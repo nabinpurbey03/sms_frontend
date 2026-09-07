@@ -215,6 +215,12 @@ export const academicApi = {
   // ==========================================
   // Assignments (Class Teacher & Subject Teacher)
   // ==========================================
+  getMyTeacherAssignments: async (
+    tenantId: string
+  ): Promise<TeacherAssignment[]> => {
+    return apiClient.get(`/academic/tenants/${tenantId}/teachers/my-assignments`);
+  },
+
   getAssignments: async (
     tenantId: string,
     params?: { teacher_id?: string; class_id?: string }

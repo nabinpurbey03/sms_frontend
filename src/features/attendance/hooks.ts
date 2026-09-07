@@ -66,11 +66,11 @@ export const useMarkAttendance = () => {
       recordDate: string;
       presentStudentIds: string[];
     }) => attendanceApi.markSectionAttendance(tenantId, classId, sectionId, recordDate, presentStudentIds),
-    onSuccess: (data, { recordDate }) => {
-      // Invalidate related queries
+    onSuccess: (data, { recordDate, presentStudentIds }) => {
       queryClient.invalidateQueries({ queryKey: ['attendance'] });
-      toast.success('Attendance Marked', {
-        description: `${data.count} student(s) marked present for ${recordDate}`,
+      const count = data?.total_marked_present ?? presentStudentIds.length;
+      toast.success('Attendance Recorded', {
+        description: `${count} student(s) marked present for ${recordDate}`,
       });
     },
     onError: (error: any) => {

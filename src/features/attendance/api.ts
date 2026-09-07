@@ -11,7 +11,7 @@ export const attendanceApi = {
     sectionId: string,
     recordDate: string,
     presentStudentIds: string[]
-  ): Promise<{ count: number }> => {
+  ): Promise<{ total_marked_present: number; total_marked_absent: number; date: string }> => {
     return apiClient.post(
       `/attendance/tenants/${tenantId}/classes/${classId}/sections/${sectionId}`,
       { present_student_ids: presentStudentIds },

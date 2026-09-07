@@ -17,6 +17,7 @@ export const STUDENTS_QUERY_KEY = 'academic_students';
 export const SUBJECTS_QUERY_KEY = 'academic_subjects';
 export const SECTION_ELIGIBILITY_KEY = 'section_eligibility';
 export const ASSIGNMENTS_QUERY_KEY = 'academic_assignments';
+export const MY_TEACHER_ASSIGNMENTS_QUERY_KEY = 'my_teacher_assignments';
 
 export const useClasses = (tenantId: string | null) => {
   return useQuery({
@@ -474,6 +475,18 @@ export const useBulkCreateSubjects = () => {
         description: error.message || 'Could not import subjects.',
       });
     },
+  });
+};
+
+export const useMyTeacherAssignments = (
+  tenantId: string | null,
+  options?: { enabled?: boolean }
+) => {
+  return useQuery({
+    queryKey: [MY_TEACHER_ASSIGNMENTS_QUERY_KEY, tenantId],
+    queryFn: () => academicApi.getMyTeacherAssignments(tenantId!),
+    enabled: !!tenantId && (options?.enabled ?? true),
+    staleTime: 1000 * 30,
   });
 };
 
