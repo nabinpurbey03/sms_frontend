@@ -40,6 +40,7 @@ import {
   UserCheck,
   CalendarCheck,
   X,
+  Loader2,
 } from 'lucide-react';
 import { useQueryClient } from '@tanstack/react-query';
 import { useNavigate, useParams } from '@tanstack/react-router';
@@ -53,12 +54,14 @@ import {
   useAddStudent,
   useAssignments,
   useDeleteAssignment,
-  useAllClassesWithDetails,
+  useClassWithDetails,
 } from '../hooks';
 import { AssignTeacherDialog } from '../components/AssignTeacherDialog';
 import { StudentAddDialog } from '../components/StudentAddDialog';
 import { SectionAddDialog } from '../components/SectionAddDialog';
 import { ParentStudentLinkDialog } from '@/features/members/components/ParentStudentLinkDialog';
+import { TenantRequiredState } from '@/components/common/TenantRequiredState';
+import { ErrorState } from '@/components/common/ErrorState';
 import {
   STUDENT_PARENTS_QUERY_KEY,
   PARENT_MAPPINGS_QUERY_KEY,
@@ -72,18 +75,18 @@ export const ClassDetailPage: React.FC = () => {
   const navigate = useNavigate();
   const { activeTenantId: tenantId, activeRole } = useAuth();
   const { isSuperAdmin, can } = usePermission();
-  const { data: classesWithDetails = [] } = useAllClassesWithDetails(tenantId);
-
-  const cls = useMemo(
-    () => classesWithDetails.find((c) => c.id === classId) ?? null,
-    [classesWithDetails, classId]
-  );
+  const { data: cls, isLoading, isError, error, refetch } = useClassWithDetails(tenantId, classId);
 
   const handleBack = () => {
     navigate({ to: '/academic/classes' });
   };
 
   const queryClient = useQueryClient();
+
+  const invalidateClassData = () => {
+    queryClient.invalidateQueries({ queryKey: ['academic_classes'] });
+    queryClient.invalidateQueries({ queryKey: ['academic_class_with_details', tenantId, classId] });
+  };
 
   const canManage =
     isSuperAdmin || can('MANAGE_CLASSES_SUBJECTS') || activeRole === 'ADMIN' || activeRole === 'OFFICE_ADMIN';
@@ -121,7 +124,33 @@ export const ClassDetailPage: React.FC = () => {
     return map;
   }, [classParentMappings]);
 
-  // Null guard — must be after all hooks
+  // 1. Tenant guard
+  if (!tenantId) {
+    return <TenantRequiredState featureName="class rosters and sections" />;
+  }
+
+  // 2. Loading state guard
+  if (isLoading) {
+    return (
+      <div className="flex flex-col items-center justify-center min-h-[60vh] text-center p-6 space-y-4">
+        <Loader2 className="w-8 h-8 animate-spin text-primary" />
+        <p className="text-sm text-muted-foreground">Loading class details...</p>
+      </div>
+    );
+  }
+
+  // 3. Error state guard
+  if (isError) {
+    return (
+      <ErrorState
+        title="Failed to Load Class Details"
+        error={error}
+        onRetry={() => refetch()}
+      />
+    );
+  }
+
+  // 4. Null guard (true 404) — must be after all hooks and error check
   if (!cls) {
     return (
       <div className="flex flex-col items-center justify-center min-h-[60vh] text-center p-6 space-y-4">
@@ -160,8 +189,7 @@ export const ClassDetailPage: React.FC = () => {
     });
     setNewSubjectName('');
     setNewSubjectCode('');
-    // Invalidate parent query so ClassesPage sees the update
-    queryClient.invalidateQueries({ queryKey: ['academic_classes'] });
+    invalidateClassData();
   };
 
   const handleDeleteSubject = async (subjectId: string) => {
@@ -169,7 +197,7 @@ export const ClassDetailPage: React.FC = () => {
     await deleteSubjectMutation.mutateAsync({
       tenantId, classId: cls.id, subjectId,
     });
-    queryClient.invalidateQueries({ queryKey: ['academic_classes'] });
+    invalidateClassData();
   };
 
   const handleDeleteSection = async (sectionId: string) => {
@@ -180,7 +208,7 @@ export const ClassDetailPage: React.FC = () => {
     if (selectedSectionId === sectionId) {
       setSelectedSectionId('');
     }
-    queryClient.invalidateQueries({ queryKey: ['academic_classes'] });
+    invalidateClassData();
   };
 
   const handleAddStudent = async (sectionId: string, data: any) => {
@@ -189,14 +217,14 @@ export const ClassDetailPage: React.FC = () => {
       tenantId, classId: cls.id, sectionId, data,
     });
     setIsEnrollStudentOpen(false);
-    queryClient.invalidateQueries({ queryKey: ['academic_classes'] });
+    invalidateClassData();
   };
 
   const handleAddSection = async (classId: string) => {
     if (!tenantId) return;
     await createSectionMutation.mutateAsync({ tenantId, classId });
     setIsAddSectionOpen(false);
-    queryClient.invalidateQueries({ queryKey: ['academic_classes'] });
+    invalidateClassData();
   };
 
   return (

@@ -5,6 +5,7 @@ import {
   createRouter,
   Outlet,
   Navigate,
+  Link,
 } from '@tanstack/react-router';
 
 import { LoginPage } from '@/features/auth/pages/LoginPage';
@@ -21,6 +22,8 @@ import { SubjectsPage } from '@/features/academic/pages/SubjectsPage';
 import { TeacherAssignmentsPage } from '@/features/academic/pages/TeacherAssignmentsPage';
 import { MarkAttendancePage } from '@/features/attendance/pages/MarkAttendancePage';
 import { MyAssignmentsPage } from '@/features/attendance/pages/MyAssignmentsPage';
+import { ErrorState } from '@/components/common/ErrorState';
+import { Button } from '@/components/ui/button';
 import { Toaster } from '@/components/ui/sonner';
 
 // Root Route
@@ -76,8 +79,8 @@ const classesRoute = createRoute({
 });
 
 const classDetailRoute = createRoute({
-  getParentRoute: () => classesRoute,
-  path: '$classId',
+  getParentRoute: () => protectedLayoutRoute,
+  path: '/academic/classes/$classId',
   component: ClassDetailPage,
 });
 
@@ -154,7 +157,8 @@ const routeTree = rootRoute.addChildren([
   registerRoute,
   protectedLayoutRoute.addChildren([
     dashboardRoute,
-    classesRoute.addChildren([classDetailRoute]),
+    classesRoute,
+    classDetailRoute,
     studentsRoute,
     subjectsRoute,
     assignmentsRoute,
@@ -172,6 +176,25 @@ const routeTree = rootRoute.addChildren([
 export const router = createRouter({
   routeTree,
   defaultPreload: 'intent',
+  defaultErrorComponent: ({ error, reset }) => (
+    <ErrorState
+      title="Application Route Error"
+      error={error}
+      onRetry={reset}
+      className="min-h-[70vh]"
+    />
+  ),
+  defaultNotFoundComponent: () => (
+    <div className="flex flex-col items-center justify-center min-h-[60vh] text-center p-6 space-y-4">
+      <h2 className="text-2xl font-extrabold text-foreground">404 - Page Not Found</h2>
+      <p className="text-sm text-muted-foreground max-w-sm">
+        The requested page does not exist or you don't have permission to access it.
+      </p>
+      <Button asChild>
+        <Link to="/dashboard">Return to Dashboard</Link>
+      </Button>
+    </div>
+  ),
 });
 
 declare module '@tanstack/react-router' {

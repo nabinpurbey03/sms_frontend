@@ -183,22 +183,29 @@ export const academicApi = {
   // ==========================================
   // Class with Details (for dedicated page view)
   // ==========================================
-  getClassWithDetails: async (tenantId: string, classId: string): Promise<ClassWithDetails> => {
-    const [cls, sections, students, subjects] = await Promise.all([
-      apiClient.get<any, AcademicClass>(`/academic/tenants/${tenantId}/classes/${classId}`),
-      apiClient.get<any, AcademicSection[]>(`/academic/tenants/${tenantId}/classes/${classId}/sections`),
-      apiClient.get<any, AcademicStudent[]>(`/academic/tenants/${tenantId}/classes/${classId}/students`),
-      apiClient.get<any, AcademicSubject[]>(`/academic/tenants/${tenantId}/classes/${classId}/subjects`),
+  getClassWithDetails: async (tenantId: string, classId: string): Promise<ClassWithDetails | null> => {
+    const [classes, sections, students, subjects] = await Promise.all([
+      academicApi.getClasses(tenantId),
+      academicApi.getSections(tenantId, classId),
+      academicApi.getStudents(tenantId, classId),
+      academicApi.getSubjects(tenantId, classId),
     ]);
+
+    const cls = classes.find((c) => c.id === classId);
+    if (!cls) {
+      return null;
+    }
 
     // Compute section student counts
     const sectionsWithCounts = sections.map((sec: AcademicSection) => ({
       ...sec,
-      student_count: (students as AcademicStudent[]).filter((s: AcademicStudent) => s.section_id === sec.id && s.status === 'ACTIVE').length,
+      student_count: (students as AcademicStudent[]).filter(
+        (s: AcademicStudent) => s.section_id === sec.id && s.status === 'ACTIVE'
+      ).length,
     }));
 
     return {
-      ...(cls as AcademicClass),
+      ...cls,
       sections: sectionsWithCounts,
       students: students as AcademicStudent[],
       subjects: subjects as AcademicSubject[],

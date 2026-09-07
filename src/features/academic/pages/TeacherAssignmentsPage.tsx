@@ -28,6 +28,8 @@ import {
   GraduationCap,
   Layers,
 } from 'lucide-react';
+import { TenantRequiredState } from '@/components/common/TenantRequiredState';
+import { EmptyState } from '@/components/common/EmptyState';
 import type { TeacherAssignment } from '../types';
 
 export const TeacherAssignmentsPage: React.FC = () => {
@@ -35,7 +37,7 @@ export const TeacherAssignmentsPage: React.FC = () => {
   const { can } = usePermission();
   const canAssign = can('ASSIGN_TEACHERS');
 
-  const { data: assignments = [], isLoading } = useAssignments(activeTenantId);
+  const { data: assignments = [], isLoading, isError, refetch } = useAssignments(activeTenantId);
   const { data: classes = [] } = useAllClassesWithDetails(activeTenantId);
   const deleteAssignmentMutation = useDeleteAssignment();
 
@@ -98,6 +100,10 @@ export const TeacherAssignmentsPage: React.FC = () => {
 
   const classTeacherCount = assignments.filter((a) => a.is_class_teacher).length;
   const subjectTeacherCount = assignments.filter((a) => !a.is_class_teacher).length;
+
+  if (!activeTenantId) {
+    return <TenantRequiredState featureName="teacher class and subject assignments" />;
+  }
 
   return (
     <div className="space-y-6 pb-12">
@@ -251,6 +257,16 @@ export const TeacherAssignmentsPage: React.FC = () => {
         </div>
       </div>
 
+      {/* Error Alert */}
+      {isError && (
+        <div className="p-4 rounded-xl border border-destructive/30 bg-destructive/10 text-destructive text-xs flex items-center justify-between">
+          <span>Failed to load teacher assignments from server.</span>
+          <Button variant="outline" size="sm" onClick={() => refetch()} className="h-7 text-xs">
+            Retry
+          </Button>
+        </div>
+      )}
+
       {/* Main Table View */}
       {isLoading ? (
         <div className="space-y-2 animate-pulse">
@@ -259,25 +275,23 @@ export const TeacherAssignmentsPage: React.FC = () => {
           <div className="h-16 bg-card rounded-xl border" />
         </div>
       ) : filteredAssignments.length === 0 ? (
-        <Card className="border-dashed p-10 text-center space-y-3 bg-card/60">
-          <GraduationCap className="w-10 h-10 mx-auto text-muted-foreground/60" />
-          <div>
-            <p className="text-sm font-bold text-foreground">No Teacher Assignments Found</p>
-            <p className="text-xs text-muted-foreground mt-0.5">
-              {searchQuery || selectedClassFilter !== 'ALL' || typeFilter !== 'ALL'
-                ? 'No records match your active filters.'
-                : 'Get started by appointing a class teacher or assigning instructors to subjects.'}
-            </p>
-          </div>
-          {canAssign && (
-            <div className="pt-2 flex justify-center gap-2">
+        <EmptyState
+          icon={GraduationCap}
+          title="No Teacher Assignments Found"
+          description={
+            searchQuery || selectedClassFilter !== 'ALL' || typeFilter !== 'ALL'
+              ? 'No records match your active filters.'
+              : 'Get started by appointing a class teacher or assigning instructors to subjects.'
+          }
+          action={
+            canAssign ? (
               <Button size="sm" onClick={() => openDialog('subject')} className="gap-1.5">
                 <Plus className="w-4 h-4" />
                 Assign Subject Teacher
               </Button>
-            </div>
-          )}
-        </Card>
+            ) : undefined
+          }
+        />
       ) : (
         <div className="rounded-xl border border-border/80 overflow-hidden bg-card shadow-xs">
           <Table>

@@ -66,7 +66,7 @@ export const useSectionEligibility = (tenantId: string | null, classId: string |
  * Hook to fetch a single class with full details for the dedicated detail page.
  */
 export const useClassWithDetails = (tenantId: string | null, classId: string | null) => {
-  return useQuery<ClassWithDetails>({
+  return useQuery<ClassWithDetails | null>({
     queryKey: ['academic_class_with_details', tenantId, classId],
     queryFn: async () => {
       const data = await academicApi.getClassWithDetails(tenantId!, classId!);

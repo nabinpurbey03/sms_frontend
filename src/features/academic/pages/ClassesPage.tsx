@@ -16,10 +16,12 @@ import { ClassEditDialog } from '../components/ClassEditDialog';
 import { ClassDeleteDialog } from '../components/ClassDeleteDialog';
 import { SectionAddDialog } from '../components/SectionAddDialog';
 import { ClassDetailModal } from '../components/ClassDetailModal';
-import { Building2, Plus, Search, X, BookOpen } from 'lucide-react';
+import { Plus, Search, X, BookOpen } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
-import { Link, useNavigate } from '@tanstack/react-router';
+import { useNavigate } from '@tanstack/react-router';
+import { TenantRequiredState } from '@/components/common/TenantRequiredState';
+import { EmptyState } from '@/components/common/EmptyState';
 import type { ClassWithDetails, AcademicClass, AcademicStats } from '../types';
 
 export const ClassesPage: React.FC = () => {
@@ -98,22 +100,7 @@ export const ClassesPage: React.FC = () => {
 
   // If no tenant selected
   if (!activeTenantId) {
-    return (
-      <div className="flex flex-col items-center justify-center min-h-[60vh] text-center p-6 space-y-4">
-        <div className="w-16 h-16 rounded-2xl bg-primary/10 text-primary flex items-center justify-center">
-          <Building2 className="w-8 h-8" />
-        </div>
-        <div className="space-y-1 max-w-md">
-          <h2 className="text-xl font-bold text-foreground">Select a School Portal</h2>
-          <p className="text-sm text-muted-foreground">
-            You must switch to an active school tenant in order to configure and view academic classes and sections.
-          </p>
-        </div>
-        <Button asChild>
-          <Link to="/tenants">View All Schools</Link>
-        </Button>
-      </div>
-    );
+    return <TenantRequiredState featureName="academic classes and sections" />;
   }
 
   return (
@@ -197,26 +184,26 @@ export const ClassesPage: React.FC = () => {
           ))}
         </div>
       ) : filteredClasses.length === 0 ? (
-        <div className="rounded-xl border border-dashed border-border/80 bg-card p-12 text-center space-y-3">
-          <div className="w-12 h-12 rounded-full bg-muted flex items-center justify-center mx-auto text-muted-foreground">
-            <BookOpen className="w-6 h-6" />
-          </div>
-          <h3 className="text-base font-semibold text-foreground">No Classes Found</h3>
-          <p className="text-sm text-muted-foreground max-w-sm mx-auto">
-            {searchQuery
+        <EmptyState
+          icon={BookOpen}
+          title="No Classes Found"
+          description={
+            searchQuery
               ? 'No classes match your search term. Try a different query.'
-              : 'Start setting up your school curriculum by creating your first academic class.'}
-          </p>
-          {canManage && !searchQuery && (
-            <Button
-              onClick={() => setIsCreateClassOpen(true)}
-              className="gap-1.5 text-xs mt-2"
-            >
-              <Plus className="w-3.5 h-3.5" />
-              Create First Class
-            </Button>
-          )}
-        </div>
+              : 'Start setting up your school curriculum by creating your first academic class.'
+          }
+          action={
+            canManage && !searchQuery ? (
+              <Button
+                onClick={() => setIsCreateClassOpen(true)}
+                className="gap-1.5 text-xs mt-2"
+              >
+                <Plus className="w-3.5 h-3.5" />
+                Create First Class
+              </Button>
+            ) : undefined
+          }
+        />
       ) : (
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
           {filteredClasses.map((cls) => (
