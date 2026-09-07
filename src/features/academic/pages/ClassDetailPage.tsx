@@ -39,11 +39,14 @@ import {
   UserCheck,
   Loader2,
   CalendarCheck,
+  Edit3,
+  CheckCircle2,
 } from 'lucide-react';
 import { useQueryClient } from '@tanstack/react-query';
 import { useNavigate, useParams } from '@tanstack/react-router';
 import { useAuth } from '@/auth/useAuth';
 import { usePermission } from '@/auth/usePermission';
+import { useDailyAttendanceStatus } from '@/features/attendance/hooks';
 import {
   useCreateSubject,
   useDeleteSubject,
@@ -137,6 +140,15 @@ export const ClassDetailPage: React.FC = () => {
       (a) => a.class_id === classId && a.is_class_teacher && (!a.section_id || a.section_id === currentSection?.id)
     );
   }, [isTeacherOnly, myAssignments, classId, currentSection]);
+
+  const todayStr = useMemo(() => new Date().toISOString().split('T')[0], []);
+  const { data: dailyStatus } = useDailyAttendanceStatus(tenantId, todayStr, classId, {
+    enabled: !!tenantId && !!classId,
+  });
+  const isCurrentSectionMarkedToday = useMemo(() => {
+    if (!currentSection || !dailyStatus) return false;
+    return dailyStatus.marked_section_ids.includes(currentSection.id);
+  }, [currentSection, dailyStatus]);
 
   // 1. Tenant guard
   if (!tenantId) {
@@ -279,18 +291,39 @@ export const ClassDetailPage: React.FC = () => {
         </div>
 
         {isClassTeacherForThisClass && (
-          <Button
-            onClick={() =>
-              navigate({
-                to: '/attendance/mark',
-                search: { classId: cls.id, sectionId: currentSection?.id } as any,
-              })
-            }
-            className="gap-2 bg-purple-600 hover:bg-purple-700 text-white shadow-xs cursor-pointer text-xs"
-          >
-            <CalendarCheck className="w-4 h-4" />
-            <span>Mark Today's Attendance {currentSection ? `(Sec ${currentSection.name})` : ''}</span>
-          </Button>
+          <div className="flex items-center gap-2">
+            <Button
+              onClick={() =>
+                navigate({
+                  to: '/attendance/mark',
+                  search: { classId: cls.id, sectionId: currentSection?.id } as any,
+                })
+              }
+              className={`gap-2 text-white shadow-xs cursor-pointer text-xs ${
+                isCurrentSectionMarkedToday
+                  ? 'bg-emerald-600 hover:bg-emerald-700'
+                  : 'bg-purple-600 hover:bg-purple-700'
+              }`}
+            >
+              {isCurrentSectionMarkedToday ? (
+                <>
+                  <Edit3 className="w-4 h-4" />
+                  <span>Update Today's Attendance {currentSection ? `(Sec ${currentSection.name})` : ''}</span>
+                </>
+              ) : (
+                <>
+                  <CalendarCheck className="w-4 h-4" />
+                  <span>Mark Today's Attendance {currentSection ? `(Sec ${currentSection.name})` : ''}</span>
+                </>
+              )}
+            </Button>
+            {isCurrentSectionMarkedToday && (
+              <span className="hidden sm:inline-flex items-center gap-1 text-[11px] font-medium text-emerald-600 dark:text-emerald-400">
+                <CheckCircle2 className="w-3.5 h-3.5" />
+                Marked
+              </span>
+            )}
+          </div>
         )}
       </div>
 

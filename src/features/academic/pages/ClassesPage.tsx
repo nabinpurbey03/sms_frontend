@@ -10,6 +10,7 @@ import {
   useCreateSection,
   useAddStudent,
 } from '../hooks';
+import { useDailyAttendanceStatus } from '@/features/attendance/hooks';
 import { AcademicStatsCards } from '../components/AcademicStatsCards';
 import { ClassCard, type TeacherClassScope } from '../components/ClassCard';
 import { ClassCreateDialog } from '../components/ClassCreateDialog';
@@ -59,6 +60,14 @@ export const ClassesPage: React.FC = () => {
     activeTenantId,
     { enabled: isTeacherOnly }
   );
+
+  const todayStr = useMemo(() => new Date().toISOString().split('T')[0], []);
+  const { data: dailyStatus } = useDailyAttendanceStatus(activeTenantId, todayStr, undefined, {
+    enabled: !!activeTenantId,
+  });
+  const markedSectionIds = useMemo(() => {
+    return new Set(dailyStatus?.marked_section_ids || []);
+  }, [dailyStatus]);
 
   const createClassMutation = useCreateClass();
   const updateClassMutation = useUpdateClass();
@@ -111,8 +120,16 @@ export const ClassesPage: React.FC = () => {
       }
     }
 
+    for (const scope of scopeMap.values()) {
+      if (scope.isClassTeacher) {
+        scope.isTodayAttendanceMarked = scope.classTeacherSections.some((sec) =>
+          markedSectionIds.has(sec.id)
+        );
+      }
+    }
+
     return { assignedClassIds: classIds, teacherScopeByClassId: scopeMap };
-  }, [isTeacherOnly, myTeacherAssignments]);
+  }, [isTeacherOnly, myTeacherAssignments, markedSectionIds]);
 
   // Filter classes for teacher
   const scopedClasses = useMemo(() => {

@@ -12,6 +12,8 @@ import {
   ArrowRight,
   UserCheck,
   CalendarCheck,
+  Edit3,
+  CheckCircle2,
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import {
@@ -28,6 +30,7 @@ export interface TeacherClassScope {
   classTeacherSections: { id: string; name: string }[];
   isSubjectTeacher: boolean;
   subjectNames: string[];
+  isTodayAttendanceMarked?: boolean;
 }
 
 interface ClassCardProps {
@@ -223,17 +226,39 @@ export const ClassCard: React.FC<ClassCardProps> = ({
         }`}
       >
         {teacherScope?.isClassTeacher && (
-          <Button
-            size="sm"
-            onClick={() => {
-              const targetSecId = teacherScope.classTeacherSections[0]?.id;
-              onMarkAttendance?.(cls.id, targetSecId);
-            }}
-            className="text-xs gap-1.5 bg-purple-600 hover:bg-purple-700 text-white shadow-xs cursor-pointer h-8"
-          >
-            <CalendarCheck className="w-3.5 h-3.5" />
-            <span>Mark Today's Attendance</span>
-          </Button>
+          <div className="flex items-center gap-2">
+            {teacherScope.isTodayAttendanceMarked ? (
+              <>
+                <Button
+                  size="sm"
+                  onClick={() => {
+                    const targetSecId = teacherScope.classTeacherSections[0]?.id;
+                    onMarkAttendance?.(cls.id, targetSecId);
+                  }}
+                  className="text-xs gap-1.5 bg-emerald-600 hover:bg-emerald-700 text-white shadow-xs cursor-pointer h-8"
+                >
+                  <Edit3 className="w-3.5 h-3.5" />
+                  <span>Update Today's Attendance</span>
+                </Button>
+                <span className="hidden sm:inline-flex items-center gap-1 text-[11px] font-medium text-emerald-600 dark:text-emerald-400">
+                  <CheckCircle2 className="w-3.5 h-3.5" />
+                  Marked
+                </span>
+              </>
+            ) : (
+              <Button
+                size="sm"
+                onClick={() => {
+                  const targetSecId = teacherScope.classTeacherSections[0]?.id;
+                  onMarkAttendance?.(cls.id, targetSecId);
+                }}
+                className="text-xs gap-1.5 bg-purple-600 hover:bg-purple-700 text-white shadow-xs cursor-pointer h-8"
+              >
+                <CalendarCheck className="w-3.5 h-3.5" />
+                <span>Mark Today's Attendance</span>
+              </Button>
+            )}
+          </div>
         )}
         <Button
           variant="ghost"
