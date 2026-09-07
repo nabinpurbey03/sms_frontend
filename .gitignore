@@ -1,0 +1,66 @@
+# Logs
+logs
+*.log
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+pnpm-debug.log*
+lerna-debug.log*
+
+# Dependencies
+node_modules
+.pnp
+.pnp.js
+
+# Production & Build outputs
+dist
+dist-ssr
+build
+*.tsbuildinfo
+
+# Environment variables
+.env
+.env.*
+!.env.example
+
+# Editor directories and files
+.vscode/*
+!.vscode/extensions.json
+.idea
+*.suo
+*.ntvs*
+*.njsproj
+*.sln
+*.sw?
+*.sublime-workspace
+*.sublime-project
+
+# AI tooling / local assistant settings
+.claude/
+
+# Caches and Temporary files
+.cache
+.vite
+.eslintcache
+.oxlintcache
+.temp
+tmp
+
+# Testing and Coverage
+coverage
+*.lcov
+.nyc_output
+
+# OS metadata
+.DS_Store
+.DS_Store?
+._*
+.Spotlight-V100
+.Trashes
+ehthumbs.db
+Thumbs.db
+desktop.ini
+
+# Project documentation / plans
+PLAN.md
+BACKEND_ARCHITECTURE.md

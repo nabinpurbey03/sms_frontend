@@ -1,0 +1,193 @@
+import axios, { type AxiosError, type InternalAxiosRequestConfig } from 'axios';
+import { ENV } from '@/config/env';
+import { ApiError } from './errors';
+import type { ApiResponse, TokenResponse } from './types';
+import { useTenantStore } from '@/stores/tenantStore';
+
+let inMemoryAccessToken: string | null = null;
+
+export const getAccessToken = () => inMemoryAccessToken;
+export const setAccessToken = (token: string | null) => {
+  inMemoryAccessToken = token;
+};
+
+export const getStoredRefreshToken = () => {
+  return localStorage.getItem('schools_up_refresh_token') || sessionStorage.getItem('schools_up_refresh_token');
+};
+
+export const setStoredRefreshToken = (token: string | null, remember = true) => {
+  if (!token) {
+    localStorage.removeItem('schools_up_refresh_token');
+    sessionStorage.removeItem('schools_up_refresh_token');
+    return;
+  }
+  if (remember) {
+    localStorage.setItem('schools_up_refresh_token', token);
+  } else {
+    sessionStorage.setItem('schools_up_refresh_token', token);
+  }
+};
+
+export const clearTokens = () => {
+  setAccessToken(null);
+  setStoredRefreshToken(null);
+};
+
+export const apiClient = axios.create({
+  baseURL: `${ENV.API_BASE_URL.replace(/\/$/, '')}${ENV.API_VERSION}`,
+  headers: {
+    'Content-Type': 'application/json',
+  },
+});
+
+// Request Interceptor
+apiClient.interceptors.request.use(
+  (config: InternalAxiosRequestConfig) => {
+    // Attach JWT Bearer Token if present
+    if (inMemoryAccessToken) {
+      config.headers.Authorization = `Bearer ${inMemoryAccessToken}`;
+    }
+
+    // Attach X-Tenant-ID if active tenant is selected
+    const activeTenantId = useTenantStore.getState().activeTenantId;
+    if (activeTenantId) {
+      config.headers[ENV.TENANT_HEADER_NAME] = activeTenantId;
+    }
+
+    return config;
+  },
+  (error) => Promise.reject(error)
+);
+
+// Response Interceptor & Token Refresh Queue
+let isRefreshing = false;
+let failedQueue: Array<{
+  resolve: (value?: unknown) => void;
+  reject: (reason?: unknown) => void;
+}> = [];
+
+const processQueue = (error: unknown, token: string | null = null) => {
+  failedQueue.forEach((prom) => {
+    if (error) {
+      prom.reject(error);
+    } else {
+      prom.resolve(token);
+    }
+  });
+  failedQueue = [];
+};
+
+apiClient.interceptors.response.use(
+  (response) => {
+    const data = response.data as ApiResponse<unknown>;
+    // Check universal API envelope
+    if (data && typeof data === 'object' && 'status' in data) {
+      if (data.status === true) {
+        return data.data as any;
+      }
+      throw new ApiError(
+        data.message || 'Request failed',
+        data.error,
+        response.status
+      );
+    }
+    return response.data;
+  },
+  async (error: AxiosError<ApiResponse<unknown>>) => {
+    const originalRequest = error.config as InternalAxiosRequestConfig & {
+      _retry?: boolean;
+    };
+
+    const status = error.response?.status;
+    const responseData = error.response?.data;
+
+    // Handle 401 & Token Refresh
+    if (
+      status === 401 &&
+      originalRequest &&
+      !originalRequest._retry &&
+      !originalRequest.url?.includes('/auth/login') &&
+      !originalRequest.url?.includes('/auth/refresh')
+    ) {
+      if (isRefreshing) {
+        return new Promise((resolve, reject) => {
+          failedQueue.push({ resolve, reject });
+        })
+          .then((token) => {
+            if (token && originalRequest.headers) {
+              originalRequest.headers.Authorization = `Bearer ${token}`;
+            }
+            return apiClient(originalRequest);
+          })
+          .catch((err) => Promise.reject(err));
+      }
+
+      originalRequest._retry = true;
+      isRefreshing = true;
+
+      const refreshToken = getStoredRefreshToken();
+
+      if (!refreshToken) {
+        clearTokens();
+        isRefreshing = false;
+        return Promise.reject(
+          new ApiError('Session expired. Please log in again.', undefined, 401)
+        );
+      }
+
+      try {
+        const refreshResponse = await axios.post<ApiResponse<TokenResponse>>(
+          `${ENV.API_BASE_URL.replace(/\/$/, '')}${ENV.API_VERSION}/auth/refresh`,
+          { refresh_token: refreshToken }
+        );
+
+        const tokenData = refreshResponse.data?.data || refreshResponse.data;
+        const newAccessToken = (tokenData as TokenResponse)?.access_token;
+        const newRefreshToken = (tokenData as TokenResponse)?.refresh_token;
+
+        if (newAccessToken) {
+          setAccessToken(newAccessToken);
+          if (newRefreshToken) {
+            setStoredRefreshToken(newRefreshToken);
+          }
+          apiClient.defaults.headers.common.Authorization = `Bearer ${newAccessToken}`;
+          processQueue(null, newAccessToken);
+          if (originalRequest.headers) {
+            originalRequest.headers.Authorization = `Bearer ${newAccessToken}`;
+          }
+          return apiClient(originalRequest);
+        } else {
+          throw new Error('No access token returned');
+        }
+      } catch (refreshErr) {
+        processQueue(refreshErr, null);
+        clearTokens();
+        return Promise.reject(
+          new ApiError('Session expired. Please log in again.', undefined, 401)
+        );
+      } finally {
+        isRefreshing = false;
+      }
+    }
+
+    // Parse structured ApiError from response envelope
+    if (responseData && typeof responseData === 'object' && 'error' in responseData) {
+      const envelope = responseData as ApiResponse<unknown>;
+      return Promise.reject(
+        new ApiError(
+          envelope.message || error.message,
+          envelope.error || undefined,
+          status
+        )
+      );
+    }
+
+    return Promise.reject(
+      new ApiError(
+        error.message || 'An unexpected error occurred',
+        undefined,
+        status
+      )
+    );
+  }
+);

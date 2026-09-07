@@ -1,0 +1,38 @@
+export type Role =
+  | 'SUPER_ADMIN'
+  | 'ADMIN'
+  | 'OFFICE_ADMIN'
+  | 'TEACHER'
+  | 'PARENT';
+
+export const PERMISSION_MATRIX = {
+  CREATE_TENANT: ['SUPER_ADMIN'],
+  MANAGE_TENANT_SETTINGS: ['SUPER_ADMIN', 'ADMIN'],
+  VIEW_TENANT_SETTINGS: ['SUPER_ADMIN', 'ADMIN', 'OFFICE_ADMIN'],
+  CREATE_OFFICE_ADMIN: ['SUPER_ADMIN', 'ADMIN'],
+  CREATE_TEACHER_PARENT: ['SUPER_ADMIN', 'ADMIN', 'OFFICE_ADMIN'],
+  ASSIGN_MEMBER_ROLES: ['SUPER_ADMIN', 'ADMIN'],
+  MANAGE_CLASSES_SUBJECTS: ['SUPER_ADMIN', 'ADMIN', 'OFFICE_ADMIN'],
+  VIEW_CLASSES_SUBJECTS: ['SUPER_ADMIN', 'ADMIN', 'OFFICE_ADMIN', 'TEACHER'],
+  MANAGE_SECTIONS_STUDENTS: ['SUPER_ADMIN', 'ADMIN', 'OFFICE_ADMIN'],
+  VIEW_SECTIONS_STUDENTS: ['SUPER_ADMIN', 'ADMIN', 'OFFICE_ADMIN', 'TEACHER'],
+  ASSIGN_TEACHERS: ['SUPER_ADMIN', 'ADMIN', 'OFFICE_ADMIN'],
+  VIEW_MY_ASSIGNMENTS: ['TEACHER'],
+  LINK_PARENTS: ['SUPER_ADMIN', 'ADMIN', 'OFFICE_ADMIN'],
+  VIEW_MY_CHILDREN: ['PARENT'],
+  MARK_ATTENDANCE: ['SUPER_ADMIN', 'ADMIN', 'OFFICE_ADMIN', 'TEACHER'],
+  VIEW_ATTENDANCE_REPORTS: ['SUPER_ADMIN', 'ADMIN', 'OFFICE_ADMIN', 'TEACHER', 'PARENT'],
+  HARD_DELETE: ['SUPER_ADMIN', 'ADMIN'],
+} as const;
+
+export type PermissionKey = keyof typeof PERMISSION_MATRIX;
+
+export const hasPermission = (
+  role: Role | string | undefined | null,
+  permission: PermissionKey
+): boolean => {
+  if (!role) return false;
+  if (role === 'SUPER_ADMIN') return true;
+  const allowedRoles = PERMISSION_MATRIX[permission] as readonly string[];
+  return allowedRoles.includes(role);
+};
