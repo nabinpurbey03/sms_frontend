@@ -38,6 +38,7 @@ import {
   UserCog,
   UserCheck,
   Loader2,
+  CalendarCheck,
 } from 'lucide-react';
 import { useQueryClient } from '@tanstack/react-query';
 import { useNavigate, useParams } from '@tanstack/react-router';
@@ -51,6 +52,7 @@ import {
   useAddStudent,
   useAssignments,
   useClassWithDetails,
+  useMyTeacherAssignments,
 } from '../hooks';
 import { TeacherAssignmentBoard } from '../components/TeacherAssignmentBoard';
 import { StudentAddDialog } from '../components/StudentAddDialog';
@@ -87,6 +89,12 @@ export const ClassDetailPage: React.FC = () => {
   const canManage =
     isSuperAdmin || can('MANAGE_CLASSES_SUBJECTS') || activeRole === 'ADMIN' || activeRole === 'OFFICE_ADMIN';
 
+  const isTeacherOnly = activeRole === 'TEACHER' && !canManage;
+  const { data: myAssignments = [], isLoading: isAssignmentsLoading } = useMyTeacherAssignments(
+    tenantId,
+    { enabled: isTeacherOnly }
+  );
+
   const [activeTab, setActiveTab] = useState<'roster' | 'subjects' | 'assignments' | 'expansion'>('roster');
   const [selectedSectionId, setSelectedSectionId] = useState<string>('');
   const [isEnrollStudentOpen, setIsEnrollStudentOpen] = useState(false);
@@ -104,7 +112,7 @@ export const ClassDetailPage: React.FC = () => {
   const addStudentMutation = useAddStudent();
 
   // Fetch assignments and parent mappings for this class
-  const { data: classAssignments = [] } = useAssignments(tenantId, { class_id: classId });
+  const { data: classAssignments = [] } = useAssignments(canManage ? tenantId : null, { class_id: classId });
   const { data: classParentMappings = [] } = useParentMappings(tenantId, { class_id: classId });
 
   // Build a lookup of student_id -> parent mapping
@@ -114,13 +122,29 @@ export const ClassDetailPage: React.FC = () => {
     return map;
   }, [classParentMappings]);
 
+  const sections = cls?.sections || [];
+  const currentSection =
+    sections.find((s) => s.id === selectedSectionId) || sections[0] || null;
+
+  const isTeacherAssignedToThisClass = useMemo(() => {
+    if (!isTeacherOnly) return true;
+    return myAssignments.some((a) => a.class_id === classId);
+  }, [isTeacherOnly, myAssignments, classId]);
+
+  const isClassTeacherForThisClass = useMemo(() => {
+    if (!isTeacherOnly) return false;
+    return myAssignments.some(
+      (a) => a.class_id === classId && a.is_class_teacher && (!a.section_id || a.section_id === currentSection?.id)
+    );
+  }, [isTeacherOnly, myAssignments, classId, currentSection]);
+
   // 1. Tenant guard
   if (!tenantId) {
     return <TenantRequiredState featureName="class rosters and sections" />;
   }
 
   // 2. Loading state guard
-  if (isLoading) {
+  if (isLoading || (isTeacherOnly && isAssignmentsLoading)) {
     return (
       <div className="flex flex-col items-center justify-center min-h-[60vh] text-center p-6 space-y-4">
         <Loader2 className="w-8 h-8 animate-spin text-primary" />
@@ -161,10 +185,28 @@ export const ClassDetailPage: React.FC = () => {
     );
   }
 
-  // Use the class data (cls is guaranteed non-null after the guard above)
-  const sections = cls.sections || [];
-  const currentSection =
-    sections.find((s) => s.id === selectedSectionId) || sections[0] || null;
+  // 5. Unauthorized guard
+  if (isTeacherOnly && !isTeacherAssignedToThisClass) {
+    return (
+      <div className="flex flex-col items-center justify-center min-h-[50vh] text-center p-6 space-y-4">
+        <div className="w-14 h-14 rounded-2xl bg-amber-500/10 border border-amber-500/20 flex items-center justify-center text-amber-600 dark:text-amber-400">
+          <Lock className="w-7 h-7" />
+        </div>
+        <div className="space-y-1 max-w-md">
+          <h2 className="text-xl font-bold text-foreground">Restricted Class Access</h2>
+          <p className="text-xs sm:text-sm text-muted-foreground">
+            You are not assigned as a Class Teacher or Subject Teacher for <strong>{cls?.name || 'this class'}</strong>.
+          </p>
+        </div>
+        <Button onClick={handleBack} variant="outline" className="gap-2 text-xs">
+          <ArrowLeft className="w-4 h-4" />
+          Return to My Classes
+        </Button>
+      </div>
+    );
+  }
+
+  // Use the class data (cls is guaranteed non-null after the guards above)
   const sectionStudents = currentSection
     ? cls.students.filter((st) => st.section_id === currentSection.id)
     : [];
@@ -235,6 +277,21 @@ export const ClassDetailPage: React.FC = () => {
             </h1>
           </div>
         </div>
+
+        {isClassTeacherForThisClass && (
+          <Button
+            onClick={() =>
+              navigate({
+                to: '/attendance/mark',
+                search: { classId: cls.id, sectionId: currentSection?.id } as any,
+              })
+            }
+            className="gap-2 bg-purple-600 hover:bg-purple-700 text-white shadow-xs cursor-pointer text-xs"
+          >
+            <CalendarCheck className="w-4 h-4" />
+            <span>Mark Today's Attendance {currentSection ? `(Sec ${currentSection.name})` : ''}</span>
+          </Button>
+        )}
       </div>
 
       {/* Quick Metrics */}
@@ -278,35 +335,39 @@ export const ClassDetailPage: React.FC = () => {
           <BookOpen className="w-3.5 h-3.5" />
           Curriculum Subjects ({cls.subjects.length})
         </button>
-        <button
-          type="button"
-          onClick={() => setActiveTab('assignments')}
-          className={`px-3 py-2 text-xs font-semibold border-b-2 transition-colors cursor-pointer flex items-center gap-1.5 whitespace-nowrap ${
-            activeTab === 'assignments'
-              ? 'border-primary text-primary'
-              : 'border-transparent text-muted-foreground hover:text-foreground'
-          }`}
-        >
-          <UserCheck className="w-3.5 h-3.5" />
-          Teacher Assignments
-          {classAssignments.length > 0 && (
-            <span className="ml-1 px-1.5 py-0.5 rounded-full bg-primary/10 text-primary text-[10px] font-bold">
-              {classAssignments.length}
-            </span>
-          )}
-        </button>
-        <button
-          type="button"
-          onClick={() => setActiveTab('expansion')}
-          className={`px-3 py-2 text-xs font-semibold border-b-2 transition-colors cursor-pointer flex items-center gap-1.5 whitespace-nowrap ${
-            activeTab === 'expansion'
-              ? 'border-primary text-primary'
-              : 'border-transparent text-muted-foreground hover:text-foreground'
-          }`}
-        >
-          <Layers className="w-3.5 h-3.5" />
-          20-Student Expansion
-        </button>
+        {canManage && (
+          <button
+            type="button"
+            onClick={() => setActiveTab('assignments')}
+            className={`px-3 py-2 text-xs font-semibold border-b-2 transition-colors cursor-pointer flex items-center gap-1.5 whitespace-nowrap ${
+              activeTab === 'assignments'
+                ? 'border-primary text-primary'
+                : 'border-transparent text-muted-foreground hover:text-foreground'
+            }`}
+          >
+            <UserCheck className="w-3.5 h-3.5" />
+            Teacher Assignments
+            {classAssignments.length > 0 && (
+              <span className="ml-1 px-1.5 py-0.5 rounded-full bg-primary/10 text-primary text-[10px] font-bold">
+                {classAssignments.length}
+              </span>
+            )}
+          </button>
+        )}
+        {canManage && (
+          <button
+            type="button"
+            onClick={() => setActiveTab('expansion')}
+            className={`px-3 py-2 text-xs font-semibold border-b-2 transition-colors cursor-pointer flex items-center gap-1.5 whitespace-nowrap ${
+              activeTab === 'expansion'
+                ? 'border-primary text-primary'
+                : 'border-transparent text-muted-foreground hover:text-foreground'
+            }`}
+          >
+            <Layers className="w-3.5 h-3.5" />
+            20-Student Expansion
+          </button>
+        )}
       </div>
 
       {/* Tab Content */}
@@ -473,7 +534,7 @@ export const ClassDetailPage: React.FC = () => {
         )}
 
         {/* Tab: Teacher Assignments */}
-        {activeTab === 'assignments' && (
+        {activeTab === 'assignments' && canManage && (
           <TeacherAssignmentBoard
             cls={cls}
             tenantId={tenantId}
@@ -563,7 +624,7 @@ export const ClassDetailPage: React.FC = () => {
         )}
 
         {/* Tab 3: 20-Student Expansion Policy */}
-        {activeTab === 'expansion' && (
+        {activeTab === 'expansion' && canManage && (
           <div className="space-y-4">
             <div className="p-4 rounded-xl border border-border/70 bg-card space-y-2">
               <h4 className="text-xs font-bold text-foreground uppercase tracking-wider flex items-center gap-1.5">
