@@ -42,6 +42,7 @@ import {
   X,
 } from 'lucide-react';
 import { useQueryClient } from '@tanstack/react-query';
+import { useNavigate, useParams } from '@tanstack/react-router';
 import { useAuth } from '@/auth/useAuth';
 import { usePermission } from '@/auth/usePermission';
 import {
@@ -52,6 +53,7 @@ import {
   useAddStudent,
   useAssignments,
   useDeleteAssignment,
+  useAllClassesWithDetails,
 } from '../hooks';
 import { AssignTeacherDialog } from '../components/AssignTeacherDialog';
 import { StudentAddDialog } from '../components/StudentAddDialog';
@@ -63,21 +65,24 @@ import {
   useParentMappings,
 } from '@/features/members/hooks';
 import type { ParentMappingDTO } from '@/features/members/types';
-import type { ClassWithDetails, AcademicStudent, AcademicSubject, AcademicSection } from '../types';
+import type { AcademicStudent, AcademicSubject, AcademicSection } from '../types';
 
-interface ClassDetailPageProps {
-  cls: ClassWithDetails;
-  tenantId: string | null;
-  onBack: () => void;
-}
-
-export const ClassDetailPage: React.FC<ClassDetailPageProps> = ({
-  cls,
-  tenantId,
-  onBack,
-}) => {
-  const { activeRole } = useAuth();
+export const ClassDetailPage: React.FC = () => {
+  const { classId } = useParams({ from: '/_authenticated/academic/classes/$classId' });
+  const navigate = useNavigate();
+  const { activeTenantId: tenantId, activeRole } = useAuth();
   const { isSuperAdmin, can } = usePermission();
+  const { data: classesWithDetails = [] } = useAllClassesWithDetails(tenantId);
+
+  const cls = useMemo(
+    () => classesWithDetails.find((c) => c.id === classId) ?? null,
+    [classesWithDetails, classId]
+  );
+
+  const handleBack = () => {
+    navigate({ to: '/academic/classes' });
+  };
+
   const queryClient = useQueryClient();
 
   const canManage =
@@ -105,11 +110,9 @@ export const ClassDetailPage: React.FC<ClassDetailPageProps> = ({
   const addStudentMutation = useAddStudent();
   const deleteAssignmentMutation = useDeleteAssignment();
 
-  // Fetch assignments for this class
-  const { data: classAssignments = [] } = useAssignments(tenantId, { class_id: cls.id });
-
-  // Fetch parent mappings for this class to show linked/unlinked status per student
-  const { data: classParentMappings = [] } = useParentMappings(tenantId, { class_id: cls.id });
+  // Fetch assignments and parent mappings for this class
+  const { data: classAssignments = [] } = useAssignments(tenantId, { class_id: classId });
+  const { data: classParentMappings = [] } = useParentMappings(tenantId, { class_id: classId });
 
   // Build a lookup of student_id -> parent mapping
   const parentByStudentId = useMemo(() => {
@@ -118,7 +121,28 @@ export const ClassDetailPage: React.FC<ClassDetailPageProps> = ({
     return map;
   }, [classParentMappings]);
 
-  // Use the passed-in class data; mutations will trigger refetch via the parent's query
+  // Null guard — must be after all hooks
+  if (!cls) {
+    return (
+      <div className="flex flex-col items-center justify-center min-h-[60vh] text-center p-6 space-y-4">
+        <div className="w-16 h-16 rounded-2xl bg-muted flex items-center justify-center">
+          <BookOpen className="w-8 h-8 text-muted-foreground" />
+        </div>
+        <div className="space-y-1 max-w-md">
+          <h2 className="text-xl font-bold text-foreground">Class Not Found</h2>
+          <p className="text-sm text-muted-foreground">
+            The class you're looking for doesn't exist or has been removed.
+          </p>
+        </div>
+        <Button onClick={handleBack} className="gap-2">
+          <ArrowLeft className="w-4 h-4" />
+          Back to Classes
+        </Button>
+      </div>
+    );
+  }
+
+  // Use the class data (cls is guaranteed non-null after the guard above)
   const sections = cls.sections || [];
   const currentSection =
     sections.find((s) => s.id === selectedSectionId) || sections[0] || null;
@@ -175,14 +199,12 @@ export const ClassDetailPage: React.FC<ClassDetailPageProps> = ({
     queryClient.invalidateQueries({ queryKey: ['academic_classes'] });
   };
 
-  if (!cls) return null;
-
   return (
     <div className="space-y-6 pb-12">
       {/* Header */}
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
         <div className="flex items-center gap-3 flex-wrap">
-          <Button variant="ghost" size="sm" onClick={onBack} className="gap-1.5">
+          <Button variant="ghost" size="sm" onClick={handleBack} className="gap-1.5">
             <ArrowLeft className="w-4 h-4" />
             Back to Classes
           </Button>

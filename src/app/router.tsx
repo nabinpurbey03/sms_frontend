@@ -15,6 +15,7 @@ import { PlaceholderPage } from '@/components/common/PlaceholderPage';
 import { MembersPage } from '@/features/members/pages/MembersPage';
 import { MyChildrenPage } from '@/features/members/pages/MyChildrenPage';
 import { ClassesPage } from '@/features/academic/pages/ClassesPage';
+import { ClassDetailPage } from '@/features/academic/pages/ClassDetailPage';
 import { StudentsPage } from '@/features/academic/pages/StudentsPage';
 import { SubjectsPage } from '@/features/academic/pages/SubjectsPage';
 import { TeacherAssignmentsPage } from '@/features/academic/pages/TeacherAssignmentsPage';
@@ -72,6 +73,12 @@ const classesRoute = createRoute({
   getParentRoute: () => protectedLayoutRoute,
   path: '/academic/classes',
   component: ClassesPage,
+});
+
+const classDetailRoute = createRoute({
+  getParentRoute: () => classesRoute,
+  path: '$classId',
+  component: ClassDetailPage,
 });
 
 const studentsRoute = createRoute({
@@ -147,7 +154,7 @@ const routeTree = rootRoute.addChildren([
   registerRoute,
   protectedLayoutRoute.addChildren([
     dashboardRoute,
-    classesRoute,
+    classesRoute.addChildren([classDetailRoute]),
     studentsRoute,
     subjectsRoute,
     assignmentsRoute,

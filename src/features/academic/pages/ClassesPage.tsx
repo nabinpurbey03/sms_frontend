@@ -15,17 +15,17 @@ import { ClassCreateDialog } from '../components/ClassCreateDialog';
 import { ClassEditDialog } from '../components/ClassEditDialog';
 import { ClassDeleteDialog } from '../components/ClassDeleteDialog';
 import { SectionAddDialog } from '../components/SectionAddDialog';
-import { ClassDetailPage } from './ClassDetailPage';
 import { ClassDetailModal } from '../components/ClassDetailModal';
 import { Building2, Plus, Search, X, BookOpen } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
-import { Link } from '@tanstack/react-router';
+import { Link, useNavigate } from '@tanstack/react-router';
 import type { ClassWithDetails, AcademicClass, AcademicStats } from '../types';
 
 export const ClassesPage: React.FC = () => {
   const { activeTenantId, activeTenantName, activeRole } = useAuth();
   const { isSuperAdmin, can } = usePermission();
+  const navigate = useNavigate();
 
   const canManage =
     isSuperAdmin || can('MANAGE_CLASSES_SUBJECTS') || activeRole === 'ADMIN' || activeRole === 'OFFICE_ADMIN';
@@ -34,8 +34,7 @@ export const ClassesPage: React.FC = () => {
   // Filters State
   const [searchQuery, setSearchQuery] = useState('');
 
-  // Detail Page State
-  const [selectedClassId, setSelectedClassId] = useState<string | null>(null);
+  // Detail Modal State (URL-based routing handles page-level detail view)
   const [detailModalClass, setDetailModalClass] = useState<ClassWithDetails | null>(null);
 
   // Dialogs State
@@ -91,12 +90,6 @@ export const ClassesPage: React.FC = () => {
     );
   }, [classesWithDetails, searchQuery]);
 
-  // Get selected class from filtered list
-  const selectedClass = useMemo(() => {
-    if (!selectedClassId) return null;
-    return filteredClasses.find((c) => c.id === selectedClassId) || null;
-  }, [filteredClasses, selectedClassId]);
-
   // Sync detailed modal class with latest query data
   const activeDetailClass = useMemo(() => {
     if (!detailModalClass) return null;
@@ -120,19 +113,6 @@ export const ClassesPage: React.FC = () => {
           <Link to="/tenants">View All Schools</Link>
         </Button>
       </div>
-    );
-  }
-
-  // If a class is selected, render the detail page
-  if (selectedClass) {
-    return (
-      <>
-        <ClassDetailPage
-          cls={selectedClass}
-          tenantId={activeTenantId}
-          onBack={() => setSelectedClassId(null)}
-        />
-      </>
     );
   }
 
@@ -245,7 +225,7 @@ export const ClassesPage: React.FC = () => {
               cls={cls}
               canManage={canManage}
               onOpenDetails={() => {}}
-              onOpenDetailsPage={(id) => setSelectedClassId(id)}
+              onOpenDetailsPage={(id) => navigate({ to: '/academic/classes/$classId', params: { classId: id } })}
               onAddSection={(c) => setAddingSectionClass(c)}
               onEditClass={(c) => setEditingClass(c)}
               onDeleteClass={(c) => setDeletingClass(c)}
