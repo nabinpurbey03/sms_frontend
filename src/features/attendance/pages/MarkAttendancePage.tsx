@@ -1,7 +1,11 @@
-import React, { useState, useMemo, useEffect } from 'react';
+import React, { useState, useMemo } from 'react';
 import { useAuth } from '@/auth/useAuth';
 import { usePermission } from '@/auth/usePermission';
-import { useAssignments, useAllClassesWithDetails } from '@/features/academic/hooks';
+import {
+  useAssignments,
+  useMyTeacherAssignments,
+  useAllClassesWithDetails,
+} from '@/features/academic/hooks';
 import { useMarkAttendance } from '../hooks';
 import { Button } from '@/components/ui/button';
 import { Card } from '@/components/ui/card';
@@ -23,121 +27,152 @@ import {
   Calendar,
   Search,
   Loader2,
+  RotateCcw,
 } from 'lucide-react';
 import type { AcademicClass, AcademicSection } from '@/features/academic/types';
 
 export const MarkAttendancePage: React.FC = () => {
   const { activeTenantId } = useAuth();
-  const { can, isTeacher } = usePermission();
+  const { can, isSuperAdmin, activeRole } = usePermission();
 
-  // Fetch all assignments for current user (if teacher, this shows only their assignments)
-  const { data: allAssignments = [], isLoading: assignmentsLoading } = useAssignments(activeTenantId);
+  const canManage =
+    isSuperAdmin || can('MANAGE_CLASSES_SUBJECTS') || activeRole === 'ADMIN' || activeRole === 'OFFICE_ADMIN';
+  const isTeacherOnly = activeRole === 'TEACHER' && !canManage;
+
+  // Admin vs Teacher assignment fetching
+  const { data: adminAssignments = [], isLoading: adminAssignmentsLoading } = useAssignments(
+    canManage ? activeTenantId : null
+  );
+  const { data: myTeacherAssignments = [], isLoading: teacherAssignmentsLoading } = useMyTeacherAssignments(
+    activeTenantId,
+    { enabled: isTeacherOnly }
+  );
+  const _assignments = isTeacherOnly ? myTeacherAssignments : adminAssignments;
+  const assignmentsLoading = isTeacherOnly ? teacherAssignmentsLoading : adminAssignmentsLoading;
   const { data: classesWithDetails = [], isLoading: classesLoading } = useAllClassesWithDetails(activeTenantId);
 
-  // State
-  const [selectedClassId, setSelectedClassId] = useState<string>('');
-  const [selectedSectionId, setSelectedSectionId] = useState<string>('');
-  const [recordDate, setRecordDate] = useState<string>(
-    new Date().toISOString().split('T')[0]
-  );
+  // URL search parameters for preselection
+  const searchParams = new URLSearchParams(window.location.search);
+  const queryClassId = searchParams.get('classId') || '';
+  const querySectionId = searchParams.get('sectionId') || '';
+
+  // Date state & ABAC rule (disallow future dates)
+  const todayStr = new Date().toISOString().split('T')[0];
+  const [recordDate, setRecordDate] = useState<string>(todayStr);
+
+  // Search and attendance mark state
   const [presentStudentIds, setPresentStudentIds] = useState<Set<string>>(new Set());
   const [searchQuery, setSearchQuery] = useState('');
 
   const markAttendanceMutation = useMarkAttendance();
 
-  // Determine which classes/sections user can mark attendance for
-  const myClassTeacherAssignments = useMemo(() => {
-    if (isTeacher) {
-      // Teachers can only mark attendance for sections they're assigned as class teacher
-      return allAssignments.filter(a => a.is_class_teacher);
-    }
-    // Admins/Office Admins can mark for any section
-    return allAssignments; // Will filter by selected class/section
-  }, [allAssignments, isTeacher]);
-
-  // For teachers, get only their assigned class/sections
-  const myAssignedClassIds = useMemo(() => {
-    if (!isTeacher) return null; // Admin/Office Admin can access all
-    return new Set(myClassTeacherAssignments.map(a => a.class_id));
-  }, [myClassTeacherAssignments, isTeacher]);
-
-  const myAssignedSectionIds = useMemo(() => {
-    if (!isTeacher) return null;
-    const sectionIds = new Set<string>();
-    myClassTeacherAssignments.forEach(a => {
-      if (a.section_id) sectionIds.add(a.section_id);
-    });
-    return sectionIds;
-  }, [myClassTeacherAssignments, isTeacher]);
-
-  // Get sections the current user can mark attendance for
+  // Compute accessible sections: for teachers, ONLY sections where is_class_teacher === true
   const accessibleSections = useMemo(() => {
     const sections: { class: AcademicClass; section: AcademicSection }[] = [];
-
     for (const cls of classesWithDetails) {
-      // Skip classes not assigned to teacher
-      if (isTeacher && myAssignedClassIds && !myAssignedClassIds.has(cls.id)) {
-        continue;
-      }
-
       for (const section of cls.sections) {
-        // Skip sections not assigned to teacher
-        if (isTeacher && myAssignedSectionIds && myAssignedSectionIds.size > 0 && !myAssignedSectionIds.has(section.id)) {
-          // If teacher has specific section assignments, check those
-          // If teacher has class-wide assignment (no section_id), allow all sections
-          const hasSectionSpecific = myClassTeacherAssignments.some(
-            a => a.section_id === section.id
+        if (isTeacherOnly) {
+          const isClassTeacher = myTeacherAssignments.some(
+            (a) => a.class_id === cls.id && a.is_class_teacher && (!a.section_id || a.section_id === section.id)
           );
-          const hasClassWide = myClassTeacherAssignments.some(
-            a => a.class_id === cls.id && !a.section_id
-          );
-          if (!hasSectionSpecific && !hasClassWide) {
-            continue;
-          }
+          if (!isClassTeacher) continue;
         }
-
         sections.push({ class: cls, section });
       }
     }
     return sections;
-  }, [classesWithDetails, isTeacher, myAssignedClassIds, myAssignedSectionIds, myClassTeacherAssignments]);
+  }, [classesWithDetails, isTeacherOnly, myTeacherAssignments]);
 
-  // Set default selection
-  useEffect(() => {
-    if (accessibleSections.length > 0 && !selectedSectionId) {
-      setSelectedClassId(accessibleSections[0].class.id);
-      setSelectedSectionId(accessibleSections[0].section.id);
+  // Distinct classes that have at least one accessible section
+  const availableClasses = useMemo(() => {
+    const map = new Map<string, AcademicClass>();
+    for (const item of accessibleSections) {
+      if (!map.has(item.class.id)) {
+        map.set(item.class.id, item.class);
+      }
     }
-  }, [accessibleSections, selectedSectionId]);
+    return Array.from(map.values());
+  }, [accessibleSections]);
 
-  // Get selected class/section data
-  const selectedClass = classesWithDetails.find(c => c.id === selectedClassId);
+  // User-driven selection override
+  const [userSelected, setUserSelected] = useState<{ classId: string; sectionId: string } | null>(null);
+
+  // Derived effective selection avoiding setState in useEffect
+  const effectiveSelection = useMemo(() => {
+    if (accessibleSections.length === 0) {
+      return { classId: '', sectionId: '' };
+    }
+
+    // 1. User manual selection
+    if (userSelected !== null) {
+      if (!userSelected.classId) {
+        return { classId: '', sectionId: '' };
+      }
+      const isValid = accessibleSections.some(
+        (item) => item.class.id === userSelected.classId && item.section.id === userSelected.sectionId
+      );
+      if (isValid) {
+        return userSelected;
+      }
+    }
+
+    // 2. Query params match
+    if (querySectionId) {
+      const match = accessibleSections.find(
+        (item) => item.section.id === querySectionId && (!queryClassId || item.class.id === queryClassId)
+      );
+      if (match) {
+        return { classId: match.class.id, sectionId: match.section.id };
+      }
+    } else if (queryClassId) {
+      const match = accessibleSections.find((item) => item.class.id === queryClassId);
+      if (match) {
+        return { classId: match.class.id, sectionId: match.section.id };
+      }
+    }
+
+    // 3. Fallback to first accessible section
+    return {
+      classId: accessibleSections[0].class.id,
+      sectionId: accessibleSections[0].section.id,
+    };
+  }, [accessibleSections, userSelected, queryClassId, querySectionId]);
+
+  const selectedClassId = effectiveSelection.classId;
+  const selectedSectionId = effectiveSelection.sectionId;
+
+  // Selected class & students data
+  const selectedClass = classesWithDetails.find((c) => c.id === selectedClassId);
   const students = useMemo(() => {
     if (!selectedClass || !selectedSectionId) return [];
-    return selectedClass.students.filter(s => s.section_id === selectedSectionId && s.status === 'ACTIVE');
+    return selectedClass.students.filter(
+      (s) => s.section_id === selectedSectionId && s.status === 'ACTIVE'
+    );
   }, [selectedClass, selectedSectionId]);
 
   // Filter students by search
   const filteredStudents = useMemo(() => {
     if (!searchQuery.trim()) return students;
     const q = searchQuery.toLowerCase();
-    return students.filter(s =>
+    return students.filter((s) =>
       `${s.first_name} ${s.last_name}`.toLowerCase().includes(q)
     );
   }, [students, searchQuery]);
 
-  // Check if user is class teacher for selected section
+  // Defense-in-depth verification for class teacher duty
   const isClassTeacherForSelected = useMemo(() => {
-    if (!isTeacher) return true; // Admins can always mark
-    return myClassTeacherAssignments.some(
-      a => a.class_id === selectedClassId &&
-           (!a.section_id || a.section_id === selectedSectionId)
+    if (canManage) return true;
+    return myTeacherAssignments.some(
+      (a) =>
+        a.class_id === selectedClassId &&
+        a.is_class_teacher &&
+        (!a.section_id || a.section_id === selectedSectionId)
     );
-  }, [isTeacher, myClassTeacherAssignments, selectedClassId, selectedSectionId]);
+  }, [canManage, myTeacherAssignments, selectedClassId, selectedSectionId]);
 
   // Handle marking attendance
   const handleMarkAllPresent = () => {
-    setPresentStudentIds(new Set(students.map(s => s.id)));
+    setPresentStudentIds(new Set(students.map((s) => s.id)));
   };
 
   const handleMarkAllAbsent = () => {
@@ -157,15 +192,8 @@ export const MarkAttendancePage: React.FC = () => {
   const handleSubmit = async () => {
     if (!activeTenantId || !selectedClassId || !selectedSectionId) return;
 
-    if (!recordDate) {
-      return;
-    }
-
-    // Check future date
-    const selectedDate = new Date(recordDate);
-    const today = new Date();
-    today.setHours(23, 59, 59, 999);
-    if (selectedDate > today) {
+    // Reject future dates (ABAC rule)
+    if (!recordDate || recordDate > todayStr) {
       return;
     }
 
@@ -183,19 +211,96 @@ export const MarkAttendancePage: React.FC = () => {
 
   const isLoading = assignmentsLoading || classesLoading;
 
-  // Check if user has any access
-  const hasAccess = isTeacher ? myClassTeacherAssignments.length > 0 : can('MARK_ATTENDANCE');
+  if (isLoading) {
+    return (
+      <div className="space-y-6 pb-12">
+        <div className="flex items-center gap-2.5">
+          <div className="p-2 rounded-xl bg-primary/10 text-primary border border-primary/20">
+            <CalendarCheck className="w-6 h-6" />
+          </div>
+          <div>
+            <h1 className="text-2xl font-bold text-foreground">Mark Daily Attendance</h1>
+            <p className="text-sm text-muted-foreground">Loading attendance details...</p>
+          </div>
+        </div>
+        <div className="h-40 rounded-xl border bg-muted/20 animate-pulse" />
+      </div>
+    );
+  }
 
-  if (!hasAccess) {
+  // Teacher has no Class Teacher assignments
+  if (isTeacherOnly && accessibleSections.length === 0) {
+    return (
+      <div className="space-y-6 pb-12">
+        <div className="flex items-center gap-2.5 border-b pb-5">
+          <div className="p-2 rounded-xl bg-primary/10 text-primary border border-primary/20">
+            <CalendarCheck className="w-6 h-6" />
+          </div>
+          <div>
+            <h1 className="text-xl sm:text-2xl font-bold tracking-tight text-foreground">
+              Mark Daily Attendance
+            </h1>
+            <p className="text-xs sm:text-sm text-muted-foreground">
+              Record daily student attendance for your assigned class section.
+            </p>
+          </div>
+        </div>
+
+        <Card className="border-dashed p-12 text-center space-y-3 bg-card/60">
+          <AlertCircle className="w-10 h-10 mx-auto text-amber-500/80" />
+          <div>
+            <p className="text-base font-bold text-foreground">No Class Teacher Assignments</p>
+            <p className="text-xs text-muted-foreground mt-1.5 max-w-md mx-auto leading-relaxed">
+              Only designated Class Teachers can record daily student attendance. If you are a Subject Teacher, you can view class rosters under Classes &amp; Sections. Please contact your school administrator if you need attendance marking rights.
+            </p>
+          </div>
+        </Card>
+      </div>
+    );
+  }
+
+  // User without attendance permissions
+  if (!canManage && !isTeacherOnly && !can('MARK_ATTENDANCE')) {
     return (
       <div className="space-y-6 pb-12">
         <div className="rounded-xl border border-destructive/30 bg-destructive/10 p-8 text-center space-y-3">
           <AlertCircle className="w-10 h-10 mx-auto text-destructive/60" />
           <h2 className="text-lg font-bold text-foreground">No Attendance Access</h2>
           <p className="text-sm text-muted-foreground max-w-md mx-auto">
-            You don't have permission to mark attendance. Teachers can only mark attendance for sections where they are assigned as Class Teacher.
+            You don't have permission to mark attendance.
           </p>
         </div>
+      </div>
+    );
+  }
+
+  // No accessible classes or sections found for admin/school
+  if (accessibleSections.length === 0) {
+    return (
+      <div className="space-y-6 pb-12">
+        <div className="flex items-center gap-2.5 border-b pb-5">
+          <div className="p-2 rounded-xl bg-primary/10 text-primary border border-primary/20">
+            <CalendarCheck className="w-6 h-6" />
+          </div>
+          <div>
+            <h1 className="text-xl sm:text-2xl font-bold tracking-tight text-foreground">
+              Mark Daily Attendance
+            </h1>
+            <p className="text-xs sm:text-sm text-muted-foreground">
+              Mark student attendance for your school sections.
+            </p>
+          </div>
+        </div>
+
+        <Card className="border-dashed p-12 text-center space-y-3 bg-card/60">
+          <CalendarCheck className="w-10 h-10 mx-auto text-muted-foreground/60" />
+          <div>
+            <p className="text-base font-bold text-foreground">No Classes or Sections Available</p>
+            <p className="text-xs text-muted-foreground mt-1.5 max-w-md mx-auto leading-relaxed">
+              There are no classes or sections set up yet. Create classes and sections first under Academics.
+            </p>
+          </div>
+        </Card>
       </div>
     );
   }
@@ -214,7 +319,7 @@ export const MarkAttendancePage: React.FC = () => {
                 Mark Daily Attendance
               </h1>
               <p className="text-xs sm:text-sm text-muted-foreground">
-                {isTeacher
+                {isTeacherOnly
                   ? 'You can only mark attendance for sections where you are the Class Teacher.'
                   : 'Mark student attendance for your school sections.'}
               </p>
@@ -232,13 +337,34 @@ export const MarkAttendancePage: React.FC = () => {
               <Calendar className="w-3.5 h-3.5" />
               Attendance Date
             </label>
-            <Input
-              type="date"
-              value={recordDate}
-              onChange={(e) => setRecordDate(e.target.value)}
-              max={new Date().toISOString().split('T')[0]}
-              className="h-10"
-            />
+            <div className="flex items-center gap-2">
+              <Input
+                type="date"
+                value={recordDate}
+                onChange={(e) => setRecordDate(e.target.value)}
+                max={todayStr}
+                className="h-10"
+              />
+              {recordDate === todayStr ? (
+                <Badge
+                  variant="secondary"
+                  className="text-xs h-10 px-3 bg-primary/10 text-primary border-primary/20 shrink-0 font-medium flex items-center"
+                >
+                  Today
+                </Badge>
+              ) : (
+                <Button
+                  type="button"
+                  variant="outline"
+                  size="sm"
+                  onClick={() => setRecordDate(todayStr)}
+                  className="h-10 px-3 text-xs gap-1.5 shrink-0 cursor-pointer text-muted-foreground hover:text-foreground"
+                >
+                  <RotateCcw className="w-3.5 h-3.5" />
+                  <span>Reset to Today</span>
+                </Button>
+              )}
+            </div>
           </div>
 
           {/* Class Selector */}
@@ -247,14 +373,23 @@ export const MarkAttendancePage: React.FC = () => {
             <select
               value={selectedClassId}
               onChange={(e) => {
-                setSelectedClassId(e.target.value);
-                setSelectedSectionId('');
+                const newClassId = e.target.value;
+                if (!newClassId) {
+                  setUserSelected({ classId: '', sectionId: '' });
+                } else {
+                  const firstSec = accessibleSections.find((item) => item.class.id === newClassId);
+                  setUserSelected({
+                    classId: newClassId,
+                    sectionId: firstSec ? firstSec.section.id : '',
+                  });
+                }
+                setPresentStudentIds(new Set());
               }}
               className="w-full h-10 px-3 rounded-lg border border-input bg-background text-sm focus:outline-none focus:ring-2 focus:ring-primary"
               disabled={isLoading}
             >
               <option value="">Select a class...</option>
-              {accessibleSections.map(({ class: cls }) => (
+              {availableClasses.map((cls) => (
                 <option key={cls.id} value={cls.id}>
                   {cls.name}
                 </option>
@@ -267,7 +402,13 @@ export const MarkAttendancePage: React.FC = () => {
             <label className="text-xs font-semibold text-muted-foreground">Section</label>
             <select
               value={selectedSectionId}
-              onChange={(e) => setSelectedSectionId(e.target.value)}
+              onChange={(e) => {
+                setUserSelected({
+                  classId: selectedClassId,
+                  sectionId: e.target.value,
+                });
+                setPresentStudentIds(new Set());
+              }}
               className="w-full h-10 px-3 rounded-lg border border-input bg-background text-sm focus:outline-none focus:ring-2 focus:ring-primary"
               disabled={!selectedClassId || isLoading}
             >
@@ -284,7 +425,7 @@ export const MarkAttendancePage: React.FC = () => {
         </div>
 
         {/* Access Notice for Teachers */}
-        {isTeacher && selectedClassId && !isClassTeacherForSelected && (
+        {isTeacherOnly && selectedClassId && !isClassTeacherForSelected && (
           <div className="mt-4 p-3 rounded-lg bg-amber-500/10 border border-amber-500/20 text-amber-700 dark:text-amber-400 text-xs flex items-center gap-2">
             <AlertCircle className="w-4 h-4 shrink-0" />
             <span>You are not the Class Teacher for this section. Only the assigned Class Teacher can mark attendance.</span>
@@ -447,7 +588,8 @@ export const MarkAttendancePage: React.FC = () => {
                 markAttendanceMutation.isPending ||
                 !selectedSectionId ||
                 students.length === 0 ||
-                (isTeacher && !isClassTeacherForSelected)
+                (isTeacherOnly && !isClassTeacherForSelected) ||
+                recordDate > todayStr
               }
               className="gap-2"
             >

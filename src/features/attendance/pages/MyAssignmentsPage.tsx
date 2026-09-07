@@ -1,16 +1,17 @@
 import React from 'react';
+import { useNavigate } from '@tanstack/react-router';
 import { useAuth } from '@/auth/useAuth';
-import { useAssignments } from '@/features/academic/hooks';
+import { useMyTeacherAssignments } from '@/features/academic/hooks';
+import { Button } from '@/components/ui/button';
 import { Card } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { BookOpen, UserCheck, GraduationCap, CalendarCheck } from 'lucide-react';
 
 export const MyAssignmentsPage: React.FC = () => {
   const { activeTenantId, user } = useAuth();
+  const navigate = useNavigate();
 
-  const { data: assignments = [], isLoading: assignmentsLoading } = useAssignments(activeTenantId);
-
-  const isLoading = assignmentsLoading;
+  const { data: assignments = [], isLoading } = useMyTeacherAssignments(activeTenantId);
 
   // Get class teacher assignments
   const classTeacherAssignments = assignments.filter(a => a.is_class_teacher);
@@ -143,32 +144,45 @@ export const MyAssignmentsPage: React.FC = () => {
               </div>
               <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
                 {classTeacherAssignments.map(assignment => (
-                  <Card key={assignment.id} className="p-4 bg-card shadow-xs border-purple-500/20">
-                    <div className="flex items-start justify-between mb-3">
-                      <div className="flex items-center gap-2">
-                        <div className="p-2 rounded-lg bg-purple-500/10">
-                          <UserCheck className="w-4 h-4 text-purple-600 dark:text-purple-400" />
-                        </div>
-                        <div>
-                          <p className="text-sm font-bold text-foreground">
-                            {assignment.class_name || 'Class'}
-                          </p>
-                          <p className="text-xs text-muted-foreground">
-                            {assignment.section_name
-                              ? `Section ${assignment.section_name}`
-                              : 'All Sections'}
-                          </p>
+                  <Card key={assignment.id} className="p-4 bg-card shadow-xs border-purple-500/20 flex flex-col justify-between">
+                    <div>
+                      <div className="flex items-start justify-between mb-3">
+                        <div className="flex items-center gap-2">
+                          <div className="p-2 rounded-lg bg-purple-500/10">
+                            <UserCheck className="w-4 h-4 text-purple-600 dark:text-purple-400" />
+                          </div>
+                          <div>
+                            <p className="text-sm font-bold text-foreground">
+                              {assignment.class_name || 'Class'}
+                            </p>
+                            <p className="text-xs text-muted-foreground">
+                              {assignment.section_name
+                                ? `Section ${assignment.section_name}`
+                                : 'All Sections'}
+                            </p>
+                          </div>
                         </div>
                       </div>
+                      <div className="space-y-1.5">
+                        <Badge variant="purple" className="text-[10px] gap-1">
+                          <CalendarCheck className="w-3 h-3" />
+                          Can Mark Attendance
+                        </Badge>
+                        <p className="text-[11px] text-muted-foreground">
+                          You are the primary class teacher for this section.
+                        </p>
+                      </div>
                     </div>
-                    <div className="space-y-1.5">
-                      <Badge variant="purple" className="text-[10px] gap-1">
-                        <CalendarCheck className="w-3 h-3" />
-                        Can Mark Attendance
-                      </Badge>
-                      <p className="text-[11px] text-muted-foreground">
-                        You are the primary class teacher for this section.
-                      </p>
+                    <div className="mt-4 pt-3 border-t border-border/50">
+                      <Button
+                        size="sm"
+                        variant="outline"
+                        onClick={() => navigate({ to: '/attendance/mark', search: { classId: assignment.class_id, sectionId: assignment.section_id } as any })}
+                        className="w-full text-xs gap-1.5 border-purple-500/30 text-purple-700 dark:text-purple-300 hover:bg-purple-500/10 cursor-pointer"
+                      >
+                        <CalendarCheck className="w-3.5 h-3.5" />
+                        <span>Mark Today's Attendance</span>
+                      </Button>
                     </div>
                   </Card>
                 ))}
