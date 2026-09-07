@@ -12,24 +12,29 @@ export interface AttendanceRecord {
 
 export interface StudentAttendanceRecord {
   student_id: string;
-  student_name: string;
-  records: {
-    date: string;
-    is_present: boolean;
-  }[];
-  present_count: number;
-  absent_count: number;
-  total_days: number;
-  attendance_percentage: number;
+  student_name?: string;
+  first_name?: string;
+  middle_name?: string | null;
+  last_name?: string;
+  records: Record<string, boolean>;
+  present_count?: number;
+  absent_count?: number;
+  total_days?: number;
+  total_present?: number;
+  total_absent?: number;
+  attendance_percentage?: number;
 }
 
 export interface SectionAttendanceReport {
-  class_id: string;
-  class_name: string;
-  section_id: string;
-  section_name: string;
-  start_date: string;
-  end_date: string;
+  class_id?: string;
+  class_name?: string;
+  section_id?: string;
+  section_name?: string;
+  start_date?: string;
+  end_date?: string;
+  from_date?: string;
+  to_date?: string;
+  total_school_days?: number;
   students: StudentAttendanceRecord[];
 }
 

@@ -1,4 +1,4 @@
-import React, { useState, useMemo } from 'react';
+import React, { useState, useMemo, useEffect } from 'react';
 import { useAuth } from '@/auth/useAuth';
 import { usePermission } from '@/auth/usePermission';
 import {
@@ -6,7 +6,7 @@ import {
   useMyTeacherAssignments,
   useAllClassesWithDetails,
 } from '@/features/academic/hooks';
-import { useMarkAttendance } from '../hooks';
+import { useMarkAttendance, useSectionAttendanceReport } from '../hooks';
 import { Button } from '@/components/ui/button';
 import { Card } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
@@ -28,6 +28,8 @@ import {
   Search,
   Loader2,
   RotateCcw,
+  Edit3,
+  CheckCircle2,
 } from 'lucide-react';
 import type { AcademicClass, AcademicSection } from '@/features/academic/types';
 
@@ -150,6 +152,40 @@ export const MarkAttendancePage: React.FC = () => {
     );
   }, [selectedClass, selectedSectionId]);
 
+  // Existing section attendance report for selected section and date
+  const { data: sectionReport, isLoading: isReportLoading } = useSectionAttendanceReport(
+    activeTenantId,
+    selectedClassId,
+    selectedSectionId,
+    recordDate,
+    recordDate
+  );
+
+  const isAlreadyMarked = useMemo(() => {
+    if (!sectionReport) return false;
+    return (
+      (sectionReport.total_school_days ?? 0) > 0 ||
+      sectionReport.students.some((s) => s.records && s.records[recordDate] !== undefined)
+    );
+  }, [sectionReport, recordDate]);
+
+  // Synchronize local marked student IDs when switching sections/dates or fetching existing records
+  useEffect(() => {
+    if (!sectionReport || !isAlreadyMarked) {
+      // oxlint-disable-next-line react/set-state-in-effect
+      setPresentStudentIds(new Set());
+      return;
+    }
+    const presentIds = new Set<string>();
+    for (const s of sectionReport.students) {
+      if (s.records && s.records[recordDate] === true) {
+        presentIds.add(s.student_id);
+      }
+    }
+    // oxlint-disable-next-line react/set-state-in-effect
+    setPresentStudentIds(presentIds);
+  }, [sectionReport, isAlreadyMarked, recordDate, selectedSectionId]);
+
   // Filter students by search
   const filteredStudents = useMemo(() => {
     if (!searchQuery.trim()) return students;
@@ -204,9 +240,6 @@ export const MarkAttendancePage: React.FC = () => {
       recordDate,
       presentStudentIds: Array.from(presentStudentIds),
     });
-
-    // Reset after success
-    setPresentStudentIds(new Set());
   };
 
   const isLoading = assignmentsLoading || classesLoading;
@@ -312,14 +345,16 @@ export const MarkAttendancePage: React.FC = () => {
         <div className="space-y-1">
           <div className="flex items-center gap-2.5">
             <div className="p-2 rounded-xl bg-primary/10 text-primary border border-primary/20">
-              <CalendarCheck className="w-6 h-6" />
+              {isAlreadyMarked ? <Edit3 className="w-6 h-6" /> : <CalendarCheck className="w-6 h-6" />}
             </div>
             <div>
               <h1 className="text-xl sm:text-2xl font-bold tracking-tight text-foreground">
-                Mark Daily Attendance
+                {isAlreadyMarked ? 'Update Daily Attendance' : 'Mark Daily Attendance'}
               </h1>
               <p className="text-xs sm:text-sm text-muted-foreground">
-                {isTeacherOnly
+                {isAlreadyMarked
+                  ? 'Attendance has already been recorded for this section on this date. Modify student attendance below.'
+                  : isTeacherOnly
                   ? 'You can only mark attendance for sections where you are the Class Teacher.'
                   : 'Mark student attendance for your school sections.'}
               </p>
@@ -337,7 +372,7 @@ export const MarkAttendancePage: React.FC = () => {
               <Calendar className="w-3.5 h-3.5" />
               Attendance Date
             </label>
-            <div className="flex items-center gap-2">
+            <div className="flex items-center gap-2 flex-wrap sm:flex-nowrap">
               <Input
                 type="date"
                 value={recordDate}
@@ -363,6 +398,15 @@ export const MarkAttendancePage: React.FC = () => {
                   <RotateCcw className="w-3.5 h-3.5" />
                   <span>Reset to Today</span>
                 </Button>
+              )}
+              {isAlreadyMarked && (
+                <Badge
+                  variant="outline"
+                  className="text-xs bg-emerald-500/10 text-emerald-700 dark:text-emerald-400 border-emerald-500/30 gap-1 h-10 px-2.5 shrink-0 flex items-center"
+                >
+                  <CheckCircle2 className="w-3.5 h-3.5 text-emerald-600 dark:text-emerald-400" />
+                  Recorded for this date
+                </Badge>
               )}
             </div>
           </div>
@@ -570,7 +614,7 @@ export const MarkAttendancePage: React.FC = () => {
             <div className="text-xs text-muted-foreground">
               {recordDate && (
                 <span>
-                  Marking attendance for{' '}
+                  {isAlreadyMarked ? 'Updating attendance for ' : 'Marking attendance for '}
                   <span className="font-semibold text-foreground">
                     {new Date(recordDate + 'T00:00:00').toLocaleDateString('en-US', {
                       weekday: 'long',
@@ -586,19 +630,26 @@ export const MarkAttendancePage: React.FC = () => {
               onClick={handleSubmit}
               disabled={
                 markAttendanceMutation.isPending ||
+                isReportLoading ||
                 !selectedSectionId ||
                 students.length === 0 ||
                 (isTeacherOnly && !isClassTeacherForSelected) ||
                 recordDate > todayStr
               }
-              className="gap-2"
+              className={`gap-2 ${
+                isAlreadyMarked
+                  ? 'bg-emerald-600 hover:bg-emerald-700 text-white'
+                  : ''
+              }`}
             >
               {markAttendanceMutation.isPending ? (
                 <Loader2 className="w-4 h-4 animate-spin" />
+              ) : isAlreadyMarked ? (
+                <Edit3 className="w-4 h-4" />
               ) : (
                 <CalendarCheck className="w-4 h-4" />
               )}
-              Save Attendance
+              {isAlreadyMarked ? 'Update Attendance' : 'Submit Attendance'}
             </Button>
           </div>
         </Card>
