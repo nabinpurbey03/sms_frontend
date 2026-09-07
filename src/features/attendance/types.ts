@@ -82,3 +82,19 @@ export interface AttendanceFilterDTO {
   class_id?: string;
   section_id?: string;
 }
+
+export interface SectionDailyAttendanceStatus {
+  section_id: string;
+  class_id: string;
+  is_marked: boolean;
+  total_students: number;
+  present_count: number;
+  absent_count: number;
+  is_locked: boolean;
+}
+
+export interface DailyAttendanceStatus {
+  date: string;
+  marked_section_ids: string[];
+  sections: SectionDailyAttendanceStatus[];
+}

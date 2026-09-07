@@ -1,5 +1,5 @@
 import { apiClient } from '@/api/client';
-import type { AttendanceReport, SectionAttendanceReport, AttendanceSummary } from './types';
+import type { AttendanceReport, SectionAttendanceReport, AttendanceSummary, DailyAttendanceStatus } from './types';
 
 export const attendanceApi = {
   // ==========================================
@@ -32,7 +32,7 @@ export const attendanceApi = {
     return apiClient.get(
       `/attendance/tenants/${tenantId}/classes/${classId}/sections/${sectionId}/report`,
       {
-        params: { start_date: startDate, end_date: endDate },
+        params: { from_date: startDate, to_date: endDate },
       }
     );
   },
@@ -60,4 +60,16 @@ export const attendanceApi = {
       { params: { record_date: recordDate } }
     );
   },
+
+  getDailyAttendanceStatus: async (
+    tenantId: string,
+    recordDate: string,
+    classId?: string
+  ): Promise<DailyAttendanceStatus> => {
+    return apiClient.get(
+      `/attendance/tenants/${tenantId}/daily-status`,
+      { params: { record_date: recordDate, class_id: classId } }
+    );
+  },
 };
+

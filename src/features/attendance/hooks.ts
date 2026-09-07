@@ -4,6 +4,7 @@ import { attendanceApi } from './api';
 import type { AttendanceFilterDTO } from './types';
 
 export const ATTENDANCE_QUERY_KEY = 'attendance';
+export const DAILY_ATTENDANCE_STATUS_KEY = 'daily_attendance_status';
 
 // Query: Get section attendance report
 export const useSectionAttendanceReport = (
@@ -48,6 +49,21 @@ export const useAttendanceSummary = (
   });
 };
 
+// Query: Get daily attendance status across sections
+export const useDailyAttendanceStatus = (
+  tenantId: string | null,
+  recordDate: string,
+  classId?: string,
+  options?: { enabled?: boolean }
+) => {
+  return useQuery({
+    queryKey: [DAILY_ATTENDANCE_STATUS_KEY, tenantId, recordDate, classId],
+    queryFn: () => attendanceApi.getDailyAttendanceStatus(tenantId!, recordDate, classId),
+    enabled: !!tenantId && !!recordDate && (options?.enabled ?? true),
+    staleTime: 1000 * 15,
+  });
+};
+
 // Mutation: Mark attendance
 export const useMarkAttendance = () => {
   const queryClient = useQueryClient();
@@ -68,6 +84,7 @@ export const useMarkAttendance = () => {
     }) => attendanceApi.markSectionAttendance(tenantId, classId, sectionId, recordDate, presentStudentIds),
     onSuccess: (data, { recordDate, presentStudentIds }) => {
       queryClient.invalidateQueries({ queryKey: ['attendance'] });
+      queryClient.invalidateQueries({ queryKey: [DAILY_ATTENDANCE_STATUS_KEY] });
       const count = data?.total_marked_present ?? presentStudentIds.length;
       toast.success('Attendance Recorded', {
         description: `${count} student(s) marked present for ${recordDate}`,
@@ -80,3 +97,4 @@ export const useMarkAttendance = () => {
     },
   });
 };
+
