@@ -8,7 +8,6 @@ import {
   DialogFooter,
 } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
-import { Card } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import {
   Table,
@@ -38,8 +37,6 @@ import {
   MoreVertical,
   UserCog,
   UserCheck,
-  CalendarCheck,
-  X,
   Loader2,
 } from 'lucide-react';
 import { useQueryClient } from '@tanstack/react-query';
@@ -53,10 +50,9 @@ import {
   useCreateSection,
   useAddStudent,
   useAssignments,
-  useDeleteAssignment,
   useClassWithDetails,
 } from '../hooks';
-import { AssignTeacherDialog } from '../components/AssignTeacherDialog';
+import { TeacherAssignmentBoard } from '../components/TeacherAssignmentBoard';
 import { StudentAddDialog } from '../components/StudentAddDialog';
 import { SectionAddDialog } from '../components/SectionAddDialog';
 import { ParentStudentLinkDialog } from '@/features/members/components/ParentStudentLinkDialog';
@@ -100,18 +96,12 @@ export const ClassDetailPage: React.FC = () => {
   const [subjectToDelete, setSubjectToDelete] = useState<AcademicSubject | null>(null);
   const [sectionToDelete, setSectionToDelete] = useState<AcademicSection | null>(null);
   const [linkParentStudent, setLinkParentStudent] = useState<AcademicStudent | null>(null);
-  const [isAssignTeacherOpen, setIsAssignTeacherOpen] = useState(false);
-  const [assignmentMode, setAssignmentMode] = useState<'subject' | 'class_teacher'>('class_teacher');
-  const [selectedSubjectForAssignment, setSelectedSubjectForAssignment] = useState<string | null>(null);
-  const [_selectedSectionForAssignment, setSelectedSectionForAssignment] = useState<string | null>(null);
-  const [assignmentToDelete, setAssignmentToDelete] = useState<any>(null);
 
   const createSubjectMutation = useCreateSubject();
   const deleteSubjectMutation = useDeleteSubject();
   const deleteSectionMutation = useDeleteSection();
   const createSectionMutation = useCreateSection();
   const addStudentMutation = useAddStudent();
-  const deleteAssignmentMutation = useDeleteAssignment();
 
   // Fetch assignments and parent mappings for this class
   const { data: classAssignments = [] } = useAssignments(tenantId, { class_id: classId });
@@ -482,195 +472,14 @@ export const ClassDetailPage: React.FC = () => {
           </div>
         )}
 
-        {/* Tab 3: Teacher Assignments */}
+        {/* Tab: Teacher Assignments */}
         {activeTab === 'assignments' && (
-          <div className="space-y-4">
-            <div className="flex items-center justify-between">
-              <div className="flex items-center gap-2">
-                <UserCheck className="w-4 h-4 text-primary" />
-                <h3 className="text-sm font-bold text-foreground">Faculty Teaching Assignments</h3>
-              </div>
-              {canManage && (
-                <div className="flex items-center gap-2">
-                  <Button
-                    size="sm"
-                    variant="outline"
-                    onClick={() => {
-                      setAssignmentMode('class_teacher');
-                      setSelectedSectionForAssignment(null);
-                      setIsAssignTeacherOpen(true);
-                    }}
-                    className="gap-1.5 text-xs"
-                  >
-                    <UserCheck className="w-3.5 h-3.5" />
-                    Appoint Class Teacher
-                  </Button>
-                  <Button
-                    size="sm"
-                    onClick={() => {
-                      setAssignmentMode('subject');
-                      setSelectedSubjectForAssignment(null);
-                      setIsAssignTeacherOpen(true);
-                    }}
-                    className="gap-1.5 text-xs"
-                    disabled={cls.subjects.length === 0}
-                  >
-                    <Plus className="w-3.5 h-3.5" />
-                    Assign Subject Teacher
-                  </Button>
-                </div>
-              )}
-            </div>
-
-            {/* Class Teacher Assignments */}
-            <div className="space-y-2">
-              <h4 className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">
-                Class Teachers
-              </h4>
-              {classAssignments.filter(a => a.is_class_teacher).length === 0 ? (
-                <div className="p-6 rounded-xl border border-dashed border-border/80 text-center">
-                  <UserCheck className="w-8 h-8 mx-auto text-muted-foreground/60 mb-2" />
-                  <p className="text-xs font-semibold text-foreground">No Class Teachers Assigned</p>
-                  <p className="text-[11px] text-muted-foreground mt-0.5">
-                    Appoint a class teacher to grant attendance marking privileges for this class.
-                  </p>
-                </div>
-              ) : (
-                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
-                  {classAssignments.filter(a => a.is_class_teacher).map(assignment => (
-                    <Card key={assignment.id} className="p-4 bg-purple-500/5 border-purple-500/20">
-                      <div className="flex items-start justify-between">
-                        <div className="flex items-center gap-2">
-                          <div className="p-2 rounded-lg bg-purple-500/10">
-                            <UserCheck className="w-4 h-4 text-purple-600 dark:text-purple-400" />
-                          </div>
-                          <div>
-                            <p className="text-xs font-bold text-foreground">
-                              {assignment.teacher_name || 'Assigned Teacher'}
-                            </p>
-                            <p className="text-[11px] text-muted-foreground">
-                              {assignment.section_name
-                                ? `Section ${assignment.section_name}`
-                                : 'All Sections'}
-                            </p>
-                          </div>
-                        </div>
-                        {canManage && (
-                          <Button
-                            variant="ghost"
-                            size="icon"
-                            onClick={() => setAssignmentToDelete(assignment)}
-                            className="h-7 w-7 text-muted-foreground hover:text-destructive"
-                          >
-                            <Trash2 className="w-3.5 h-3.5" />
-                          </Button>
-                        )}
-                      </div>
-                      <div className="mt-2 pt-2 border-t border-purple-500/10">
-                        <span className="text-[10px] font-medium text-purple-600 dark:text-purple-400 flex items-center gap-1">
-                          <CalendarCheck className="w-3 h-3" />
-                          Can Mark Attendance
-                        </span>
-                      </div>
-                    </Card>
-                  ))}
-                </div>
-              )}
-            </div>
-
-            {/* Subject Teacher Assignments */}
-            <div className="space-y-2">
-              <h4 className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">
-                Subject Teachers
-              </h4>
-              {classAssignments.filter(a => !a.is_class_teacher).length === 0 ? (
-                <div className="p-6 rounded-xl border border-dashed border-border/80 text-center">
-                  <BookOpen className="w-8 h-8 mx-auto text-muted-foreground/60 mb-2" />
-                  <p className="text-xs font-semibold text-foreground">No Subject Teachers Assigned</p>
-                  <p className="text-[11px] text-muted-foreground mt-0.5">
-                    Assign teachers to teach subjects in this class.
-                  </p>
-                </div>
-              ) : (
-                <div className="space-y-3">
-                  {cls.subjects.map(subject => {
-                    const subjectAssignments = classAssignments.filter(
-                      a => !a.is_class_teacher && a.subject_id === subject.id
-                    );
-                    return (
-                      <Card key={subject.id} className="p-4 bg-card border-border/60">
-                        <div className="flex items-center justify-between mb-3">
-                          <div className="flex items-center gap-2">
-                            <div className="p-2 rounded-lg bg-primary/10">
-                              <BookOpen className="w-4 h-4 text-primary" />
-                            </div>
-                            <div>
-                              <p className="text-sm font-bold text-foreground">{subject.name}</p>
-                              {subject.code && (
-                                <span className="text-[10px] text-muted-foreground font-mono">
-                                  {subject.code}
-                                </span>
-                              )}
-                            </div>
-                          </div>
-                          {canManage && (
-                            <Button
-                              size="sm"
-                              variant="outline"
-                              onClick={() => {
-                                setAssignmentMode('subject');
-                                setSelectedSubjectForAssignment(subject.id);
-                                setIsAssignTeacherOpen(true);
-                              }}
-                              className="h-7 text-xs gap-1"
-                            >
-                              <Plus className="w-3 h-3" />
-                              Assign
-                            </Button>
-                          )}
-                        </div>
-                        {subjectAssignments.length === 0 ? (
-                          <p className="text-xs text-muted-foreground italic pl-9">
-                            No teacher assigned yet
-                          </p>
-                        ) : (
-                          <div className="flex flex-wrap gap-2 pl-9">
-                            {subjectAssignments.map(assignment => (
-                              <div
-                                key={assignment.id}
-                                className="flex items-center gap-2 px-2.5 py-1.5 rounded-lg bg-primary/5 border border-primary/10"
-                              >
-                                <div className="w-6 h-6 rounded-full bg-primary/10 text-primary flex items-center justify-center text-[10px] font-bold">
-                                  {(assignment.teacher_name || 'T')[0].toUpperCase()}
-                                </div>
-                                <span className="text-xs font-medium text-foreground">
-                                  {assignment.teacher_name || 'Teacher'}
-                                </span>
-                                {assignment.section_name && (
-                                  <span className="text-[10px] text-muted-foreground">
-                                    • {assignment.section_name}
-                                  </span>
-                                )}
-                                {canManage && (
-                                  <button
-                                    type="button"
-                                    onClick={() => setAssignmentToDelete(assignment)}
-                                    className="ml-1 text-muted-foreground hover:text-destructive transition-colors"
-                                  >
-                                    <X className="w-3 h-3" />
-                                  </button>
-                                )}
-                              </div>
-                            ))}
-                          </div>
-                        )}
-                      </Card>
-                    );
-                  })}
-                </div>
-              )}
-            </div>
-          </div>
+          <TeacherAssignmentBoard
+            cls={cls}
+            tenantId={tenantId}
+            canManage={canManage}
+            initialSectionId={selectedSectionId || cls.sections[0]?.id}
+          />
         )}
 
         {/* Tab 2: Curriculum Subjects */}
@@ -997,83 +806,7 @@ export const ClassDetailPage: React.FC = () => {
         </DialogContent>
       </Dialog>
 
-      {/* Assignment Delete Confirmation Dialog */}
-      <Dialog
-        open={!!assignmentToDelete}
-        onOpenChange={(open) => !open && setAssignmentToDelete(null)}
-      >
-        <DialogContent className="sm:max-w-md">
-          <DialogHeader>
-            <div className="w-10 h-10 rounded-full bg-destructive/15 text-destructive flex items-center justify-center mb-2">
-              <AlertTriangle className="w-5 h-5" />
-            </div>
-            <DialogTitle className="text-lg font-bold text-foreground">
-              Remove Teacher Assignment
-            </DialogTitle>
-            <DialogDescription className="text-xs text-muted-foreground leading-relaxed">
-              Are you sure you want to remove{' '}
-              <span className="font-semibold text-foreground">{assignmentToDelete?.teacher_name}</span>{' '}
-              from{' '}
-              <span className="font-semibold text-foreground">
-                {assignmentToDelete?.is_class_teacher
-                  ? `Class Teacher for ${cls.name}`
-                  : `${assignmentToDelete?.subject_name || 'Subject'} in ${cls.name}`}
-              </span>?
-            </DialogDescription>
-          </DialogHeader>
-          <div className="p-3 rounded-lg bg-amber-500/10 border border-amber-500/20 text-xs text-amber-700 dark:text-amber-400 space-y-1">
-            <p className="font-semibold">Note:</p>
-            <p className="text-[11px]">
-              {assignmentToDelete?.is_class_teacher
-                ? 'This teacher will no longer be able to mark attendance for this class/section.'
-                : 'This teacher will no longer be assigned to teach this subject.'}
-            </p>
-          </div>
-          <DialogFooter className="gap-2 sm:gap-0 pt-2">
-            <Button
-              type="button"
-              variant="outline"
-              onClick={() => setAssignmentToDelete(null)}
-              disabled={deleteAssignmentMutation.isPending}
-              className="text-xs"
-            >
-              Cancel
-            </Button>
-            <Button
-              type="button"
-              variant="destructive"
-              onClick={async () => {
-                if (assignmentToDelete && tenantId) {
-                  await deleteAssignmentMutation.mutateAsync({
-                    tenantId,
-                    assignmentId: assignmentToDelete.id,
-                  });
-                  setAssignmentToDelete(null);
-                }
-              }}
-              disabled={deleteAssignmentMutation.isPending}
-              className="text-xs"
-            >
-              {deleteAssignmentMutation.isPending ? 'Removing...' : 'Remove Assignment'}
-            </Button>
-          </DialogFooter>
-        </DialogContent>
-      </Dialog>
 
-      {/* Assign Teacher Dialog */}
-      <AssignTeacherDialog
-        isOpen={isAssignTeacherOpen}
-        onClose={() => {
-          setIsAssignTeacherOpen(false);
-          setSelectedSubjectForAssignment(null);
-          setSelectedSectionForAssignment(null);
-        }}
-        classes={[cls]}
-        tenantId={tenantId}
-        initialMode={assignmentMode}
-        defaultClassId={cls.id}
-        defaultSubjectId={selectedSubjectForAssignment || undefined}
-      />
     </div>
   );
 };

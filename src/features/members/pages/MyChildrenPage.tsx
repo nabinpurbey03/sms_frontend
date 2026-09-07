@@ -1,7 +1,8 @@
 import React from 'react';
-import { Baby, Users, AlertCircle, BookOpen, Hash } from 'lucide-react';
+import { Baby, Users, AlertCircle, BookOpen, Hash, Building2, School } from 'lucide-react';
 import { useAuth } from '@/auth/useAuth';
 import { usePermission } from '@/auth/usePermission';
+import { TenantRequiredState } from '@/components/common/TenantRequiredState';
 import { useParentChildren } from '../hooks';
 import type { ParentChildDTO } from '../types';
 
@@ -20,7 +21,7 @@ const STATUS_LABELS: Record<string, { label: string; class: string }> = {
 };
 
 export const MyChildrenPage: React.FC = () => {
-  const { user, activeTenantId } = useAuth();
+  const { user, activeTenantId, activeTenantName } = useAuth();
   const { isParent } = usePermission();
 
   const {
@@ -44,23 +45,34 @@ export const MyChildrenPage: React.FC = () => {
     );
   }
 
+  // Guard: active school tenant required
+  if (!activeTenantId) {
+    return <TenantRequiredState featureName="linked children" />;
+  }
+
   return (
     <div className="space-y-6">
       {/* Page Header */}
-      <div className="flex items-start justify-between gap-4">
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
         <div>
-          <h1 className="text-xl font-bold text-foreground flex items-center gap-2">
-            <Baby className="w-5 h-5 text-primary" />
-            My Children
-          </h1>
-          <p className="text-xs text-muted-foreground mt-0.5">
+          <div className="flex items-center gap-2 flex-wrap">
+            <h1 className="text-xl sm:text-2xl font-bold tracking-tight text-foreground flex items-center gap-2">
+              <Baby className="w-5 h-5 text-primary" />
+              My Children
+            </h1>
+            <span className="text-xs font-semibold px-2.5 py-0.5 rounded-full bg-primary/10 text-primary border border-primary/20 flex items-center gap-1.5">
+              <School className="w-3.5 h-3.5" />
+              {activeTenantName || 'Current School'}
+            </span>
+          </div>
+          <p className="text-xs text-muted-foreground mt-1">
             Students linked to your account through the parent-student ReBAC mapping.
           </p>
         </div>
 
         {/* Child count badge */}
         {!isLoading && (
-          <div className="shrink-0 flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-primary/10 text-primary border border-primary/20 text-xs font-semibold">
+          <div className="shrink-0 flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-primary/10 text-primary border border-primary/20 text-xs font-semibold self-start sm:self-auto">
             <Users className="w-3.5 h-3.5" />
             {children.length} {children.length === 1 ? 'Child' : 'Children'}
           </div>
@@ -97,7 +109,7 @@ export const MyChildrenPage: React.FC = () => {
           <Baby className="w-10 h-10 text-muted-foreground opacity-40" />
           <p className="text-sm font-semibold text-foreground">No Children Linked Yet</p>
           <p className="text-xs text-muted-foreground max-w-sm">
-            No students have been linked to your parent account. Please contact your school administrator to link your enrolled children.
+            No students have been linked to your parent account in this school. Please contact your school administrator to link your enrolled children.
           </p>
         </div>
       )}
@@ -105,7 +117,11 @@ export const MyChildrenPage: React.FC = () => {
       {!isLoading && !isError && children.length > 0 && (
         <div className="grid gap-4 sm:grid-cols-1 md:grid-cols-2 xl:grid-cols-3">
           {children.map((child) => (
-            <ChildCard key={child.student_id} child={child} />
+            <ChildCard
+              key={child.student_id}
+              child={child}
+              schoolName={activeTenantName || 'Current School'}
+            />
           ))}
         </div>
       )}
@@ -115,9 +131,10 @@ export const MyChildrenPage: React.FC = () => {
 
 interface ChildCardProps {
   child: ParentChildDTO;
+  schoolName: string;
 }
 
-const ChildCard: React.FC<ChildCardProps> = ({ child }) => {
+const ChildCard: React.FC<ChildCardProps> = ({ child, schoolName }) => {
   const fullName = [child.first_name, child.middle_name, child.last_name]
     .filter(Boolean)
     .join(' ');
@@ -145,10 +162,14 @@ const ChildCard: React.FC<ChildCardProps> = ({ child }) => {
           </div>
           <div className="min-w-0 flex-1">
             <p className="text-sm font-bold text-foreground leading-tight">{fullName}</p>
-            <div className="flex items-center gap-1.5 mt-1 flex-wrap">
+            <div className="flex items-center gap-1.5 mt-1.5 flex-wrap">
               <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-semibold bg-primary/10 text-primary border border-primary/20">
                 <BookOpen className="w-3 h-3" />
                 {classLabel}{sectionLabel}
+              </span>
+              <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-medium bg-muted text-muted-foreground border border-border">
+                <Building2 className="w-3 h-3" />
+                {schoolName}
               </span>
             </div>
           </div>

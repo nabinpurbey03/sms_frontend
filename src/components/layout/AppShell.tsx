@@ -38,6 +38,10 @@ import {
 } from '@/components/ui/dropdown-menu';
 import type { Role } from '@/config/permissions';
 
+const isNavItemActive = (currentPath: string, navHref: string): boolean => {
+  return currentPath === navHref || currentPath.startsWith(`${navHref}/`);
+};
+
 export const AppShell: React.FC = () => {
   const navigate = useNavigate();
   const { location } = useRouterState();
@@ -214,7 +218,7 @@ export const AppShell: React.FC = () => {
           </p>
           <nav className="space-y-1">
             {visibleNavItems.map((item) => {
-              const isActive = location.pathname === item.href;
+              const isActive = isNavItemActive(location.pathname, item.href);
               const Icon = item.icon;
               return (
                 <Link
@@ -452,7 +456,7 @@ export const AppShell: React.FC = () => {
               {/* Mobile Navigation Items */}
               <nav className="space-y-1">
                 {visibleNavItems.map((item) => {
-                  const isActive = location.pathname === item.href;
+                  const isActive = isNavItemActive(location.pathname, item.href);
                   const Icon = item.icon;
                   return (
                     <Link
