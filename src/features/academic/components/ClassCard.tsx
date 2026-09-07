@@ -10,6 +10,8 @@ import {
   Edit2,
   Trash2,
   ArrowRight,
+  UserCheck,
+  CalendarCheck,
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import {
@@ -21,24 +23,35 @@ import {
 } from '@/components/ui/dropdown-menu';
 import type { ClassWithDetails } from '../types';
 
+export interface TeacherClassScope {
+  isClassTeacher: boolean;
+  classTeacherSections: { id: string; name: string }[];
+  isSubjectTeacher: boolean;
+  subjectNames: string[];
+}
+
 interface ClassCardProps {
   cls: ClassWithDetails;
   canManage: boolean;
+  teacherScope?: TeacherClassScope;
   onOpenDetails: (cls: ClassWithDetails) => void;
   onOpenDetailsPage: (clsId: string) => void; // New prop for page navigation
   onAddSection: (cls: ClassWithDetails) => void;
   onEditClass: (cls: ClassWithDetails) => void;
   onDeleteClass: (cls: ClassWithDetails) => void;
+  onMarkAttendance?: (clsId: string, sectionId?: string) => void;
 }
 
 export const ClassCard: React.FC<ClassCardProps> = ({
   cls,
   canManage,
+  teacherScope,
   onOpenDetails,
   onOpenDetailsPage,
   onAddSection,
   onEditClass,
   onDeleteClass,
+  onMarkAttendance,
 }) => {
   const sections = cls.sections || [];
   const lastSection = sections.length > 0 ? sections[sections.length - 1] : null;
@@ -106,6 +119,32 @@ export const ClassCard: React.FC<ClassCardProps> = ({
             </DropdownMenu>
           )}
         </div>
+
+        {/* Teacher Role Badges */}
+        {teacherScope && (teacherScope.isClassTeacher || (teacherScope.isSubjectTeacher && teacherScope.subjectNames.length > 0)) && (
+          <div className="flex flex-wrap items-center gap-1.5 pt-0.5">
+            {teacherScope.isClassTeacher && (
+              <div className="inline-flex items-center gap-1 px-2.5 py-1 rounded-lg bg-purple-500/10 border border-purple-500/20 text-purple-700 dark:text-purple-300 text-xs font-medium">
+                <UserCheck className="w-3.5 h-3.5 text-purple-600 dark:text-purple-400" />
+                <span>
+                  Class Teacher
+                  {teacherScope.classTeacherSections.length > 0
+                    ? ` (Sec ${teacherScope.classTeacherSections.map((s) => s.name).join(', ')})`
+                    : ' (Class-wide)'}
+                </span>
+              </div>
+            )}
+            {teacherScope.isSubjectTeacher && teacherScope.subjectNames.length > 0 && (
+              <div className="inline-flex items-center gap-1 px-2.5 py-1 rounded-lg bg-blue-500/10 border border-blue-500/20 text-blue-700 dark:text-blue-300 text-xs font-medium">
+                <BookOpen className="w-3.5 h-3.5 text-blue-600 dark:text-blue-400" />
+                <span>
+                  Subject: {teacherScope.subjectNames.slice(0, 2).join(', ')}
+                  {teacherScope.subjectNames.length > 2 ? ` +${teacherScope.subjectNames.length - 2}` : ''}
+                </span>
+              </div>
+            )}
+          </div>
+        )}
 
         {/* Sections Pills */}
         <div className="space-y-1.5">
@@ -178,14 +217,31 @@ export const ClassCard: React.FC<ClassCardProps> = ({
       </div>
 
       {/* Card Footer */}
-      <div className="pt-4 mt-4 border-t border-border/50 flex justify-end">
+      <div
+        className={`pt-4 mt-4 border-t border-border/50 flex items-center ${
+          teacherScope?.isClassTeacher ? 'justify-between' : 'justify-end'
+        }`}
+      >
+        {teacherScope?.isClassTeacher && (
+          <Button
+            size="sm"
+            onClick={() => {
+              const targetSecId = teacherScope.classTeacherSections[0]?.id;
+              onMarkAttendance?.(cls.id, targetSecId);
+            }}
+            className="text-xs gap-1.5 bg-purple-600 hover:bg-purple-700 text-white shadow-xs cursor-pointer h-8"
+          >
+            <CalendarCheck className="w-3.5 h-3.5" />
+            <span>Mark Today's Attendance</span>
+          </Button>
+        )}
         <Button
           variant="ghost"
           size="sm"
           onClick={() => onOpenDetailsPage(cls.id)}
           className="text-xs gap-1.5 text-primary hover:text-primary"
         >
-          <span>View Sections & Roster</span>
+          <span>{teacherScope?.isClassTeacher ? 'View Roster' : 'View Sections & Roster'}</span>
           <ArrowRight className="w-3.5 h-3.5" />
         </Button>
       </div>

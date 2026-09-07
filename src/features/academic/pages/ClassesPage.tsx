@@ -3,6 +3,7 @@ import { useAuth } from '@/auth/useAuth';
 import { usePermission } from '@/auth/usePermission';
 import {
   useAllClassesWithDetails,
+  useMyTeacherAssignments,
   useCreateClass,
   useUpdateClass,
   useDeleteClass,
@@ -10,13 +11,13 @@ import {
   useAddStudent,
 } from '../hooks';
 import { AcademicStatsCards } from '../components/AcademicStatsCards';
-import { ClassCard } from '../components/ClassCard';
+import { ClassCard, type TeacherClassScope } from '../components/ClassCard';
 import { ClassCreateDialog } from '../components/ClassCreateDialog';
 import { ClassEditDialog } from '../components/ClassEditDialog';
 import { ClassDeleteDialog } from '../components/ClassDeleteDialog';
 import { SectionAddDialog } from '../components/SectionAddDialog';
 import { ClassDetailModal } from '../components/ClassDetailModal';
-import { Plus, Search, X, BookOpen } from 'lucide-react';
+import { Plus, Search, X, BookOpen, ShieldCheck } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { useNavigate } from '@tanstack/react-router';
@@ -32,6 +33,7 @@ export const ClassesPage: React.FC = () => {
   const canManage =
     isSuperAdmin || can('MANAGE_CLASSES_SUBJECTS') || activeRole === 'ADMIN' || activeRole === 'OFFICE_ADMIN';
   const canHardDelete = isSuperAdmin || activeRole === 'ADMIN';
+  const isTeacherOnly = activeRole === 'TEACHER' && !canManage;
 
   // Filters State
   const [searchQuery, setSearchQuery] = useState('');
@@ -53,19 +55,78 @@ export const ClassesPage: React.FC = () => {
     refetch,
   } = useAllClassesWithDetails(activeTenantId);
 
+  const { data: myTeacherAssignments = [] } = useMyTeacherAssignments(
+    activeTenantId,
+    { enabled: isTeacherOnly }
+  );
+
   const createClassMutation = useCreateClass();
   const updateClassMutation = useUpdateClass();
   const deleteClassMutation = useDeleteClass();
   const createSectionMutation = useCreateSection();
   const addStudentMutation = useAddStudent();
 
+  // Teacher scope mapping
+  const { assignedClassIds, teacherScopeByClassId } = useMemo(() => {
+    if (!isTeacherOnly) {
+      return {
+        assignedClassIds: null,
+        teacherScopeByClassId: new Map<string, TeacherClassScope>(),
+      };
+    }
+
+    const classIds = new Set<string>();
+    const scopeMap = new Map<string, TeacherClassScope>();
+
+    for (const a of myTeacherAssignments) {
+      if (!a.class_id) continue;
+      classIds.add(a.class_id);
+
+      let scope = scopeMap.get(a.class_id);
+      if (!scope) {
+        scope = {
+          isClassTeacher: false,
+          classTeacherSections: [],
+          isSubjectTeacher: false,
+          subjectNames: [],
+        };
+        scopeMap.set(a.class_id, scope);
+      }
+
+      if (a.is_class_teacher) {
+        scope.isClassTeacher = true;
+        if (a.section_id) {
+          if (!scope.classTeacherSections.some((s) => s.id === a.section_id)) {
+            scope.classTeacherSections.push({
+              id: a.section_id,
+              name: a.section_name || 'A',
+            });
+          }
+        }
+      } else {
+        scope.isSubjectTeacher = true;
+        if (a.subject_name && !scope.subjectNames.includes(a.subject_name)) {
+          scope.subjectNames.push(a.subject_name);
+        }
+      }
+    }
+
+    return { assignedClassIds: classIds, teacherScopeByClassId: scopeMap };
+  }, [isTeacherOnly, myTeacherAssignments]);
+
+  // Filter classes for teacher
+  const scopedClasses = useMemo(() => {
+    if (!isTeacherOnly || !assignedClassIds) return classesWithDetails;
+    return classesWithDetails.filter((c) => assignedClassIds.has(c.id));
+  }, [classesWithDetails, isTeacherOnly, assignedClassIds]);
+
   // Compute Stats
   const stats: AcademicStats = useMemo(() => {
-    const totalClasses = classesWithDetails.length;
+    const totalClasses = scopedClasses.length;
     let totalSections = 0;
     let totalStudents = 0;
 
-    for (const c of classesWithDetails) {
+    for (const c of scopedClasses) {
       totalSections += c.sections.length;
       totalStudents += c.students.length;
     }
@@ -79,18 +140,18 @@ export const ClassesPage: React.FC = () => {
       totalStudents,
       avgStudentsPerSection,
     };
-  }, [classesWithDetails]);
+  }, [scopedClasses]);
 
   // Filtered Classes
   const filteredClasses = useMemo(() => {
-    if (!searchQuery.trim()) return classesWithDetails;
+    if (!searchQuery.trim()) return scopedClasses;
     const q = searchQuery.toLowerCase();
-    return classesWithDetails.filter(
+    return scopedClasses.filter(
       (c) =>
         c.name.toLowerCase().includes(q) ||
         c.sections.some((s) => s.name.toLowerCase().includes(q))
     );
-  }, [classesWithDetails, searchQuery]);
+  }, [scopedClasses, searchQuery]);
 
   // Sync detailed modal class with latest query data
   const activeDetailClass = useMemo(() => {
@@ -172,6 +233,16 @@ export const ClassesPage: React.FC = () => {
         </div>
       )}
 
+      {/* Teacher View Scope Banner */}
+      {isTeacherOnly && (
+        <div className="flex items-center gap-2 p-3 rounded-xl bg-purple-500/10 border border-purple-500/20 text-purple-800 dark:text-purple-300 text-xs">
+          <ShieldCheck className="w-4 h-4 shrink-0 text-purple-600 dark:text-purple-400" />
+          <span>
+            <strong>Teacher View:</strong> Displaying only classes where you are assigned as a Class Teacher or Subject Teacher.
+          </span>
+        </div>
+      )}
+
       {/* Classes Grid */}
       {isLoading ? (
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
@@ -186,10 +257,12 @@ export const ClassesPage: React.FC = () => {
       ) : filteredClasses.length === 0 ? (
         <EmptyState
           icon={BookOpen}
-          title="No Classes Found"
+          title={isTeacherOnly && !searchQuery ? 'No Assigned Classes' : 'No Classes Found'}
           description={
             searchQuery
               ? 'No classes match your search term. Try a different query.'
+              : isTeacherOnly
+              ? 'You are not currently assigned as a Class Teacher or Subject Teacher for any class. Please contact your school administrator to assign your curriculum or class responsibilities.'
               : 'Start setting up your school curriculum by creating your first academic class.'
           }
           action={
@@ -211,6 +284,13 @@ export const ClassesPage: React.FC = () => {
               key={cls.id}
               cls={cls}
               canManage={canManage}
+              teacherScope={teacherScopeByClassId.get(cls.id)}
+              onMarkAttendance={(clsId, secId) =>
+                navigate({
+                  to: '/attendance/mark',
+                  search: { classId: clsId, sectionId: secId } as any,
+                })
+              }
               onOpenDetails={() => {}}
               onOpenDetailsPage={(id) => navigate({ to: '/academic/classes/$classId', params: { classId: id } })}
               onAddSection={(c) => setAddingSectionClass(c)}
