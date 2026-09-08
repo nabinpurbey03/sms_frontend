@@ -1,8 +1,10 @@
 import React from 'react';
-import { Baby, Users, AlertCircle, BookOpen, Hash, Building2, School } from 'lucide-react';
+import { Link } from '@tanstack/react-router';
+import { Baby, Users, AlertCircle, BookOpen, Hash, Building2, School, Award } from 'lucide-react';
 import { useAuth } from '@/auth/useAuth';
 import { usePermission } from '@/auth/usePermission';
 import { TenantRequiredState } from '@/components/common/TenantRequiredState';
+import { Button } from '@/components/ui/button';
 import { useParentChildren } from '../hooks';
 import type { ParentChildDTO } from '../types';
 
@@ -200,6 +202,22 @@ const ChildCard: React.FC<ChildCardProps> = ({ child, schoolName }) => {
             ReBAC-linked to your account
           </p>
         </div>
+
+        {/* View Report Cards Button */}
+        <Button
+          variant="outline"
+          size="sm"
+          asChild
+          className="w-full text-xs font-semibold mt-2 gap-1.5"
+        >
+          <Link
+            to={'/academic/report-cards' as any}
+            search={{ studentId: child.student_id } as any}
+          >
+            <Award className="w-3.5 h-3.5 text-amber-500" />
+            <span>View Report Cards</span>
+          </Link>
+        </Button>
       </div>
     </div>
   );

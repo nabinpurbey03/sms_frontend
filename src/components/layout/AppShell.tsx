@@ -20,6 +20,7 @@ import {
   Moon,
   Monitor,
   GraduationCap,
+  Award,
 } from 'lucide-react';
 
 import { useAuth } from '@/auth/useAuth';
@@ -146,6 +147,12 @@ export const AppShell: React.FC = () => {
       label: 'My Children',
       href: '/academic/my-children',
       icon: Baby,
+      show: isParent,
+    },
+    {
+      label: 'Report Cards',
+      href: '/academic/report-cards',
+      icon: Award,
       show: isParent,
     },
     {

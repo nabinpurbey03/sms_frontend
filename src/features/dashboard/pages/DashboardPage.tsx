@@ -13,6 +13,7 @@ import {
   Sparkles,
   AlertCircle,
   GraduationCap,
+  Award,
 } from 'lucide-react';
 
 import { useAuth } from '@/auth/useAuth';
@@ -22,10 +23,12 @@ import { Button } from '@/components/ui/button';
 import { DashboardHeroBanner } from '../components/DashboardHeroBanner';
 import { AttendanceDashboardHub } from '../components/AttendanceDashboardHub';
 import { SchoolResultsDashboardHub } from '../components/SchoolResultsDashboardHub';
+import { ParentReportCardsDashboardHub } from '@/features/examination/components/ParentReportCardsDashboardHub';
 
 import { useAttendanceSummary } from '@/features/attendance/hooks';
 import { useAllClassesWithDetails, useMyTeacherAssignments } from '@/features/academic/hooks';
 import { useParentChildren } from '@/features/members/hooks';
+import { useMyChildrenReportCards } from '@/features/examination/hooks';
 
 export const DashboardPage: React.FC = () => {
   const { user, activeRole, activeTenantName, activeTenantId } = useAuth();
@@ -43,6 +46,10 @@ export const DashboardPage: React.FC = () => {
   const { data: parentChildren = [] } = useParentChildren(
     activeTenantId,
     isParent ? (user?.id ?? null) : null
+  );
+  const { data: parentReportCards } = useMyChildrenReportCards(
+    activeTenantId,
+    { enabled: !!activeTenantId && isParent }
   );
 
   // Computed total students
@@ -155,16 +162,22 @@ export const DashboardPage: React.FC = () => {
         <Card className="border-border/60 hover:shadow-md transition-shadow rounded-xl">
           <CardHeader className="flex flex-row items-center justify-between pb-2 p-4 sm:p-6 space-y-0">
             <CardTitle className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">
-              Authorization Status
+              {isParent ? 'Published Report Cards' : 'Authorization Status'}
             </CardTitle>
             <div className="p-2.5 bg-amber-500/10 text-amber-600 dark:text-amber-400 rounded-xl">
-              <ShieldCheck className="h-4 w-4" />
+              {isParent ? <Award className="h-4 w-4" /> : <ShieldCheck className="h-4 w-4" />}
             </div>
           </CardHeader>
           <CardContent className="p-4 sm:p-6 pt-0 sm:pt-0">
-            <div className="text-2xl font-bold text-foreground">RBAC + ReBAC</div>
+            <div className="text-2xl font-bold text-foreground">
+              {isParent
+                ? `${parentReportCards?.total_published_exams ?? 0} Available`
+                : 'RBAC + ReBAC'}
+            </div>
             <p className="text-xs text-muted-foreground mt-1 truncate">
-              {isSuperAdmin
+              {isParent
+                ? 'Official examination transcripts'
+                : isSuperAdmin
                 ? 'Super Admin Platform Access'
                 : `Scoped to ${activeTenantName || 'Current School'}`}
             </p>
@@ -396,6 +409,9 @@ export const DashboardPage: React.FC = () => {
       {(can('MANAGE_EXAMS') || isSuperAdmin) && (
         <SchoolResultsDashboardHub />
       )}
+
+      {/* Parent Official Academic Report Cards Hub */}
+      {isParent && <ParentReportCardsDashboardHub />}
 
       {/* Live Attendance Reporting Hub */}
       <AttendanceDashboardHub />

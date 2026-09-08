@@ -27,6 +27,7 @@ import { ExamsListPage } from '@/features/examination/pages/ExamsListPage';
 import { CreateExamPage } from '@/features/examination/pages/CreateExamPage';
 import { ScoreEntryPage } from '@/features/examination/pages/ScoreEntryPage';
 import { ExamReviewPage } from '@/features/examination/pages/ExamReviewPage';
+import { ParentReportCardsPage } from '@/features/examination/pages/ParentReportCardsPage';
 import { ErrorState } from '@/components/common/ErrorState';
 import { Button } from '@/components/ui/button';
 import { Toaster } from '@/components/ui/sonner';
@@ -125,6 +126,12 @@ const myChildrenRoute = createRoute({
   component: MyChildrenPage,
 });
 
+const reportCardsRoute = createRoute({
+  getParentRoute: () => protectedLayoutRoute,
+  path: '/academic/report-cards',
+  component: ParentReportCardsPage,
+});
+
 const attendanceMarkRoute = createRoute({
   getParentRoute: () => protectedLayoutRoute,
   path: '/attendance/mark',
@@ -194,6 +201,7 @@ const routeTree = rootRoute.addChildren([
     myAssignmentsRoute,
     parentLinksRoute,
     myChildrenRoute,
+    reportCardsRoute,
     attendanceMarkRoute,
     attendanceReportsRoute,
     membersRoute,
