@@ -112,6 +112,30 @@ export interface DailySchoolAttendanceItem {
   attendance_percentage: number;
 }
 
+export interface AtRiskStudentSummary {
+  student_id: string;
+  first_name: string;
+  middle_name?: string | null;
+  last_name: string;
+  class_id: string;
+  class_name: string;
+  section_id?: string | null;
+  section_name?: string | null;
+  total_days: number;
+  total_present: number;
+  total_absent: number;
+  attendance_percentage: number;
+}
+
+export interface DayOfWeekAttendanceSummary {
+  day_name: string;
+  day_index: number;
+  total_records: number;
+  present_count: number;
+  absent_count: number;
+  attendance_percentage: number;
+}
+
 export interface SchoolAttendanceReportResponse {
   from_date: string;
   to_date: string;
@@ -120,6 +144,12 @@ export interface SchoolAttendanceReportResponse {
   total_present: number;
   total_absent: number;
   overall_attendance_percentage: number;
+  best_class_name?: string | null;
+  lowest_class_name?: string | null;
+  chronic_absentee_count: number;
+  chronic_absentee_rate: number;
+  at_risk_students: AtRiskStudentSummary[];
+  day_of_week_stats: DayOfWeekAttendanceSummary[];
   classes: ClassAttendanceSummaryItem[];
   daily_stats: DailySchoolAttendanceItem[];
 }
