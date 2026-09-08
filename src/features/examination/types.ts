@@ -96,6 +96,7 @@ export interface ExamSubjectCreateDTO {
   subject_id: string;
   full_mark: number;
   pass_mark: number;
+  teacher_id?: string | null;
 }
 
 export interface StudentScoreItemDTO {

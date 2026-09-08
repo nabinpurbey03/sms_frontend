@@ -22,6 +22,8 @@ export interface SubjectConfigItem {
   fullMark: number;
   passMark: number;
   assignedTeacherId: string;
+  autoAssignedTeacherId?: string | null;
+  autoAssignedTeacherName?: string | null;
   error?: string;
 }
 
@@ -208,23 +210,75 @@ export const ExamSubjectConfigList: React.FC<ExamSubjectConfigListProps> = ({
                     )}
                   </TableCell>
                   <TableCell>
-                    <select
-                      value={item.assignedTeacherId}
-                      onChange={(e) =>
-                        handleTeacherChange(index, e.target.value)
-                      }
-                      disabled={disabled || isExcluded}
-                      className="w-full h-9 px-3 rounded-lg border border-input bg-background text-sm focus:outline-none focus:ring-2 focus:ring-primary disabled:cursor-not-allowed disabled:opacity-50"
-                    >
-                      <option value="">
-                        -- Select Grading Teacher (Optional) --
-                      </option>
-                      {teachers.map((t) => (
-                        <option key={t.user_id} value={t.user_id}>
-                          {t.first_name} {t.last_name}
+                    <div className="space-y-1.5">
+                      <div className="flex items-center justify-between gap-1">
+                        <div className="flex items-center gap-1">
+                          {item.autoAssignedTeacherId &&
+                            item.assignedTeacherId === item.autoAssignedTeacherId && (
+                              <Badge
+                                variant="outline"
+                                className="text-[10px] px-1.5 py-0 bg-emerald-500/10 text-emerald-700 dark:text-emerald-400 border-emerald-500/30"
+                              >
+                                Auto-assigned
+                              </Badge>
+                            )}
+                          {item.autoAssignedTeacherId &&
+                            item.assignedTeacherId !== item.autoAssignedTeacherId && (
+                              <Badge
+                                variant="outline"
+                                className="text-[10px] px-1.5 py-0 bg-amber-500/10 text-amber-700 dark:text-amber-400 border-amber-500/30"
+                              >
+                                Admin Override
+                              </Badge>
+                            )}
+                        </div>
+                        {item.autoAssignedTeacherId &&
+                          item.assignedTeacherId !== item.autoAssignedTeacherId && (
+                            <button
+                              type="button"
+                              onClick={() =>
+                                handleTeacherChange(index, item.autoAssignedTeacherId || '')
+                              }
+                              disabled={disabled || isExcluded}
+                              className="text-[10px] text-primary hover:underline font-medium"
+                            >
+                              Reset to Auto
+                            </button>
+                          )}
+                      </div>
+                      <select
+                        value={item.assignedTeacherId}
+                        onChange={(e) =>
+                          handleTeacherChange(index, e.target.value)
+                        }
+                        disabled={disabled || isExcluded}
+                        className="w-full h-9 px-3 rounded-lg border border-input bg-background text-sm focus:outline-none focus:ring-2 focus:ring-primary disabled:cursor-not-allowed disabled:opacity-50"
+                      >
+                        <option value="">
+                          {item.autoAssignedTeacherName
+                            ? `-- None (Unassigned) --`
+                            : `-- Select Grading Teacher (Optional) --`}
                         </option>
-                      ))}
-                    </select>
+                        {teachers.map((t) => (
+                          <option key={t.user_id} value={t.user_id}>
+                            {t.first_name} {t.last_name}
+                            {item.autoAssignedTeacherId === t.user_id ? ' (Subject Teacher)' : ''}
+                          </option>
+                        ))}
+                      </select>
+                      {item.autoAssignedTeacherName ? (
+                        <p className="text-[11px] text-muted-foreground truncate">
+                          Subject Teacher:{' '}
+                          <span className="font-medium text-foreground">
+                            {item.autoAssignedTeacherName}
+                          </span>
+                        </p>
+                      ) : (
+                        <p className="text-[11px] text-muted-foreground italic">
+                          No subject teacher assigned
+                        </p>
+                      )}
+                    </div>
                   </TableCell>
                 </TableRow>
               );
@@ -327,27 +381,76 @@ export const ExamSubjectConfigList: React.FC<ExamSubjectConfigListProps> = ({
                   </div>
                 )}
 
-                <div className="space-y-1">
-                  <label className="text-xs font-medium text-muted-foreground">
-                    Grading Teacher (Optional)
-                  </label>
+                <div className="space-y-1.5 pt-1">
+                  <div className="flex items-center justify-between gap-1">
+                    <label className="text-xs font-medium text-muted-foreground">
+                      Grading Teacher
+                    </label>
+                    <div className="flex items-center gap-1.5">
+                      {item.autoAssignedTeacherId &&
+                        item.assignedTeacherId === item.autoAssignedTeacherId && (
+                          <Badge
+                            variant="outline"
+                            className="text-[10px] px-1.5 py-0 bg-emerald-500/10 text-emerald-700 dark:text-emerald-400 border-emerald-500/30"
+                          >
+                            Auto-assigned
+                          </Badge>
+                        )}
+                      {item.autoAssignedTeacherId &&
+                        item.assignedTeacherId !== item.autoAssignedTeacherId && (
+                          <>
+                            <Badge
+                              variant="outline"
+                              className="text-[10px] px-1.5 py-0 bg-amber-500/10 text-amber-700 dark:text-amber-400 border-amber-500/30"
+                            >
+                              Admin Override
+                            </Badge>
+                            <button
+                              type="button"
+                              onClick={() =>
+                                handleTeacherChange(index, item.autoAssignedTeacherId || '')
+                              }
+                              disabled={disabled || isExcluded}
+                              className="text-[11px] text-primary hover:underline font-medium min-h-[28px] flex items-center"
+                            >
+                              Reset to Auto
+                            </button>
+                          </>
+                        )}
+                    </div>
+                  </div>
                   <select
                     value={item.assignedTeacherId}
                     onChange={(e) =>
                       handleTeacherChange(index, e.target.value)
                     }
                     disabled={disabled || isExcluded}
-                    className="w-full h-9 px-3 rounded-lg border border-input bg-background text-sm focus:outline-none focus:ring-2 focus:ring-primary disabled:cursor-not-allowed disabled:opacity-50"
+                    className="w-full h-10 px-3 rounded-lg border border-input bg-background text-sm focus:outline-none focus:ring-2 focus:ring-primary disabled:cursor-not-allowed disabled:opacity-50"
                   >
                     <option value="">
-                      -- Select Grading Teacher (Optional) --
+                      {item.autoAssignedTeacherName
+                        ? `-- None (Unassigned) --`
+                        : `-- Select Grading Teacher (Optional) --`}
                     </option>
                     {teachers.map((t) => (
                       <option key={t.user_id} value={t.user_id}>
                         {t.first_name} {t.last_name}
+                        {item.autoAssignedTeacherId === t.user_id ? ' (Subject Teacher)' : ''}
                       </option>
                     ))}
                   </select>
+                  {item.autoAssignedTeacherName ? (
+                    <p className="text-[11px] text-muted-foreground truncate">
+                      Subject Teacher:{' '}
+                      <span className="font-medium text-foreground">
+                        {item.autoAssignedTeacherName}
+                      </span>
+                    </p>
+                  ) : (
+                    <p className="text-[11px] text-muted-foreground italic">
+                      No subject teacher assigned
+                    </p>
+                  )}
                 </div>
               </CardContent>
             </Card>

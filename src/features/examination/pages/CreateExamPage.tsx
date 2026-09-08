@@ -11,12 +11,15 @@ import {
 } from 'lucide-react';
 import { useAuth } from '@/auth/useAuth';
 import { usePermission } from '@/auth/usePermission';
-import { useClasses, useClassSubjects } from '@/features/academic/hooks';
+import {
+  useClasses,
+  useClassSubjects,
+  useAssignments,
+} from '@/features/academic/hooks';
 import { useMembers } from '@/features/members/hooks';
 import {
   useCreateExam,
   useAddExamSubject,
-  useAssignExamTeacher,
 } from '@/features/examination/hooks';
 import {
   Card,
@@ -59,12 +62,15 @@ export const CreateExamPage: React.FC = () => {
     activeTenantId,
     selectedClassId || null
   );
+  const { data: classAssignments = [] } = useAssignments(
+    selectedClassId ? activeTenantId : null,
+    selectedClassId ? { class_id: selectedClassId } : undefined
+  );
   const { data: teachersData = [] } = useMembers(activeTenantId, 'TEACHER');
 
   // Mutations
   const createExamMutation = useCreateExam();
   const addExamSubjectMutation = useAddExamSubject();
-  const assignExamTeacherMutation = useAssignExamTeacher();
 
   // Transform teachers list
   const teacherList = useMemo(
@@ -77,28 +83,59 @@ export const CreateExamPage: React.FC = () => {
     [teachersData]
   );
 
+  // Map assigned subject teachers by subject_id from academic module
+  const subjectTeacherMap = useMemo(() => {
+    const map = new Map<string, { teacherId: string; teacherName: string }>();
+    if (!classAssignments || classAssignments.length === 0) return map;
+
+    for (const assignment of classAssignments) {
+      if (!assignment.is_class_teacher && assignment.subject_id && assignment.teacher_id) {
+        let teacherName = assignment.teacher_name;
+        if (!teacherName) {
+          const t = teachersData.find((teacher) => teacher.user_id === assignment.teacher_id);
+          if (t) {
+            teacherName = `${t.first_name} ${t.last_name}`.trim();
+          }
+        }
+        map.set(assignment.subject_id, {
+          teacherId: assignment.teacher_id,
+          teacherName: teacherName || 'Assigned Subject Teacher',
+        });
+      }
+    }
+    return map;
+  }, [classAssignments, teachersData]);
+
   // Handle class selection change
   const handleClassChange = (classId: string) => {
     setSelectedClassId(classId);
     setOverrides({});
   };
 
-  // Derive subjectConfigs from loaded subjects and user overrides
+  // Derive subjectConfigs from loaded subjects, academic subject teachers, and user overrides
   const subjectConfigs = useMemo<SubjectConfigItem[]>(() => {
     if (!selectedClassId || !subjects) return [];
 
     return subjects.map((s) => {
       const override = overrides[s.id];
+      const autoTeacher = subjectTeacherMap.get(s.id);
+
       const fullMark =
         override?.fullMark !== undefined ? override.fullMark : 100;
       const passMark =
         override?.passMark !== undefined ? override.passMark : 40;
       const included =
         override?.included !== undefined ? override.included : true;
+
+      // Auto-assign from Subject Teacher, allowing explicit Admin override
       const assignedTeacherId =
         override?.assignedTeacherId !== undefined
           ? override.assignedTeacherId
-          : '';
+          : autoTeacher?.teacherId || '';
+
+      const autoAssignedTeacherId = autoTeacher?.teacherId || null;
+      const autoAssignedTeacherName = autoTeacher?.teacherName || null;
+
       const error =
         override?.error !== undefined
           ? override.error
@@ -114,10 +151,12 @@ export const CreateExamPage: React.FC = () => {
         fullMark,
         passMark,
         assignedTeacherId,
+        autoAssignedTeacherId,
+        autoAssignedTeacherName,
         error,
       };
     });
-  }, [selectedClassId, subjects, overrides]);
+  }, [selectedClassId, subjects, overrides, subjectTeacherMap]);
 
   const handleSubjectConfigsChange = (configs: SubjectConfigItem[]) => {
     const newOverrides: Record<string, Partial<SubjectConfigItem>> = {};
@@ -203,7 +242,7 @@ export const CreateExamPage: React.FC = () => {
         },
       });
 
-      // 5. For each included subject:
+      // 5. For each included subject (with auto-assigned or overridden teacher):
       for (const item of includedSubjects) {
         await addExamSubjectMutation.mutateAsync({
           tenantId: activeTenantId,
@@ -212,17 +251,9 @@ export const CreateExamPage: React.FC = () => {
             subject_id: item.subjectId,
             full_mark: item.fullMark,
             pass_mark: item.passMark,
+            teacher_id: item.assignedTeacherId || undefined,
           },
         });
-
-        if (item.assignedTeacherId) {
-          await assignExamTeacherMutation.mutateAsync({
-            tenantId: activeTenantId,
-            examId: createdExam.id,
-            subjectId: item.subjectId,
-            teacherId: item.assignedTeacherId,
-          });
-        }
       }
 
       // 6. Toast via Sonner
