@@ -1,5 +1,13 @@
 import { apiClient } from '@/api/client';
-import type { AttendanceReport, SectionAttendanceReport, AttendanceSummary, DailyAttendanceStatus } from './types';
+import type {
+  AttendanceReport,
+  SectionAttendanceReport,
+  AttendanceSummary,
+  DailyAttendanceStatus,
+  SchoolAttendanceReportResponse,
+  ClassAttendanceReportResponse,
+  IndividualStudentAttendanceReport,
+} from './types';
 
 export const attendanceApi = {
   // ==========================================
@@ -37,16 +45,44 @@ export const attendanceApi = {
     );
   },
 
+  getClassAttendanceReport: async (
+    tenantId: string,
+    classId: string,
+    startDate: string,
+    endDate: string,
+    sectionId?: string
+  ): Promise<ClassAttendanceReportResponse> => {
+    return apiClient.get(
+      `/attendance/tenants/${tenantId}/classes/${classId}/report`,
+      {
+        params: { from_date: startDate, to_date: endDate, section_id: sectionId },
+      }
+    );
+  },
+
+  getSchoolAttendanceReport: async (
+    tenantId: string,
+    startDate: string,
+    endDate: string
+  ): Promise<SchoolAttendanceReportResponse> => {
+    return apiClient.get(
+      `/attendance/tenants/${tenantId}/school/report`,
+      {
+        params: { from_date: startDate, to_date: endDate },
+      }
+    );
+  },
+
   getStudentReport: async (
     tenantId: string,
     studentId: string,
     startDate?: string,
     endDate?: string
-  ): Promise<AttendanceReport> => {
+  ): Promise<IndividualStudentAttendanceReport & AttendanceReport> => {
     return apiClient.get(
       `/attendance/tenants/${tenantId}/students/${studentId}/report`,
       {
-        params: { start_date: startDate, end_date: endDate },
+        params: { from_date: startDate, to_date: endDate },
       }
     );
   },

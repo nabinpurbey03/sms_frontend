@@ -56,25 +56,16 @@ export interface AttendanceReport {
   }[];
 }
 
+export interface AttendanceLevelStats {
+  total_students: number;
+  total_present: number;
+}
+
 export interface AttendanceSummary {
   date: string;
-  total_students: number;
-  present_count: number;
-  absent_count: number;
-  classes: {
-    class_id: string;
-    class_name: string;
-    total_students: number;
-    present_count: number;
-    absent_count: number;
-    sections: {
-      section_id: string;
-      section_name: string;
-      total_students: number;
-      present_count: number;
-      absent_count: number;
-    }[];
-  }[];
+  school: AttendanceLevelStats;
+  class_stats?: AttendanceLevelStats | null;
+  section_stats?: AttendanceLevelStats | null;
 }
 
 export interface MarkAttendanceDTO {
@@ -103,3 +94,85 @@ export interface DailyAttendanceStatus {
   marked_section_ids: string[];
   sections: SectionDailyAttendanceStatus[];
 }
+
+export interface ClassAttendanceSummaryItem {
+  class_id: string;
+  class_name: string;
+  total_students: number;
+  total_present: number;
+  total_absent: number;
+  attendance_percentage: number;
+}
+
+export interface DailySchoolAttendanceItem {
+  date: string;
+  total_students: number;
+  present_count: number;
+  absent_count: number;
+  attendance_percentage: number;
+}
+
+export interface SchoolAttendanceReportResponse {
+  from_date: string;
+  to_date: string;
+  total_school_days: number;
+  total_students: number;
+  total_present: number;
+  total_absent: number;
+  overall_attendance_percentage: number;
+  classes: ClassAttendanceSummaryItem[];
+  daily_stats: DailySchoolAttendanceItem[];
+}
+
+export interface SectionAttendanceSummaryItem {
+  section_id: string;
+  section_name: string;
+  total_students: number;
+  total_present: number;
+  total_absent: number;
+  attendance_percentage: number;
+}
+
+export interface ClassStudentAttendanceSummary {
+  student_id: string;
+  first_name: string;
+  middle_name?: string | null;
+  last_name: string;
+  section_id?: string | null;
+  section_name?: string | null;
+  total_present: number;
+  total_absent: number;
+  attendance_percentage: number;
+  records: Record<string, boolean>;
+}
+
+export interface ClassAttendanceReportResponse {
+  class_id: string;
+  class_name: string;
+  from_date: string;
+  to_date: string;
+  total_school_days: number;
+  total_students: number;
+  total_present: number;
+  total_absent: number;
+  overall_attendance_percentage: number;
+  sections: SectionAttendanceSummaryItem[];
+  students: ClassStudentAttendanceSummary[];
+}
+
+export interface IndividualStudentAttendanceReport {
+  student_id: string;
+  first_name: string;
+  middle_name?: string | null;
+  last_name: string;
+  class_id: string;
+  section_id?: string | null;
+  from_date: string;
+  to_date: string;
+  total_days: number;
+  total_present: number;
+  total_absent: number;
+  attendance_percentage: number;
+  records: Record<string, boolean>;
+}
+

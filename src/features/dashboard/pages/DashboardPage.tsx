@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useMemo } from 'react';
 import { Link } from '@tanstack/react-router';
 import {
   Users,
@@ -11,79 +11,53 @@ import {
   FileSpreadsheet,
   Baby,
   Sparkles,
-  Check,
-  X,
+  AlertCircle,
 } from 'lucide-react';
 
 import { useAuth } from '@/auth/useAuth';
 import { usePermission } from '@/auth/usePermission';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { Badge } from '@/components/ui/badge';
-import { ResponsiveDataTable, type Column } from '@/components/common/ResponsiveDataTable';
 import { DashboardHeroBanner } from '../components/DashboardHeroBanner';
+import { AttendanceDashboardHub } from '../components/AttendanceDashboardHub';
 
-interface QuickRecord {
-  id: string;
-  studentName: string;
-  rollNo: string;
-  className: string;
-  section: string;
-  status: 'PRESENT' | 'ABSENT';
-  time: string;
-}
-
-const SAMPLE_ATTENDANCE_LOG: QuickRecord[] = [
-  { id: '1', studentName: 'Aarav Sharma', rollNo: '101', className: 'Grade 10', section: 'Section A', status: 'PRESENT', time: '09:05 AM' },
-  { id: '2', studentName: 'Pooja Thapa', rollNo: '102', className: 'Grade 10', section: 'Section A', status: 'PRESENT', time: '09:08 AM' },
-  { id: '3', studentName: 'Rohan Shrestha', rollNo: '103', className: 'Grade 10', section: 'Section A', status: 'ABSENT', time: '-' },
-  { id: '4', studentName: 'Ananya Joshi', rollNo: '104', className: 'Grade 10', section: 'Section A', status: 'PRESENT', time: '09:02 AM' },
-];
+import { useAttendanceSummary } from '@/features/attendance/hooks';
+import { useAllClassesWithDetails, useMyTeacherAssignments } from '@/features/academic/hooks';
+import { useParentChildren } from '@/features/members/hooks';
 
 export const DashboardPage: React.FC = () => {
   const { user, activeRole, activeTenantName, activeTenantId } = useAuth();
   const { can, isSuperAdmin, isTeacher, isParent } = usePermission();
 
-  const columns: Column<QuickRecord>[] = [
-    {
-      header: 'Roll No',
-      accessorKey: 'rollNo',
-      cell: (item) => <span className="font-mono text-xs font-semibold">{item.rollNo}</span>,
-    },
-    {
-      header: 'Student Name',
-      accessorKey: 'studentName',
-      cell: (item) => <span className="font-medium text-foreground">{item.studentName}</span>,
-    },
-    {
-      header: 'Class & Section',
-      cell: (item) => (
-        <span className="text-xs text-muted-foreground">
-          {item.className} - {item.section}
-        </span>
-      ),
-    },
-    {
-      header: 'Status',
-      cell: (item) =>
-        item.status === 'PRESENT' ? (
-          <Badge variant="success" className="gap-1 text-[10px] px-2 py-0.5">
-            <Check className="h-3 w-3" />
-            Present
-          </Badge>
-        ) : (
-          <Badge variant="destructive" className="gap-1 text-[10px] px-2 py-0.5">
-            <X className="h-3 w-3" />
-            Absent
-          </Badge>
-        ),
-    },
-    {
-      header: 'Marked At',
-      accessorKey: 'time',
-      cell: (item) => <span className="text-xs font-mono text-muted-foreground">{item.time}</span>,
-    },
-  ];
+  const todayStr = useMemo(() => new Date().toISOString().split('T')[0], []);
+
+  // Queries for live metrics
+  const { data: attendanceSummary } = useAttendanceSummary(activeTenantId, todayStr);
+  const { data: classes = [] } = useAllClassesWithDetails(activeTenantId);
+  const { data: teacherAssignments = [] } = useMyTeacherAssignments(
+    activeTenantId,
+    { enabled: !!activeTenantId && isTeacher }
+  );
+  const { data: parentChildren = [] } = useParentChildren(
+    activeTenantId,
+    isParent ? (user?.id ?? null) : null
+  );
+
+  // Computed total students
+  const totalEnrolledStudents = useMemo(() => {
+    return classes.reduce((sum, c) => {
+      const classStudents = (c.sections || []).reduce((secSum, s) => secSum + (s.student_count || 0), 0);
+      return sum + classStudents;
+    }, 0);
+  }, [classes]);
+
+  // Computed today's attendance rate
+  const todayAttendanceRate = useMemo(() => {
+    const total = attendanceSummary?.school?.total_students || 0;
+    const present = attendanceSummary?.school?.total_present || 0;
+    if (!total || total === 0) return null;
+    return Math.round((present / total) * 1000) / 10;
+  }, [attendanceSummary]);
 
   return (
     <div className="space-y-4 sm:space-y-6 w-full min-w-0">
@@ -104,11 +78,15 @@ export const DashboardPage: React.FC = () => {
           </CardHeader>
           <CardContent className="p-4 sm:p-6 pt-0 sm:pt-0">
             <div className="text-2xl font-bold text-foreground">
-              {isParent ? '1 Child' : '240+'}
+              {isParent
+                ? `${parentChildren.length} ${parentChildren.length === 1 ? 'Child' : 'Children'}`
+                : totalEnrolledStudents > 0
+                ? `${totalEnrolledStudents}`
+                : '0 Enrolled'}
             </div>
             <p className="text-xs text-muted-foreground mt-1 flex items-center gap-1 truncate">
               <CheckCircle2 className="h-3.5 w-3.5 text-emerald-500 shrink-0" />
-              <span>{isParent ? 'Enrolled in Class 6A' : 'Enrolled across all sections'}</span>
+              <span>{isParent ? 'Enrolled in current school' : 'Enrolled across all classes'}</span>
             </p>
           </CardContent>
         </Card>
@@ -125,17 +103,21 @@ export const DashboardPage: React.FC = () => {
           </CardHeader>
           <CardContent className="p-4 sm:p-6 pt-0 sm:pt-0">
             <div className="text-2xl font-bold text-foreground">
-              {isTeacher ? '3 Classes' : '10 Classes'}
+              {isTeacher
+                ? `${teacherAssignments.length} ${teacherAssignments.length === 1 ? 'Duty' : 'Duties'}`
+                : `${classes.length} ${classes.length === 1 ? 'Class' : 'Classes'}`}
             </div>
             <p className="text-xs text-muted-foreground mt-1 flex items-center gap-1 truncate">
               <span className="font-medium text-foreground">
-                {isTeacher ? 'Class Teacher: Grade 10-A' : 'Auto-provisioned sections'}
+                {isTeacher
+                  ? `${teacherAssignments.filter((a) => a.is_class_teacher).length} Class Teacher designation(s)`
+                  : 'Auto-provisioned sections'}
               </span>
             </p>
           </CardContent>
         </Card>
 
-        {/* Metric 3 */}
+        {/* Metric 3: Today's Live Attendance */}
         <Card className="border-border/60 hover:shadow-md transition-shadow rounded-xl">
           <CardHeader className="flex flex-row items-center justify-between pb-2 p-4 sm:p-6 space-y-0">
             <CardTitle className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">
@@ -146,10 +128,23 @@ export const DashboardPage: React.FC = () => {
             </div>
           </CardHeader>
           <CardContent className="p-4 sm:p-6 pt-0 sm:pt-0">
-            <div className="text-2xl font-bold text-foreground">94.8%</div>
+            <div className="text-2xl font-bold text-foreground">
+              {todayAttendanceRate !== null ? `${todayAttendanceRate}%` : 'Pending'}
+            </div>
             <p className="text-xs text-muted-foreground mt-1 flex items-center gap-1 truncate">
-              <CheckCircle2 className="h-3.5 w-3.5 text-emerald-500 shrink-0" />
-              <span>Daily presence rate</span>
+              {todayAttendanceRate !== null ? (
+                <>
+                  <CheckCircle2 className="h-3.5 w-3.5 text-emerald-500 shrink-0" />
+                  <span>
+                    {attendanceSummary?.school?.total_present} of {attendanceSummary?.school?.total_students} confirmed
+                  </span>
+                </>
+              ) : (
+                <>
+                  <AlertCircle className="h-3.5 w-3.5 text-amber-500 shrink-0" />
+                  <span>No sections marked yet today</span>
+                </>
+              )}
             </p>
           </CardContent>
         </Card>
@@ -174,6 +169,7 @@ export const DashboardPage: React.FC = () => {
           </CardContent>
         </Card>
       </div>
+
 
       {/* Quick Action Hub (1 col mobile, 2 cols tablet, 3 cols desktop) */}
       <div className="space-y-3 sm:space-y-4">
@@ -363,56 +359,9 @@ export const DashboardPage: React.FC = () => {
         </div>
       </div>
 
-      {/* Live Responsive Data Table Section (Demonstrating Stacked Cards on Mobile vs Table on Desktop) */}
-      <div className="space-y-3">
-        <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-1 sm:gap-2">
-          <div>
-            <h2 className="text-base sm:text-lg font-bold tracking-tight text-foreground">
-              Recent Attendance Log
-            </h2>
-            <p className="text-xs text-muted-foreground">
-              Real-time daily attendance entries for active school section
-            </p>
-          </div>
-          <Badge variant="outline" className="w-fit text-[11px] font-mono">
-            Live Section A
-          </Badge>
-        </div>
+      {/* Live Attendance Reporting Hub */}
+      <AttendanceDashboardHub />
 
-        <ResponsiveDataTable
-          data={SAMPLE_ATTENDANCE_LOG}
-          columns={columns}
-          keyExtractor={(item) => item.id}
-          renderCard={(item) => (
-            <Card className="border-border/60 shadow-xs p-3.5 space-y-2.5 rounded-xl">
-              <div className="flex items-center justify-between">
-                <div className="flex items-center gap-2">
-                  <span className="font-mono text-xs font-bold px-1.5 py-0.5 rounded bg-muted">
-                    #{item.rollNo}
-                  </span>
-                  <span className="font-semibold text-sm text-foreground">
-                    {item.studentName}
-                  </span>
-                </div>
-                {item.status === 'PRESENT' ? (
-                  <Badge variant="success" className="text-[10px] px-2 py-0.5">
-                    Present
-                  </Badge>
-                ) : (
-                  <Badge variant="destructive" className="text-[10px] px-2 py-0.5">
-                    Absent
-                  </Badge>
-                )}
-              </div>
-
-              <div className="flex items-center justify-between text-xs text-muted-foreground pt-1 border-t border-border/40">
-                <span>{item.className} - {item.section}</span>
-                <span className="font-mono">{item.time}</span>
-              </div>
-            </Card>
-          )}
-        />
-      </div>
 
       {/* System Security & RBAC Summary */}
       <Card className="border-border/60 bg-card/90 rounded-2xl">

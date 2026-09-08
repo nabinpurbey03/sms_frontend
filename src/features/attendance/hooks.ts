@@ -49,6 +49,39 @@ export const useAttendanceSummary = (
   });
 };
 
+// Query: Get school-wide attendance report across date range
+export const useSchoolAttendanceReport = (
+  tenantId: string | null,
+  startDate: string,
+  endDate: string,
+  options?: { enabled?: boolean }
+) => {
+  return useQuery({
+    queryKey: ['attendance', 'school-report', tenantId, startDate, endDate],
+    queryFn: () => attendanceApi.getSchoolAttendanceReport(tenantId!, startDate, endDate),
+    enabled: !!tenantId && !!startDate && !!endDate && (options?.enabled ?? true),
+    staleTime: 1000 * 60 * 2,
+  });
+};
+
+// Query: Get class attendance report with section breakdown
+export const useClassAttendanceReport = (
+  tenantId: string | null,
+  classId: string | null,
+  startDate: string,
+  endDate: string,
+  sectionId?: string,
+  options?: { enabled?: boolean }
+) => {
+  return useQuery({
+    queryKey: ['attendance', 'class-report', tenantId, classId, startDate, endDate, sectionId],
+    queryFn: () => attendanceApi.getClassAttendanceReport(tenantId!, classId!, startDate, endDate, sectionId),
+    enabled: !!tenantId && !!classId && !!startDate && !!endDate && (options?.enabled ?? true),
+    staleTime: 1000 * 60 * 2,
+  });
+};
+
+
 // Query: Get daily attendance status across sections
 export const useDailyAttendanceStatus = (
   tenantId: string | null,
