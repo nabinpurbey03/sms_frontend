@@ -96,7 +96,6 @@ export const TeacherScoreEntryTable: React.FC<TeacherScoreEntryTableProps> = ({
             <Button
               type="button"
               size="sm"
-              variant={row.isAbsent ? 'destructive' : 'outline'}
               disabled={isLocked}
               onClick={() => {
                 const nextAbsent = !row.isAbsent;
@@ -106,13 +105,13 @@ export const TeacherScoreEntryTable: React.FC<TeacherScoreEntryTableProps> = ({
                 }
               }}
               className={cn(
-                'min-h-[36px] min-w-[110px] text-xs font-semibold transition-all',
+                'min-h-[36px] min-w-[110px] text-xs font-semibold transition-all shadow-xs',
                 row.isAbsent
-                  ? 'bg-destructive text-destructive-foreground hover:bg-destructive/90 shadow-sm'
-                  : 'text-muted-foreground hover:text-foreground hover:bg-accent'
+                  ? 'bg-rose-600 hover:bg-rose-700 text-white dark:bg-rose-600 dark:hover:bg-rose-700'
+                  : 'bg-emerald-600 hover:bg-emerald-700 text-white dark:bg-emerald-600 dark:hover:bg-emerald-700'
               )}
             >
-              {row.isAbsent ? 'AB (Absent)' : 'Present'}
+              {row.isAbsent ? 'Absent' : 'Present'}
             </Button>
           </div>
         ),
@@ -235,7 +234,6 @@ export const TeacherScoreEntryTable: React.FC<TeacherScoreEntryTableProps> = ({
             <Button
               type="button"
               size="sm"
-              variant={row.isAbsent ? 'destructive' : 'outline'}
               disabled={isLocked}
               onClick={() => {
                 const nextAbsent = !row.isAbsent;
@@ -245,13 +243,13 @@ export const TeacherScoreEntryTable: React.FC<TeacherScoreEntryTableProps> = ({
                 }
               }}
               className={cn(
-                'w-full min-h-[44px] text-xs font-semibold transition-colors',
+                'w-full min-h-[44px] text-xs font-semibold transition-colors shadow-xs',
                 row.isAbsent
-                  ? 'bg-destructive text-destructive-foreground hover:bg-destructive/90 shadow-sm'
-                  : 'text-foreground hover:bg-accent'
+                  ? 'bg-rose-600 hover:bg-rose-700 text-white dark:bg-rose-600 dark:hover:bg-rose-700'
+                  : 'bg-emerald-600 hover:bg-emerald-700 text-white dark:bg-emerald-600 dark:hover:bg-emerald-700'
               )}
             >
-              {row.isAbsent ? 'AB (Absent)' : 'Present'}
+              {row.isAbsent ? 'Absent' : 'Present'}
             </Button>
           </div>
 

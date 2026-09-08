@@ -250,7 +250,6 @@ export const InlineScoreCell: React.FC<InlineScoreCellProps> = ({
           <Button
             type="button"
             size="sm"
-            variant={inputAbsent ? 'destructive' : 'outline'}
             disabled={isSaving}
             onClick={() => {
               const next = !inputAbsent;
@@ -261,11 +260,13 @@ export const InlineScoreCell: React.FC<InlineScoreCellProps> = ({
               }
             }}
             className={cn(
-              'h-8 px-2 text-[11px] font-bold shrink-0',
-              inputAbsent && 'shadow-xs'
+              'h-8 px-2.5 text-xs font-semibold shrink-0 shadow-xs transition-colors',
+              inputAbsent
+                ? 'bg-rose-600 hover:bg-rose-700 text-white'
+                : 'bg-emerald-600 hover:bg-emerald-700 text-white'
             )}
           >
-            AB
+            {inputAbsent ? 'Absent' : 'Present'}
           </Button>
 
           <Button
