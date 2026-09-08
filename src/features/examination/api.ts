@@ -9,6 +9,8 @@ import type {
   StudentScoreItemDTO,
   TeacherExamSubjectAssignment,
   SchoolResultsAnalyticsResponse,
+  ParentChildrenReportCardsResponse,
+  OfficialReportCardDTO,
 } from './types';
 
 export const examinationApi = {
@@ -79,5 +81,21 @@ export const examinationApi = {
     params?: { class_id?: string; academic_term?: string }
   ): Promise<SchoolResultsAnalyticsResponse> => {
     return apiClient.get(`/academic/tenants/${tenantId}/exams/analytics`, { params });
+  },
+
+  getMyChildrenReportCards: async (
+    tenantId: string
+  ): Promise<ParentChildrenReportCardsResponse> => {
+    return apiClient.get(`/academic/tenants/${tenantId}/parents/my-children/report-cards`);
+  },
+
+  getStudentReportCard: async (
+    tenantId: string,
+    examId: string,
+    studentId: string
+  ): Promise<OfficialReportCardDTO> => {
+    return apiClient.get(
+      `/academic/tenants/${tenantId}/exams/${examId}/report-cards/${studentId}`
+    );
   },
 };

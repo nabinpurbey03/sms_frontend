@@ -11,6 +11,8 @@ export const EXAMS_QUERY_KEY = 'examination_exams';
 export const EXAM_REVIEW_QUERY_KEY = 'examination_exam_review';
 export const TEACHER_EXAM_ASSIGNMENTS_QUERY_KEY = 'teacher_exam_assignments';
 export const EXAM_ANALYTICS_QUERY_KEY = 'exam_results_analytics';
+export const PARENT_REPORT_CARDS_QUERY_KEY = 'parent_children_report_cards';
+export const OFFICIAL_REPORT_CARD_QUERY_KEY = 'official_report_card';
 
 export const useExams = (
   tenantId: string | null,
@@ -55,6 +57,33 @@ export const useExamResultsAnalytics = (
     queryFn: () => examinationApi.getResultsAnalytics(tenantId!, params),
     enabled: !!tenantId && (options?.enabled ?? true),
     staleTime: 1000 * 30,
+  });
+};
+
+export const useMyChildrenReportCards = (
+  tenantId: string | null,
+  options?: { enabled?: boolean }
+) => {
+  return useQuery({
+    queryKey: [PARENT_REPORT_CARDS_QUERY_KEY, tenantId],
+    queryFn: () => examinationApi.getMyChildrenReportCards(tenantId!),
+    enabled: !!tenantId && (options?.enabled ?? true),
+    staleTime: 1000 * 30,
+  });
+};
+
+export const useStudentReportCard = (
+  tenantId: string | null,
+  examId: string | null,
+  studentId: string | null,
+  options?: { enabled?: boolean }
+) => {
+  return useQuery({
+    queryKey: [OFFICIAL_REPORT_CARD_QUERY_KEY, tenantId, examId, studentId],
+    queryFn: () =>
+      examinationApi.getStudentReportCard(tenantId!, examId!, studentId!),
+    enabled: !!tenantId && !!examId && !!studentId && (options?.enabled ?? true),
+    staleTime: 1000 * 60 * 5,
   });
 };
 

@@ -214,3 +214,112 @@ export interface SchoolResultsAnalyticsResponse {
   top_achievers: TopAchieverItem[];
 }
 
+// ==========================================
+// Parent Published Report Cards & Official Transcripts
+// ==========================================
+
+export interface OfficialSchoolHeader {
+  name: string;
+  domain_name?: string | null;
+  email?: string | null;
+  phone?: string | null;
+  logo_url?: string | null;
+  address?: string | null;
+}
+
+export interface StudentProfileInfo {
+  id: string;
+  name: string;
+  roll_number?: string | null;
+  class_name: string;
+  section_name?: string | null;
+  status: string;
+}
+
+export interface ExamDetailsInfo {
+  id: string;
+  name: string;
+  academic_term?: string | null;
+  published_at?: string | null;
+  issue_date: string;
+}
+
+export interface StudentReportCardSubjectItem {
+  subject_id: string;
+  subject_name: string;
+  full_mark: number;
+  pass_mark: number;
+  score: number | null;
+  is_absent: boolean;
+  is_pass: boolean;
+  grade: string;
+  grade_point: number;
+  remarks: string;
+  highest_class_score?: number | null;
+}
+
+export interface ReportCardSummary {
+  total_obtained: number;
+  total_full_mark: number;
+  percentage: number;
+  overall_grade: string;
+  gpa: number;
+  is_passed: boolean;
+  rank_in_class?: string | null;
+  rank_in_section?: string | null;
+  exam_attendance_rate: number;
+  absent_subject_count: number;
+  final_result_text: string;
+}
+
+export interface OfficialSignatories {
+  class_teacher_title: string;
+  principal_title: string;
+  controller_title: string;
+  verification_code: string;
+  disclaimer: string;
+}
+
+export interface OfficialReportCardDTO {
+  school: OfficialSchoolHeader;
+  student: StudentProfileInfo;
+  exam: ExamDetailsInfo;
+  subjects: StudentReportCardSubjectItem[];
+  summary: ReportCardSummary;
+  signatories: OfficialSignatories;
+}
+
+export interface ChildPublishedExamItem {
+  exam_id: string;
+  exam_name: string;
+  academic_term?: string | null;
+  class_name: string;
+  section_name?: string | null;
+  total_obtained: number;
+  total_full_mark: number;
+  percentage: number;
+  grade: string;
+  gpa: number;
+  is_passed: boolean;
+  exam_attendance_rate: number;
+  rank_in_class?: string | null;
+  published_at?: string | null;
+}
+
+export interface ChildWithReportCardsDTO {
+  student_id: string;
+  student_name: string;
+  class_id: string;
+  class_name: string;
+  section_id?: string | null;
+  section_name?: string | null;
+  status: string;
+  relationship_type: string;
+  exams: ChildPublishedExamItem[];
+}
+
+export interface ParentChildrenReportCardsResponse {
+  children: ChildWithReportCardsDTO[];
+  total_published_exams: number;
+}
+
