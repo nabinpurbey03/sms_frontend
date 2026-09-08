@@ -46,6 +46,7 @@ export const ScoreEntryPage: React.FC = () => {
   const { activeTenantId, user } = useAuth();
   const { isTeacher, isAdmin, isOfficeAdmin, isSuperAdmin, can } =
     usePermission();
+  const isPrivileged = isAdmin || isOfficeAdmin || isSuperAdmin;
 
   // Route params retrieval with pathname fallback
   const params = useParams({ strict: false }) as Record<
@@ -110,13 +111,20 @@ export const ScoreEntryPage: React.FC = () => {
 
   // Handle absent toggle
   const handleAbsentToggle = (studentId: string, isAbsent: boolean) => {
-    setLocalGrades((prev) => ({
-      ...prev,
-      [studentId]: {
-        score: isAbsent ? 0 : (prev[studentId]?.score ?? null),
-        isAbsent,
-      },
-    }));
+    setLocalGrades((prev) => {
+      const prevScore = prev[studentId]?.score;
+      const score = isAbsent
+        ? 0
+        : (prevScore === 0 ? null : (prevScore ?? null));
+
+      return {
+        ...prev,
+        [studentId]: {
+          score,
+          isAbsent,
+        },
+      };
+    });
   };
 
   // Map students to StudentGradingRow
@@ -173,7 +181,7 @@ export const ScoreEntryPage: React.FC = () => {
   // Subject constants & counters
   const fullMark = subject?.full_mark ?? 100;
   const passMark = subject?.pass_mark ?? 40;
-  const isLocked = subject?.status === 'SUBMITTED';
+  const isLocked = !isPrivileged && subject?.status === 'SUBMITTED';
 
   const totalStudents = studentRows.length;
   const absentCount = studentRows.filter((r) => r.isAbsent).length;
@@ -231,7 +239,6 @@ export const ScoreEntryPage: React.FC = () => {
 
   // ReBAC Guard:
   // If user is Teacher and not admin, verify assigned_teacher_id === user?.id
-  const isPrivileged = isAdmin || isOfficeAdmin || isSuperAdmin;
   const isAssignedTeacher = Boolean(
     subject.assigned_teacher_id &&
       user?.id &&

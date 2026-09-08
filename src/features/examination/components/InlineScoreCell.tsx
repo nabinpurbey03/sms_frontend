@@ -256,8 +256,10 @@ export const InlineScoreCell: React.FC<InlineScoreCellProps> = ({
               setInputAbsent(next);
               if (next) {
                 setInputScore('0');
-                setErrorMessage(null);
+              } else if (inputScore === '0') {
+                setInputScore('');
               }
+              setErrorMessage(null);
             }}
             className={cn(
               'h-8 px-2.5 text-xs font-semibold shrink-0 shadow-xs transition-colors',

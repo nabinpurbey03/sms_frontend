@@ -97,13 +97,7 @@ export const TeacherScoreEntryTable: React.FC<TeacherScoreEntryTableProps> = ({
               type="button"
               size="sm"
               disabled={isLocked}
-              onClick={() => {
-                const nextAbsent = !row.isAbsent;
-                onAbsentToggle(row.studentId, nextAbsent);
-                if (nextAbsent) {
-                  onScoreChange(row.studentId, 0);
-                }
-              }}
+              onClick={() => onAbsentToggle(row.studentId, !row.isAbsent)}
               className={cn(
                 'min-h-[36px] min-w-[110px] text-xs font-semibold transition-all shadow-xs',
                 row.isAbsent
@@ -235,13 +229,7 @@ export const TeacherScoreEntryTable: React.FC<TeacherScoreEntryTableProps> = ({
               type="button"
               size="sm"
               disabled={isLocked}
-              onClick={() => {
-                const nextAbsent = !row.isAbsent;
-                onAbsentToggle(row.studentId, nextAbsent);
-                if (nextAbsent) {
-                  onScoreChange(row.studentId, 0);
-                }
-              }}
+              onClick={() => onAbsentToggle(row.studentId, !row.isAbsent)}
               className={cn(
                 'w-full min-h-[44px] text-xs font-semibold transition-colors shadow-xs',
                 row.isAbsent
