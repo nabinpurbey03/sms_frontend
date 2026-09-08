@@ -23,6 +23,10 @@ import { TeacherAssignmentsPage } from '@/features/academic/pages/TeacherAssignm
 import { MarkAttendancePage } from '@/features/attendance/pages/MarkAttendancePage';
 import { MyAssignmentsPage } from '@/features/attendance/pages/MyAssignmentsPage';
 import { AttendanceReportsPage } from '@/features/attendance/pages/AttendanceReportsPage';
+import { ExamsListPage } from '@/features/examination/pages/ExamsListPage';
+import { CreateExamPage } from '@/features/examination/pages/CreateExamPage';
+import { ScoreEntryPage } from '@/features/examination/pages/ScoreEntryPage';
+import { ExamReviewPage } from '@/features/examination/pages/ExamReviewPage';
 import { ErrorState } from '@/components/common/ErrorState';
 import { Button } from '@/components/ui/button';
 import { Toaster } from '@/components/ui/sonner';
@@ -151,6 +155,30 @@ const tenantSettingsRoute = createRoute({
   component: () => <PlaceholderPage title="School Settings & Logo Upload" />,
 });
 
+const examsRoute = createRoute({
+  getParentRoute: () => protectedLayoutRoute,
+  path: '/examination/exams',
+  component: ExamsListPage,
+});
+
+const createExamRoute = createRoute({
+  getParentRoute: () => protectedLayoutRoute,
+  path: '/examination/exams/create',
+  component: CreateExamPage,
+});
+
+const examReviewRoute = createRoute({
+  getParentRoute: () => protectedLayoutRoute,
+  path: '/examination/exams/$examId/review',
+  component: ExamReviewPage,
+});
+
+const scoreEntryRoute = createRoute({
+  getParentRoute: () => protectedLayoutRoute,
+  path: '/examination/exams/$examId/grade/$examSubjectId',
+  component: ScoreEntryPage,
+});
+
 // Build Route Tree
 const routeTree = rootRoute.addChildren([
   indexRoute,
@@ -171,6 +199,10 @@ const routeTree = rootRoute.addChildren([
     membersRoute,
     tenantsRoute,
     tenantSettingsRoute,
+    examsRoute,
+    createExamRoute,
+    examReviewRoute,
+    scoreEntryRoute,
   ]),
 ]);
 

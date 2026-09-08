@@ -19,6 +19,7 @@ import {
   Sun,
   Moon,
   Monitor,
+  GraduationCap,
 } from 'lucide-react';
 
 import { useAuth } from '@/auth/useAuth';
@@ -158,6 +159,12 @@ export const AppShell: React.FC = () => {
       href: '/attendance/reports',
       icon: FileSpreadsheet,
       show: can('VIEW_ATTENDANCE_REPORTS'),
+    },
+    {
+      label: 'Examinations',
+      href: '/examination/exams',
+      icon: GraduationCap,
+      show: can('MANAGE_EXAMS') || can('ENTER_EXAM_SCORES'),
     },
   ];
 
