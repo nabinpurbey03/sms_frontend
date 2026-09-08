@@ -22,6 +22,7 @@ import { SubjectsPage } from '@/features/academic/pages/SubjectsPage';
 import { TeacherAssignmentsPage } from '@/features/academic/pages/TeacherAssignmentsPage';
 import { MarkAttendancePage } from '@/features/attendance/pages/MarkAttendancePage';
 import { MyAssignmentsPage } from '@/features/attendance/pages/MyAssignmentsPage';
+import { AttendanceReportsPage } from '@/features/attendance/pages/AttendanceReportsPage';
 import { ErrorState } from '@/components/common/ErrorState';
 import { Button } from '@/components/ui/button';
 import { Toaster } from '@/components/ui/sonner';
@@ -129,7 +130,7 @@ const attendanceMarkRoute = createRoute({
 const attendanceReportsRoute = createRoute({
   getParentRoute: () => protectedLayoutRoute,
   path: '/attendance/reports',
-  component: () => <PlaceholderPage title="Attendance Reports & Summary" />,
+  component: AttendanceReportsPage,
 });
 
 const membersRoute = createRoute({
