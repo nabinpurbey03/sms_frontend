@@ -178,6 +178,9 @@ export interface SubjectResultSummary {
   pass_rate: number;
   average_score: number;
   full_mark: number;
+  attendance_rate?: number;
+  absent_count?: number;
+  attended_average_score?: number;
 }
 
 export interface AtRiskStudentItem {

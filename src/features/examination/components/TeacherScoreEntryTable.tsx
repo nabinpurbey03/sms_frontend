@@ -40,7 +40,7 @@ function getInitials(name: string): string {
 
 function renderResultBadge(row: StudentGradingRow, passMark: number) {
   if (row.isAbsent) {
-    return <Badge variant="destructive">Absent</Badge>;
+    return <Badge variant="destructive">Absent (0)</Badge>;
   }
   if (row.score !== null) {
     if (row.score >= passMark) {
@@ -102,7 +102,7 @@ export const TeacherScoreEntryTable: React.FC<TeacherScoreEntryTableProps> = ({
                 const nextAbsent = !row.isAbsent;
                 onAbsentToggle(row.studentId, nextAbsent);
                 if (nextAbsent) {
-                  onScoreChange(row.studentId, null);
+                  onScoreChange(row.studentId, 0);
                 }
               }}
               className={cn(
@@ -137,8 +137,8 @@ export const TeacherScoreEntryTable: React.FC<TeacherScoreEntryTableProps> = ({
                         min={0}
                         max={fullMark}
                         step="0.5"
-                        placeholder={`0 - ${fullMark}`}
-                        value={row.score ?? ''}
+                        placeholder={row.isAbsent ? '0 (Absent)' : `0 - ${fullMark}`}
+                        value={row.isAbsent ? '0' : (row.score ?? '')}
                         disabled={row.isAbsent || isLocked}
                         onChange={(e) => {
                           const raw = e.target.value;
@@ -154,6 +154,7 @@ export const TeacherScoreEntryTable: React.FC<TeacherScoreEntryTableProps> = ({
                         }}
                         className={cn(
                           'w-28 text-center font-semibold text-sm transition-all h-9',
+                          row.isAbsent && 'bg-muted text-muted-foreground cursor-not-allowed font-medium',
                           isInvalid &&
                             'border-destructive text-destructive focus-visible:ring-destructive focus-visible:border-destructive bg-destructive/5'
                         )}
@@ -240,7 +241,7 @@ export const TeacherScoreEntryTable: React.FC<TeacherScoreEntryTableProps> = ({
                 const nextAbsent = !row.isAbsent;
                 onAbsentToggle(row.studentId, nextAbsent);
                 if (nextAbsent) {
-                  onScoreChange(row.studentId, null);
+                  onScoreChange(row.studentId, 0);
                 }
               }}
               className={cn(
@@ -263,8 +264,8 @@ export const TeacherScoreEntryTable: React.FC<TeacherScoreEntryTableProps> = ({
               min={0}
               max={fullMark}
               step="0.5"
-              placeholder={`0 - ${fullMark}`}
-              value={row.score ?? ''}
+              placeholder={row.isAbsent ? '0 (Absent)' : `0 - ${fullMark}`}
+              value={row.isAbsent ? '0' : (row.score ?? '')}
               disabled={row.isAbsent || isLocked}
               onChange={(e) => {
                 const raw = e.target.value;
@@ -280,6 +281,7 @@ export const TeacherScoreEntryTable: React.FC<TeacherScoreEntryTableProps> = ({
               }}
               className={cn(
                 'min-h-[44px] text-center font-semibold text-sm',
+                row.isAbsent && 'bg-muted text-muted-foreground cursor-not-allowed font-medium',
                 isInvalid &&
                   'border-destructive text-destructive focus-visible:ring-destructive bg-destructive/5'
               )}

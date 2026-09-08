@@ -113,7 +113,7 @@ export const ScoreEntryPage: React.FC = () => {
     setLocalGrades((prev) => ({
       ...prev,
       [studentId]: {
-        score: isAbsent ? null : (prev[studentId]?.score ?? null),
+        score: isAbsent ? 0 : (prev[studentId]?.score ?? null),
         isAbsent,
       },
     }));
@@ -283,7 +283,7 @@ export const ScoreEntryPage: React.FC = () => {
 
     const payload: StudentScoreItemDTO[] = studentRows.map((r) => ({
       student_id: r.studentId,
-      score: r.isAbsent ? null : r.score,
+      score: r.isAbsent ? 0 : r.score,
       is_absent: r.isAbsent,
     }));
 
@@ -321,7 +321,7 @@ export const ScoreEntryPage: React.FC = () => {
 
     const payload: StudentScoreItemDTO[] = studentRows.map((r) => ({
       student_id: r.studentId,
-      score: r.isAbsent ? null : r.score,
+      score: r.isAbsent ? 0 : r.score,
       is_absent: r.isAbsent,
     }));
 

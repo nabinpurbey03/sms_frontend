@@ -17,12 +17,17 @@ export const studentScoreItemSchema = z
   .refine(
     (data) => {
       if (data.is_absent) {
-        return data.score === null || data.score === undefined || Number.isNaN(data.score);
+        return (
+          data.score === null ||
+          data.score === undefined ||
+          Number.isNaN(data.score) ||
+          data.score === 0
+        );
       }
       return data.score !== null && data.score !== undefined && !Number.isNaN(data.score);
     },
     {
-      message: 'Score must be empty when student is absent, and a valid number when present',
+      message: 'Score is required when student is present',
       path: ['score'],
     }
   );

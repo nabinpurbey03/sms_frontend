@@ -65,7 +65,7 @@ export const InlineScoreCell: React.FC<InlineScoreCellProps> = ({
     if (!canEdit || isSaving) return;
     setInputAbsent(isAbsent);
     setInputScore(
-      score !== null && score !== undefined && !isAbsent ? String(score) : ''
+      isAbsent ? '0' : (score !== null && score !== undefined ? String(score) : '')
     );
     setErrorMessage(null);
     setIsEditing(true);
@@ -83,7 +83,7 @@ export const InlineScoreCell: React.FC<InlineScoreCellProps> = ({
     if (inputAbsent) {
       setIsSaving(true);
       try {
-        await onSave(null, true);
+        await onSave(0, true);
         setIsEditing(false);
         setErrorMessage(null);
       } catch (err: any) {
@@ -148,7 +148,7 @@ export const InlineScoreCell: React.FC<InlineScoreCellProps> = ({
     if (isAbsent) {
       content = (
         <Badge variant="destructive" className="px-1.5 py-0 text-[11px] font-bold">
-          AB
+          AB (0)
         </Badge>
       );
     } else if (score !== null && score !== undefined) {
@@ -256,7 +256,7 @@ export const InlineScoreCell: React.FC<InlineScoreCellProps> = ({
               const next = !inputAbsent;
               setInputAbsent(next);
               if (next) {
-                setInputScore('');
+                setInputScore('0');
                 setErrorMessage(null);
               }
             }}
