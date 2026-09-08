@@ -194,18 +194,19 @@ export const AttendanceDashboardHub: React.FC = () => {
     isLoading: isDailyStatusLoading,
     refetch: refetchDailyStatus,
   } = useDailyAttendanceStatus(
-    activeTenantId,
+    !isParent ? activeTenantId : null,
     selectedDate,
     undefined,
-    { enabled: !!activeTenantId && timeframe === 'today' }
+    { enabled: !!activeTenantId && timeframe === 'today' && !isParent }
   );
 
   const {
     data: attendanceSummary,
     refetch: refetchSummary,
   } = useAttendanceSummary(
-    activeTenantId,
-    selectedDate
+    !isParent ? activeTenantId : null,
+    selectedDate,
+    { enabled: !!activeTenantId && !isParent }
   );
 
   const {
@@ -219,7 +220,7 @@ export const AttendanceDashboardHub: React.FC = () => {
     { enabled: !!activeTenantId && isAdminOrOfficeAdmin && timeframe !== 'today' }
   );
 
-  const { data: schoolClasses = [] } = useAllClassesWithDetails(activeTenantId);
+  const { data: schoolClasses = [] } = useAllClassesWithDetails(!isParent ? activeTenantId : null);
 
   // Queries for Teacher
   const {

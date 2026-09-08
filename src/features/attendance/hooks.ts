@@ -39,12 +39,13 @@ export const useStudentAttendanceReport = (
 // Query: Get attendance summary
 export const useAttendanceSummary = (
   tenantId: string | null,
-  recordDate: string
+  recordDate: string,
+  options?: { enabled?: boolean }
 ) => {
   return useQuery({
     queryKey: ['attendance', 'summary', tenantId, recordDate],
     queryFn: () => attendanceApi.getAttendanceSummary(tenantId!, recordDate),
-    enabled: !!tenantId && !!recordDate,
+    enabled: !!tenantId && !!recordDate && (options?.enabled ?? true),
     staleTime: 1000 * 30,
   });
 };

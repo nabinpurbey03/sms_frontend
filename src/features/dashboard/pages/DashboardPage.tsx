@@ -37,8 +37,12 @@ export const DashboardPage: React.FC = () => {
   const todayStr = useMemo(() => new Date().toISOString().split('T')[0], []);
 
   // Queries for live metrics
-  const { data: attendanceSummary } = useAttendanceSummary(activeTenantId, todayStr);
-  const { data: classes = [] } = useAllClassesWithDetails(activeTenantId);
+  const { data: attendanceSummary } = useAttendanceSummary(
+    !isParent ? activeTenantId : null,
+    todayStr,
+    { enabled: !!activeTenantId && !isParent }
+  );
+  const { data: classes = [] } = useAllClassesWithDetails(!isParent ? activeTenantId : null);
   const { data: teacherAssignments = [] } = useMyTeacherAssignments(
     activeTenantId,
     { enabled: !!activeTenantId && isTeacher }
@@ -130,7 +134,7 @@ export const DashboardPage: React.FC = () => {
         <Card className="border-border/60 hover:shadow-md transition-shadow rounded-xl">
           <CardHeader className="flex flex-row items-center justify-between pb-2 p-4 sm:p-6 space-y-0">
             <CardTitle className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">
-              Today's Attendance
+              {isParent ? 'Children Attendance' : "Today's Attendance"}
             </CardTitle>
             <div className="p-2.5 bg-purple-500/10 text-purple-600 dark:text-purple-400 rounded-xl">
               <CalendarCheck className="h-4 w-4" />
@@ -138,10 +142,19 @@ export const DashboardPage: React.FC = () => {
           </CardHeader>
           <CardContent className="p-4 sm:p-6 pt-0 sm:pt-0">
             <div className="text-2xl font-bold text-foreground">
-              {todayAttendanceRate !== null ? `${todayAttendanceRate}%` : 'Pending'}
+              {isParent
+                ? `${parentChildren.length > 0 ? 'Active' : 'Pending'}`
+                : todayAttendanceRate !== null
+                ? `${todayAttendanceRate}%`
+                : 'Pending'}
             </div>
             <p className="text-xs text-muted-foreground mt-1 flex items-center gap-1 truncate">
-              {todayAttendanceRate !== null ? (
+              {isParent ? (
+                <>
+                  <CheckCircle2 className="h-3.5 w-3.5 text-emerald-500 shrink-0" />
+                  <span>Individual tracking below</span>
+                </>
+              ) : todayAttendanceRate !== null ? (
                 <>
                   <CheckCircle2 className="h-3.5 w-3.5 text-emerald-500 shrink-0" />
                   <span>
@@ -255,7 +268,7 @@ export const DashboardPage: React.FC = () => {
           )}
 
           {/* Attendance Reports */}
-          {can('VIEW_ATTENDANCE_REPORTS') && (
+          {can('VIEW_ATTENDANCE_REPORTS') && !isParent && (
             <Card className="group border-border/60 hover:border-primary/50 transition-all rounded-xl">
               <CardHeader className="p-4 sm:p-5 pb-3">
                 <div className="flex items-center justify-between">

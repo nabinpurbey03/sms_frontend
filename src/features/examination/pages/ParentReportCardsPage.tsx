@@ -355,7 +355,7 @@ export const ParentReportCardsPage: React.FC = () => {
                   <div>
                     <span className="text-[10px] text-muted-foreground uppercase font-semibold">Grand Total</span>
                     <p className="text-xs font-bold text-foreground">
-                      {exam.total_obtained}{' '}
+                      {Number(exam.total_obtained).toFixed(1)}{' '}
                       <span className="text-[10px] font-normal text-muted-foreground">
                         /{exam.total_full_mark}
                       </span>
@@ -364,7 +364,7 @@ export const ParentReportCardsPage: React.FC = () => {
                   <div>
                     <span className="text-[10px] text-muted-foreground uppercase font-semibold">Percentage</span>
                     <p className="text-xs font-bold text-foreground">
-                      {exam.percentage.toFixed(1)}%
+                      {Number(exam.percentage).toFixed(1)}%
                     </p>
                   </div>
                   <div>
@@ -372,7 +372,7 @@ export const ParentReportCardsPage: React.FC = () => {
                     <p className="text-xs font-bold text-foreground">
                       {exam.grade}{' '}
                       <span className="text-[10px] font-normal text-muted-foreground">
-                        ({exam.gpa.toFixed(2)})
+                        ({Number(exam.gpa).toFixed(2)})
                       </span>
                     </p>
                   </div>
