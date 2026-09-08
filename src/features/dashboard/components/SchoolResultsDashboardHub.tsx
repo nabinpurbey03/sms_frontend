@@ -22,6 +22,7 @@ import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Input } from '@/components/ui/input';
 import { ResponsiveDataTable, type Column } from '@/components/common/ResponsiveDataTable';
+import { cn } from '@/lib/utils';
 
 import { useExamResultsAnalytics } from '@/features/examination/hooks';
 import { useClasses } from '@/features/academic/hooks';
@@ -270,14 +271,23 @@ export const SchoolResultsDashboardHub: React.FC = () => {
             {item.failed_subjects_count} {item.failed_subjects_count === 1 ? 'Subject' : 'Subjects'}
           </Badge>
           <div className="flex flex-wrap gap-1 pt-0.5">
-            {item.failed_subject_names.map((name, i) => (
-              <span
-                key={i}
-                className="text-[10px] px-1.5 py-0.5 rounded bg-muted/60 text-muted-foreground font-medium border"
-              >
-                {name}
-              </span>
-            ))}
+            {item.failed_subject_names.map((name, i) => {
+              const isAbsent = name.includes('(Absent)');
+              return (
+                <span
+                  key={i}
+                  className={cn(
+                    'text-[10px] px-1.5 py-0.5 rounded font-medium border inline-flex items-center gap-1',
+                    isAbsent
+                      ? 'bg-amber-500/15 text-amber-700 dark:text-amber-300 border-amber-500/30'
+                      : 'bg-rose-500/10 text-rose-700 dark:text-rose-400 border-rose-500/30'
+                  )}
+                >
+                  {isAbsent && <span className="w-1.5 h-1.5 rounded-full bg-amber-500 shrink-0" />}
+                  {name}
+                </span>
+              );
+            })}
           </div>
         </div>
       ),
@@ -736,6 +746,14 @@ export const SchoolResultsDashboardHub: React.FC = () => {
                                 <p className="text-sm font-bold text-foreground">{sub.average_score}</p>
                               </div>
                             </div>
+                            {sub.attendance_rate !== undefined && (
+                              <div className="flex items-center justify-between text-[11px] pt-2 border-t text-muted-foreground font-medium">
+                                <span>Exam Attendance:</span>
+                                <span className={cn('font-semibold', (sub.attendance_rate ?? 100) < 90 ? 'text-amber-600 dark:text-amber-400' : 'text-foreground')}>
+                                  {sub.attendance_rate}% {sub.absent_count ? `(${sub.absent_count} Absent)` : '(All Present)'}
+                                </span>
+                              </div>
+                            )}
                           </CardContent>
                         </Card>
                       );

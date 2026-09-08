@@ -72,9 +72,11 @@ export function exportSchoolResultsCsv(
     'Class Name',
     'Examination Name',
     'Students Evaluated',
+    'Attendance Rate (%)',
+    'Absent Count',
     'Passed Count',
     'Pass Rate (%)',
-    'Average Score',
+    'Attended Average Score',
     'Full Mark',
   ]);
   analytics.subject_summaries.forEach((s) => {
@@ -83,6 +85,8 @@ export function exportSchoolResultsCsv(
       s.class_name,
       s.exam_name,
       String(s.students_evaluated),
+      s.attendance_rate !== undefined ? `${s.attendance_rate}%` : '100%',
+      String(s.absent_count ?? 0),
       String(s.passed_count),
       `${s.pass_rate}%`,
       String(s.average_score),
