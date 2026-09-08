@@ -8,6 +8,7 @@ import type {
   ExamSubjectCreateDTO,
   StudentScoreItemDTO,
   TeacherExamSubjectAssignment,
+  SchoolResultsAnalyticsResponse,
 } from './types';
 
 export const examinationApi = {
@@ -71,5 +72,12 @@ export const examinationApi = {
     tenantId: string
   ): Promise<TeacherExamSubjectAssignment[]> => {
     return apiClient.get(`/academic/tenants/${tenantId}/teacher/my-exam-assignments`);
+  },
+
+  getResultsAnalytics: async (
+    tenantId: string,
+    params?: { class_id?: string; academic_term?: string }
+  ): Promise<SchoolResultsAnalyticsResponse> => {
+    return apiClient.get(`/academic/tenants/${tenantId}/exams/analytics`, { params });
   },
 };

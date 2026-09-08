@@ -12,6 +12,7 @@ import {
   Baby,
   Sparkles,
   AlertCircle,
+  GraduationCap,
 } from 'lucide-react';
 
 import { useAuth } from '@/auth/useAuth';
@@ -20,6 +21,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { Button } from '@/components/ui/button';
 import { DashboardHeroBanner } from '../components/DashboardHeroBanner';
 import { AttendanceDashboardHub } from '../components/AttendanceDashboardHub';
+import { SchoolResultsDashboardHub } from '../components/SchoolResultsDashboardHub';
 
 import { useAttendanceSummary } from '@/features/attendance/hooks';
 import { useAllClassesWithDetails, useMyTeacherAssignments } from '@/features/academic/hooks';
@@ -270,6 +272,37 @@ export const DashboardPage: React.FC = () => {
             </Card>
           )}
 
+          {/* Examinations & Academic Results */}
+          {(can('MANAGE_EXAMS') || can('ENTER_EXAM_SCORES')) && (
+            <Card className="group border-border/60 hover:border-primary/50 transition-all rounded-xl">
+              <CardHeader className="p-4 sm:p-5 pb-3">
+                <div className="flex items-center justify-between">
+                  <div className="p-2.5 bg-indigo-500/10 text-indigo-600 rounded-xl group-hover:scale-105 transition-transform">
+                    <GraduationCap className="h-5 w-5" />
+                  </div>
+                  <ArrowRight className="h-4 w-4 text-muted-foreground group-hover:text-primary group-hover:translate-x-1 transition-all" />
+                </div>
+                <CardTitle className="text-base font-semibold pt-2">
+                  Examinations & Results
+                </CardTitle>
+                <CardDescription className="text-xs">
+                  {isTeacher
+                    ? 'Enter and submit student scores for your assigned subjects'
+                    : 'Create term exams, configure pass marks, and review score matrices'}
+                </CardDescription>
+              </CardHeader>
+              <CardContent className="p-4 sm:p-5 pt-0">
+                <Button
+                  variant="outline"
+                  className="w-full text-xs font-semibold min-h-[44px] sm:min-h-9"
+                  asChild
+                >
+                  <Link to="/examination/exams">Open Examinations</Link>
+                </Button>
+              </CardContent>
+            </Card>
+          )}
+
           {/* Parent Linked Children */}
           {isParent && (
             <Card className="group border-border/60 hover:border-primary/50 transition-all rounded-xl">
@@ -358,6 +391,11 @@ export const DashboardPage: React.FC = () => {
           )}
         </div>
       </div>
+
+      {/* School Examination Results & Academic Performance Hub (Admin & Office Admin only) */}
+      {(can('MANAGE_EXAMS') || isSuperAdmin) && (
+        <SchoolResultsDashboardHub />
+      )}
 
       {/* Live Attendance Reporting Hub */}
       <AttendanceDashboardHub />

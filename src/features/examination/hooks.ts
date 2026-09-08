@@ -10,6 +10,7 @@ import type {
 export const EXAMS_QUERY_KEY = 'examination_exams';
 export const EXAM_REVIEW_QUERY_KEY = 'examination_exam_review';
 export const TEACHER_EXAM_ASSIGNMENTS_QUERY_KEY = 'teacher_exam_assignments';
+export const EXAM_ANALYTICS_QUERY_KEY = 'exam_results_analytics';
 
 export const useExams = (
   tenantId: string | null,
@@ -44,6 +45,19 @@ export const useTeacherExamAssignments = (
   });
 };
 
+export const useExamResultsAnalytics = (
+  tenantId: string | null,
+  params?: { class_id?: string; academic_term?: string },
+  options?: { enabled?: boolean }
+) => {
+  return useQuery({
+    queryKey: [EXAM_ANALYTICS_QUERY_KEY, tenantId, params?.class_id, params?.academic_term],
+    queryFn: () => examinationApi.getResultsAnalytics(tenantId!, params),
+    enabled: !!tenantId && (options?.enabled ?? true),
+    staleTime: 1000 * 30,
+  });
+};
+
 export const useCreateExam = () => {
   const queryClient = useQueryClient();
 
@@ -52,6 +66,7 @@ export const useCreateExam = () => {
       examinationApi.createExam(tenantId, data),
     onSuccess: (_data, { tenantId }) => {
       queryClient.invalidateQueries({ queryKey: [EXAMS_QUERY_KEY, tenantId] });
+      queryClient.invalidateQueries({ queryKey: [EXAM_ANALYTICS_QUERY_KEY, tenantId] });
       toast.success('Exam created successfully');
     },
     onError: (error: any) => {
@@ -78,6 +93,7 @@ export const useAddExamSubject = () => {
     onSuccess: (_data, { tenantId, examId }) => {
       queryClient.invalidateQueries({ queryKey: [EXAM_REVIEW_QUERY_KEY, tenantId, examId] });
       queryClient.invalidateQueries({ queryKey: [EXAMS_QUERY_KEY, tenantId] });
+      queryClient.invalidateQueries({ queryKey: [EXAM_ANALYTICS_QUERY_KEY, tenantId] });
       toast.success('Exam subject added successfully');
     },
     onError: (error: any) => {
@@ -105,6 +121,7 @@ export const useAssignExamTeacher = () => {
     }) => examinationApi.assignExamTeacher(tenantId, examId, subjectId, teacherId),
     onSuccess: (_data, { tenantId, examId }) => {
       queryClient.invalidateQueries({ queryKey: [EXAM_REVIEW_QUERY_KEY, tenantId, examId] });
+      queryClient.invalidateQueries({ queryKey: [EXAM_ANALYTICS_QUERY_KEY, tenantId] });
       toast.success('Teacher assigned successfully');
     },
     onError: (error: any) => {
@@ -131,6 +148,7 @@ export const useSaveExamScores = () => {
     onSuccess: (_data, { tenantId }) => {
       queryClient.invalidateQueries({ queryKey: [EXAM_REVIEW_QUERY_KEY, tenantId] });
       queryClient.invalidateQueries({ queryKey: [EXAMS_QUERY_KEY, tenantId] });
+      queryClient.invalidateQueries({ queryKey: [EXAM_ANALYTICS_QUERY_KEY, tenantId] });
       toast.success('Scores saved successfully');
     },
     onError: (error: any) => {
@@ -156,6 +174,7 @@ export const useSubmitExamSubject = () => {
       queryClient.invalidateQueries({ queryKey: [EXAM_REVIEW_QUERY_KEY, tenantId] });
       queryClient.invalidateQueries({ queryKey: [EXAMS_QUERY_KEY, tenantId] });
       queryClient.invalidateQueries({ queryKey: [TEACHER_EXAM_ASSIGNMENTS_QUERY_KEY, tenantId] });
+      queryClient.invalidateQueries({ queryKey: [EXAM_ANALYTICS_QUERY_KEY, tenantId] });
       toast.success('Exam subject submitted successfully');
     },
     onError: (error: any) => {
@@ -180,6 +199,7 @@ export const useApproveExam = () => {
     onSuccess: (_data, { tenantId, examId }) => {
       queryClient.invalidateQueries({ queryKey: [EXAM_REVIEW_QUERY_KEY, tenantId, examId] });
       queryClient.invalidateQueries({ queryKey: [EXAMS_QUERY_KEY, tenantId] });
+      queryClient.invalidateQueries({ queryKey: [EXAM_ANALYTICS_QUERY_KEY, tenantId] });
       toast.success('Exam approved successfully');
     },
     onError: (error: any) => {

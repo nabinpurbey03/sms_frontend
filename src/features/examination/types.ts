@@ -122,3 +122,92 @@ export interface TeacherExamSubjectAssignment {
   status: ExamSubjectStatus;
   submitted_at?: string | null;
 }
+
+// ==========================================
+// School Results & Examination Analytics Types
+// ==========================================
+
+export interface ExamPipelineStats {
+  total_exams: number;
+  draft_count: number;
+  in_progress_count: number;
+  pending_approval_count: number;
+  approved_count: number;
+}
+
+export interface AcademicKPIs {
+  total_students_evaluated: number;
+  total_passed: number;
+  total_failed: number;
+  school_pass_rate: number;
+  school_average_percentage: number;
+}
+
+export interface PendingApprovalAlertItem {
+  exam_id: string;
+  exam_name: string;
+  class_id: string;
+  class_name: string;
+  academic_term?: string | null;
+  subject_count: number;
+  student_count: number;
+  submitted_at?: string | null;
+}
+
+export interface ClassResultSummary {
+  exam_id: string;
+  exam_name: string;
+  class_id: string;
+  class_name: string;
+  academic_term?: string | null;
+  status: ExamStatus;
+  total_students: number;
+  passed_students: number;
+  failed_students: number;
+  pass_rate: number;
+  average_percentage: number;
+}
+
+export interface SubjectResultSummary {
+  subject_id: string;
+  subject_name: string;
+  class_name: string;
+  exam_name: string;
+  students_evaluated: number;
+  passed_count: number;
+  pass_rate: number;
+  average_score: number;
+  full_mark: number;
+}
+
+export interface AtRiskStudentItem {
+  student_id: string;
+  student_name: string;
+  class_name: string;
+  section_name?: string | null;
+  exam_name: string;
+  failed_subjects_count: number;
+  failed_subject_names: string[];
+  overall_percentage: number;
+}
+
+export interface TopAchieverItem {
+  student_id: string;
+  student_name: string;
+  class_name: string;
+  section_name?: string | null;
+  exam_name: string;
+  overall_percentage: number;
+  rank: number;
+}
+
+export interface SchoolResultsAnalyticsResponse {
+  pipeline: ExamPipelineStats;
+  kpis: AcademicKPIs;
+  pending_approvals: PendingApprovalAlertItem[];
+  class_summaries: ClassResultSummary[];
+  subject_summaries: SubjectResultSummary[];
+  at_risk_students: AtRiskStudentItem[];
+  top_achievers: TopAchieverItem[];
+}
+
