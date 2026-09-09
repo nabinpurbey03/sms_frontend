@@ -22,7 +22,13 @@ const printStyles = `
 @media print {
   @page {
     size: A4 portrait;
-    margin: 12mm;
+    margin: 10mm;
+  }
+  html, body {
+    height: 100%;
+    margin: 0;
+    padding: 0;
+    background: white;
   }
   body * {
     visibility: hidden !important;
@@ -36,13 +42,18 @@ const printStyles = `
     left: 0 !important;
     top: 0 !important;
     width: 100% !important;
+    height: 100% !important;
     box-shadow: none !important;
-    border-width: 2px !important;
-    border-color: #333 !important;
+    border: none !important;
     background: white !important;
     color: black !important;
     -webkit-print-color-adjust: exact !important;
     print-color-adjust: exact !important;
+    /* Try to fit entirely within one page */
+    page-break-inside: avoid;
+    display: flex;
+    flex-direction: column;
+    padding: 0;
   }
   .no-print {
     display: none !important;
@@ -207,17 +218,15 @@ export const OfficialReportCardDocument: React.FC<OfficialReportCardDocumentProp
         {/* DETAILED SUBJECT MARKS TABLE                              */}
         {/* ========================================================= */}
         <section className="overflow-x-auto rounded-xl border border-border/80 mb-6">
-          <table className="w-full text-xs sm:text-sm text-left border-collapse">
-            <thead className="bg-muted/60 text-[11px] sm:text-xs uppercase font-semibold text-muted-foreground border-b border-border/80">
+          <table className="w-full text-[10px] sm:text-xs text-left border-collapse">
+            <thead className="bg-muted/60 text-[9px] sm:text-[10px] uppercase font-semibold text-muted-foreground border-b border-border/80">
               <tr>
-                <th className="px-3 py-2.5 sm:px-4 text-left font-bold">Subject Name</th>
-                <th className="px-2 py-2.5 sm:px-3 text-center font-bold">Full Mark</th>
-                <th className="px-2 py-2.5 sm:px-3 text-center font-bold">Pass Mark</th>
-                <th className="px-3 py-2.5 sm:px-4 text-right font-bold">Marks Obtained</th>
-                <th className="px-2 py-2.5 sm:px-3 text-center font-bold">Letter Grade</th>
-                <th className="px-2 py-2.5 sm:px-3 text-center font-bold">Grade Point</th>
-                <th className="px-2 py-2.5 sm:px-3 text-center font-bold">Highest Score</th>
-                <th className="px-3 py-2.5 sm:px-4 text-left font-bold">Remarks</th>
+                <th className="px-2 py-1.5 sm:px-3 sm:py-2 text-left font-bold">Subject Name</th>
+                <th className="px-1.5 py-1.5 sm:px-2 sm:py-2 text-center font-bold">Full Mark</th>
+                <th className="px-1.5 py-1.5 sm:px-2 sm:py-2 text-center font-bold">Pass Mark</th>
+                <th className="px-2 py-1.5 sm:px-3 sm:py-2 text-right font-bold">Marks Obtained</th>
+                <th className="px-1.5 py-1.5 sm:px-2 sm:py-2 text-center font-bold">Grade</th>
+                <th className="px-2 py-1.5 sm:px-3 sm:py-2 text-left font-bold">Remarks</th>
               </tr>
             </thead>
             <tbody className="divide-y divide-border/60 bg-card">
@@ -233,18 +242,18 @@ export const OfficialReportCardDocument: React.FC<OfficialReportCardDocumentProp
                       index % 2 === 1 ? 'bg-muted/10' : ''
                     )}
                   >
-                    <td className="px-3 py-2.5 sm:px-4 font-semibold text-foreground">
+                    <td className="px-2 py-1.5 sm:px-3 sm:py-2 font-semibold text-foreground">
                       {sub.subject_name}
                     </td>
-                    <td className="px-2 py-2.5 sm:px-3 text-center font-mono text-muted-foreground">
+                    <td className="px-1.5 py-1.5 sm:px-2 sm:py-2 text-center font-mono text-muted-foreground">
                       {sub.full_mark}
                     </td>
-                    <td className="px-2 py-2.5 sm:px-3 text-center font-mono text-muted-foreground">
+                    <td className="px-1.5 py-1.5 sm:px-2 sm:py-2 text-center font-mono text-muted-foreground">
                       {sub.pass_mark}
                     </td>
-                    <td className="px-3 py-2.5 sm:px-4 text-right font-mono font-bold">
+                    <td className="px-2 py-1.5 sm:px-3 sm:py-2 text-right font-mono font-bold">
                       {isAbsent ? (
-                        <span className="inline-flex items-center px-2 py-0.5 rounded text-[10px] sm:text-xs font-bold bg-rose-500/15 text-rose-600 dark:text-rose-400 border border-rose-500/25">
+                        <span className="inline-flex items-center px-1.5 py-0.5 rounded text-[9px] sm:text-[10px] font-bold bg-rose-500/15 text-rose-600 dark:text-rose-400 border border-rose-500/25">
                           0.00 (AB)
                         </span>
                       ) : sub.score !== null && sub.score !== undefined ? (
@@ -261,10 +270,10 @@ export const OfficialReportCardDocument: React.FC<OfficialReportCardDocumentProp
                         '-'
                       )}
                     </td>
-                    <td className="px-2 py-2.5 sm:px-3 text-center">
+                    <td className="px-1.5 py-1.5 sm:px-2 sm:py-2 text-center">
                       <span
                         className={cn(
-                          'inline-block px-2 py-0.5 rounded text-[11px] font-black min-w-[28px]',
+                          'inline-block px-1.5 py-0.5 rounded text-[10px] font-black min-w-[24px]',
                           isAbsent || isFailing
                             ? 'bg-rose-500/15 text-rose-600 dark:text-rose-400'
                             : sub.grade.startsWith('A')
@@ -275,18 +284,7 @@ export const OfficialReportCardDocument: React.FC<OfficialReportCardDocumentProp
                         {sub.grade || '-'}
                       </span>
                     </td>
-                    <td className="px-2 py-2.5 sm:px-3 text-center font-mono font-medium text-foreground">
-                      {sub.grade_point !== null && sub.grade_point !== undefined
-                        ? Number(sub.grade_point).toFixed(2)
-                        : '-'}
-                    </td>
-                    <td className="px-2 py-2.5 sm:px-3 text-center font-mono text-muted-foreground">
-                      {sub.highest_class_score !== null &&
-                      sub.highest_class_score !== undefined
-                        ? Number(sub.highest_class_score).toFixed(2)
-                        : '-'}
-                    </td>
-                    <td className="px-3 py-2.5 sm:px-4 text-xs font-medium text-muted-foreground">
+                    <td className="px-2 py-1.5 sm:px-3 sm:py-2 text-[10px] font-medium text-muted-foreground truncate max-w-[120px]">
                       {sub.remarks ||
                         (isAbsent
                           ? 'Absent'
@@ -300,24 +298,23 @@ export const OfficialReportCardDocument: React.FC<OfficialReportCardDocumentProp
             </tbody>
             <tfoot className="bg-muted/50 border-t-2 border-border/80 font-bold text-foreground">
               <tr>
-                <td className="px-3 py-2.5 sm:px-4 text-left uppercase text-xs tracking-wider">
+                <td className="px-2 py-1.5 sm:px-3 sm:py-2 text-left uppercase text-[10px] sm:text-xs tracking-wider">
                   Grand Total
                 </td>
-                <td className="px-2 py-2.5 sm:px-3 text-center font-mono">
+                <td className="px-1.5 py-1.5 sm:px-2 sm:py-2 text-center font-mono">
                   {summary.total_full_mark}
                 </td>
-                <td className="px-2 py-2.5 sm:px-3 text-center text-muted-foreground font-normal">
+                <td className="px-1.5 py-1.5 sm:px-2 sm:py-2 text-center text-muted-foreground font-normal">
                   -
                 </td>
-                <td className="px-3 py-2.5 sm:px-4 text-right font-mono text-primary font-black">
+                <td className="px-2 py-1.5 sm:px-3 sm:py-2 text-right font-mono text-primary font-black">
                   {Number(summary.total_obtained).toFixed(2)}
                 </td>
                 <td
-                  colSpan={4}
-                  className="px-3 py-2.5 sm:px-4 text-right text-xs text-muted-foreground font-medium"
+                  colSpan={2}
+                  className="px-2 py-1.5 sm:px-3 sm:py-2 text-right text-[10px] sm:text-xs text-muted-foreground font-medium"
                 >
-                  Obtained {Number(summary.total_obtained).toFixed(2)} out of{' '}
-                  {summary.total_full_mark} marks
+                  Obtained {Number(summary.total_obtained).toFixed(2)} / {summary.total_full_mark}
                 </td>
               </tr>
             </tfoot>
