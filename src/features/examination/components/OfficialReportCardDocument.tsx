@@ -31,6 +31,13 @@ const printStyles = `
     color-adjust: exact !important;
   }
 
+  /* Ensure uniform white background across the entire page */
+  html, body {
+    background: white !important;
+    margin: 0 !important;
+    padding: 0 !important;
+  }
+
   /* Hide the action bar and any print:hidden elements */
   .print\\:hidden,
   [class*="print:hidden"] {
@@ -54,16 +61,17 @@ const printStyles = `
     width: 100% !important;
     max-width: none !important;
     margin: 0 !important;
-    padding: 3mm !important;
+    padding: 4mm !important;
     box-shadow: none !important;
     border-radius: 0 !important;
     border-width: 0 !important;
     background: white !important;
+    color: black !important;
 
-    /* Scale down to guarantee single-page fit */
-    transform: scale(0.82);
+    /* Gentle scale — sized for ~10 subjects */
+    transform: scale(0.94);
     transform-origin: top left;
-    width: 121.95% !important; /* 100% / 0.82 to fill page width after scaling */
+    width: 106.38% !important; /* 100% / 0.94 */
 
     page-break-inside: avoid;
     page-break-after: avoid;
@@ -71,20 +79,26 @@ const printStyles = `
     overflow: visible !important;
   }
 
+  /* Force all nested card/muted backgrounds to pure white in print */
+  #official-report-card-document .bg-card,
+  #official-report-card-document .bg-muted\\/30,
+  #official-report-card-document .bg-muted\\/20,
+  #official-report-card-document .bg-muted\\/40,
+  #official-report-card-document .bg-muted\\/50,
+  #official-report-card-document .bg-muted\\/60,
+  #official-report-card-document .bg-muted\\/10,
+  #official-report-card-document [class*="bg-muted"],
+  #official-report-card-document [class*="bg-card"],
+  #official-report-card-document [class*="bg-background"] {
+    background: white !important;
+  }
+
   /* Remove decorative corner borders in print */
   #official-report-card-document > .absolute {
     display: none !important;
   }
 
-  /* Compact spacing for single-page fit */
-  #official-report-card-document section {
-    margin-bottom: 2mm !important;
-  }
-
-  #official-report-card-document header {
-    margin-bottom: 1mm !important;
-  }
-
+  /* Compact header divider spacing */
   #official-report-card-document header .my-5,
   #official-report-card-document header .my-6,
   #official-report-card-document header [class*="my-"] {
@@ -92,32 +106,19 @@ const printStyles = `
     margin-bottom: 2mm !important;
   }
 
-  #official-report-card-document footer {
-    padding-top: 1mm !important;
-  }
-
-  /* Compact signatories section */
-  #official-report-card-document section:last-of-type {
-    padding-top: 3mm !important;
-    padding-bottom: 1mm !important;
-    margin-bottom: 2mm !important;
-    gap: 2mm !important;
-  }
-
-  /* Compact grading scale */
+  /* Compact grading scale bottom margin */
   #official-report-card-document .mb-8 {
+    margin-bottom: 4mm !important;
+  }
+
+  /* Compact section spacing */
+  #official-report-card-document .mb-6 {
     margin-bottom: 3mm !important;
   }
 
   /* Ensure table fits without horizontal scroll */
   #official-report-card-document table {
     width: 100% !important;
-    font-size: 9px !important;
-  }
-
-  /* Reduce summary card grid gap */
-  #official-report-card-document .grid {
-    gap: 1.5mm !important;
   }
 
   /* Suppress radix portal styling */
