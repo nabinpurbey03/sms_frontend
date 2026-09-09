@@ -12,7 +12,19 @@ export const OfficialReportCardViewPage: React.FC = () => {
   const { data: reportCard, isLoading, isError } = useStudentReportCard(tenantId, examId, studentId);
 
   const handlePrint = () => {
+    if (!reportCard) return;
+
+    const studentName = reportCard.student.name.trim().replace(/\s+/g, '_');
+    const examName = reportCard.exam.name.trim().replace(/\s+/g, '_');
+    const pdfTitle = `${studentName}_${examName}_Report_Card`;
+
+    const originalTitle = document.title;
+    document.title = pdfTitle;
     window.print();
+    // Restore after a tick — browsers read title asynchronously
+    setTimeout(() => {
+      document.title = originalTitle;
+    }, 1000);
   };
 
   if (isLoading) {

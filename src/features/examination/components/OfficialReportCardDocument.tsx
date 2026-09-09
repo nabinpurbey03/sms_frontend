@@ -22,14 +22,23 @@ const printStyles = `
 @media print {
   @page {
     size: A4 portrait;
-    margin: 10mm;
+    margin: 8mm;
   }
-  html, body {
-    height: 100%;
-    margin: 0;
-    padding: 0;
-    background: white;
+
+  /* Force the browser to print background colors and images */
+  * {
+    -webkit-print-color-adjust: exact !important;
+    print-color-adjust: exact !important;
+    color-adjust: exact !important;
   }
+
+  /* Hide the action bar and any print:hidden elements */
+  .print\\:hidden,
+  [class*="print:hidden"] {
+    display: none !important;
+  }
+
+  /* Hide everything outside the report card document */
   body * {
     visibility: hidden !important;
   }
@@ -37,27 +46,62 @@ const printStyles = `
   #official-report-card-document * {
     visibility: visible !important;
   }
+
+  /* The report card container */
   #official-report-card-document {
-    position: absolute !important;
-    left: 0 !important;
+    position: fixed !important;
     top: 0 !important;
+    left: 0 !important;
     width: 100% !important;
-    height: 100% !important;
+    max-width: none !important;
+    margin: 0 !important;
+    padding: 4mm !important;
     box-shadow: none !important;
-    border: none !important;
+    border-radius: 0 !important;
+    border-width: 0 !important;
     background: white !important;
-    color: black !important;
-    -webkit-print-color-adjust: exact !important;
-    print-color-adjust: exact !important;
-    /* Try to fit entirely within one page */
+
+    /* Scale down to guarantee single-page fit */
+    transform: scale(0.88);
+    transform-origin: top left;
+    width: 113.6% !important; /* 100% / 0.88 to fill page width after scaling */
+
     page-break-inside: avoid;
-    display: flex;
-    flex-direction: column;
-    padding: 0;
+    page-break-after: avoid;
+    page-break-before: avoid;
+    overflow: visible !important;
   }
-  .no-print {
+
+  /* Remove decorative corner borders in print */
+  #official-report-card-document > .absolute {
     display: none !important;
   }
+
+  /* Compact spacing for single-page fit */
+  #official-report-card-document section {
+    margin-bottom: 3mm !important;
+  }
+
+  #official-report-card-document header {
+    margin-bottom: 2mm !important;
+  }
+
+  #official-report-card-document footer {
+    padding-top: 2mm !important;
+  }
+
+  /* Ensure table fits without horizontal scroll */
+  #official-report-card-document table {
+    width: 100% !important;
+    font-size: 9px !important;
+  }
+
+  /* Slightly reduce summary card grid gap */
+  #official-report-card-document .grid {
+    gap: 1.5mm !important;
+  }
+
+  /* Suppress radix portal styling */
   [data-radix-portal],
   [role="dialog"] {
     position: static !important;
