@@ -28,6 +28,7 @@ import { CreateExamPage } from '@/features/examination/pages/CreateExamPage';
 import { ScoreEntryPage } from '@/features/examination/pages/ScoreEntryPage';
 import { ExamReviewPage } from '@/features/examination/pages/ExamReviewPage';
 import { ParentReportCardsPage } from '@/features/examination/pages/ParentReportCardsPage';
+import { OfficialReportCardViewPage } from '@/features/examination/pages/OfficialReportCardViewPage';
 import { ErrorState } from '@/components/common/ErrorState';
 import { Button } from '@/components/ui/button';
 import { Toaster } from '@/components/ui/sonner';
@@ -68,6 +69,13 @@ const protectedLayoutRoute = createRoute({
   getParentRoute: () => rootRoute,
   id: '_authenticated',
   component: ProtectedLayout,
+});
+
+// Official Report Card View Route (Standalone, not using ProtectedLayout so it's full screen)
+const officialReportCardViewRoute = createRoute({
+  getParentRoute: () => rootRoute,
+  path: '/report-card/$tenantId/$examId/$studentId',
+  component: OfficialReportCardViewPage,
 });
 
 // Dashboard Route
@@ -191,6 +199,7 @@ const routeTree = rootRoute.addChildren([
   indexRoute,
   loginRoute,
   registerRoute,
+  officialReportCardViewRoute,
   protectedLayoutRoute.addChildren([
     dashboardRoute,
     classesRoute,
