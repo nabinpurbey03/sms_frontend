@@ -5,7 +5,6 @@ import {
   GraduationCap,
   Award,
   Calendar,
-  Hash,
   User,
   BookOpen,
   Phone,
@@ -22,7 +21,7 @@ const printStyles = `
 @media print {
   @page {
     size: A4 portrait;
-    margin: 8mm;
+    margin: 5mm;
   }
 
   /* Force the browser to print background colors and images */
@@ -55,16 +54,16 @@ const printStyles = `
     width: 100% !important;
     max-width: none !important;
     margin: 0 !important;
-    padding: 4mm !important;
+    padding: 3mm !important;
     box-shadow: none !important;
     border-radius: 0 !important;
     border-width: 0 !important;
     background: white !important;
 
     /* Scale down to guarantee single-page fit */
-    transform: scale(0.88);
+    transform: scale(0.82);
     transform-origin: top left;
-    width: 113.6% !important; /* 100% / 0.88 to fill page width after scaling */
+    width: 121.95% !important; /* 100% / 0.82 to fill page width after scaling */
 
     page-break-inside: avoid;
     page-break-after: avoid;
@@ -79,15 +78,35 @@ const printStyles = `
 
   /* Compact spacing for single-page fit */
   #official-report-card-document section {
-    margin-bottom: 3mm !important;
+    margin-bottom: 2mm !important;
   }
 
   #official-report-card-document header {
+    margin-bottom: 1mm !important;
+  }
+
+  #official-report-card-document header .my-5,
+  #official-report-card-document header .my-6,
+  #official-report-card-document header [class*="my-"] {
+    margin-top: 2mm !important;
     margin-bottom: 2mm !important;
   }
 
   #official-report-card-document footer {
-    padding-top: 2mm !important;
+    padding-top: 1mm !important;
+  }
+
+  /* Compact signatories section */
+  #official-report-card-document section:last-of-type {
+    padding-top: 3mm !important;
+    padding-bottom: 1mm !important;
+    margin-bottom: 2mm !important;
+    gap: 2mm !important;
+  }
+
+  /* Compact grading scale */
+  #official-report-card-document .mb-8 {
+    margin-bottom: 3mm !important;
   }
 
   /* Ensure table fits without horizontal scroll */
@@ -96,7 +115,7 @@ const printStyles = `
     font-size: 9px !important;
   }
 
-  /* Slightly reduce summary card grid gap */
+  /* Reduce summary card grid gap */
   #official-report-card-document .grid {
     gap: 1.5mm !important;
   }
@@ -218,7 +237,7 @@ export const OfficialReportCardDocument: React.FC<OfficialReportCardDocumentProp
         {/* ========================================================= */}
         {/* STUDENT PROFILE BOX                                       */}
         {/* ========================================================= */}
-        <section className="grid grid-cols-2 md:grid-cols-4 gap-3 sm:gap-4 p-4 rounded-xl bg-muted/30 border border-border/80 text-xs sm:text-sm mb-6">
+        <section className="grid grid-cols-3 gap-3 sm:gap-4 p-4 rounded-xl bg-muted/30 border border-border/80 text-xs sm:text-sm mb-6">
           <div className="space-y-1">
             <span className="text-[11px] font-semibold text-muted-foreground uppercase tracking-wider flex items-center gap-1.5">
               <User className="h-3 w-3 text-primary" /> Student Name
@@ -235,16 +254,6 @@ export const OfficialReportCardDocument: React.FC<OfficialReportCardDocumentProp
             <p className="font-bold text-foreground leading-tight">
               {student.class_name}
               {student.section_name ? ` · Sec ${student.section_name}` : ''}
-            </p>
-          </div>
-
-          <div className="space-y-1">
-            <span className="text-[11px] font-semibold text-muted-foreground uppercase tracking-wider flex items-center gap-1.5">
-              <Hash className="h-3 w-3 text-primary" /> Roll / Student ID
-            </span>
-            <p className="font-mono font-bold text-foreground leading-tight">
-              {student.roll_number ||
-                (student.id ? student.id.slice(0, 8).toUpperCase() : 'N/A')}
             </p>
           </div>
 
