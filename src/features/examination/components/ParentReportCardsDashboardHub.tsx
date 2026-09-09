@@ -14,7 +14,6 @@ import { Card, CardContent, CardHeader } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { cn } from '@/lib/utils';
 import { useMyChildrenReportCards } from '../hooks';
-import { OfficialReportCardModal } from './OfficialReportCardModal';
 
 export const ParentReportCardsDashboardHub: React.FC = () => {
   const { activeTenantId } = useAuth();
@@ -24,15 +23,6 @@ export const ParentReportCardsDashboardHub: React.FC = () => {
   const totalPublishedExams = reportCardsData?.total_published_exams ?? 0;
 
   const [selectedStudentId, setSelectedStudentId] = useState<string | null>(null);
-  const [modalState, setModalState] = useState<{
-    isOpen: boolean;
-    examId: string | null;
-    studentId: string | null;
-  }>({
-    isOpen: false,
-    examId: null,
-    studentId: null,
-  });
 
   // Determine active child
   const activeChild = useMemo(() => {
@@ -259,13 +249,10 @@ export const ParentReportCardsDashboardHub: React.FC = () => {
                     variant="outline"
                     size="sm"
                     className="w-full text-xs font-semibold gap-1.5 mt-1 border-primary/30 text-primary hover:bg-primary/5 hover:border-primary"
-                    onClick={() =>
-                      setModalState({
-                        isOpen: true,
-                        examId: exam.exam_id,
-                        studentId: activeChild.student_id,
-                      })
-                    }
+                    onClick={() => {
+                      const url = `/report-card/${activeTenantId}/${exam.exam_id}/${activeChild.student_id}`;
+                      window.open(url, '_blank');
+                    }}
                   >
                     <Printer className="w-3.5 h-3.5 text-primary" />
                     <span>View Official Report Card</span>
@@ -276,15 +263,6 @@ export const ParentReportCardsDashboardHub: React.FC = () => {
           </div>
         )}
       </CardContent>
-
-      {/* Official Report Card Modal */}
-      <OfficialReportCardModal
-        isOpen={modalState.isOpen}
-        onClose={() => setModalState((prev) => ({ ...prev, isOpen: false }))}
-        tenantId={activeTenantId}
-        examId={modalState.examId}
-        studentId={modalState.studentId}
-      />
     </Card>
   );
 };

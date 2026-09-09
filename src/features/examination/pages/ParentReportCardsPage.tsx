@@ -20,7 +20,6 @@ import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { cn } from '@/lib/utils';
 import { useMyChildrenReportCards } from '../hooks';
-import { OfficialReportCardModal } from '../components/OfficialReportCardModal';
 
 export const ParentReportCardsPage: React.FC = () => {
   const { activeTenantId, activeTenantName } = useAuth();
@@ -47,16 +46,6 @@ export const ParentReportCardsPage: React.FC = () => {
 
   const [selectedStudentId, setSelectedStudentId] = useState<string | null>(searchStudentId);
   const [selectedTerm, setSelectedTerm] = useState<string>('ALL');
-
-  const [modalState, setModalState] = useState<{
-    isOpen: boolean;
-    examId: string | null;
-    studentId: string | null;
-  }>({
-    isOpen: false,
-    examId: null,
-    studentId: null,
-  });
 
   // Determine active child
   const activeChild = useMemo(() => {
@@ -397,13 +386,10 @@ export const ParentReportCardsPage: React.FC = () => {
                   variant="outline"
                   size="sm"
                   className="w-full text-xs font-semibold gap-1.5 mt-1 border-primary/30 text-primary hover:bg-primary/5 hover:border-primary cursor-pointer"
-                  onClick={() =>
-                    setModalState({
-                      isOpen: true,
-                      examId: exam.exam_id,
-                      studentId: activeChild!.student_id,
-                    })
-                  }
+                  onClick={() => {
+                    const url = `/report-card/${activeTenantId}/${exam.exam_id}/${activeChild!.student_id}`;
+                    window.open(url, '_blank');
+                  }}
                 >
                   <Printer className="w-3.5 h-3.5 text-primary" />
                   <span>View Official Report Card</span>
@@ -413,15 +399,6 @@ export const ParentReportCardsPage: React.FC = () => {
           ))}
         </div>
       )}
-
-      {/* Official Report Card Modal */}
-      <OfficialReportCardModal
-        isOpen={modalState.isOpen}
-        onClose={() => setModalState((prev) => ({ ...prev, isOpen: false }))}
-        tenantId={activeTenantId}
-        examId={modalState.examId}
-        studentId={modalState.studentId}
-      />
     </div>
   );
 };
