@@ -323,3 +323,20 @@ export interface ParentChildrenReportCardsResponse {
   total_published_exams: number;
 }
 
+export interface BatchReportCardItem {
+  student_id: string;
+  student_name: string;
+  file_url: string;
+  file_name: string;
+  generated_at: string;
+}
+
+export interface BatchReportCardsResponse {
+  exam_id: string;
+  exam_name: string;
+  class_id: string;
+  class_name: string;
+  total_students: number;
+  report_cards: BatchReportCardItem[];
+}
+

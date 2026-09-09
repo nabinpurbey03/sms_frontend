@@ -8,6 +8,7 @@ import {
   Loader2,
   Calendar,
   GraduationCap,
+  FileText,
 } from 'lucide-react';
 import { useAuth } from '@/auth/useAuth';
 import { usePermission } from '@/auth/usePermission';
@@ -15,6 +16,7 @@ import {
   useExamReview,
   useApproveExam,
   useSaveExamScores,
+  useBatchGenerateReportCards,
 } from '@/features/examination/hooks';
 import type { ExamStatus } from '@/features/examination/types';
 import { Button } from '@/components/ui/button';
@@ -98,6 +100,7 @@ export const ExamReviewPage: React.FC = () => {
 
   const approveExamMutation = useApproveExam();
   const saveScoresMutation = useSaveExamScores();
+  const batchGenerateMutation = useBatchGenerateReportCards();
 
   // Confirmation Dialog State
   const [isConfirmOpen, setIsConfirmOpen] = useState<boolean>(false);
@@ -224,6 +227,15 @@ export const ExamReviewPage: React.FC = () => {
     }
   };
 
+  // Action: Batch Generate Report Cards (Once Approved)
+  const handleBatchGenerate = async () => {
+    if (!activeTenantId || !review.exam.id) return;
+    await batchGenerateMutation.mutateAsync({
+      tenantId: activeTenantId,
+      examId: review.exam.id,
+    });
+  };
+
   return (
     <div className="space-y-6 max-w-7xl mx-auto pb-16">
       {/* Top Header & Navigation */}
@@ -259,13 +271,33 @@ export const ExamReviewPage: React.FC = () => {
         {/* Approval Status & CTA */}
         <div className="flex items-center gap-3 md:self-end">
           {isApproved ? (
-            <Badge
-              variant="success"
-              className="gap-2 py-2 px-4 text-xs font-semibold shadow-xs"
-            >
-              <CheckCircle2 className="w-4 h-4 text-emerald-600 dark:text-emerald-400" />
-              Exam Approved & Published
-            </Badge>
+            <div className="flex flex-wrap items-center gap-2.5">
+              <Badge
+                variant="success"
+                className="gap-2 py-2 px-3.5 text-xs font-semibold shadow-xs"
+              >
+                <CheckCircle2 className="w-4 h-4 text-emerald-600 dark:text-emerald-400" />
+                Exam Approved & Published
+              </Badge>
+              <Button
+                type="button"
+                onClick={handleBatchGenerate}
+                disabled={batchGenerateMutation.isPending}
+                className="bg-primary hover:bg-primary/90 text-primary-foreground font-semibold gap-2 shadow-xs cursor-pointer"
+              >
+                {batchGenerateMutation.isPending ? (
+                  <>
+                    <Loader2 className="w-4 h-4 animate-spin" />
+                    Generating Report Cards...
+                  </>
+                ) : (
+                  <>
+                    <FileText className="w-4 h-4" />
+                    Generate Class Report Cards
+                  </>
+                )}
+              </Button>
+            </div>
           ) : canApprove ? (
             <Button
               type="button"

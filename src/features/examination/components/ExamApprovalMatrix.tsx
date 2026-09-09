@@ -14,7 +14,9 @@ import {
   Users,
   Award,
   Filter,
+  FileText,
 } from 'lucide-react';
+import { useAuth } from '@/auth/useAuth';
 import { cn } from '@/lib/utils';
 
 export interface ExamApprovalMatrixProps {
@@ -40,6 +42,7 @@ export const ExamApprovalMatrix: React.FC<ExamApprovalMatrixProps> = ({
   canEdit,
   onSaveScore,
 }) => {
+  const { activeTenantId } = useAuth();
   const [searchQuery, setSearchQuery] = useState<string>('');
   const [selectedSection, setSelectedSection] = useState<string>('ALL');
 
@@ -239,6 +242,14 @@ export const ExamApprovalMatrix: React.FC<ExamApprovalMatrixProps> = ({
                 >
                   Result
                 </th>
+                {!canEdit && (
+                  <th
+                    scope="col"
+                    className="min-w-[100px] px-3 py-3 text-center text-xs font-semibold uppercase tracking-wider border-l border-border"
+                  >
+                    Report Card
+                  </th>
+                )}
               </tr>
             </thead>
             <tbody className="divide-y divide-border">
@@ -347,6 +358,25 @@ export const ExamApprovalMatrix: React.FC<ExamApprovalMatrixProps> = ({
                         </Badge>
                       )}
                     </td>
+
+                    {/* Report Card Preview Action (When Approved) */}
+                    {!canEdit && (
+                      <td className="px-3 py-2 text-center border-l border-border">
+                        <Button
+                          type="button"
+                          size="sm"
+                          variant="ghost"
+                          className="h-7 text-xs px-2 gap-1 text-primary hover:bg-primary/10 cursor-pointer"
+                          onClick={() => {
+                            const url = `/report-card/${activeTenantId}/${review.exam.id}/${st.student_id}`;
+                            window.open(url, '_blank');
+                          }}
+                        >
+                          <FileText className="w-3.5 h-3.5" />
+                          <span>Preview</span>
+                        </Button>
+                      </td>
+                    )}
                   </tr>
                 );
               })}

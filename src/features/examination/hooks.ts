@@ -238,3 +238,88 @@ export const useApproveExam = () => {
     },
   });
 };
+
+export const useDownloadReportCard = () => {
+  return useMutation({
+    mutationFn: async ({
+      tenantId,
+      examId,
+      studentId,
+      studentName,
+      examName,
+    }: {
+      tenantId: string;
+      examId: string;
+      studentId: string;
+      studentName?: string;
+      examName?: string;
+    }) => {
+      const blob = await examinationApi.downloadStudentReportCardPdf(
+        tenantId,
+        examId,
+        studentId
+      );
+
+      const sName = (studentName || 'Student').trim().replace(/\s+/g, '_');
+      const eName = (examName || 'Exam').trim().replace(/\s+/g, '_');
+      const filename = `${sName}_${eName}_Report_Card.pdf`;
+
+      const url = window.URL.createObjectURL(blob);
+      const link = document.createElement('a');
+      link.href = url;
+      link.download = filename;
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+      window.URL.revokeObjectURL(url);
+
+      return { filename };
+    },
+    onSuccess: ({ filename }) => {
+      toast.success('Report Card Downloaded', {
+        description: `Successfully downloaded ${filename}`,
+      });
+    },
+    onError: async (error: any) => {
+      let description = error.message || 'Could not download report card.';
+      if (error.response?.data instanceof Blob) {
+        try {
+          const text = await error.response.data.text();
+          const json = JSON.parse(text);
+          if (json.message) {
+            description = json.message;
+          }
+        } catch {}
+      }
+      toast.error('Failed to download report card', {
+        description,
+      });
+    },
+  });
+};
+
+export const useBatchGenerateReportCards = () => {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: async ({
+      tenantId,
+      examId,
+    }: {
+      tenantId: string;
+      examId: string;
+    }) => examinationApi.batchGenerateReportCards(tenantId, examId),
+    onSuccess: (data, { tenantId, examId }) => {
+      queryClient.invalidateQueries({ queryKey: [EXAM_REVIEW_QUERY_KEY, tenantId, examId] });
+      queryClient.invalidateQueries({ queryKey: [EXAMS_QUERY_KEY, tenantId] });
+      toast.success('Report Cards Generated', {
+        description: `Successfully generated ${data.total_students} report cards for ${data.class_name}.`,
+      });
+    },
+    onError: (error: any) => {
+      toast.error('Failed to generate report cards', {
+        description: error.message || 'Could not batch generate report cards.',
+      });
+    },
+  });
+};

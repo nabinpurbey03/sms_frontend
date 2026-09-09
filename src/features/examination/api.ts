@@ -11,6 +11,7 @@ import type {
   SchoolResultsAnalyticsResponse,
   ParentChildrenReportCardsResponse,
   OfficialReportCardDTO,
+  BatchReportCardsResponse,
 } from './types';
 
 export const examinationApi = {
@@ -96,6 +97,31 @@ export const examinationApi = {
   ): Promise<OfficialReportCardDTO> => {
     return apiClient.get(
       `/academic/tenants/${tenantId}/exams/${examId}/report-cards/${studentId}`
+    );
+  },
+
+  downloadStudentReportCardPdf: async (
+    tenantId: string,
+    examId: string,
+    studentId: string
+  ): Promise<Blob> => {
+    return apiClient.get(
+      `/academic/tenants/${tenantId}/exams/${examId}/students/${studentId}/report-card`,
+      {
+        responseType: 'blob',
+        headers: {
+          Accept: 'application/pdf',
+        },
+      }
+    );
+  },
+
+  batchGenerateReportCards: async (
+    tenantId: string,
+    examId: string
+  ): Promise<BatchReportCardsResponse> => {
+    return apiClient.post(
+      `/academic/tenants/${tenantId}/exams/${examId}/report-cards/generate`
     );
   },
 };

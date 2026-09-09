@@ -1,30 +1,30 @@
-import React, { useRef } from 'react';
+import React from 'react';
 import { useParams, Link } from '@tanstack/react-router';
-import { ArrowLeft, Printer, Loader2, AlertCircle } from 'lucide-react';
+import { ArrowLeft, Download, Loader2, AlertCircle, Eye } from 'lucide-react';
 import { Button } from '@/components/ui/button';
+import { Badge } from '@/components/ui/badge';
 import { OfficialReportCardDocument } from '../components/OfficialReportCardDocument';
-import { useStudentReportCard } from '../hooks';
+import { useStudentReportCard, useDownloadReportCard } from '../hooks';
 
 export const OfficialReportCardViewPage: React.FC = () => {
   const { tenantId, examId, studentId } = useParams({ strict: false }) as any;
-  const printRef = useRef<HTMLDivElement>(null);
 
   const { data: reportCard, isLoading, isError } = useStudentReportCard(tenantId, examId, studentId);
+  const downloadMutation = useDownloadReportCard();
 
-  const handlePrint = () => {
-    if (!reportCard) return;
+  // The download action is gated to approved exams (published_at indicates official approval)
+  const isApproved = !!reportCard?.exam?.published_at;
 
-    const studentName = reportCard.student.name.trim().replace(/\s+/g, '_');
-    const examName = reportCard.exam.name.trim().replace(/\s+/g, '_');
-    const pdfTitle = `${studentName}_${examName}_Report_Card`;
+  const handleDownload = () => {
+    if (!reportCard || !tenantId || !examId || !studentId) return;
 
-    const originalTitle = document.title;
-    document.title = pdfTitle;
-    window.print();
-    // Restore after a tick — browsers read title asynchronously
-    setTimeout(() => {
-      document.title = originalTitle;
-    }, 1000);
+    downloadMutation.mutate({
+      tenantId,
+      examId,
+      studentId,
+      studentName: reportCard.student.name,
+      examName: reportCard.exam.name,
+    });
   };
 
   if (isLoading) {
@@ -51,28 +51,45 @@ export const OfficialReportCardViewPage: React.FC = () => {
 
   return (
     <div className="min-h-screen bg-muted/20 flex flex-col">
-      {/* Top action bar - Hidden during print */}
-      <div className="sticky top-0 z-50 bg-background/80 backdrop-blur-sm border-b border-border/40 p-4 print:hidden flex justify-between items-center shadow-sm">
+      {/* Top action bar */}
+      <div className="sticky top-0 z-50 bg-background/80 backdrop-blur-sm border-b border-border/40 p-4 flex justify-between items-center shadow-sm">
         <Button variant="ghost" size="sm" asChild className="gap-2">
           <Link to="..">
             <ArrowLeft className="w-4 h-4" />
             Back to Dashboard
           </Link>
         </Button>
-        <div className="flex gap-3">
-          <Button onClick={handlePrint} className="gap-2 cursor-pointer">
-            <Printer className="w-4 h-4" />
-            Print / Save PDF
+
+        <div className="flex items-center gap-3">
+          <Badge variant="outline" className="text-xs font-semibold gap-1 text-muted-foreground hidden sm:inline-flex">
+            <Eye className="w-3.5 h-3.5" />
+            Live Preview
+          </Badge>
+
+          <Button
+            onClick={handleDownload}
+            disabled={downloadMutation.isPending || !isApproved}
+            className="gap-2 cursor-pointer"
+          >
+            {downloadMutation.isPending ? (
+              <>
+                <Loader2 className="w-4 h-4 animate-spin" />
+                <span>Generating PDF...</span>
+              </>
+            ) : (
+              <>
+                <Download className="w-4 h-4" />
+                <span>Download Report Card</span>
+              </>
+            )}
           </Button>
         </div>
       </div>
 
-      {/* Report Card Document Container */}
-      <div className="flex-1 p-4 md:p-8 flex justify-center overflow-auto print:p-0 print:block">
-        <div ref={printRef} className="w-full max-w-4xl bg-white shadow-xl ring-1 ring-black/5 print:shadow-none print:ring-0 print:w-full print:max-w-none">
-          <OfficialReportCardDocument
-            reportCard={reportCard}
-          />
+      {/* Report Card Live Preview Document Container */}
+      <div className="flex-1 p-4 md:p-8 flex justify-center overflow-auto">
+        <div className="w-full max-w-4xl bg-white shadow-xl ring-1 ring-black/5 rounded-2xl">
+          <OfficialReportCardDocument reportCard={reportCard} />
         </div>
       </div>
     </div>

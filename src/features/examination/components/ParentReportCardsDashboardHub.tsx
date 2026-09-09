@@ -4,7 +4,7 @@ import {
   Award,
   CheckCircle2,
   AlertCircle,
-  Printer,
+  FileText,
   ArrowRight,
   CalendarCheck,
 } from 'lucide-react';
@@ -254,7 +254,7 @@ export const ParentReportCardsDashboardHub: React.FC = () => {
                       window.open(url, '_blank');
                     }}
                   >
-                    <Printer className="w-3.5 h-3.5 text-primary" />
+                    <FileText className="w-3.5 h-3.5 text-primary" />
                     <span>View Official Report Card</span>
                   </Button>
                 </CardContent>
