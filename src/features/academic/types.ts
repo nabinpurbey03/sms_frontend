@@ -100,3 +100,73 @@ export interface AssignTeacherDTO {
   section_id?: string;
 }
 
+
+// ==========================================
+// Parent-Teacher Link Interfaces
+// ==========================================
+export interface TeacherContactInfo {
+  teacher_id: string;
+  name: string;
+  phone?: string | null;
+  email?: string | null;
+}
+
+export interface SubjectTeacherContactInfo {
+  subject_id: string;
+  subject_name: string;
+  subject_code?: string | null;
+  teacher_id?: string | null;
+  name?: string | null;
+  phone?: string | null;
+  email?: string | null;
+}
+
+export interface ChildTeachersResponse {
+  student_id: string;
+  student_name: string;
+  class_id: string;
+  class_name: string;
+  section_id?: string | null;
+  section_name?: string | null;
+  relationship_type: string;
+  class_teacher?: TeacherContactInfo | null;
+  subject_teachers: SubjectTeacherContactInfo[];
+}
+
+export interface StudentParentContactInfo {
+  parent_id: string;
+  name: string;
+  relationship_type: string;
+  phone?: string | null;
+  email?: string | null;
+  is_primary_contact: boolean;
+}
+
+export interface TeacherStudentParentItem {
+  student_id: string;
+  student_name: string;
+  class_id: string;
+  class_name: string;
+  section_id?: string | null;
+  section_name?: string | null;
+  status: string;
+  is_class_teacher_for_student: boolean;
+  subjects_taught: string[];
+  parent?: StudentParentContactInfo | null;
+}
+
+export interface TeacherAssignedClassOption {
+  class_id: string;
+  class_name: string;
+  section_id?: string | null;
+  section_name?: string | null;
+  is_class_teacher: boolean;
+  subjects: string[];
+}
+
+export interface TeacherStudentsParentsResponse {
+  assigned_classes: TeacherAssignedClassOption[];
+  students: TeacherStudentParentItem[];
+  total_students: number;
+  total_linked_parents: number;
+}

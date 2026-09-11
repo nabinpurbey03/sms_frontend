@@ -567,3 +567,36 @@ export const useDeleteAssignment = () => {
   });
 };
 
+
+// ==========================================
+// Parent-Teacher Link Hooks
+// ==========================================
+export const MY_CHILDREN_TEACHERS_KEY = 'my_children_teachers';
+export const TEACHER_STUDENTS_PARENTS_KEY = 'teacher_students_parents';
+
+export const useMyChildrenTeachers = (tenantId: string | null) => {
+  return useQuery({
+    queryKey: [MY_CHILDREN_TEACHERS_KEY, tenantId],
+    queryFn: () => academicApi.getMyChildrenTeachers(tenantId!),
+    enabled: !!tenantId,
+    staleTime: 1000 * 60 * 2,
+  });
+};
+
+export const useTeacherStudentsAndParents = (
+  tenantId: string | null,
+  params?: { class_id?: string; section_id?: string; search?: string }
+) => {
+  return useQuery({
+    queryKey: [
+      TEACHER_STUDENTS_PARENTS_KEY,
+      tenantId,
+      params?.class_id,
+      params?.section_id,
+      params?.search,
+    ],
+    queryFn: () => academicApi.getTeacherStudentsAndParents(tenantId!, params),
+    enabled: !!tenantId,
+    staleTime: 1000 * 30,
+  });
+};

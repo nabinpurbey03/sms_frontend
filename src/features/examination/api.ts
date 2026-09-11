@@ -79,7 +79,7 @@ export const examinationApi = {
 
   getResultsAnalytics: async (
     tenantId: string,
-    params?: { class_id?: string; academic_term?: string }
+    params?: { class_id?: string }
   ): Promise<SchoolResultsAnalyticsResponse> => {
     return apiClient.get(`/academic/tenants/${tenantId}/exams/analytics`, { params });
   },
@@ -122,6 +122,21 @@ export const examinationApi = {
   ): Promise<BatchReportCardsResponse> => {
     return apiClient.post(
       `/academic/tenants/${tenantId}/exams/${examId}/report-cards/generate`
+    );
+  },
+
+  downloadAllClassReportCardsPdf: async (
+    tenantId: string,
+    examId: string
+  ): Promise<Blob> => {
+    return apiClient.get(
+      `/academic/tenants/${tenantId}/exams/${examId}/class-report-cards/download`,
+      {
+        responseType: 'blob',
+        headers: {
+          Accept: 'application/pdf',
+        },
+      }
     );
   },
 };

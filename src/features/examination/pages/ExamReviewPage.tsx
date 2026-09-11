@@ -9,6 +9,7 @@ import {
   Calendar,
   GraduationCap,
   FileText,
+  Download,
 } from 'lucide-react';
 import { useAuth } from '@/auth/useAuth';
 import { usePermission } from '@/auth/usePermission';
@@ -17,6 +18,7 @@ import {
   useApproveExam,
   useSaveExamScores,
   useBatchGenerateReportCards,
+  useDownloadAllClassReportCardsPdf,
 } from '@/features/examination/hooks';
 import type { ExamStatus } from '@/features/examination/types';
 import { Button } from '@/components/ui/button';
@@ -101,6 +103,7 @@ export const ExamReviewPage: React.FC = () => {
   const approveExamMutation = useApproveExam();
   const saveScoresMutation = useSaveExamScores();
   const batchGenerateMutation = useBatchGenerateReportCards();
+  const downloadAllMutation = useDownloadAllClassReportCardsPdf();
 
   // Confirmation Dialog State
   const [isConfirmOpen, setIsConfirmOpen] = useState<boolean>(false);
@@ -294,6 +297,33 @@ export const ExamReviewPage: React.FC = () => {
                   <>
                     <FileText className="w-4 h-4" />
                     Generate Class Report Cards
+                  </>
+                )}
+              </Button>
+              <Button
+                type="button"
+                onClick={() => {
+                  if (activeTenantId && review) {
+                    downloadAllMutation.mutate({
+                      tenantId: activeTenantId,
+                      examId: review.exam.id,
+                      examName: review.exam.name,
+                    });
+                  }
+                }}
+                disabled={downloadAllMutation.isPending}
+                variant="outline"
+                className="font-semibold gap-2 cursor-pointer"
+              >
+                {downloadAllMutation.isPending ? (
+                  <>
+                    <Loader2 className="w-4 h-4 animate-spin" />
+                    Downloading...
+                  </>
+                ) : (
+                  <>
+                    <Download className="w-4 h-4" />
+                    Download Class PDF
                   </>
                 )}
               </Button>

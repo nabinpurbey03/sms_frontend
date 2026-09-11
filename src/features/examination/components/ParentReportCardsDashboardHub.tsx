@@ -104,9 +104,9 @@ export const ParentReportCardsDashboardHub: React.FC = () => {
           </Link>
         </div>
 
-        {/* Child Switcher Tabs/Pills if multiple children */}
+        {/* Child Switcher Tabs/Pills if multiple children - wraps naturally, zero horizontal scroll */}
         {children.length > 1 && (
-          <div className="flex items-center gap-2 overflow-x-auto pt-3 pb-1 scrollbar-none">
+          <div className="flex flex-wrap items-center gap-2 pt-3">
             {children.map((child) => {
               const isSelected = child.student_id === activeChild?.student_id;
               return (

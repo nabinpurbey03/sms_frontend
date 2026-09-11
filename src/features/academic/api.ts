@@ -12,6 +12,8 @@ import type {
   TeacherAssignment,
   AssignTeacherDTO,
   ClassWithDetails,
+  ChildTeachersResponse,
+  TeacherStudentsParentsResponse,
 } from './types';
 
 export const academicApi = {
@@ -259,6 +261,25 @@ export const academicApi = {
       `/academic/tenants/${tenantId}/assignments/${assignmentId}`
     );
     return true;
+  },
+
+  // ==========================================
+  // Parent-Teacher Link
+  // ==========================================
+  getMyChildrenTeachers: async (
+    tenantId: string
+  ): Promise<ChildTeachersResponse[]> => {
+    return apiClient.get(`/academic/tenants/${tenantId}/parents/my-teachers`);
+  },
+
+  getTeacherStudentsAndParents: async (
+    tenantId: string,
+    params?: { class_id?: string; section_id?: string; search?: string }
+  ): Promise<TeacherStudentsParentsResponse> => {
+    return apiClient.get(
+      `/academic/tenants/${tenantId}/teachers/my-students-parents`,
+      { params }
+    );
   },
 };
 

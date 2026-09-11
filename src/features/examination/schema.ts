@@ -51,7 +51,7 @@ export const examSubjectConfigSchema = z
 
 export const examCreateSchema = z.object({
   name: z.string().trim().min(2, 'Exam name must be at least 2 characters').max(100, 'Exam name is too long'),
-  class_id: z.string().min(1, 'Class selection is required'),
+  class_ids: z.array(z.string()).min(1, 'Select at least one class'),
   academic_term: z.string().trim().max(50).optional().or(z.literal('')),
   start_date: z.string().optional().or(z.literal('')),
   end_date: z.string().optional().or(z.literal('')),

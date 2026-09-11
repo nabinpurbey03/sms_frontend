@@ -512,7 +512,7 @@ export const ScoreEntryPage: React.FC = () => {
 
       {/* Section Filter Tabs */}
       {sections.length > 0 && (
-        <div className="flex items-center gap-2 overflow-x-auto pb-1 pt-1">
+        <div className="flex flex-wrap items-center gap-2 pb-1 pt-1">
           <span className="text-xs font-semibold text-muted-foreground uppercase tracking-wider mr-1 shrink-0">
             Sections:
           </span>

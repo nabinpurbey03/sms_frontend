@@ -16,7 +16,7 @@ export function exportSchoolResultsCsv(
   rows.push(['School Name', schoolName]);
   rows.push(['Generated On', todayStr]);
   if (filters?.term) {
-    rows.push(['Term Filter', filters.term]);
+    rows.push(['Exam Filter', filters.term]);
   }
   if (filters?.className) {
     rows.push(['Class Filter', filters.className]);

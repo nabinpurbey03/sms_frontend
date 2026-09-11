@@ -20,6 +20,8 @@ import { ClassDetailPage } from '@/features/academic/pages/ClassDetailPage';
 import { StudentsPage } from '@/features/academic/pages/StudentsPage';
 import { SubjectsPage } from '@/features/academic/pages/SubjectsPage';
 import { TeacherAssignmentsPage } from '@/features/academic/pages/TeacherAssignmentsPage';
+import { MyTeachersPage } from '@/features/academic/pages/MyTeachersPage';
+import { TeacherParentDirectoryPage } from '@/features/academic/pages/TeacherParentDirectoryPage';
 import { MarkAttendancePage } from '@/features/attendance/pages/MarkAttendancePage';
 import { MyAssignmentsPage } from '@/features/attendance/pages/MyAssignmentsPage';
 import { AttendanceReportsPage } from '@/features/attendance/pages/AttendanceReportsPage';
@@ -125,7 +127,19 @@ const myAssignmentsRoute = createRoute({
 const parentLinksRoute = createRoute({
   getParentRoute: () => protectedLayoutRoute,
   path: '/academic/parent-links',
-  component: () => <PlaceholderPage title="Parent-Student Mappings (ReBAC)" />,
+  component: TeacherParentDirectoryPage,
+});
+
+const parentDirectoryRoute = createRoute({
+  getParentRoute: () => protectedLayoutRoute,
+  path: '/academic/parent-directory',
+  component: TeacherParentDirectoryPage,
+});
+
+const myTeachersRoute = createRoute({
+  getParentRoute: () => protectedLayoutRoute,
+  path: '/academic/my-teachers',
+  component: MyTeachersPage,
 });
 
 const myChildrenRoute = createRoute({
@@ -209,6 +223,8 @@ const routeTree = rootRoute.addChildren([
     assignmentsRoute,
     myAssignmentsRoute,
     parentLinksRoute,
+    parentDirectoryRoute,
+    myTeachersRoute,
     myChildrenRoute,
     reportCardsRoute,
     attendanceMarkRoute,

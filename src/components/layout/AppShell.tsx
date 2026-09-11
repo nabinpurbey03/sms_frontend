@@ -138,10 +138,22 @@ export const AppShell: React.FC = () => {
       show: isTeacher,
     },
     {
+      label: 'Student & Parent Directory',
+      href: '/academic/parent-directory',
+      icon: Users,
+      show: isTeacher,
+    },
+    {
       label: 'Parent-Student Links',
       href: '/academic/parent-links',
       icon: HeartHandshake,
       show: can('LINK_PARENTS'),
+    },
+    {
+      label: "My Children's Teacher",
+      href: '/academic/my-teachers',
+      icon: GraduationCap,
+      show: isParent,
     },
     {
       label: 'My Children',

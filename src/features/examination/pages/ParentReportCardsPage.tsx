@@ -9,6 +9,7 @@ import {
   School,
   Baby,
   Filter,
+  GraduationCap,
 } from 'lucide-react';
 
 import { useAuth } from '@/auth/useAuth';
@@ -97,28 +98,40 @@ export const ParentReportCardsPage: React.FC = () => {
   return (
     <div className="space-y-6">
       {/* Page Header */}
-      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 border-b border-border/60 pb-5">
         <div>
-          <div className="flex items-center gap-2 flex-wrap">
-            <h1 className="text-xl sm:text-2xl font-bold tracking-tight text-foreground flex items-center gap-2">
-              <Award className="w-5 h-5 text-amber-500" />
-              Official Academic Report Cards
-            </h1>
-            <span className="text-xs font-semibold px-2.5 py-0.5 rounded-full bg-primary/10 text-primary border border-primary/20 flex items-center gap-1.5">
-              <School className="w-3.5 h-3.5" />
-              {activeTenantName || 'Current School'}
-            </span>
+          <div className="flex items-center gap-2.5">
+            <div className="w-9 h-9 rounded-lg bg-amber-500/10 text-amber-600 dark:text-amber-400 flex items-center justify-center shrink-0">
+              <Award className="w-5 h-5" />
+            </div>
+            <div>
+              <div className="flex items-center gap-2 flex-wrap">
+                <h1 className="text-2xl font-bold tracking-tight text-foreground">
+                  Official Academic Report Cards
+                </h1>
+                <span className="text-xs font-semibold px-2.5 py-0.5 rounded-full bg-primary/10 text-primary border border-primary/20 flex items-center gap-1.5">
+                  <School className="w-3.5 h-3.5" />
+                  {activeTenantName || 'Current School'}
+                </span>
+              </div>
+              <p className="text-sm text-muted-foreground mt-0.5">
+                Official examination transcripts approved and published by school administration.
+              </p>
+            </div>
           </div>
-          <p className="text-xs text-muted-foreground mt-1">
-            Official examination transcripts approved and published by school administration.
-          </p>
         </div>
 
-        <div className="flex items-center gap-2 self-start sm:self-auto">
-          <Button variant="outline" size="sm" asChild className="text-xs font-medium">
+        <div className="flex items-center gap-2 self-start sm:self-auto shrink-0">
+          <Button variant="outline" size="sm" asChild className="text-xs font-medium gap-1.5">
             <Link to="/academic/my-children">
-              <Baby className="w-3.5 h-3.5 mr-1.5 text-primary" />
-              My Children
+              <Baby className="w-3.5 h-3.5 text-primary" />
+              <span>My Children</span>
+            </Link>
+          </Button>
+          <Button variant="outline" size="sm" asChild className="text-xs font-medium gap-1.5">
+            <Link to="/academic/my-teachers">
+              <GraduationCap className="w-3.5 h-3.5 text-emerald-600" />
+              <span>Class Teacher</span>
             </Link>
           </Button>
         </div>
@@ -159,9 +172,13 @@ export const ParentReportCardsPage: React.FC = () => {
         />
       )}
 
-      {/* Children Switcher Tabs (if multiple children) */}
+      {/* Children Switcher Pills (if multiple children) - wraps naturally, zero horizontal scroll */}
       {!isLoading && !isError && children.length > 1 && (
-        <div className="flex items-center gap-2 overflow-x-auto pb-1 scrollbar-none border-b border-border/60">
+        <div className="flex flex-wrap items-center gap-2 p-3 bg-muted/40 rounded-xl border border-border/50">
+          <span className="text-xs font-semibold text-muted-foreground flex items-center gap-1 shrink-0 mr-1">
+            <Baby className="w-3.5 h-3.5 text-primary" />
+            Select student:
+          </span>
           {children.map((child) => {
             const isSelected = child.student_id === activeChild?.student_id;
             return (
@@ -173,30 +190,34 @@ export const ParentReportCardsPage: React.FC = () => {
                   setSelectedTerm('ALL');
                 }}
                 className={cn(
-                  'px-4 py-2 text-xs font-semibold rounded-t-lg transition-all flex items-center gap-2 shrink-0 border-b-2 cursor-pointer',
+                  'inline-flex items-center gap-2 px-3.5 py-1.5 rounded-lg text-xs font-semibold border transition-all cursor-pointer shadow-2xs',
                   isSelected
-                    ? 'border-primary text-primary bg-primary/5'
-                    : 'border-transparent text-muted-foreground hover:text-foreground hover:bg-muted/40'
+                    ? 'bg-primary text-primary-foreground border-primary shadow-xs ring-1 ring-primary/30'
+                    : 'bg-background hover:bg-muted text-foreground border-border/60 hover:border-primary/40'
                 )}
               >
+                <span
+                  className={cn(
+                    'w-2 h-2 rounded-full',
+                    isSelected ? 'bg-primary-foreground' : 'bg-primary'
+                  )}
+                />
                 <span>{child.student_name}</span>
                 <span
                   className={cn(
-                    'px-1.5 py-0.5 rounded text-[10px]',
-                    isSelected
-                      ? 'bg-primary/15 text-primary'
-                      : 'bg-muted text-muted-foreground'
+                    'text-[11px] font-normal',
+                    isSelected ? 'text-primary-foreground/80' : 'text-muted-foreground'
                   )}
                 >
-                  {child.class_name}
+                  ({child.class_name}{child.section_name ? ` · Sec ${child.section_name}` : ''})
                 </span>
                 {child.exams.length > 0 && (
                   <span
                     className={cn(
-                      'w-4 h-4 rounded-full text-[10px] flex items-center justify-center font-bold',
+                      'px-1.5 py-0.5 rounded-full text-[10px] font-bold',
                       isSelected
                         ? 'bg-amber-400 text-amber-950'
-                        : 'bg-amber-500/20 text-amber-700 dark:text-amber-300'
+                        : 'bg-amber-500/15 text-amber-700 dark:text-amber-300'
                     )}
                   >
                     {child.exams.length}

@@ -420,7 +420,11 @@ export const OfficialReportCardDocument: React.FC<OfficialReportCardDocumentProp
               Class Rank
             </div>
             <div className="text-xs sm:text-sm font-bold text-foreground mt-0.5">
-              {summary.rank_in_class || 'N/A'}
+              {summary.rank_in_class
+                ? summary.rank_in_class.includes('/')
+                  ? summary.rank_in_class.split('/')[0].trim()
+                  : summary.rank_in_class
+                : 'N/A'}
             </div>
           </div>
 

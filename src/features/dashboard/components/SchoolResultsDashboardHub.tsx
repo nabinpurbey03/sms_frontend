@@ -40,7 +40,7 @@ export const SchoolResultsDashboardHub: React.FC = () => {
 
   // Filters state
   const [selectedClassId, setSelectedClassId] = useState<string>('');
-  const [selectedTerm, setSelectedTerm] = useState<string>('');
+  const [selectedExamName, setSelectedExamName] = useState<string>('');
   const [activeTab, setActiveTab] = useState<ActiveTabOption>('classes');
   const [searchQuery, setSearchQuery] = useState<string>('');
 
@@ -53,21 +53,20 @@ export const SchoolResultsDashboardHub: React.FC = () => {
     refetch,
   } = useExamResultsAnalytics(activeTenantId, {
     class_id: selectedClassId || undefined,
-    academic_term: selectedTerm || undefined,
   });
 
   const classSummaries = analytics?.class_summaries;
   const subjectSummaries = analytics?.subject_summaries;
   const atRiskStudents = analytics?.at_risk_students;
 
-  // Extract distinct academic terms from class summaries for filter dropdown
-  const availableTerms = useMemo(() => {
+  // Extract distinct exam names from class summaries for filter dropdown
+  const availableExams = useMemo(() => {
     if (!classSummaries) return [];
-    const terms = new Set<string>();
+    const exams = new Set<string>();
     classSummaries.forEach((c) => {
-      if (c.academic_term) terms.add(c.academic_term);
+      if (c.exam_name) exams.add(c.exam_name);
     });
-    return Array.from(terms);
+    return Array.from(exams);
   }, [classSummaries]);
 
   // Handle CSV Export
@@ -75,7 +74,7 @@ export const SchoolResultsDashboardHub: React.FC = () => {
     if (!analytics) return;
     const selectedClassName = classes.find((c) => c.id === selectedClassId)?.name;
     exportSchoolResultsCsv(analytics, activeTenantName || 'School', {
-      term: selectedTerm || undefined,
+      term: selectedExamName || undefined,
       className: selectedClassName,
     });
   };
@@ -83,42 +82,60 @@ export const SchoolResultsDashboardHub: React.FC = () => {
   // Filtered Class Summaries by search
   const filteredClassSummaries = useMemo(() => {
     if (!classSummaries) return [];
-    if (!searchQuery.trim()) return classSummaries;
-    const q = searchQuery.toLowerCase();
-    return classSummaries.filter(
-      (c) =>
-        c.class_name.toLowerCase().includes(q) ||
-        c.exam_name.toLowerCase().includes(q) ||
-        (c.academic_term && c.academic_term.toLowerCase().includes(q))
-    );
-  }, [classSummaries, searchQuery]);
+    let result = classSummaries;
+    if (selectedExamName) {
+      result = result.filter(c => c.exam_name === selectedExamName);
+    }
+    if (searchQuery.trim()) {
+      const q = searchQuery.toLowerCase();
+      result = result.filter(
+        (c) =>
+          c.class_name.toLowerCase().includes(q) ||
+          c.exam_name.toLowerCase().includes(q) ||
+          (c.academic_term && c.academic_term.toLowerCase().includes(q))
+      );
+    }
+    return result;
+  }, [classSummaries, searchQuery, selectedExamName]);
 
   // Filtered Subjects by search
   const filteredSubjectSummaries = useMemo(() => {
     if (!subjectSummaries) return [];
-    if (!searchQuery.trim()) return subjectSummaries;
-    const q = searchQuery.toLowerCase();
-    return subjectSummaries.filter(
-      (s) =>
-        s.subject_name.toLowerCase().includes(q) ||
-        s.class_name.toLowerCase().includes(q) ||
-        s.exam_name.toLowerCase().includes(q)
-    );
-  }, [subjectSummaries, searchQuery]);
+    let result = subjectSummaries;
+    if (selectedExamName) {
+      result = result.filter(s => s.exam_name === selectedExamName);
+    }
+    if (searchQuery.trim()) {
+      const q = searchQuery.toLowerCase();
+      result = result.filter(
+        (s) =>
+          s.subject_name.toLowerCase().includes(q) ||
+          s.class_name.toLowerCase().includes(q) ||
+          s.exam_name.toLowerCase().includes(q)
+      );
+    }
+    return result;
+  }, [subjectSummaries, searchQuery, selectedExamName]);
 
   // Filtered At-Risk Students by search
   const filteredAtRiskStudents = useMemo(() => {
     if (!atRiskStudents) return [];
-    if (!searchQuery.trim()) return atRiskStudents;
-    const q = searchQuery.toLowerCase();
-    return atRiskStudents.filter(
-      (s) =>
-        s.student_name.toLowerCase().includes(q) ||
-        s.class_name.toLowerCase().includes(q) ||
-        (s.section_name && s.section_name.toLowerCase().includes(q)) ||
-        s.failed_subject_names.some((fn) => fn.toLowerCase().includes(q))
-    );
-  }, [atRiskStudents, searchQuery]);
+    let result = atRiskStudents;
+    if (selectedExamName) {
+      result = result.filter(s => s.exam_name === selectedExamName);
+    }
+    if (searchQuery.trim()) {
+      const q = searchQuery.toLowerCase();
+      result = result.filter(
+        (s) =>
+          s.student_name.toLowerCase().includes(q) ||
+          s.class_name.toLowerCase().includes(q) ||
+          (s.section_name && s.section_name.toLowerCase().includes(q)) ||
+          s.failed_subject_names.some((fn) => fn.toLowerCase().includes(q))
+      );
+    }
+    return result;
+  }, [atRiskStudents, searchQuery, selectedExamName]);
 
   // Table Columns for Class Performance
   const classColumns: Column<ClassResultSummary>[] = [
@@ -377,20 +394,20 @@ export const SchoolResultsDashboardHub: React.FC = () => {
             </select>
           </div>
 
-          {/* Academic Term Filter */}
+          {/* Exam Name Filter */}
           <div className="space-y-1">
             <label className="text-[11px] font-semibold text-muted-foreground uppercase">
-              Filter by Term
+              Filter by Exam
             </label>
             <select
-              value={selectedTerm}
-              onChange={(e) => setSelectedTerm(e.target.value)}
+              value={selectedExamName}
+              onChange={(e) => setSelectedExamName(e.target.value)}
               className="w-full h-9 px-3 rounded-lg border border-input bg-background text-xs focus:outline-none focus:ring-2 focus:ring-primary"
             >
-              <option value="">All Academic Terms</option>
-              {availableTerms.map((term) => (
-                <option key={term} value={term}>
-                  {term}
+              <option value="">All Exams</option>
+              {availableExams.map((exam) => (
+                <option key={exam} value={exam}>
+                  {exam}
                 </option>
               ))}
             </select>

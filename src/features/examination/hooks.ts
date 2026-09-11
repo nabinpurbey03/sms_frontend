@@ -49,11 +49,11 @@ export const useTeacherExamAssignments = (
 
 export const useExamResultsAnalytics = (
   tenantId: string | null,
-  params?: { class_id?: string; academic_term?: string },
+  params?: { class_id?: string },
   options?: { enabled?: boolean }
 ) => {
   return useQuery({
-    queryKey: [EXAM_ANALYTICS_QUERY_KEY, tenantId, params?.class_id, params?.academic_term],
+    queryKey: [EXAM_ANALYTICS_QUERY_KEY, tenantId, params?.class_id],
     queryFn: () => examinationApi.getResultsAnalytics(tenantId!, params),
     enabled: !!tenantId && (options?.enabled ?? true),
     staleTime: 1000 * 30,
@@ -319,6 +319,56 @@ export const useBatchGenerateReportCards = () => {
     onError: (error: any) => {
       toast.error('Failed to generate report cards', {
         description: error.message || 'Could not batch generate report cards.',
+      });
+    },
+  });
+};
+
+export const useDownloadAllClassReportCardsPdf = () => {
+  return useMutation({
+    mutationFn: async ({
+      tenantId,
+      examId,
+      examName,
+    }: {
+      tenantId: string;
+      examId: string;
+      examName?: string;
+    }) => {
+      const blob = await examinationApi.downloadAllClassReportCardsPdf(tenantId, examId);
+      
+      const eName = (examName || 'Exam').trim().replace(/\s+/g, '_');
+      const filename = `${eName}_All_Report_Cards.pdf`;
+
+      const url = window.URL.createObjectURL(blob);
+      const link = document.createElement('a');
+      link.href = url;
+      link.download = filename;
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+      window.URL.revokeObjectURL(url);
+
+      return { filename };
+    },
+    onSuccess: ({ filename }) => {
+      toast.success('Class Report Cards Downloaded', {
+        description: `Successfully downloaded ${filename}`,
+      });
+    },
+    onError: async (error: any) => {
+      let description = error.message || 'Could not download class report cards.';
+      if (error.response?.data instanceof Blob) {
+        try {
+          const text = await error.response.data.text();
+          const json = JSON.parse(text);
+          if (json.message) {
+            description = json.message;
+          }
+        } catch {}
+      }
+      toast.error('Failed to download report cards', {
+        description,
       });
     },
   });

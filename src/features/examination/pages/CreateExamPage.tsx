@@ -12,8 +12,7 @@ import {
 import { useAuth } from '@/auth/useAuth';
 import { usePermission } from '@/auth/usePermission';
 import {
-  useClasses,
-  useClassSubjects,
+  useAllClassesWithDetails,
   useAssignments,
 } from '@/features/academic/hooks';
 import { useMembers } from '@/features/members/hooks';
@@ -31,6 +30,13 @@ import {
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
+import { Checkbox } from '@/components/ui/checkbox';
+import {
+  Accordion,
+  AccordionItem,
+  AccordionTrigger,
+  AccordionContent,
+} from '@/components/ui/accordion';
 import { TenantRequiredState } from '@/components/common/TenantRequiredState';
 import {
   ExamSubjectConfigList,
@@ -43,30 +49,28 @@ export const CreateExamPage: React.FC = () => {
   const { can } = usePermission();
 
   // Form states
-  const [selectedClassId, setSelectedClassId] = useState<string>('');
+  const [selectedClassIds, setSelectedClassIds] = useState<string[]>([]);
   const [examName, setExamName] = useState<string>('');
   const [academicTerm, setAcademicTerm] = useState<string>('');
   const [startDate, setStartDate] = useState<string>('');
   const [endDate, setEndDate] = useState<string>('');
   const [isSubmitting, setIsSubmitting] = useState<boolean>(false);
 
-  // Track user overrides for subject configuration
+  // Track user overrides for subject configuration: Record<classId, Record<subjectId, Partial<SubjectConfigItem>>>
   const [overrides, setOverrides] = useState<
-    Record<string, Partial<SubjectConfigItem>>
+    Record<string, Record<string, Partial<SubjectConfigItem>>>
   >({});
 
   // Data Queries
-  const { data: classes = [], isLoading: classesLoading } =
-    useClasses(activeTenantId);
-  const { data: subjects = [], isLoading: subjectsLoading } = useClassSubjects(
+  const { data: detailedClasses = [], isLoading: classesLoading } =
+    useAllClassesWithDetails(activeTenantId);
+  const { data: classAssignments = [], isLoading: assignmentsLoading } = useAssignments(
     activeTenantId,
-    selectedClassId || null
-  );
-  const { data: classAssignments = [] } = useAssignments(
-    selectedClassId ? activeTenantId : null,
-    selectedClassId ? { class_id: selectedClassId } : undefined
+    undefined // fetch all assignments for tenant
   );
   const { data: teachersData = [] } = useMembers(activeTenantId, 'TEACHER');
+
+  const classes = detailedClasses;
 
   // Mutations
   const createExamMutation = useCreateExam();
@@ -83,13 +87,13 @@ export const CreateExamPage: React.FC = () => {
     [teachersData]
   );
 
-  // Map assigned subject teachers by subject_id from academic module
+  // Map assigned subject teachers by classId_subjectId from academic module
   const subjectTeacherMap = useMemo(() => {
     const map = new Map<string, { teacherId: string; teacherName: string }>();
     if (!classAssignments || classAssignments.length === 0) return map;
 
     for (const assignment of classAssignments) {
-      if (!assignment.is_class_teacher && assignment.subject_id && assignment.teacher_id) {
+      if (!assignment.is_class_teacher && assignment.class_id && assignment.subject_id && assignment.teacher_id) {
         let teacherName = assignment.teacher_name;
         if (!teacherName) {
           const t = teachersData.find((teacher) => teacher.user_id === assignment.teacher_id);
@@ -97,7 +101,7 @@ export const CreateExamPage: React.FC = () => {
             teacherName = `${t.first_name} ${t.last_name}`.trim();
           }
         }
-        map.set(assignment.subject_id, {
+        map.set(`${assignment.class_id}_${assignment.subject_id}`, {
           teacherId: assignment.teacher_id,
           teacherName: teacherName || 'Assigned Subject Teacher',
         });
@@ -106,70 +110,87 @@ export const CreateExamPage: React.FC = () => {
     return map;
   }, [classAssignments, teachersData]);
 
-  // Handle class selection change
-  const handleClassChange = (classId: string) => {
-    setSelectedClassId(classId);
-    setOverrides({});
+  // Handle class selection toggle
+  const toggleClassSelection = (classId: string) => {
+    setSelectedClassIds((prev) => {
+      if (prev.includes(classId)) {
+        return prev.filter((id) => id !== classId);
+      }
+      return [...prev, classId];
+    });
   };
 
   // Derive subjectConfigs from loaded subjects, academic subject teachers, and user overrides
-  const subjectConfigs = useMemo<SubjectConfigItem[]>(() => {
-    if (!selectedClassId || !subjects) return [];
+  const classSubjectConfigs = useMemo(() => {
+    const configsMap: Record<string, SubjectConfigItem[]> = {};
+    
+    for (const classId of selectedClassIds) {
+      const cls = classes.find(c => c.id === classId);
+      if (!cls || !cls.subjects) {
+        configsMap[classId] = [];
+        continue;
+      }
 
-    return subjects.map((s) => {
-      const override = overrides[s.id];
-      const autoTeacher = subjectTeacherMap.get(s.id);
+      configsMap[classId] = cls.subjects.map((s) => {
+        const override = overrides[classId]?.[s.id];
+        const autoTeacher = subjectTeacherMap.get(`${classId}_${s.id}`);
 
-      const fullMark =
-        override?.fullMark !== undefined ? override.fullMark : 100;
-      const passMark =
-        override?.passMark !== undefined ? override.passMark : 40;
-      const included =
-        override?.included !== undefined ? override.included : true;
+        const fullMark =
+          override?.fullMark !== undefined ? override.fullMark : 100;
+        const passMark =
+          override?.passMark !== undefined ? override.passMark : 40;
+        const included =
+          override?.included !== undefined ? override.included : true;
 
-      // Auto-assign from Subject Teacher, allowing explicit Admin override
-      const assignedTeacherId =
-        override?.assignedTeacherId !== undefined
-          ? override.assignedTeacherId
-          : autoTeacher?.teacherId || '';
+        const assignedTeacherId =
+          override?.assignedTeacherId !== undefined
+            ? override.assignedTeacherId
+            : autoTeacher?.teacherId || '';
 
-      const autoAssignedTeacherId = autoTeacher?.teacherId || null;
-      const autoAssignedTeacherName = autoTeacher?.teacherName || null;
+        const autoAssignedTeacherId = autoTeacher?.teacherId || null;
+        const autoAssignedTeacherName = autoTeacher?.teacherName || null;
 
-      const error =
-        override?.error !== undefined
-          ? override.error
-          : included && passMark > fullMark
-            ? 'Pass mark cannot exceed full mark'
-            : undefined;
+        const error =
+          override?.error !== undefined
+            ? override.error
+            : included && passMark > fullMark
+              ? 'Pass mark cannot exceed full mark'
+              : undefined;
 
+        return {
+          subjectId: s.id,
+          subjectName: s.name,
+          subjectCode: s.code,
+          included,
+          fullMark,
+          passMark,
+          assignedTeacherId,
+          autoAssignedTeacherId,
+          autoAssignedTeacherName,
+          error,
+        };
+      });
+    }
+    return configsMap;
+  }, [selectedClassIds, classes, overrides, subjectTeacherMap]);
+
+  const handleSubjectConfigsChange = (classId: string, configs: SubjectConfigItem[]) => {
+    setOverrides((prev) => {
+      const classOverrides: Record<string, Partial<SubjectConfigItem>> = {};
+      for (const c of configs) {
+        classOverrides[c.subjectId] = {
+          included: c.included,
+          fullMark: c.fullMark,
+          passMark: c.passMark,
+          assignedTeacherId: c.assignedTeacherId,
+          error: c.error,
+        };
+      }
       return {
-        subjectId: s.id,
-        subjectName: s.name,
-        subjectCode: s.code,
-        included,
-        fullMark,
-        passMark,
-        assignedTeacherId,
-        autoAssignedTeacherId,
-        autoAssignedTeacherName,
-        error,
+        ...prev,
+        [classId]: classOverrides,
       };
     });
-  }, [selectedClassId, subjects, overrides, subjectTeacherMap]);
-
-  const handleSubjectConfigsChange = (configs: SubjectConfigItem[]) => {
-    const newOverrides: Record<string, Partial<SubjectConfigItem>> = {};
-    for (const c of configs) {
-      newOverrides[c.subjectId] = {
-        included: c.included,
-        fullMark: c.fullMark,
-        passMark: c.passMark,
-        assignedTeacherId: c.assignedTeacherId,
-        error: c.error,
-      };
-    }
-    setOverrides(newOverrides);
   };
 
   // Submission handler
@@ -183,9 +204,9 @@ export const CreateExamPage: React.FC = () => {
       return;
     }
 
-    if (!selectedClassId) {
+    if (selectedClassIds.length === 0) {
       toast.error('Validation Error', {
-        description: 'Please select a class for the examination.',
+        description: 'Please select at least one class for the examination.',
       });
       return;
     }
@@ -198,27 +219,6 @@ export const CreateExamPage: React.FC = () => {
       return;
     }
 
-    // 1. Validate that at least one subject is included
-    const includedSubjects = subjectConfigs.filter((s) => s.included);
-    if (includedSubjects.length === 0) {
-      toast.error('Validation Error', {
-        description: 'At least one subject must be included in the examination.',
-      });
-      return;
-    }
-
-    // 2. Validate that no included subject has passMark > fullMark
-    const hasInvalidMarks = includedSubjects.some(
-      (s) => s.passMark > s.fullMark || s.fullMark < 1 || s.passMark < 0
-    );
-    if (hasInvalidMarks) {
-      toast.error('Validation Error', {
-        description:
-          'Pass mark cannot exceed full mark, and full mark must be at least 1.',
-      });
-      return;
-    }
-
     if (startDate && endDate && endDate < startDate) {
       toast.error('Validation Error', {
         description: 'End date cannot be earlier than start date.',
@@ -226,45 +226,71 @@ export const CreateExamPage: React.FC = () => {
       return;
     }
 
-    // 3. Set isSubmitting = true
+    // Pre-validate subjects for all selected classes
+    for (const classId of selectedClassIds) {
+      const classConfigs = classSubjectConfigs[classId] || [];
+      const included = classConfigs.filter((s) => s.included);
+      
+      if (included.length === 0) {
+        toast.error('Validation Error', {
+          description: `At least one subject must be included for each selected class.`,
+        });
+        return;
+      }
+      
+      const hasInvalidMarks = included.some(
+        (s) => s.passMark > s.fullMark || s.fullMark < 1 || s.passMark < 0
+      );
+      if (hasInvalidMarks) {
+        toast.error('Validation Error', {
+          description: 'Pass mark cannot exceed full mark, and full mark must be at least 1.',
+        });
+        return;
+      }
+    }
+
     setIsSubmitting(true);
 
     try {
-      // 4. Create the exam
-      const createdExam = await createExamMutation.mutateAsync({
-        tenantId: activeTenantId,
-        data: {
-          name: trimmedName,
-          class_id: selectedClassId,
-          academic_term: academicTerm.trim() || undefined,
-          start_date: startDate || undefined,
-          end_date: endDate || undefined,
-        },
-      });
-
-      // 5. For each included subject (with auto-assigned or overridden teacher):
-      for (const item of includedSubjects) {
-        await addExamSubjectMutation.mutateAsync({
+      // Loop over all selected classes and create an exam for each
+      for (const classId of selectedClassIds) {
+        const createdExam = await createExamMutation.mutateAsync({
           tenantId: activeTenantId,
-          examId: createdExam.id,
           data: {
-            subject_id: item.subjectId,
-            full_mark: item.fullMark,
-            pass_mark: item.passMark,
-            teacher_id: item.assignedTeacherId || undefined,
-          },
+            name: trimmedName,
+            class_ids: [classId], // Frontend sends array per schema, backend actually takes class_id, let's fix backend payload to pass class_id
+            class_id: classId,
+            academic_term: academicTerm.trim() || undefined,
+            start_date: startDate || undefined,
+            end_date: endDate || undefined,
+          } as any, // Cast to any to handle schema misalignment if necessary
         });
+
+        const classConfigs = classSubjectConfigs[classId] || [];
+        const includedSubjects = classConfigs.filter((s) => s.included);
+
+        for (const item of includedSubjects) {
+          await addExamSubjectMutation.mutateAsync({
+            tenantId: activeTenantId,
+            examId: createdExam.id,
+            data: {
+              subject_id: item.subjectId,
+              full_mark: item.fullMark,
+              pass_mark: item.passMark,
+              teacher_id: item.assignedTeacherId || undefined,
+            },
+          });
+        }
       }
 
-      // 6. Toast via Sonner
-      toast.success('Examination created successfully', {
-        description: `${trimmedName} created with ${includedSubjects.length} subject(s).`,
+      toast.success('Examinations created successfully', {
+        description: `${trimmedName} created for ${selectedClassIds.length} class(es).`,
       });
 
-      // 7. Navigate to /examination/exams
       navigate({ to: '/examination/exams' as any });
     } catch (err: any) {
-      console.error('Failed to create examination:', err);
+      console.error('Failed to create examinations:', err);
+      toast.error('Failed to create some examinations. Please check the logs.');
     } finally {
       setIsSubmitting(false);
     }
@@ -339,24 +365,32 @@ export const CreateExamPage: React.FC = () => {
         <CardContent className="space-y-4">
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             {/* Class Selector */}
-            <div className="space-y-1.5">
-              <Label htmlFor="exam-class" className="text-sm font-semibold">
-                Target Class <span className="text-destructive">*</span>
+            <div className="space-y-1.5 md:col-span-2">
+              <Label className="text-sm font-semibold">
+                Target Classes <span className="text-destructive">*</span>
               </Label>
-              <select
-                id="exam-class"
-                value={selectedClassId}
-                onChange={(e) => handleClassChange(e.target.value)}
-                disabled={isSubmitting || classesLoading}
-                className="w-full h-10 px-3 rounded-lg border border-input bg-background text-sm focus:outline-none focus:ring-2 focus:ring-primary disabled:cursor-not-allowed disabled:opacity-50"
-              >
-                <option value="">-- Select Class --</option>
-                {classes.map((cls) => (
-                  <option key={cls.id} value={cls.id}>
-                    {cls.name}
-                  </option>
-                ))}
-              </select>
+              {classesLoading ? (
+                <div className="flex items-center gap-2 text-sm text-muted-foreground p-3">
+                  <Loader2 className="w-4 h-4 animate-spin" /> Loading classes...
+                </div>
+              ) : classes.length === 0 ? (
+                <div className="text-sm text-muted-foreground p-3 border rounded-lg bg-muted/10">
+                  No classes available.
+                </div>
+              ) : (
+                <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-3 mt-1 border rounded-lg p-3 bg-muted/10 max-h-[160px] overflow-y-auto">
+                  {classes.map((cls) => (
+                    <label key={cls.id} className="flex items-center gap-2 cursor-pointer hover:bg-muted/50 p-1.5 rounded-md transition-colors">
+                      <Checkbox
+                        checked={selectedClassIds.includes(cls.id)}
+                        onCheckedChange={() => toggleClassSelection(cls.id)}
+                        disabled={isSubmitting}
+                      />
+                      <span className="text-sm font-medium truncate">{cls.name}</span>
+                    </label>
+                  ))}
+                </div>
+              )}
             </div>
 
             {/* Exam Name */}
@@ -431,46 +465,53 @@ export const CreateExamPage: React.FC = () => {
           </CardDescription>
         </CardHeader>
         <CardContent>
-          {!selectedClassId ? (
+          {selectedClassIds.length === 0 ? (
             <div className="flex flex-col items-center justify-center p-8 text-center border rounded-xl bg-muted/20 border-dashed">
               <BookOpen className="w-8 h-8 text-muted-foreground/60 mb-2" />
               <p className="text-sm font-medium text-foreground">
-                No Class Selected
+                No Classes Selected
               </p>
               <p className="text-xs text-muted-foreground mt-0.5">
-                Select a class above to configure subject marks and teacher
+                Select one or more classes above to configure subject marks and teacher
                 assignments.
               </p>
             </div>
-          ) : subjectsLoading ? (
-            <div className="flex items-center justify-center p-8">
-              <Loader2 className="w-6 h-6 animate-spin text-primary" />
-              <span className="text-sm text-muted-foreground ml-2">
-                Loading class curriculum subjects...
-              </span>
-            </div>
-          ) : subjects.length === 0 ? (
-            <div className="flex flex-col items-center justify-center p-8 text-center border rounded-xl bg-muted/20 border-dashed space-y-3">
-              <BookOpen className="w-8 h-8 text-muted-foreground/60" />
-              <div className="space-y-1">
-                <p className="text-sm font-semibold text-foreground">
-                  No subjects found for this class.
-                </p>
-                <p className="text-xs text-muted-foreground">
-                  Add subjects in Academic &gt; Subjects first.
-                </p>
-              </div>
-              <Button variant="outline" size="sm" asChild>
-                <Link to="/academic/subjects">Go to Subjects</Link>
-              </Button>
-            </div>
           ) : (
-            <ExamSubjectConfigList
-              configs={subjectConfigs}
-              teachers={teacherList}
-              onChange={handleSubjectConfigsChange}
-              disabled={isSubmitting}
-            />
+            <Accordion type="multiple" defaultValue={selectedClassIds} className="w-full space-y-3">
+              {selectedClassIds.map((classId) => {
+                const cls = classes.find((c) => c.id === classId);
+                const classConfigs = classSubjectConfigs[classId] || [];
+                if (!cls) return null;
+
+                return (
+                  <AccordionItem key={classId} value={classId} className="border rounded-lg bg-card/60 px-4">
+                    <AccordionTrigger className="hover:no-underline py-4">
+                      <div className="flex items-center gap-2">
+                        <GraduationCap className="w-4 h-4 text-muted-foreground" />
+                        <span className="font-semibold">{cls.name} Subjects</span>
+                        <span className="text-xs text-muted-foreground font-normal ml-2">
+                          ({classConfigs.length} subjects)
+                        </span>
+                      </div>
+                    </AccordionTrigger>
+                    <AccordionContent className="pt-2 pb-4">
+                      {classConfigs.length === 0 ? (
+                        <div className="text-sm text-muted-foreground text-center p-4 border rounded-lg bg-muted/20 border-dashed">
+                          No subjects found for this class. Add subjects in Academic &gt; Subjects first.
+                        </div>
+                      ) : (
+                        <ExamSubjectConfigList
+                          configs={classConfigs}
+                          teachers={teacherList}
+                          onChange={(configs) => handleSubjectConfigsChange(classId, configs)}
+                          disabled={isSubmitting}
+                        />
+                      )}
+                    </AccordionContent>
+                  </AccordionItem>
+                );
+              })}
+            </Accordion>
           )}
         </CardContent>
       </Card>
@@ -487,7 +528,7 @@ export const CreateExamPage: React.FC = () => {
         </Button>
         <Button
           type="submit"
-          disabled={isSubmitting || !selectedClassId || !examName.trim()}
+          disabled={isSubmitting || selectedClassIds.length === 0 || !examName.trim()}
         >
           {isSubmitting ? (
             <>
