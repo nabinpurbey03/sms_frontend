@@ -569,10 +569,15 @@ export const AppShell: React.FC = () => {
           </div>
 
           {/* Middle: School Name & Search */}
-          <div className="hidden md:flex flex-1 items-center justify-center gap-4 px-6 max-w-2xl">
-            <span className="font-semibold text-sm text-foreground/80 truncate shrink-0 max-w-[200px]">
-              {activeTenantName || 'Global Platform'}
-            </span>
+          <div className="hidden md:flex flex-1 items-center justify-center gap-6 px-6 max-w-3xl">
+            <div className="flex flex-col items-start shrink-0">
+              <span className="font-bold text-base whitespace-nowrap bg-gradient-to-r from-[#03045E] via-[#0077B6] to-[#00B4D8] bg-clip-text text-transparent">
+                {activeTenantName || 'Global Platform'}
+              </span>
+              <span className="text-[11px] font-medium tracking-wide whitespace-nowrap bg-gradient-to-r from-[#0077B6] to-[#00B4D8] bg-clip-text text-transparent opacity-90">
+                123 Education St, New York, NY
+              </span>
+            </div>
             <div className="relative w-full max-w-md">
               <Search className="absolute left-2.5 top-2 h-4 w-4 text-muted-foreground" />
               <Input 
