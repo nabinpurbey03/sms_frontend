@@ -101,7 +101,7 @@ export const AppShell: React.FC = () => {
     }
   };
 
-  const navItems = [
+  const navItems = React.useMemo(() => [
     {
       label: 'Dashboard',
       href: '/dashboard',
@@ -230,7 +230,7 @@ export const AppShell: React.FC = () => {
       show: isParent,
       category: 'Parent Portal',
     },
-  ];
+  ], [isSuperAdmin, can, isTeacher, isParent]);
 
   const currentMembership = user?.memberships?.find(
     (m) => m.tenant_id === activeTenantId
@@ -248,6 +248,19 @@ export const AppShell: React.FC = () => {
     acc[cat].push(item);
     return acc;
   }, {} as Record<string, typeof visibleNavItems>);
+
+  const activeItem = React.useMemo(() => {
+    return navItems.find((item) => isNavItemActive(location.pathname, item.href));
+  }, [location.pathname, navItems]);
+
+  const searchTimeoutRef = React.useRef<ReturnType<typeof setTimeout> | null>(null);
+  const handleSearch = (e: React.ChangeEvent<HTMLInputElement>) => {
+    if (searchTimeoutRef.current) clearTimeout(searchTimeoutRef.current);
+    searchTimeoutRef.current = setTimeout(() => {
+      console.log("Searching for:", e.target.value);
+      // Future integration: Global search API call
+    }, 500);
+  };
 
   return (
     <div className="min-h-screen flex flex-col lg:flex-row bg-background text-foreground antialiased selection:bg-primary/20">
@@ -536,9 +549,43 @@ export const AppShell: React.FC = () => {
       <div className="flex-1 min-w-0 flex flex-col h-screen bg-background">
         
         {/* Sticky Top Header */}
-        <header className="sticky top-0 z-20 flex h-14 items-center justify-end px-4 sm:px-6 border-b border-border/40 bg-card/95 backdrop-blur-md shrink-0 gap-3">
+        <header className="sticky top-0 z-20 flex h-14 items-center justify-between px-4 sm:px-6 border-b border-border/40 bg-card/95 backdrop-blur-md shrink-0 gap-4">
           
-          {/* Theme Toggle */}
+          {/* Left: Active Tab Info */}
+          <div className="flex items-center gap-3 min-w-0 flex-1">
+            {activeItem && (
+              <>
+                <div className="hidden sm:flex p-1.5 bg-primary/10 text-primary rounded-lg shrink-0">
+                  <activeItem.icon className="h-4 w-4" />
+                </div>
+                <div className="flex flex-col min-w-0">
+                  <h1 className="text-sm font-bold text-foreground leading-tight truncate">{activeItem.label}</h1>
+                  {activeItem.description && (
+                    <p className="text-[10px] text-muted-foreground leading-tight truncate hidden sm:block">{activeItem.description}</p>
+                  )}
+                </div>
+              </>
+            )}
+          </div>
+
+          {/* Middle: School Name & Search */}
+          <div className="hidden md:flex flex-1 items-center justify-center gap-4 px-6 max-w-2xl">
+            <span className="font-semibold text-sm text-foreground/80 truncate shrink-0 max-w-[200px]">
+              {activeTenantName || 'Global Platform'}
+            </span>
+            <div className="relative w-full max-w-md">
+              <Search className="absolute left-2.5 top-2 h-4 w-4 text-muted-foreground" />
+              <Input 
+                placeholder="Search students, parents, staff..." 
+                className="w-full bg-muted/50 border-none pl-9 h-8 focus-visible:bg-background transition-colors text-xs rounded-full"
+                onChange={handleSearch}
+              />
+            </div>
+          </div>
+
+          {/* Right: Controls & Profile */}
+          <div className="flex items-center gap-2 sm:gap-3 shrink-0">
+            {/* Theme Toggle */}
           <Button 
             variant="ghost" 
             size="icon" 
@@ -707,6 +754,7 @@ export const AppShell: React.FC = () => {
               </DropdownMenuItem>
             </DropdownMenuContent>
           </DropdownMenu>
+          </div>
         </header>
 
         <main className="flex-1 overflow-y-auto px-3 py-4 sm:px-6 sm:py-6 lg:px-8 lg:py-8 bg-muted/20">
