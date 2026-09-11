@@ -8,10 +8,8 @@ import {
   Building2,
   UserCheck,
   LogOut,
-  ChevronDown,
   Menu,
   X,
-  School,
   FileSpreadsheet,
   Layers,
   HeartHandshake,
@@ -21,6 +19,9 @@ import {
   Monitor,
   GraduationCap,
   Award,
+  ChevronLeft,
+  ChevronRight,
+  Bell,
 } from 'lucide-react';
 
 import { useAuth } from '@/auth/useAuth';
@@ -30,6 +31,12 @@ import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Avatar, AvatarFallback } from '@/components/ui/avatar';
 import { SchoolHeaderBadge } from './SchoolHeaderBadge';
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipProvider,
+  TooltipTrigger,
+} from '@/components/ui/tooltip';
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -59,10 +66,20 @@ export const AppShell: React.FC = () => {
   const { can, isSuperAdmin, isTeacher, isParent } = usePermission();
   const { theme, setTheme } = useThemeStore();
   const [sidebarOpen, setSidebarOpen] = useState(false);
+  const [isDesktopSidebarCollapsed, setIsDesktopSidebarCollapsed] = useState(false);
 
   const handleLogout = async () => {
     await logout();
     navigate({ to: '/login' });
+  };
+
+
+  const formatRole = (role: string | null | undefined) => {
+    if (!role) return 'User';
+    if (role === 'ADMIN') return 'Principal';
+    if (role === 'SUPER_ADMIN') return 'Super Admin';
+    if (role === 'OFFICE_ADMIN') return 'Office Admin';
+    return role.charAt(0).toUpperCase() + role.slice(1).toLowerCase();
   };
 
   const getRoleBadgeVariant = (role: string | null) => {
@@ -88,102 +105,112 @@ export const AppShell: React.FC = () => {
       href: '/dashboard',
       icon: LayoutDashboard,
       show: true,
+      category: 'Overview',
     },
     {
       label: 'Tenant Management',
       href: '/tenants',
       icon: Building2,
       show: isSuperAdmin,
-    },
-    {
-      label: 'School Settings',
-      href: '/tenant-settings',
-      icon: School,
-      show: can('MANAGE_TENANT_SETTINGS') && !isSuperAdmin,
+      category: 'Administration',
     },
     {
       label: 'School Members',
       href: '/members',
       icon: Users,
       show: can('CREATE_TEACHER_PARENT'),
-    },
-    {
-      label: 'Classes & Sections',
-      href: '/academic/classes',
-      icon: BookOpen,
-      show: can('VIEW_CLASSES_SUBJECTS'),
-    },
-    {
-      label: 'Students Roster',
-      href: '/academic/students',
-      icon: Users,
-      show: can('VIEW_SECTIONS_STUDENTS'),
-    },
-    {
-      label: 'Subjects',
-      href: '/academic/subjects',
-      icon: Layers,
-      show: can('VIEW_CLASSES_SUBJECTS'),
-    },
-    {
-      label: 'Teacher Assignments',
-      href: '/academic/assignments',
-      icon: UserCheck,
-      show: can('ASSIGN_TEACHERS'),
-    },
-    {
-      label: 'My Teaching Duties',
-      href: '/academic/my-assignments',
-      icon: BookOpen,
-      show: isTeacher,
-    },
-    {
-      label: 'Student & Parent Directory',
-      href: '/academic/parent-directory',
-      icon: Users,
-      show: isTeacher,
+      category: 'Administration',
     },
     {
       label: 'Parent-Student Links',
       href: '/academic/parent-links',
       icon: HeartHandshake,
       show: can('LINK_PARENTS'),
+      category: 'Administration',
     },
     {
-      label: "My Children's Teacher",
-      href: '/academic/my-teachers',
-      icon: GraduationCap,
-      show: isParent,
+      label: 'Classes & Sections',
+      href: '/academic/classes',
+      icon: BookOpen,
+      show: can('VIEW_CLASSES_SUBJECTS'),
+      category: 'Academics',
     },
     {
-      label: 'My Children',
-      href: '/academic/my-children',
-      icon: Baby,
-      show: isParent,
+      label: 'Subjects',
+      href: '/academic/subjects',
+      icon: Layers,
+      show: can('VIEW_CLASSES_SUBJECTS'),
+      category: 'Academics',
     },
     {
-      label: 'Report Cards',
-      href: '/academic/report-cards',
-      icon: Award,
-      show: isParent,
+      label: 'Students Roster',
+      href: '/academic/students',
+      icon: Users,
+      show: can('VIEW_SECTIONS_STUDENTS'),
+      category: 'Academics',
+    },
+    {
+      label: 'Teacher Assignments',
+      href: '/academic/assignments',
+      icon: UserCheck,
+      show: can('ASSIGN_TEACHERS'),
+      category: 'Academics',
     },
     {
       label: 'Mark Attendance',
       href: '/attendance/mark',
       icon: CalendarCheck,
       show: can('MARK_ATTENDANCE') && !isParent,
+      category: 'Attendance',
     },
     {
       label: 'Attendance Reports',
       href: '/attendance/reports',
       icon: FileSpreadsheet,
       show: can('VIEW_ATTENDANCE_REPORTS') && !isParent,
+      category: 'Attendance',
     },
     {
       label: 'Examinations',
       href: '/examination/exams',
       icon: GraduationCap,
       show: can('MANAGE_EXAMS') || can('ENTER_EXAM_SCORES'),
+      category: 'Examinations',
+    },
+    {
+      label: 'My Teaching Duties',
+      href: '/academic/my-assignments',
+      icon: BookOpen,
+      show: isTeacher,
+      category: 'Teacher Desk',
+    },
+    {
+      label: 'Student & Parent Directory',
+      href: '/academic/parent-directory',
+      icon: Users,
+      show: isTeacher,
+      category: 'Teacher Desk',
+    },
+    {
+      label: 'My Children',
+      href: '/academic/my-children',
+      icon: Baby,
+      show: isParent,
+      category: 'Parent Portal',
+    },
+    {
+      label: "My Children's Teacher",
+      href: '/academic/my-teachers',
+      icon: GraduationCap,
+      show: isParent,
+      category: 'Parent Portal',
+    },
+    {
+      label: 'Report Cards',
+      href: '/academic/report-cards',
+      icon: Award,
+      show: isParent,
+      category: 'Parent Portal',
     },
   ];
 
@@ -196,6 +223,13 @@ export const AppShell: React.FC = () => {
     : 'U';
 
   const visibleNavItems = navItems.filter((item) => item.show);
+
+  const groupedNavItems = visibleNavItems.reduce((acc, item) => {
+    const cat = item.category || 'General';
+    if (!acc[cat]) acc[cat] = [];
+    acc[cat].push(item);
+    return acc;
+  }, {} as Record<string, typeof visibleNavItems>);
 
   return (
     <div className="min-h-screen flex flex-col lg:flex-row bg-background text-foreground antialiased selection:bg-primary/20">
@@ -236,73 +270,291 @@ export const AppShell: React.FC = () => {
       </header>
 
       {/* Desktop Fixed Sidebar (lg+) */}
-      <aside className="hidden lg:flex shrink-0 flex-col justify-between border-r bg-card h-screen sticky top-0 w-64 xl:w-70 z-30 shadow-xs">
-        {/* Navigation Menu */}
-        <div className="flex-1 overflow-y-auto px-3 py-4 space-y-1">
-          <p className="px-3 text-[10px] font-bold text-muted-foreground uppercase tracking-wider mb-2">
-            Main Menu
-          </p>
-          <nav className="space-y-1">
-            {visibleNavItems.map((item) => {
-              const isActive = isNavItemActive(location.pathname, item.href);
-              const Icon = item.icon;
-              return (
-                <Link
-                  key={item.href}
-                  to={item.href}
-                  className={`flex items-center gap-3 rounded-xl px-3 py-2.5 text-sm transition-all duration-150 ${
-                    isActive
-                      ? 'bg-primary text-primary-foreground font-semibold shadow-xs shadow-primary/20'
-                      : 'text-muted-foreground hover:bg-accent hover:text-foreground font-medium'
-                  }`}
-                >
-                  <Icon className="h-4 w-4 shrink-0" />
-                  <span className="truncate">{item.label}</span>
-                </Link>
-              );
-            })}
-          </nav>
+      <TooltipProvider delayDuration={150}>
+      <aside
+        className={`hidden lg:flex shrink-0 flex-col justify-between bg-card h-screen sticky top-0 z-30 shadow-xs transition-all duration-300 ${
+          isDesktopSidebarCollapsed ? 'w-20' : 'w-64 xl:w-70'
+        }`}
+      >
+        {/* Sidebar Header: Logo & Toggle */}
+        <div className={`flex items-center h-14 shrink-0 px-3 border-b border-border/40 ${isDesktopSidebarCollapsed ? 'justify-center gap-1.5' : 'justify-between'}`}>
+          <Link to="/dashboard" className="flex items-center gap-2 focus:outline-none min-w-0" title="Go to Dashboard">
+            <div className="flex h-8 w-8 min-h-[32px] min-w-[32px] items-center justify-center rounded-xl bg-card border border-border/80 shadow-xs overflow-hidden p-0.5 shrink-0">
+              <img src="/logo.svg" alt="Schools Up Pro" className="h-full w-full object-contain" />
+            </div>
+            {!isDesktopSidebarCollapsed && (
+              <span className="font-bold tracking-tight text-foreground text-sm truncate">
+                Schools Up Pro
+              </span>
+            )}
+          </Link>
+          
+          <Button
+            variant="ghost"
+            size="icon"
+            className={`h-7 w-7 text-muted-foreground hover:bg-accent hover:text-foreground cursor-pointer transition-colors ${isDesktopSidebarCollapsed ? 'shrink-0' : ''}`}
+            onClick={() => setIsDesktopSidebarCollapsed(!isDesktopSidebarCollapsed)}
+            aria-label="Toggle Sidebar"
+          >
+            {isDesktopSidebarCollapsed ? <ChevronRight className="h-4 w-4" /> : <ChevronLeft className="h-4 w-4" />}
+          </Button>
         </div>
 
-        {/* Bottom Left Corner: Profile & Account Menu */}
-        <div className="p-3 border-t bg-card/60 shrink-0">
+        {/* Navigation Menu */}
+        <div className="flex-1 overflow-y-auto scrollbar-hide px-3 py-4 space-y-8">
+          {Object.entries(groupedNavItems).map(([category, items]) => (
+            <div key={category}>
+              {!isDesktopSidebarCollapsed ? (
+                <p className="px-3 text-[10px] font-bold text-muted-foreground/80 uppercase tracking-wider mb-2">
+                  {category}
+                </p>
+              ) : (
+                <div className="w-full flex justify-center mb-2">
+                  <div className="w-6 border-t border-border/50"></div>
+                </div>
+              )}
+              <nav className="space-y-0.5">
+                {items.map((item) => {
+                  const isActive = isNavItemActive(location.pathname, item.href);
+                  const Icon = item.icon;
+                  const linkContent = (
+                    <Link
+                      to={item.href}
+                      className={`flex items-center rounded-xl py-2 text-sm transition-all duration-150 ${
+                        isDesktopSidebarCollapsed ? 'justify-center px-0' : 'gap-3 px-3'
+                      } ${
+                        isActive
+                          ? 'bg-primary text-primary-foreground font-semibold shadow-xs shadow-primary/20'
+                          : 'text-muted-foreground hover:bg-accent hover:text-foreground font-medium'
+                      }`}
+                    >
+                      <Icon className="h-4 w-4 shrink-0" />
+                      {!isDesktopSidebarCollapsed && <span className="truncate">{item.label}</span>}
+                    </Link>
+                  );
+
+                  return isDesktopSidebarCollapsed ? (
+                    <Tooltip key={item.href}>
+                      <TooltipTrigger asChild>
+                        {linkContent}
+                      </TooltipTrigger>
+                      <TooltipContent side="right" sideOffset={14} className="font-semibold text-xs py-1.5 px-3">
+                        {item.label}
+                      </TooltipContent>
+                    </Tooltip>
+                  ) : (
+                    <React.Fragment key={item.href}>
+                      {linkContent}
+                    </React.Fragment>
+                  );
+                })}
+              </nav>
+            </div>
+          ))}
+        </div>
+
+        
+        {/* Sidebar Bottom Profile Card */}
+        <div className="p-3 shrink-0 border-t border-border/40 bg-card">
+          <div className="w-full flex items-center gap-3 p-2 bg-accent/40 rounded-xl border border-border/50 text-left">
+            <Avatar className="h-9 w-9 shrink-0 ring-1 ring-border">
+              <AvatarFallback className="bg-primary/10 text-primary font-bold text-xs">
+                {userInitials}
+              </AvatarFallback>
+            </Avatar>
+            {!isDesktopSidebarCollapsed && (
+              <div className="flex-1 min-w-0 flex flex-col justify-center">
+                <p className="text-sm font-semibold text-foreground truncate leading-tight">
+                  {user?.first_name} {user?.last_name}
+                </p>
+                <div className="mt-1">
+                  <Badge variant={getRoleBadgeVariant(activeRole)} className="text-[10px] px-1.5 py-0">
+                    {formatRole(activeRole)}
+                  </Badge>
+                </div>
+              </div>
+            )}
+          </div>
+        </div>
+      </aside>
+      </TooltipProvider>
+
+      {/* Mobile Slide-Out Drawer (< lg screens) */}
+      {sidebarOpen && (
+        <div className="fixed inset-0 z-50 lg:hidden">
+          {/* Backdrop */}
+          <div
+            className="fixed inset-0 bg-black/60 backdrop-blur-xs transition-opacity"
+            onClick={() => setSidebarOpen(false)}
+            aria-hidden="true"
+          />
+
+          {/* Slide-in Drawer */}
+          <div className="fixed inset-y-0 left-0 z-50 w-full max-w-[280px] sm:max-w-xs bg-card p-4 shadow-2xl flex flex-col justify-between overflow-y-auto scrollbar-hide animate-in slide-in-from-left duration-200">
+            <div className="space-y-4">
+              {/* Drawer Header with Close Button */}
+              <div className="flex items-center justify-between pb-3 border-b">
+                <div className="flex items-center gap-2.5">
+                  <div className="flex h-9 w-9 items-center justify-center rounded-xl bg-card border border-border/80 shadow-xs overflow-hidden p-0.5">
+                    <img src="/logo.svg" alt="Schools Up Pro" className="h-full w-full object-contain" />
+                  </div>
+                  <div>
+                    <span className="font-bold text-foreground text-sm leading-tight block">
+                      Schools Up Pro
+                    </span>
+                    <span className="text-[10px] text-muted-foreground font-mono block">
+                      SMS MENU
+                    </span>
+                  </div>
+                </div>
+                <Button
+                  variant="ghost"
+                  size="icon"
+                  className="min-h-[40px] min-w-[40px] h-10 w-10 rounded-xl text-muted-foreground hover:text-foreground"
+                  onClick={() => setSidebarOpen(false)}
+                  aria-label="Close menu"
+                >
+                  <X className="h-5 w-5" />
+                </Button>
+              </div>
+
+              {/* Mobile Navigation Items */}
+              <div className="space-y-8">
+                {Object.entries(groupedNavItems).map(([category, items]) => (
+                  <div key={category}>
+                    <p className="px-3 text-[10px] font-bold text-muted-foreground/80 uppercase tracking-wider mb-2">
+                      {category}
+                    </p>
+                    <nav className="space-y-0.5">
+                      {items.map((item) => {
+                        const isActive = isNavItemActive(location.pathname, item.href);
+                        const Icon = item.icon;
+                        return (
+                          <Link
+                            key={item.href}
+                            to={item.href}
+                            onClick={() => setSidebarOpen(false)}
+                            className={`flex min-h-[44px] items-center gap-3 rounded-xl px-3.5 py-2 text-sm font-medium transition-colors ${
+                              isActive
+                                ? 'bg-primary text-primary-foreground font-semibold shadow-sm'
+                                : 'text-muted-foreground hover:bg-accent hover:text-foreground active:bg-accent/80'
+                            }`}
+                          >
+                            <Icon className="h-5 w-5 shrink-0" />
+                            <span className="truncate">{item.label}</span>
+                          </Link>
+                        );
+                      })}
+                    </nav>
+                  </div>
+                ))}
+              </div>
+            </div>
+
+            {/* Drawer Bottom Session & Logout */}
+            <div className="pt-4 space-y-3 shrink-0">
+              <div className="rounded-xl border bg-muted/40 p-3 space-y-1">
+                <p className="text-xs font-bold text-foreground truncate">
+                  {user?.first_name} {user?.last_name}
+                </p>
+                <div className="flex items-center gap-2">
+                  <Badge variant={getRoleBadgeVariant(activeRole)} className="text-[9px] px-1 py-0">
+                    {formatRole(activeRole)}
+                  </Badge>
+                  <p className="text-[11px] text-muted-foreground truncate">
+                    {activeTenantName || 'Global Platform'}
+                  </p>
+                </div>
+              </div>
+
+              {/* Theme Mode Quick Buttons on Mobile */}
+              <div className="grid grid-cols-3 gap-1">
+                <button
+                  type="button"
+                  onClick={() => setTheme('light')}
+                  className={`flex items-center justify-center gap-1 py-1.5 px-2 rounded-lg text-xs font-medium border ${
+                    theme === 'light' ? 'bg-primary text-primary-foreground border-primary' : 'border-input'
+                  }`}
+                >
+                  <Sun className="h-3.5 w-3.5" />
+                  <span>Light</span>
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setTheme('dark')}
+                  className={`flex items-center justify-center gap-1 py-1.5 px-2 rounded-lg text-xs font-medium border ${
+                    theme === 'dark' ? 'bg-primary text-primary-foreground border-primary' : 'border-input'
+                  }`}
+                >
+                  <Moon className="h-3.5 w-3.5" />
+                  <span>Dark</span>
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setTheme('system')}
+                  className={`flex items-center justify-center gap-1 py-1.5 px-2 rounded-lg text-xs font-medium border ${
+                    theme === 'system' ? 'bg-primary text-primary-foreground border-primary' : 'border-input'
+                  }`}
+                >
+                  <Monitor className="h-3.5 w-3.5" />
+                  <span>Auto</span>
+                </button>
+              </div>
+
+              <Button
+                variant="outline"
+                onClick={handleLogout}
+                className="w-full min-h-[44px] h-11 text-destructive hover:bg-destructive/10 hover:text-destructive border-destructive/20 font-semibold rounded-xl"
+              >
+                <LogOut className="h-4 w-4 mr-2" />
+                Sign Out
+              </Button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Dashboard Main Area */}
+      <div className="flex-1 min-w-0 flex flex-col h-screen bg-background">
+        
+        {/* Sticky Top Header */}
+        <header className="sticky top-0 z-20 flex h-14 items-center justify-end px-4 sm:px-6 border-b border-border/40 bg-card/95 backdrop-blur-md shrink-0 gap-3">
+          
+          {/* Theme Toggle */}
+          <Button 
+            variant="ghost" 
+            size="icon" 
+            onClick={() => setTheme(theme === 'dark' ? 'light' : 'dark')} 
+            className="h-9 w-9 rounded-full text-muted-foreground hover:bg-accent hover:text-foreground"
+          >
+            {theme === 'dark' ? <Sun className="h-5 w-5" /> : <Moon className="h-5 w-5" />}
+          </Button>
+          
+          {/* Notifications */}
+          <Button variant="ghost" size="icon" className="h-9 w-9 rounded-full text-muted-foreground hover:bg-accent hover:text-foreground relative">
+            <Bell className="h-5 w-5" />
+            <span className="absolute top-1.5 right-1.5 h-2 w-2 rounded-full bg-destructive border border-card" />
+          </Button>
+          
+          <div className="w-px h-6 bg-border/50 mx-1" /> {/* Divider */}
+
+          {/* User Profile Menu */}
           <DropdownMenu>
             <DropdownMenuTrigger asChild>
               <button
-                type="button"
-                className="w-full flex items-center gap-2.5 p-2 rounded-xl hover:bg-accent/80 transition-all text-left group focus:outline-none focus-visible:ring-2 focus-visible:ring-primary cursor-pointer border border-border/50 hover:border-border shadow-2xs"
+                className="flex items-center justify-center rounded-full hover:ring-2 hover:ring-primary/50 transition-all focus:outline-none focus-visible:ring-2 focus-visible:ring-primary cursor-pointer"
                 aria-label="User Account Menu"
               >
-                <Avatar className="h-9 w-9 shrink-0 ring-1 ring-border group-hover:ring-primary/50 transition-all">
+                <Avatar className="h-9 w-9 shrink-0 ring-1 ring-border">
                   <AvatarFallback className="bg-primary/10 text-primary font-bold text-xs">
                     {userInitials}
                   </AvatarFallback>
                 </Avatar>
-                <div className="flex-1 min-w-0">
-                  <div className="flex items-center justify-between gap-1">
-                    <p className="text-xs font-bold text-foreground truncate leading-tight">
-                      {user?.first_name} {user?.last_name}
-                    </p>
-                    <ChevronDown className="h-3.5 w-3.5 text-muted-foreground shrink-0 opacity-60 group-hover:opacity-100 transition-opacity" />
-                  </div>
-                  <div className="flex items-center gap-1.5 pt-0.5">
-                    <Badge
-                      variant={getRoleBadgeVariant(activeRole)}
-                      className="text-[9px] px-1.5 py-0 font-semibold leading-tight shrink-0"
-                    >
-                      {activeRole || 'USER'}
-                    </Badge>
-                    <span className="text-[11px] text-muted-foreground truncate leading-tight">
-                      {user?.email}
-                    </span>
-                  </div>
-                </div>
               </button>
             </DropdownMenuTrigger>
             <DropdownMenuContent
-              side="right"
               align="end"
-              sideOffset={12}
+              sideOffset={8}
               className="w-72 p-2 shadow-2xl rounded-2xl border bg-card"
             >
               {/* Profile Details Header */}
@@ -319,7 +571,7 @@ export const AppShell: React.FC = () => {
                       variant={getRoleBadgeVariant(activeRole)}
                       className="text-[10px] px-1.5"
                     >
-                      {activeRole || 'USER'}
+                      {formatRole(activeRole)}
                     </Badge>
                     {isSuperAdmin && (
                       <Badge variant="purple" className="text-[10px] px-1.5">
@@ -338,7 +590,7 @@ export const AppShell: React.FC = () => {
                     <div className="text-xs font-semibold text-muted-foreground flex items-center justify-between">
                       <span>Active Persona</span>
                       <span className="text-[10px] font-mono text-primary">
-                        {activeRole}
+                        {formatRole(activeRole)}
                       </span>
                     </div>
                     <div className="grid grid-cols-2 gap-1 pt-0.5">
@@ -358,7 +610,7 @@ export const AppShell: React.FC = () => {
                             <Badge variant={getRoleBadgeVariant(r)} className="text-[9px] px-1 py-0">
                               {r[0]}
                             </Badge>
-                            <span className="truncate">{r}</span>
+                            <span className="truncate">{formatRole(r)}</span>
                           </button>
                         );
                       })}
@@ -437,141 +689,14 @@ export const AppShell: React.FC = () => {
               </DropdownMenuItem>
             </DropdownMenuContent>
           </DropdownMenu>
-        </div>
-      </aside>
+        </header>
 
-      {/* Mobile Slide-Out Drawer (< lg screens) */}
-      {sidebarOpen && (
-        <div className="fixed inset-0 z-50 lg:hidden">
-          {/* Backdrop */}
-          <div
-            className="fixed inset-0 bg-black/60 backdrop-blur-xs transition-opacity"
-            onClick={() => setSidebarOpen(false)}
-            aria-hidden="true"
-          />
-
-          {/* Slide-in Drawer */}
-          <div className="fixed inset-y-0 left-0 z-50 w-full max-w-[280px] sm:max-w-xs bg-card p-4 shadow-2xl flex flex-col justify-between overflow-y-auto animate-in slide-in-from-left duration-200">
-            <div className="space-y-4">
-              {/* Drawer Header with Close Button */}
-              <div className="flex items-center justify-between pb-3 border-b">
-                <div className="flex items-center gap-2.5">
-                  <div className="flex h-9 w-9 items-center justify-center rounded-xl bg-card border border-border/80 shadow-xs overflow-hidden p-0.5">
-                    <img src="/logo.svg" alt="Schools Up Pro" className="h-full w-full object-contain" />
-                  </div>
-                  <div>
-                    <span className="font-bold text-foreground text-sm leading-tight block">
-                      Schools Up Pro
-                    </span>
-                    <span className="text-[10px] text-muted-foreground font-mono block">
-                      SMS MENU
-                    </span>
-                  </div>
-                </div>
-                <Button
-                  variant="ghost"
-                  size="icon"
-                  className="min-h-[40px] min-w-[40px] h-10 w-10 rounded-xl text-muted-foreground hover:text-foreground"
-                  onClick={() => setSidebarOpen(false)}
-                  aria-label="Close menu"
-                >
-                  <X className="h-5 w-5" />
-                </Button>
-              </div>
-
-              {/* Mobile Navigation Items */}
-              <nav className="space-y-1">
-                {visibleNavItems.map((item) => {
-                  const isActive = isNavItemActive(location.pathname, item.href);
-                  const Icon = item.icon;
-                  return (
-                    <Link
-                      key={item.href}
-                      to={item.href}
-                      onClick={() => setSidebarOpen(false)}
-                      className={`flex min-h-[44px] items-center gap-3 rounded-xl px-3.5 py-2.5 text-sm font-medium transition-colors ${
-                        isActive
-                          ? 'bg-primary text-primary-foreground font-semibold shadow-sm'
-                          : 'text-muted-foreground hover:bg-accent hover:text-foreground active:bg-accent/80'
-                      }`}
-                    >
-                      <Icon className="h-5 w-5 shrink-0" />
-                      <span className="truncate">{item.label}</span>
-                    </Link>
-                  );
-                })}
-              </nav>
-            </div>
-
-            {/* Drawer Bottom Session & Logout */}
-            <div className="pt-4 border-t space-y-3 shrink-0">
-              <div className="rounded-xl border bg-muted/40 p-3 space-y-1">
-                <p className="text-xs font-bold text-foreground truncate">
-                  {user?.first_name} {user?.last_name}
-                </p>
-                <div className="flex items-center gap-2">
-                  <Badge variant={getRoleBadgeVariant(activeRole)} className="text-[9px] px-1 py-0">
-                    {activeRole || 'USER'}
-                  </Badge>
-                  <p className="text-[11px] text-muted-foreground truncate">
-                    {activeTenantName || 'Global Platform'}
-                  </p>
-                </div>
-              </div>
-
-              {/* Theme Mode Quick Buttons on Mobile */}
-              <div className="grid grid-cols-3 gap-1">
-                <button
-                  type="button"
-                  onClick={() => setTheme('light')}
-                  className={`flex items-center justify-center gap-1 py-1.5 px-2 rounded-lg text-xs font-medium border ${
-                    theme === 'light' ? 'bg-primary text-primary-foreground border-primary' : 'border-input'
-                  }`}
-                >
-                  <Sun className="h-3.5 w-3.5" />
-                  <span>Light</span>
-                </button>
-                <button
-                  type="button"
-                  onClick={() => setTheme('dark')}
-                  className={`flex items-center justify-center gap-1 py-1.5 px-2 rounded-lg text-xs font-medium border ${
-                    theme === 'dark' ? 'bg-primary text-primary-foreground border-primary' : 'border-input'
-                  }`}
-                >
-                  <Moon className="h-3.5 w-3.5" />
-                  <span>Dark</span>
-                </button>
-                <button
-                  type="button"
-                  onClick={() => setTheme('system')}
-                  className={`flex items-center justify-center gap-1 py-1.5 px-2 rounded-lg text-xs font-medium border ${
-                    theme === 'system' ? 'bg-primary text-primary-foreground border-primary' : 'border-input'
-                  }`}
-                >
-                  <Monitor className="h-3.5 w-3.5" />
-                  <span>Auto</span>
-                </button>
-              </div>
-
-              <Button
-                variant="outline"
-                onClick={handleLogout}
-                className="w-full min-h-[44px] h-11 text-destructive hover:bg-destructive/10 hover:text-destructive border-destructive/20 font-semibold rounded-xl"
-              >
-                <LogOut className="h-4 w-4 mr-2" />
-                Sign Out
-              </Button>
-            </div>
+        <main className="flex-1 overflow-y-auto px-3 py-4 sm:px-6 sm:py-6 lg:px-8 lg:py-8 bg-muted/20">
+          <div className="w-full max-w-7xl mx-auto">
+            <Outlet />
           </div>
-        </div>
-      )}
-
-      {/* Main Content Viewport */}
-      <main className="flex-1 min-w-0 h-screen overflow-y-auto bg-[#E9EAEE] dark:bg-background px-3 py-4 sm:px-6 sm:py-6 lg:px-8 lg:py-8">
-        <div className="w-full max-w-7xl mx-auto">
-          <Outlet />
-        </div>
-      </main>
+        </main>
+      </div>
     </div>
   );
 };
