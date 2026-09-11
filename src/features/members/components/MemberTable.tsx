@@ -46,7 +46,7 @@ const ROLE_BADGE_CONFIG: Record<
   { label: string; bg: string; text: string; border: string; icon: React.ElementType }
 > = {
   ADMIN: {
-    label: 'School Admin',
+    label: 'Principal',
     bg: 'bg-purple-500/10',
     text: 'text-purple-700 dark:text-purple-300',
     border: 'border-purple-500/25',
@@ -253,40 +253,42 @@ export const MemberTable: React.FC<MemberTableProps> = ({
                   {member.phone || 'No phone registered'}
                 </TableCell>
 
-                {/* Actions Dropdown */}
-                <TableCell className="text-right">
-                  <DropdownMenu>
-                    <DropdownMenuTrigger asChild>
+                {/* Actions */}
+                <TableCell className="text-right whitespace-nowrap">
+                  <div className="flex justify-end items-center gap-2">
+                    {canManageMembers && (
                       <Button
-                        variant="ghost"
-                        size="icon"
-                        className="h-8 w-8 text-muted-foreground hover:text-foreground"
+                        variant="outline"
+                        size="sm"
+                        className="h-8 gap-1.5 text-xs font-medium cursor-pointer hover:bg-muted"
+                        onClick={() => onManageRoles(member)}
                       >
-                        <MoreHorizontal className="w-4 h-4" />
-                        <span className="sr-only">Open actions menu</span>
+                        <Shield className="w-3.5 h-3.5" />
+                        Manage Roles
                       </Button>
-                    </DropdownMenuTrigger>
-                    <DropdownMenuContent align="end" className="w-52">
-                      <DropdownMenuLabel className="text-xs font-semibold text-muted-foreground">
-                        Member Options
-                      </DropdownMenuLabel>
-                      <DropdownMenuItem
-                        onClick={() => onInspectMember(member)}
-                        className="cursor-pointer gap-2 text-xs"
-                      >
-                        <Eye className="w-3.5 h-3.5" />
-                        View Profile & ReBAC
-                      </DropdownMenuItem>
-
-                      {canManageMembers && (
+                    )}
+                    <DropdownMenu>
+                      <DropdownMenuTrigger asChild>
+                        <Button
+                          variant="ghost"
+                          size="icon"
+                          className="h-8 w-8 text-muted-foreground hover:text-foreground cursor-pointer"
+                        >
+                          <MoreHorizontal className="w-4 h-4" />
+                          <span className="sr-only">Open actions menu</span>
+                        </Button>
+                      </DropdownMenuTrigger>
+                      <DropdownMenuContent align="end" className="w-52">
+                        <DropdownMenuLabel className="text-xs font-semibold text-muted-foreground">
+                          Member Options
+                        </DropdownMenuLabel>
                         <DropdownMenuItem
-                          onClick={() => onManageRoles(member)}
+                          onClick={() => onInspectMember(member)}
                           className="cursor-pointer gap-2 text-xs"
                         >
-                          <Shield className="w-3.5 h-3.5" />
-                          Manage Roles ({member.roles.length})
+                          <Eye className="w-3.5 h-3.5" />
+                          View Profile & ReBAC
                         </DropdownMenuItem>
-                      )}
 
                       <DropdownMenuItem
                         onClick={() => handleCopyEmail(member.email)}
@@ -310,6 +312,7 @@ export const MemberTable: React.FC<MemberTableProps> = ({
                       )}
                     </DropdownMenuContent>
                   </DropdownMenu>
+                  </div>
                 </TableCell>
               </TableRow>
             );

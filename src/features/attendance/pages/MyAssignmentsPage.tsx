@@ -16,7 +16,7 @@ import {
 } from 'lucide-react';
 
 export const MyAssignmentsPage: React.FC = () => {
-  const { activeTenantId, user } = useAuth();
+  const { activeTenantId } = useAuth();
   const navigate = useNavigate();
 
   const { data: assignments = [], isLoading } = useMyTeacherAssignments(activeTenantId);

@@ -22,7 +22,7 @@ import { cn } from '@/lib/utils';
 import { useMyChildrenReportCards } from '../hooks';
 
 export const ParentReportCardsPage: React.FC = () => {
-  const { activeTenantId, activeTenantName } = useAuth();
+  const { activeTenantId } = useAuth();
   const { isParent } = usePermission();
 
   // Read URL search param studentId if present
