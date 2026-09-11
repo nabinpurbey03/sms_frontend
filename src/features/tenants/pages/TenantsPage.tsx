@@ -11,7 +11,6 @@ import { useAuth } from '@/auth/useAuth';
 import { usePermission } from '@/auth/usePermission';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
-import { Badge } from '@/components/ui/badge';
 import {
   useTenants,
   useCreateTenant,
@@ -129,43 +128,24 @@ export const TenantsPage: React.FC = () => {
 
   return (
     <div className="space-y-6 w-full min-w-0">
-      {/* Top Page Header */}
-      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
-        <div className="space-y-1">
-          <div className="flex items-center gap-2">
-            <Badge variant="purple" className="text-[10px] px-2 py-0.5">
-              PLATFORM OWNER
-            </Badge>
-            <span className="text-xs text-muted-foreground font-mono">
-              TENANT MANAGEMENT
-            </span>
-          </div>
-          <h1 className="text-2xl sm:text-3xl font-bold tracking-tight text-foreground">
-            School Tenants Directory
-          </h1>
-          <p className="text-xs sm:text-sm text-muted-foreground">
-            Register, configure, and oversee institutional school portals across the multi-tenant platform.
-          </p>
-        </div>
-
-        <div className="flex items-center gap-2">
-          <Button
-            variant="outline"
-            size="sm"
-            onClick={() => refetch()}
-            className="h-10 px-3 text-xs font-semibold"
-          >
-            <RefreshCw className="h-3.5 w-3.5 mr-1.5" />
-            Refresh
-          </Button>
-          <Button
-            onClick={handleOpenCreate}
-            className="h-10 px-4 text-xs font-bold shadow-md shadow-primary/25"
-          >
-            <Plus className="h-4 w-4 mr-1.5" />
-            Register School
-          </Button>
-        </div>
+      {/* Action Header */}
+      <div className="flex justify-end items-center gap-2">
+        <Button
+          variant="outline"
+          size="sm"
+          onClick={() => refetch()}
+          className="h-10 px-3 text-xs font-semibold"
+        >
+          <RefreshCw className="h-3.5 w-3.5 mr-1.5" />
+          Refresh
+        </Button>
+        <Button
+          onClick={handleOpenCreate}
+          className="h-10 px-4 text-xs font-bold shadow-md shadow-primary/25"
+        >
+          <Plus className="h-4 w-4 mr-1.5" />
+          Register School
+        </Button>
       </div>
 
       {/* Summary KPI Stats */}

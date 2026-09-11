@@ -6,7 +6,6 @@ import {
   AlertCircle,
   FileText,
   CalendarCheck,
-  School,
   Baby,
   Filter,
   GraduationCap,
@@ -97,44 +96,20 @@ export const ParentReportCardsPage: React.FC = () => {
 
   return (
     <div className="space-y-6">
-      {/* Page Header */}
-      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 border-b border-border/60 pb-5">
-        <div>
-          <div className="flex items-center gap-2.5">
-            <div className="w-9 h-9 rounded-lg bg-amber-500/10 text-amber-600 dark:text-amber-400 flex items-center justify-center shrink-0">
-              <Award className="w-5 h-5" />
-            </div>
-            <div>
-              <div className="flex items-center gap-2 flex-wrap">
-                <h1 className="text-2xl font-bold tracking-tight text-foreground">
-                  Official Academic Report Cards
-                </h1>
-                <span className="text-xs font-semibold px-2.5 py-0.5 rounded-full bg-primary/10 text-primary border border-primary/20 flex items-center gap-1.5">
-                  <School className="w-3.5 h-3.5" />
-                  {activeTenantName || 'Current School'}
-                </span>
-              </div>
-              <p className="text-sm text-muted-foreground mt-0.5">
-                Official examination transcripts approved and published by school administration.
-              </p>
-            </div>
-          </div>
-        </div>
-
-        <div className="flex items-center gap-2 self-start sm:self-auto shrink-0">
-          <Button variant="outline" size="sm" asChild className="text-xs font-medium gap-1.5">
-            <Link to="/academic/my-children">
-              <Baby className="w-3.5 h-3.5 text-primary" />
-              <span>My Children</span>
-            </Link>
-          </Button>
-          <Button variant="outline" size="sm" asChild className="text-xs font-medium gap-1.5">
-            <Link to="/academic/my-teachers">
-              <GraduationCap className="w-3.5 h-3.5 text-emerald-600" />
-              <span>Class Teacher</span>
-            </Link>
-          </Button>
-        </div>
+      {/* Navigation Actions */}
+      <div className="flex justify-end items-center gap-2">
+        <Button variant="outline" size="sm" asChild className="text-xs font-medium gap-1.5">
+          <Link to="/academic/my-children">
+            <Baby className="w-3.5 h-3.5 text-primary" />
+            <span>My Children</span>
+          </Link>
+        </Button>
+        <Button variant="outline" size="sm" asChild className="text-xs font-medium gap-1.5">
+          <Link to="/academic/my-teachers">
+            <GraduationCap className="w-3.5 h-3.5 text-emerald-600" />
+            <span>Class Teacher</span>
+          </Link>
+        </Button>
       </div>
 
       {/* Loading State */}

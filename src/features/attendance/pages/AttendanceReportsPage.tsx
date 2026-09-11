@@ -252,55 +252,31 @@ export const AttendanceReportsPage: React.FC = () => {
 
   return (
     <div className="space-y-6 pb-12">
-      {/* Header & Main Controls */}
-      <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-4 border-b pb-5">
-        <div className="space-y-1">
-          <div className="flex items-center gap-2.5">
-            <div className="p-2.5 rounded-xl bg-primary/10 text-primary border border-primary/20">
-              <BarChart3 className="w-6 h-6" />
-            </div>
-            <div>
-              <div className="flex items-center gap-2">
-                <h1 className="text-xl sm:text-2xl font-bold tracking-tight text-foreground">
-                  Attendance Reports &amp; Analytics
-                </h1>
-                <Badge variant="outline" className="text-xs font-mono">
-                  {activeTenantName || 'School Scope'}
-                </Badge>
-              </div>
-              <p className="text-xs sm:text-sm text-muted-foreground">
-                Comprehensive school-wide attendance metrics, class rankings, at-risk tracking, and matrix rosters.
-              </p>
-            </div>
-          </div>
-        </div>
-
-        {/* Global Action Buttons */}
-        <div className="flex items-center gap-2 flex-wrap sm:flex-nowrap">
-          <Button
-            type="button"
-            variant="outline"
-            size="sm"
-            onClick={handleRefresh}
-            disabled={isSchoolLoading || isSchoolRefetching}
-            className="h-9 gap-1.5 text-xs cursor-pointer"
-          >
-            <RotateCw
-              className={cn('w-3.5 h-3.5', (isSchoolRefetching || isClassRefetching) && 'animate-spin')}
-            />
-            <span>Refresh</span>
-          </Button>
-          <Button
-            type="button"
-            size="sm"
-            onClick={handleExportCsv}
-            disabled={!schoolReport || isSchoolLoading}
-            className="h-9 gap-1.5 text-xs bg-emerald-600 hover:bg-emerald-700 text-white cursor-pointer"
-          >
-            <Download className="w-3.5 h-3.5" />
-            <span>Export CSV</span>
-          </Button>
-        </div>
+      {/* Global Action Buttons */}
+      <div className="flex justify-end items-center gap-2 flex-wrap sm:flex-nowrap">
+        <Button
+          type="button"
+          variant="outline"
+          size="sm"
+          onClick={handleRefresh}
+          disabled={isSchoolLoading || isSchoolRefetching}
+          className="h-9 gap-1.5 text-xs cursor-pointer"
+        >
+          <RotateCw
+            className={cn('w-3.5 h-3.5', (isSchoolRefetching || isClassRefetching) && 'animate-spin')}
+          />
+          <span>Refresh</span>
+        </Button>
+        <Button
+          type="button"
+          size="sm"
+          onClick={handleExportCsv}
+          disabled={!schoolReport || isSchoolLoading}
+          className="h-9 gap-1.5 text-xs bg-emerald-600 hover:bg-emerald-700 text-white cursor-pointer"
+        >
+          <Download className="w-3.5 h-3.5" />
+          <span>Export CSV</span>
+        </Button>
       </div>
 
       {/* Timeframe Controls Bar */}

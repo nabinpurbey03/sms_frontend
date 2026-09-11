@@ -10,7 +10,6 @@ import {
   GraduationCap,
   Phone,
   Mail,
-  UserCheck,
   Loader2,
   AlertCircle,
   Copy,
@@ -103,47 +102,29 @@ export const MyTeachersPage: React.FC = () => {
 
   return (
     <div className="space-y-6 pb-16">
-      {/* Header */}
-      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 border-b border-border/60 pb-5">
-        <div>
-          <div className="flex items-center gap-2.5">
-            <div className="w-9 h-9 rounded-lg bg-primary/10 text-primary flex items-center justify-center shrink-0">
-              <UserCheck className="w-5 h-5" />
-            </div>
-            <div>
-              <h1 className="text-2xl font-bold tracking-tight text-foreground">
-                My Children's Teacher
-              </h1>
-              <p className="text-sm text-muted-foreground mt-0.5">
-                Direct contact information for the designated Class Teacher and academic mentor for your enrolled children.
-              </p>
-            </div>
-          </div>
-        </div>
-
-        <div className="flex items-center gap-2 self-start sm:self-auto shrink-0 flex-wrap">
-          <Button variant="outline" size="sm" asChild className="text-xs font-medium gap-1.5">
-            <Link to="/academic/my-children">
-              <Baby className="w-3.5 h-3.5 text-primary" />
-              <span>My Children</span>
-            </Link>
-          </Button>
-          <Button variant="outline" size="sm" asChild className="text-xs font-medium gap-1.5">
-            <Link to="/academic/report-cards">
-              <Award className="w-3.5 h-3.5 text-amber-500" />
-              <span>Report Cards</span>
-            </Link>
-          </Button>
-          <Badge
-            variant="outline"
-            className="px-3 py-1 text-xs font-semibold gap-1.5 bg-primary/5 text-primary border-primary/20"
-          >
-            <Users className="w-3.5 h-3.5" />
-            <span>
-              {childrenTeachers.length} {childrenTeachers.length === 1 ? 'Child Enrolled' : 'Children Enrolled'}
-            </span>
-          </Badge>
-        </div>
+      {/* Navigation & Status Actions */}
+      <div className="flex justify-end items-center gap-2 flex-wrap">
+        <Button variant="outline" size="sm" asChild className="text-xs font-medium gap-1.5">
+          <Link to="/academic/my-children">
+            <Baby className="w-3.5 h-3.5 text-primary" />
+            <span>My Children</span>
+          </Link>
+        </Button>
+        <Button variant="outline" size="sm" asChild className="text-xs font-medium gap-1.5">
+          <Link to="/academic/report-cards">
+            <Award className="w-3.5 h-3.5 text-amber-500" />
+            <span>Report Cards</span>
+          </Link>
+        </Button>
+        <Badge
+          variant="outline"
+          className="px-3 py-1 text-xs font-semibold gap-1.5 bg-primary/5 text-primary border-primary/20"
+        >
+          <GraduationCap className="w-3.5 h-3.5" />
+          <span>
+            {childrenTeachers.length} {childrenTeachers.length === 1 ? 'Class Teacher' : 'Class Teachers'}
+          </span>
+        </Badge>
       </div>
 
       {/* Quick Jump Bar for multiple children - wraps naturally, zero horizontal scroll */}

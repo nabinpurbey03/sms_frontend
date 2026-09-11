@@ -18,7 +18,6 @@ import {
   Check,
   Filter,
   Link2,
-  HeartHandshake,
   Star,
   BookOpen,
   GraduationCap,
@@ -92,32 +91,16 @@ export const TeacherParentDirectoryPage: React.FC = () => {
 
   return (
     <div className="space-y-6 pb-16">
-      {/* Header */}
-      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 border-b border-border/60 pb-5">
-        <div>
-          <div className="flex items-center gap-2">
-            <div className="w-9 h-9 rounded-lg bg-primary/10 text-primary flex items-center justify-center">
-              <HeartHandshake className="w-5 h-5" />
-            </div>
-            <h1 className="text-2xl font-bold tracking-tight text-foreground">
-              Student & Parent Directory
-            </h1>
-          </div>
-          <p className="text-sm text-muted-foreground mt-1">
-            Official directory of students in your assigned classes and their verified parents / guardians.
-          </p>
-        </div>
-
-        <div className="flex items-center gap-2">
-          <Button
-            variant="outline"
-            size="sm"
-            onClick={() => refetch()}
-            className="gap-2 cursor-pointer text-xs"
-          >
-            Refresh Directory
-          </Button>
-        </div>
+      {/* Actions */}
+      <div className="flex justify-end">
+        <Button
+          variant="outline"
+          size="sm"
+          onClick={() => refetch()}
+          className="gap-2 cursor-pointer text-xs"
+        >
+          Refresh Directory
+        </Button>
       </div>
 
       {/* KPI Metrics Ribbon */}

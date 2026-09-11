@@ -189,32 +189,18 @@ export const MembersPage: React.FC = () => {
 
   return (
     <div className="space-y-6 pb-12">
-      {/* Page Header */}
-      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
-        <div>
-          <div className="flex items-center gap-2">
-            <h1 className="text-2xl font-extrabold tracking-tight text-foreground">
-              School Members Hub
-            </h1>
-            <span className="text-xs font-semibold px-2.5 py-0.5 rounded-full bg-primary/10 text-primary border border-primary/20">
-              {activeTenantName || 'Current School'}
-            </span>
-          </div>
-          <p className="text-xs sm:text-sm text-muted-foreground mt-1">
-            Manage teachers, staff, parents, and administrators with granular role-based access control.
-          </p>
-        </div>
-
-        {canManageMembers && (
+      {/* Action Header */}
+      {canManageMembers && (
+        <div className="flex justify-end">
           <Button
             onClick={() => setIsAddOpen(true)}
-            className="gap-2 shadow-xs shrink-0 self-start sm:self-auto"
+            className="gap-2 shadow-xs shrink-0"
           >
             <Users className="w-4 h-4" />
             <span>Add Member</span>
           </Button>
-        )}
-      </div>
+        </div>
+      )}
 
       {/* KPI Stats Cards */}
       <MemberStatsCards

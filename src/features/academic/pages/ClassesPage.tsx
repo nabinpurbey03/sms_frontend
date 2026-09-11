@@ -27,7 +27,7 @@ import { EmptyState } from '@/components/common/EmptyState';
 import type { ClassWithDetails, AcademicClass, AcademicStats } from '../types';
 
 export const ClassesPage: React.FC = () => {
-  const { activeTenantId, activeTenantName, activeRole } = useAuth();
+  const { activeTenantId, activeRole } = useAuth();
   const { isSuperAdmin, can } = usePermission();
   const navigate = useNavigate();
 
@@ -183,32 +183,18 @@ export const ClassesPage: React.FC = () => {
 
   return (
     <div className="space-y-6 pb-12">
-      {/* Header */}
-      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
-        <div>
-          <div className="flex items-center gap-2">
-            <h1 className="text-2xl font-extrabold tracking-tight text-foreground">
-              Classes & Sections
-            </h1>
-            <span className="text-xs font-semibold px-2.5 py-0.5 rounded-full bg-primary/10 text-primary border border-primary/20">
-              {activeTenantName || 'Current School'}
-            </span>
-          </div>
-          <p className="text-xs sm:text-sm text-muted-foreground mt-1">
-            Organize academic classes, auto-provision sections, and monitor student capacity under the 20-student expansion policy.
-          </p>
-        </div>
-
-        {canManage && (
+      {/* Actions */}
+      {canManage && (
+        <div className="flex justify-end">
           <Button
             onClick={() => setIsCreateClassOpen(true)}
-            className="gap-2 shadow-xs shrink-0 self-start sm:self-auto"
+            className="gap-2 shadow-xs shrink-0"
           >
             <Plus className="w-4 h-4" />
             <span>Create Class</span>
           </Button>
-        )}
-      </div>
+        </div>
+      )}
 
       {/* KPI Stats */}
       <AcademicStatsCards stats={stats} isLoading={isLoading} />

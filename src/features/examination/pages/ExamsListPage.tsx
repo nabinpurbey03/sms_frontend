@@ -171,27 +171,17 @@ export const ExamsListPage: React.FC = () => {
 
   return (
     <div className="space-y-6 max-w-7xl mx-auto pb-16">
-      {/* Header */}
-      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 border-b pb-5">
-        <div>
-          <h1 className="text-2xl font-bold tracking-tight text-foreground flex items-center gap-2.5">
-            <GraduationCap className="w-7 h-7 text-primary" />
-            Examinations
-          </h1>
-          <p className="text-sm text-muted-foreground mt-1">
-            Manage school examinations, grade submissions, and approve results matrices.
-          </p>
-        </div>
-
-        {canManageExams && (
-          <Button asChild className="gap-2 font-semibold self-start sm:self-auto shadow-xs">
+      {/* Action Header */}
+      {canManageExams && (
+        <div className="flex justify-end">
+          <Button asChild className="gap-2 font-semibold shadow-xs">
             <Link to={'/examination/exams/create' as any}>
               <Plus className="w-4 h-4" />
               Create Examination
             </Link>
           </Button>
-        )}
-      </div>
+        </div>
+      )}
 
       {/* Tabs Switcher */}
       <div className="flex items-center gap-2 border-b pb-2">

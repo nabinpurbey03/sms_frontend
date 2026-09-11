@@ -107,25 +107,9 @@ export const TeacherAssignmentsPage: React.FC = () => {
 
   return (
     <div className="space-y-6 pb-12">
-      {/* Header Banner */}
-      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 border-b pb-5">
-        <div className="space-y-1">
-          <div className="flex items-center gap-2.5">
-            <div className="p-2 rounded-xl bg-primary/10 text-primary border border-primary/20">
-              <UserCheck className="w-6 h-6" />
-            </div>
-            <div>
-              <h1 className="text-xl sm:text-2xl font-bold tracking-tight text-foreground">
-                Faculty Teaching Duties
-              </h1>
-              <p className="text-xs sm:text-sm text-muted-foreground">
-                Appoint class teachers and assign subject instructors across classes and sections.
-              </p>
-            </div>
-          </div>
-        </div>
-
-        {canAssign && (
+      {/* Actions */}
+      {canAssign && (
+        <div className="flex justify-end">
           <div className="flex items-center gap-2 shrink-0">
             <Button
               variant="outline"
@@ -145,8 +129,8 @@ export const TeacherAssignmentsPage: React.FC = () => {
               <span>Assign Subject Teacher</span>
             </Button>
           </div>
-        )}
-      </div>
+        </div>
+      )}
 
       {/* Summary KPI Cards */}
       <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">

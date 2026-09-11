@@ -233,24 +233,10 @@ export const SubjectsPage: React.FC = () => {
 
   return (
     <div className="space-y-6 pb-12">
-      {/* Header */}
-      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
-        <div>
-          <div className="flex items-center gap-2">
-            <h1 className="text-2xl font-extrabold tracking-tight text-foreground">
-              Curriculum Subjects
-            </h1>
-            <span className="text-xs font-semibold px-2.5 py-0.5 rounded-full bg-primary/10 text-primary border border-primary/20">
-              {activeTenantName || 'Current School'}
-            </span>
-          </div>
-          <p className="text-xs sm:text-sm text-muted-foreground mt-1">
-            Configure courses, curriculum subjects, and standardized subject codes across all academic grades.
-          </p>
-        </div>
-
-        {canManage && (
-          <div className="flex items-center gap-2 shrink-0 self-start sm:self-auto">
+      {/* Actions */}
+      {canManage && (
+        <div className="flex justify-end">
+          <div className="flex items-center gap-2 shrink-0">
             <Button
               variant="outline"
               onClick={() => setIsBulkOpen(true)}
@@ -269,8 +255,8 @@ export const SubjectsPage: React.FC = () => {
               <span>Add Subject</span>
             </Button>
           </div>
-        )}
-      </div>
+        </div>
+      )}
 
       {/* KPI Stats Cards */}
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4">

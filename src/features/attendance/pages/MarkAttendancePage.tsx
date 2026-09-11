@@ -247,15 +247,6 @@ export const MarkAttendancePage: React.FC = () => {
   if (isLoading) {
     return (
       <div className="space-y-6 pb-12">
-        <div className="flex items-center gap-2.5">
-          <div className="p-2 rounded-xl bg-primary/10 text-primary border border-primary/20">
-            <CalendarCheck className="w-6 h-6" />
-          </div>
-          <div>
-            <h1 className="text-2xl font-bold text-foreground">Mark Daily Attendance</h1>
-            <p className="text-sm text-muted-foreground">Loading attendance details...</p>
-          </div>
-        </div>
         <div className="h-40 rounded-xl border bg-muted/20 animate-pulse" />
       </div>
     );
@@ -265,20 +256,6 @@ export const MarkAttendancePage: React.FC = () => {
   if (isTeacherOnly && accessibleSections.length === 0) {
     return (
       <div className="space-y-6 pb-12">
-        <div className="flex items-center gap-2.5 border-b pb-5">
-          <div className="p-2 rounded-xl bg-primary/10 text-primary border border-primary/20">
-            <CalendarCheck className="w-6 h-6" />
-          </div>
-          <div>
-            <h1 className="text-xl sm:text-2xl font-bold tracking-tight text-foreground">
-              Mark Daily Attendance
-            </h1>
-            <p className="text-xs sm:text-sm text-muted-foreground">
-              Record daily student attendance for your assigned class section.
-            </p>
-          </div>
-        </div>
-
         <Card className="border-dashed p-12 text-center space-y-3 bg-card/60">
           <AlertCircle className="w-10 h-10 mx-auto text-amber-500/80" />
           <div>
@@ -311,20 +288,6 @@ export const MarkAttendancePage: React.FC = () => {
   if (accessibleSections.length === 0) {
     return (
       <div className="space-y-6 pb-12">
-        <div className="flex items-center gap-2.5 border-b pb-5">
-          <div className="p-2 rounded-xl bg-primary/10 text-primary border border-primary/20">
-            <CalendarCheck className="w-6 h-6" />
-          </div>
-          <div>
-            <h1 className="text-xl sm:text-2xl font-bold tracking-tight text-foreground">
-              Mark Daily Attendance
-            </h1>
-            <p className="text-xs sm:text-sm text-muted-foreground">
-              Mark student attendance for your school sections.
-            </p>
-          </div>
-        </div>
-
         <Card className="border-dashed p-12 text-center space-y-3 bg-card/60">
           <CalendarCheck className="w-10 h-10 mx-auto text-muted-foreground/60" />
           <div>
@@ -340,29 +303,6 @@ export const MarkAttendancePage: React.FC = () => {
 
   return (
     <div className="space-y-6 pb-12">
-      {/* Header */}
-      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 border-b pb-5">
-        <div className="space-y-1">
-          <div className="flex items-center gap-2.5">
-            <div className="p-2 rounded-xl bg-primary/10 text-primary border border-primary/20">
-              {isAlreadyMarked ? <Edit3 className="w-6 h-6" /> : <CalendarCheck className="w-6 h-6" />}
-            </div>
-            <div>
-              <h1 className="text-xl sm:text-2xl font-bold tracking-tight text-foreground">
-                {isAlreadyMarked ? 'Update Daily Attendance' : 'Mark Daily Attendance'}
-              </h1>
-              <p className="text-xs sm:text-sm text-muted-foreground">
-                {isAlreadyMarked
-                  ? 'Attendance has already been recorded for this section on this date. Modify student attendance below.'
-                  : isTeacherOnly
-                  ? 'You can only mark attendance for sections where you are the Class Teacher.'
-                  : 'Mark student attendance for your school sections.'}
-              </p>
-            </div>
-          </div>
-        </div>
-      </div>
-
       {/* Selection Controls */}
       <Card className="p-4 bg-card shadow-xs border-border/70">
         <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">

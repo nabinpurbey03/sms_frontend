@@ -52,15 +52,6 @@ export const MyAssignmentsPage: React.FC = () => {
   if (isLoading) {
     return (
       <div className="space-y-6 pb-12">
-        <div className="flex items-center gap-2.5">
-          <div className="p-2 rounded-xl bg-primary/10 text-primary border border-primary/20">
-            <BookOpen className="w-6 h-6" />
-          </div>
-          <div>
-            <h1 className="text-2xl font-bold text-foreground">My Teaching Duties</h1>
-            <p className="text-sm text-muted-foreground">Loading your assignments...</p>
-          </div>
-        </div>
         <div className="space-y-4">
           {[1, 2, 3].map(i => (
             <div key={i} className="h-32 rounded-xl border bg-muted/20 animate-pulse" />
@@ -74,19 +65,6 @@ export const MyAssignmentsPage: React.FC = () => {
 
   return (
     <div className="space-y-6 pb-12">
-      {/* Header */}
-      <div className="flex items-center gap-2.5">
-        <div className="p-2 rounded-xl bg-primary/10 text-primary border border-primary/20">
-          <GraduationCap className="w-6 h-6" />
-        </div>
-        <div>
-          <h1 className="text-2xl font-bold text-foreground">My Teaching Duties</h1>
-          <p className="text-sm text-muted-foreground">
-            Welcome back, {user?.first_name}! Here's your teaching schedule and responsibilities.
-          </p>
-        </div>
-      </div>
-
       {hasNoAssignments ? (
         <Card className="border-dashed p-12 text-center space-y-3 bg-card/60">
           <GraduationCap className="w-10 h-10 mx-auto text-muted-foreground/60" />
