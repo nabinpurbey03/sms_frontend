@@ -27,6 +27,7 @@ import {
 
 import { useAuth } from '@/auth/useAuth';
 import { usePermission } from '@/auth/usePermission';
+import { useTenant } from '@/features/tenants/hooks';
 import { useThemeStore } from '@/stores/themeStore';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -66,6 +67,7 @@ export const AppShell: React.FC = () => {
     switchPersona,
   } = useAuth();
   const { can, isSuperAdmin, isTeacher, isParent } = usePermission();
+  const { data: tenant } = useTenant(activeTenantId);
   const { theme, setTheme } = useThemeStore();
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const [isDesktopSidebarCollapsed, setIsDesktopSidebarCollapsed] = useState(false);
@@ -568,28 +570,30 @@ export const AppShell: React.FC = () => {
             )}
           </div>
 
-          {/* Middle: School Name & Search */}
-          <div className="hidden md:flex flex-1 items-center justify-center gap-6 px-6 max-w-3xl">
-            <div className="flex flex-col items-start shrink-0">
+          {/* Middle: School Name & Address */}
+          <div className="hidden md:flex flex-1 items-center justify-center px-6">
+            <div className="flex flex-col items-center justify-center shrink-0">
               <span className="font-bold text-base whitespace-nowrap bg-gradient-to-r from-[#03045E] via-[#0077B6] to-[#00B4D8] bg-clip-text text-transparent">
                 {activeTenantName || 'Global Platform'}
               </span>
-              <span className="text-[11px] font-medium tracking-wide whitespace-nowrap bg-gradient-to-r from-[#0077B6] to-[#00B4D8] bg-clip-text text-transparent opacity-90">
-                123 Education St, New York, NY
-              </span>
+              {tenant?.address && (
+                <span className="text-[11px] font-medium tracking-wide whitespace-nowrap bg-gradient-to-r from-[#0077B6] to-[#00B4D8] bg-clip-text text-transparent opacity-90">
+                  {tenant.address.tole ? `${tenant.address.tole}, ` : ''}{tenant.address.municipality}-{tenant.address.ward}, {tenant.address.district}
+                </span>
+              )}
             </div>
-            <div className="relative w-full max-w-md">
+          </div>
+
+          {/* Right: Search, Controls & Profile */}
+          <div className="flex flex-1 min-w-0 items-center justify-end gap-2 sm:gap-3 shrink-0">
+            <div className="relative hidden lg:block w-full max-w-[240px] mr-2">
               <Search className="absolute left-2.5 top-2 h-4 w-4 text-muted-foreground" />
               <Input 
-                placeholder="Search students, parents, staff..." 
+                placeholder="Search students, parents..."
                 className="w-full bg-muted/50 border-none pl-9 h-8 focus-visible:bg-background transition-colors text-xs rounded-full"
                 onChange={handleSearch}
               />
             </div>
-          </div>
-
-          {/* Right: Controls & Profile */}
-          <div className="flex items-center gap-2 sm:gap-3 shrink-0">
             {/* Theme Toggle */}
           <Button 
             variant="ghost" 
