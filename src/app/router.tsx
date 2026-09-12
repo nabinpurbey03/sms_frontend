@@ -34,6 +34,7 @@ import { OfficialReportCardViewPage } from '@/features/examination/pages/Officia
 import { ErrorState } from '@/components/common/ErrorState';
 import { Button } from '@/components/ui/button';
 import { Toaster } from '@/components/ui/sonner';
+import { AcademicYearsPage } from '@/features/academic-year/pages/AcademicYearsPage';
 
 // Root Route
 const rootRoute = createRootRoute({
@@ -178,6 +179,12 @@ const tenantsRoute = createRoute({
   component: TenantsPage,
 });
 
+const academicYearsRoute = createRoute({
+  getParentRoute: () => protectedLayoutRoute,
+  path: '/academic-years',
+  component: AcademicYearsPage,
+});
+
 const tenantSettingsRoute = createRoute({
   getParentRoute: () => protectedLayoutRoute,
   path: '/tenant-settings',
@@ -231,6 +238,7 @@ const routeTree = rootRoute.addChildren([
     attendanceReportsRoute,
     membersRoute,
     tenantsRoute,
+    academicYearsRoute,
     tenantSettingsRoute,
     examsRoute,
     createExamRoute,

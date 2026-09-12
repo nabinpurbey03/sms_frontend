@@ -6,6 +6,7 @@ import {
   useAllClassesWithDetails,
   useDeleteAssignment,
 } from '../hooks';
+import { useSelectedAcademicYear } from '@/features/academic-year/hooks/useSelectedAcademicYear';
 import { AssignTeacherDialog } from '../components/AssignTeacherDialog';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
@@ -37,8 +38,11 @@ export const TeacherAssignmentsPage: React.FC = () => {
   const { can } = usePermission();
   const canAssign = can('ASSIGN_TEACHERS');
 
-  const { data: assignments = [], isLoading, isError, refetch } = useAssignments(activeTenantId);
-  const { data: classes = [] } = useAllClassesWithDetails(activeTenantId);
+  const { selectedYear, selectedYearId } = useSelectedAcademicYear();
+  const isReadOnly = selectedYear?.is_closed || !selectedYear?.is_current;
+
+  const { data: assignments = [], isLoading, isError, refetch } = useAssignments(activeTenantId, { academic_year_id: selectedYearId });
+  const { data: classes = [] } = useAllClassesWithDetails(activeTenantId, selectedYearId);
   const deleteAssignmentMutation = useDeleteAssignment();
 
   // Dialog State
@@ -108,7 +112,7 @@ export const TeacherAssignmentsPage: React.FC = () => {
   return (
     <div className="space-y-6 pb-12">
       {/* Actions */}
-      {canAssign && (
+      {canAssign && !isReadOnly && (
         <div className="flex justify-end">
           <div className="flex items-center gap-2 shrink-0">
             <Button
@@ -343,7 +347,7 @@ export const TeacherAssignmentsPage: React.FC = () => {
                     )}
                   </TableCell>
 
-                  {canAssign && (
+                  {canAssign && !isReadOnly && (
                     <TableCell className="text-right">
                       <Button
                         variant="ghost"

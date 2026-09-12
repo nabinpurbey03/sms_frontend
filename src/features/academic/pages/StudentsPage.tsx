@@ -13,7 +13,8 @@ import { StudentEnrollGlobalDialog } from '../components/StudentEnrollGlobalDial
 import { BulkStudentUploadDialog } from '../components/BulkStudentUploadDialog';
 import { StudentDeleteDialog } from '../components/StudentDeleteDialog';
 import { ParentStudentLinkDialog } from '@/features/members/components/ParentStudentLinkDialog';
-
+import { useSelectedAcademicYear } from '@/features/academic-year/hooks/useSelectedAcademicYear';
+import { StudentEnrollmentHistoryDialog } from '../components/StudentEnrollmentHistoryDialog';
 import {
   Users,
   GraduationCap,
@@ -69,6 +70,9 @@ export const StudentsPage: React.FC = () => {
   const [isBulkOpen, setIsBulkOpen] = useState(false);
   const [studentToDelete, setStudentToDelete] = useState<EnrichedStudent | null>(null);
   const [linkingStudent, setLinkingStudent] = useState<EnrichedStudent | null>(null);
+  const [historyStudent, setHistoryStudent] = useState<EnrichedStudent | null>(null);
+
+  const { selectedYearId } = useSelectedAcademicYear();
 
   // Queries & Mutations
   const {
@@ -76,7 +80,7 @@ export const StudentsPage: React.FC = () => {
     isLoading,
     isError,
     refetch,
-  } = useAllClassesWithDetails(activeTenantId);
+  } = useAllClassesWithDetails(activeTenantId, selectedYearId);
 
   const addStudentMutation = useAddStudent();
   const bulkAddMutation = useBulkAddStudents();
@@ -239,6 +243,7 @@ export const StudentsPage: React.FC = () => {
       classId,
       sectionId,
       data,
+      academicYearId: selectedYearId,
     });
   };
 
@@ -250,6 +255,7 @@ export const StudentsPage: React.FC = () => {
       classId,
       sectionId,
       students,
+      academicYearId: selectedYearId,
     });
   };
 
@@ -642,6 +648,15 @@ export const StudentsPage: React.FC = () => {
                               </DropdownMenuItem>
 
                               <DropdownMenuSeparator />
+                              <DropdownMenuLabel className="text-xs">History</DropdownMenuLabel>
+                              <DropdownMenuItem
+                                onClick={() => setHistoryStudent(st)}
+                                className="text-xs cursor-pointer"
+                              >
+                                View Enrollment History
+                              </DropdownMenuItem>
+
+                              <DropdownMenuSeparator />
                               <DropdownMenuLabel className="text-xs">Guardian ReBAC</DropdownMenuLabel>
                               <DropdownMenuItem
                                 onClick={() => setLinkingStudent(st)}
@@ -697,6 +712,12 @@ export const StudentsPage: React.FC = () => {
         onClose={() => setStudentToDelete(null)}
         onConfirm={handleDeleteStudent}
         isLoading={deleteStudentMutation.isPending}
+      />
+
+      <StudentEnrollmentHistoryDialog
+        open={!!historyStudent}
+        onOpenChange={(val) => !val && setHistoryStudent(null)}
+        student={historyStudent}
       />
 
       {/* Dialog: Link Parent / Guardian to Student */}

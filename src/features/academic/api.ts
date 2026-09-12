@@ -20,8 +20,8 @@ export const academicApi = {
   // ==========================================
   // Classes
   // ==========================================
-  getClasses: async (tenantId: string): Promise<AcademicClass[]> => {
-    return apiClient.get(`/academic/tenants/${tenantId}/classes`);
+  getClasses: async (tenantId: string, academicYearId?: string | null): Promise<AcademicClass[]> => {
+    return apiClient.get(`/academic/tenants/${tenantId}/classes`, { params: { academic_year_id: academicYearId || undefined } });
   },
 
   createClass: async (tenantId: string, data: ClassCreateDTO): Promise<AcademicClass> => {
@@ -47,8 +47,8 @@ export const academicApi = {
   // ==========================================
   // Sections
   // ==========================================
-  getSections: async (tenantId: string, classId: string): Promise<AcademicSection[]> => {
-    return apiClient.get(`/academic/tenants/${tenantId}/classes/${classId}/sections`);
+  getSections: async (tenantId: string, classId: string, academicYearId?: string | null): Promise<AcademicSection[]> => {
+    return apiClient.get(`/academic/tenants/${tenantId}/classes/${classId}/sections`, { params: { academic_year_id: academicYearId || undefined } });
   },
 
   checkSectionEligibility: async (
@@ -78,20 +78,21 @@ export const academicApi = {
   // ==========================================
   // Students
   // ==========================================
-  getStudents: async (tenantId: string, classId: string): Promise<AcademicStudent[]> => {
-    return apiClient.get(`/academic/tenants/${tenantId}/classes/${classId}/students`);
+  getStudents: async (tenantId: string, classId: string, academicYearId?: string | null): Promise<AcademicStudent[]> => {
+    return apiClient.get(`/academic/tenants/${tenantId}/classes/${classId}/students`, { params: { academic_year_id: academicYearId || undefined } });
   },
 
   addStudent: async (
     tenantId: string,
     classId: string,
     sectionId: string,
-    data: StudentCreateDTO
+    data: StudentCreateDTO,
+    academicYearId?: string | null
   ): Promise<AcademicStudent> => {
     return apiClient.post(
       `/academic/tenants/${tenantId}/classes/${classId}/students`,
       data,
-      { params: { section_id: sectionId } }
+      { params: { section_id: sectionId, academic_year_id: academicYearId || undefined } }
     );
   },
 
@@ -99,12 +100,13 @@ export const academicApi = {
     tenantId: string,
     classId: string,
     sectionId: string,
-    students: StudentCreateDTO[]
+    students: StudentCreateDTO[],
+    academicYearId?: string | null
   ): Promise<{ count: number; students: AcademicStudent[] }> => {
     return apiClient.post(
       `/academic/tenants/${tenantId}/classes/${classId}/students/bulk`,
       { students },
-      { params: { section_id: sectionId } }
+      { params: { section_id: sectionId, academic_year_id: academicYearId || undefined } }
     );
   },
 
@@ -134,8 +136,8 @@ export const academicApi = {
   // ==========================================
   // Subjects
   // ==========================================
-  getSubjects: async (tenantId: string, classId: string): Promise<AcademicSubject[]> => {
-    return apiClient.get(`/academic/tenants/${tenantId}/classes/${classId}/subjects`);
+  getSubjects: async (tenantId: string, classId: string, academicYearId?: string | null): Promise<AcademicSubject[]> => {
+    return apiClient.get(`/academic/tenants/${tenantId}/classes/${classId}/subjects`, { params: { academic_year_id: academicYearId || undefined } });
   },
 
   createSubject: async (
@@ -185,12 +187,12 @@ export const academicApi = {
   // ==========================================
   // Class with Details (for dedicated page view)
   // ==========================================
-  getClassWithDetails: async (tenantId: string, classId: string): Promise<ClassWithDetails | null> => {
+  getClassWithDetails: async (tenantId: string, classId: string, academicYearId?: string | null): Promise<ClassWithDetails | null> => {
     const [classes, sections, students, subjects] = await Promise.all([
-      academicApi.getClasses(tenantId),
-      academicApi.getSections(tenantId, classId),
-      academicApi.getStudents(tenantId, classId),
-      academicApi.getSubjects(tenantId, classId),
+      academicApi.getClasses(tenantId, academicYearId),
+      academicApi.getSections(tenantId, classId, academicYearId),
+      academicApi.getStudents(tenantId, classId, academicYearId),
+      academicApi.getSubjects(tenantId, classId, academicYearId),
     ]);
 
     const cls = classes.find((c) => c.id === classId);
@@ -225,7 +227,7 @@ export const academicApi = {
 
   getAssignments: async (
     tenantId: string,
-    params?: { teacher_id?: string; class_id?: string }
+    params?: { teacher_id?: string; class_id?: string; academic_year_id?: string | null }
   ): Promise<TeacherAssignment[]> => {
     return apiClient.get(`/academic/tenants/${tenantId}/assignments`, { params });
   },

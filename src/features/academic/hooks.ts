@@ -19,37 +19,37 @@ export const SECTION_ELIGIBILITY_KEY = 'section_eligibility';
 export const ASSIGNMENTS_QUERY_KEY = 'academic_assignments';
 export const MY_TEACHER_ASSIGNMENTS_QUERY_KEY = 'my_teacher_assignments';
 
-export const useClasses = (tenantId: string | null) => {
+export const useClasses = (tenantId: string | null, academicYearId?: string | null) => {
   return useQuery({
-    queryKey: [CLASSES_QUERY_KEY, tenantId],
-    queryFn: () => academicApi.getClasses(tenantId!),
+    queryKey: [CLASSES_QUERY_KEY, tenantId, academicYearId],
+    queryFn: () => academicApi.getClasses(tenantId!, academicYearId),
     enabled: !!tenantId,
     staleTime: 1000 * 30,
   });
 };
 
-export const useClassSections = (tenantId: string | null, classId: string | null) => {
+export const useClassSections = (tenantId: string | null, classId: string | null, academicYearId?: string | null) => {
   return useQuery({
-    queryKey: [SECTIONS_QUERY_KEY, tenantId, classId],
-    queryFn: () => academicApi.getSections(tenantId!, classId!),
+    queryKey: [SECTIONS_QUERY_KEY, tenantId, classId, academicYearId],
+    queryFn: () => academicApi.getSections(tenantId!, classId!, academicYearId),
     enabled: !!tenantId && !!classId,
     staleTime: 1000 * 30,
   });
 };
 
-export const useClassStudents = (tenantId: string | null, classId: string | null) => {
+export const useClassStudents = (tenantId: string | null, classId: string | null, academicYearId?: string | null) => {
   return useQuery({
-    queryKey: [STUDENTS_QUERY_KEY, tenantId, classId],
-    queryFn: () => academicApi.getStudents(tenantId!, classId!),
+    queryKey: [STUDENTS_QUERY_KEY, tenantId, classId, academicYearId],
+    queryFn: () => academicApi.getStudents(tenantId!, classId!, academicYearId),
     enabled: !!tenantId && !!classId,
     staleTime: 1000 * 30,
   });
 };
 
-export const useClassSubjects = (tenantId: string | null, classId: string | null) => {
+export const useClassSubjects = (tenantId: string | null, classId: string | null, academicYearId?: string | null) => {
   return useQuery({
-    queryKey: [SUBJECTS_QUERY_KEY, tenantId, classId],
-    queryFn: () => academicApi.getSubjects(tenantId!, classId!),
+    queryKey: [SUBJECTS_QUERY_KEY, tenantId, classId, academicYearId],
+    queryFn: () => academicApi.getSubjects(tenantId!, classId!, academicYearId),
     enabled: !!tenantId && !!classId,
     staleTime: 1000 * 30,
   });
@@ -66,11 +66,11 @@ export const useSectionEligibility = (tenantId: string | null, classId: string |
 /**
  * Hook to fetch a single class with full details for the dedicated detail page.
  */
-export const useClassWithDetails = (tenantId: string | null, classId: string | null) => {
+export const useClassWithDetails = (tenantId: string | null, classId: string | null, academicYearId?: string | null) => {
   return useQuery<ClassWithDetails | null>({
-    queryKey: ['academic_class_with_details', tenantId, classId],
+    queryKey: ['academic_class_with_details', tenantId, classId, academicYearId],
     queryFn: async () => {
-      const data = await academicApi.getClassWithDetails(tenantId!, classId!);
+      const data = await academicApi.getClassWithDetails(tenantId!, classId!, academicYearId);
       return data;
     },
     enabled: !!tenantId && !!classId,
@@ -81,19 +81,19 @@ export const useClassWithDetails = (tenantId: string | null, classId: string | n
 /**
  * Hook to aggregate all classes with their sections and students.
  */
-export const useAllClassesWithDetails = (tenantId: string | null) => {
+export const useAllClassesWithDetails = (tenantId: string | null, academicYearId?: string | null) => {
   return useQuery({
-    queryKey: [CLASSES_QUERY_KEY, 'detailed', tenantId],
+    queryKey: [CLASSES_QUERY_KEY, 'detailed', tenantId, academicYearId],
     queryFn: async (): Promise<ClassWithDetails[]> => {
       if (!tenantId) return [];
-      const classes = await academicApi.getClasses(tenantId);
+      const classes = await academicApi.getClasses(tenantId, academicYearId);
 
       const detailed = await Promise.all(
         classes.map(async (cls) => {
           const [sections, students, subjects] = await Promise.all([
-            academicApi.getSections(tenantId, cls.id),
-            academicApi.getStudents(tenantId, cls.id),
-            academicApi.getSubjects(tenantId, cls.id),
+            academicApi.getSections(tenantId, cls.id, academicYearId),
+            academicApi.getStudents(tenantId, cls.id, academicYearId),
+            academicApi.getSubjects(tenantId, cls.id, academicYearId),
           ]);
 
           // Compute section student counts
@@ -252,12 +252,14 @@ export const useAddStudent = () => {
       classId,
       sectionId,
       data,
+      academicYearId,
     }: {
       tenantId: string;
       classId: string;
       sectionId: string;
       data: StudentCreateDTO;
-    }) => academicApi.addStudent(tenantId, classId, sectionId, data),
+      academicYearId?: string | null;
+    }) => academicApi.addStudent(tenantId, classId, sectionId, data, academicYearId),
     onSuccess: (newStudent) => {
       queryClient.invalidateQueries({ queryKey: [CLASSES_QUERY_KEY] });
       queryClient.invalidateQueries({ queryKey: [STUDENTS_QUERY_KEY] });
@@ -283,12 +285,14 @@ export const useBulkAddStudents = () => {
       classId,
       sectionId,
       students,
+      academicYearId,
     }: {
       tenantId: string;
       classId: string;
       sectionId: string;
       students: StudentCreateDTO[];
-    }) => academicApi.bulkAddStudents(tenantId, classId, sectionId, students),
+      academicYearId?: string | null;
+    }) => academicApi.bulkAddStudents(tenantId, classId, sectionId, students, academicYearId),
     onSuccess: (res) => {
       queryClient.invalidateQueries({ queryKey: [CLASSES_QUERY_KEY] });
       queryClient.invalidateQueries({ queryKey: [STUDENTS_QUERY_KEY] });
@@ -480,11 +484,12 @@ export const useBulkCreateSubjects = () => {
 
 export const useMyTeacherAssignments = (
   tenantId: string | null,
-  options?: { enabled?: boolean }
+  options?: { enabled?: boolean },
+  academicYearId?: string | null
 ) => {
   return useQuery({
-    queryKey: [MY_TEACHER_ASSIGNMENTS_QUERY_KEY, tenantId],
-    queryFn: () => academicApi.getMyTeacherAssignments(tenantId!),
+    queryKey: [MY_TEACHER_ASSIGNMENTS_QUERY_KEY, tenantId, academicYearId],
+    queryFn: () => academicApi.getMyTeacherAssignments(tenantId!), // backend doesn't support academicYearId on my-assignments yet according to api.ts changes, let's keep it simple for now, but include in key
     enabled: !!tenantId && (options?.enabled ?? true),
     staleTime: 1000 * 30,
   });
@@ -492,12 +497,13 @@ export const useMyTeacherAssignments = (
 
 export const useAssignments = (
   tenantId: string | null,
-  params?: { teacher_id?: string; class_id?: string }
+  params?: { teacher_id?: string; class_id?: string; academic_year_id?: string | null }
 ) => {
   return useQuery({
     queryKey: [ASSIGNMENTS_QUERY_KEY, tenantId, params],
     queryFn: () => academicApi.getAssignments(tenantId!, params),
     enabled: !!tenantId,
+    staleTime: 1000 * 30,
   });
 };
 

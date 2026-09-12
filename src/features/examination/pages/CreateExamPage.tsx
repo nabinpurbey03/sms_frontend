@@ -20,6 +20,7 @@ import {
   useCreateExam,
   useAddExamSubject,
 } from '@/features/examination/hooks';
+import { useSelectedAcademicYear } from '@/features/academic-year/hooks/useSelectedAcademicYear';
 import {
   Card,
   CardHeader,
@@ -51,7 +52,8 @@ export const CreateExamPage: React.FC = () => {
   // Form states
   const [selectedClassIds, setSelectedClassIds] = useState<string[]>([]);
   const [examName, setExamName] = useState<string>('');
-  const [academicTerm, setAcademicTerm] = useState<string>('');
+  const { years, selectedYearId } = useSelectedAcademicYear();
+  const [academicTerm, setAcademicTerm] = useState<string>(selectedYearId || '');
   const [startDate, setStartDate] = useState<string>('');
   const [endDate, setEndDate] = useState<string>('');
   const [isSubmitting, setIsSubmitting] = useState<boolean>(false);
@@ -60,6 +62,13 @@ export const CreateExamPage: React.FC = () => {
   const [overrides, setOverrides] = useState<
     Record<string, Record<string, Partial<SubjectConfigItem>>>
   >({});
+
+  // Update academic term if selectedYearId loads after mount
+  React.useEffect(() => {
+    if (selectedYearId && !academicTerm) {
+      setAcademicTerm(selectedYearId);
+    }
+  }, [selectedYearId, academicTerm]);
 
   // Data Queries
   const { data: detailedClasses = [], isLoading: classesLoading } =
@@ -407,18 +416,25 @@ export const CreateExamPage: React.FC = () => {
               />
             </div>
 
-            {/* Academic Term */}
+            {/* Academic Year */}
             <div className="space-y-1.5">
               <Label htmlFor="academic-term" className="text-sm font-semibold">
-                Academic Term (Optional)
+                Academic Year
               </Label>
-              <Input
+              <select
                 id="academic-term"
                 value={academicTerm}
                 onChange={(e) => setAcademicTerm(e.target.value)}
-                placeholder="e.g. First Term"
                 disabled={isSubmitting}
-              />
+                className="flex h-9 w-full rounded-md border border-input bg-transparent px-3 py-1 text-sm shadow-xs transition-colors focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring disabled:cursor-not-allowed disabled:opacity-50"
+              >
+                <option value="">Select Academic Year</option>
+                {years.map((y) => (
+                  <option key={y.id} value={y.id}>
+                    {y.name} {y.is_current ? '(Current)' : ''}
+                  </option>
+                ))}
+              </select>
             </div>
 
             {/* Start and End Dates */}
