@@ -37,8 +37,8 @@ export function ResponsiveDataTable<T>({
 }: ResponsiveDataTableProps<T>) {
   if (!data || data.length === 0) {
     return (
-      <Card className="border-dashed p-8 text-center bg-card/60">
-        <p className="text-sm text-muted-foreground">{emptyMessage}</p>
+      <Card className="border-dashed p-8 text-center bg-muted/20 border-border/60">
+        <p className="text-sm font-medium text-muted-foreground">{emptyMessage}</p>
       </Card>
     );
   }
@@ -46,7 +46,7 @@ export function ResponsiveDataTable<T>({
   return (
     <div className={cn('w-full', className)}>
       {/* Mobile Stacked Card View (< md) */}
-      <div className="grid grid-cols-1 gap-3 md:hidden">
+      <div className="grid grid-cols-1 gap-4 md:hidden">
         {data.map((item, index) => {
           const key = keyExtractor(item, index);
           if (renderCard) {
@@ -55,14 +55,14 @@ export function ResponsiveDataTable<T>({
 
           // Fallback auto-stacked card renderer if custom card is not supplied
           return (
-            <Card key={key} className="border-border/70 shadow-sm p-4 space-y-2.5">
-              <CardContent className="p-0 space-y-2">
+            <Card key={key} className="border-border/60 shadow-sm transition-shadow hover:shadow-md overflow-hidden">
+              <CardContent className="p-4 space-y-3">
                 {columns.map((col, colIdx) => (
                   <div
                     key={colIdx}
-                    className="flex items-center justify-between gap-2 border-b border-border/40 pb-1.5 last:border-0 last:pb-0 text-xs sm:text-sm"
+                    className="flex items-center justify-between gap-3 border-b border-border/40 pb-2 last:border-0 last:pb-0 text-sm"
                   >
-                    <span className="font-semibold text-muted-foreground">
+                    <span className="font-medium text-muted-foreground">
                       {typeof col.header === 'string' ? col.header : `Field ${colIdx + 1}`}
                     </span>
                     <div className="text-right font-medium text-foreground">
@@ -81,12 +81,12 @@ export function ResponsiveDataTable<T>({
       </div>
 
       {/* Desktop / Tablet Landscape Table View (md+) */}
-      <div className="hidden md:block rounded-xl border border-border/80 overflow-hidden bg-card shadow-sm">
+      <div className="hidden md:block rounded-xl border border-border/60 overflow-hidden bg-card shadow-sm">
         <Table>
-          <TableHeader>
-            <TableRow>
+          <TableHeader className="bg-muted/30">
+            <TableRow className="hover:bg-transparent border-b border-border/60">
               {columns.map((col, colIdx) => (
-                <TableHead key={colIdx} className={col.className}>
+                <TableHead key={colIdx} className={cn("font-semibold text-muted-foreground h-11", col.className)}>
                   {col.header}
                 </TableHead>
               ))}
@@ -94,9 +94,12 @@ export function ResponsiveDataTable<T>({
           </TableHeader>
           <TableBody>
             {data.map((item, index) => (
-              <TableRow key={keyExtractor(item, index)}>
+              <TableRow 
+                key={keyExtractor(item, index)}
+                className="hover:bg-muted/40 transition-colors border-b border-border/40 last:border-0"
+              >
                 {columns.map((col, colIdx) => (
-                  <TableCell key={colIdx} className={col.className}>
+                  <TableCell key={colIdx} className={cn("py-3", col.className)}>
                     {col.cell
                       ? col.cell(item, index)
                       : col.accessorKey
