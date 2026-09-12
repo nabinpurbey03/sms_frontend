@@ -50,7 +50,7 @@ interface LoginPageProps {
 
 export const LoginPage: React.FC<LoginPageProps> = ({ defaultTab = 'signin' }) => {
   const navigate = useNavigate();
-  const { login, refreshProfile, isAuthenticated } = useAuth();
+  const { login, refreshProfile, isAuthenticated, isLoading } = useAuth();
 
   const [activeTab, setActiveTab] = useState<'signin' | 'signup'>(defaultTab);
   const [showLoginPassword, setShowLoginPassword] = useState(false);
@@ -104,6 +104,17 @@ export const LoginPage: React.FC<LoginPageProps> = ({ defaultTab = 'signin' }) =
       navigate({ to: '/dashboard' });
     }
   }, [isAuthenticated, navigate]);
+
+  if (isLoading && !isSubmitting) {
+    return (
+      <div className="min-h-screen w-full flex flex-col items-center justify-center bg-slate-950">
+        <Loader2 className="h-8 w-8 animate-spin text-primary mb-3" />
+        <p className="text-sm font-medium text-slate-400">
+          Checking session...
+        </p>
+      </div>
+    );
+  }
 
   // Handle Sign In submission
   const onLogin = async (data: LoginFormData) => {
