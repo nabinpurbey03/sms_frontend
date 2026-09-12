@@ -576,7 +576,7 @@ export const AppShell: React.FC = () => {
 
           {/* Right: Search, Controls & Profile */}
           <div className="flex flex-1 min-w-0 items-center justify-end gap-2 sm:gap-3 shrink-0">
-            <div className="relative hidden lg:block w-full max-w-[280px] mr-2">
+            <div className="relative hidden lg:block w-full max-w-[400px] mr-2">
               <Search className="absolute left-2.5 top-2 h-4 w-4 text-muted-foreground" />
               <Input 
                 placeholder="Search students, parents..."
