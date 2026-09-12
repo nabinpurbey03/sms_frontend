@@ -12,7 +12,7 @@ import type { Role } from '@/config/permissions';
 import type { LoginFormData } from '@/features/auth/schema';
 import { AuthContext } from './useAuth';
 
-let initPromise: Promise<void> | null = null;
+let activeRefreshPromise: Promise<any> | null = null;
 
 const ROLE_HIERARCHY: Record<string, number> = {
   SUPER_ADMIN: 5,
@@ -117,7 +117,10 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({
       }
 
       try {
-        const tokenRes = await authApi.refreshToken(refreshToken);
+        if (!activeRefreshPromise) {
+          activeRefreshPromise = authApi.refreshToken(refreshToken);
+        }
+        const tokenRes = await activeRefreshPromise;
         setAccessToken(tokenRes.access_token);
         if (tokenRes.refresh_token) {
           setStoredRefreshToken(tokenRes.refresh_token);
@@ -130,13 +133,11 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({
         setUser(null);
       } finally {
         setIsLoading(false);
-        initPromise = null;
+        activeRefreshPromise = null;
       }
     };
 
-    if (!initPromise) {
-      initPromise = initSession();
-    }
+    initSession();
   }, [clearTenant, clearPersona, refreshProfile]);
 
   const login = async (data: LoginFormData): Promise<UserProfileDTO> => {
