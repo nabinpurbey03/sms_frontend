@@ -19,15 +19,12 @@ import {
   Monitor,
   GraduationCap,
   Award,
-  ChevronLeft,
-  ChevronRight,
   Bell,
   Search,
 } from 'lucide-react';
 
 import { useAuth } from '@/auth/useAuth';
 import { usePermission } from '@/auth/usePermission';
-import { useTenant } from '@/features/tenants/hooks';
 import { useThemeStore } from '@/stores/themeStore';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -67,8 +64,7 @@ export const AppShell: React.FC = () => {
     switchPersona,
   } = useAuth();
   const { can, isSuperAdmin, isTeacher, isParent } = usePermission();
-  const { data: tenant } = useTenant(activeTenantId);
-  const { theme, setTheme } = useThemeStore();
+    const { theme, setTheme } = useThemeStore();
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const [isDesktopSidebarCollapsed, setIsDesktopSidebarCollapsed] = useState(false);
 
@@ -323,22 +319,22 @@ export const AppShell: React.FC = () => {
           </Link>
           
           <Button
-            variant="ghost"
+            variant="outline"
             size="icon"
-            className={`h-7 w-7 text-muted-foreground hover:bg-accent hover:text-foreground cursor-pointer transition-colors ${isDesktopSidebarCollapsed ? 'shrink-0' : ''}`}
+            className={`h-8 w-8 text-foreground hover:bg-accent hover:text-foreground cursor-pointer transition-colors shadow-sm ${isDesktopSidebarCollapsed ? 'shrink-0' : ''}`}
             onClick={() => setIsDesktopSidebarCollapsed(!isDesktopSidebarCollapsed)}
             aria-label="Toggle Sidebar"
           >
-            {isDesktopSidebarCollapsed ? <ChevronRight className="h-4 w-4" /> : <ChevronLeft className="h-4 w-4" />}
+            <Menu className="h-4 w-4" />
           </Button>
         </div>
 
         {/* Navigation Menu */}
-        <div className="flex-1 overflow-y-auto scrollbar-hide px-3 py-4 space-y-8">
+        <div className="flex-1 overflow-y-auto scrollbar-hide px-3 py-4 space-y-6">
           {Object.entries(groupedNavItems).map(([category, items]) => (
             <div key={category}>
               {!isDesktopSidebarCollapsed ? (
-                <p className="px-3 text-[10px] font-bold text-muted-foreground/80 uppercase tracking-wider mb-2">
+                <p className="px-3 mt-6 text-[10px] font-bold text-muted-foreground/90 uppercase tracking-[0.15em] mb-2">
                   {category}
                 </p>
               ) : (
@@ -346,7 +342,7 @@ export const AppShell: React.FC = () => {
                   <div className="w-6 border-t border-border/50"></div>
                 </div>
               )}
-              <nav className="space-y-0.5">
+              <nav className="space-y-1 mt-2">
                 {items.map((item) => {
                   const isActive = isNavItemActive(location.pathname, item.href);
                   const Icon = item.icon;
@@ -357,8 +353,8 @@ export const AppShell: React.FC = () => {
                         isDesktopSidebarCollapsed ? 'justify-center px-0' : 'gap-3 px-3'
                       } ${
                         isActive
-                          ? 'bg-primary text-primary-foreground font-semibold shadow-xs shadow-primary/20'
-                          : 'text-muted-foreground hover:bg-accent hover:text-foreground font-medium'
+                          ? 'bg-primary/15 text-primary font-bold border-l-4 border-primary rounded-l-none'
+                          : 'text-muted-foreground hover:bg-accent hover:text-foreground font-medium border-l-4 border-transparent'
                       }`}
                     >
                       <Icon className="h-4 w-4 shrink-0" />
@@ -388,8 +384,8 @@ export const AppShell: React.FC = () => {
 
         
         {/* Sidebar Bottom Profile Card */}
-        <div className="p-3 shrink-0 border-t border-border/40 bg-card">
-          <div className="w-full flex items-center gap-3 p-2 bg-accent/40 rounded-xl border border-border/50 text-left">
+        <div className="p-4 shrink-0 border-t border-border/40 bg-card">
+          <div className="w-full flex items-center gap-3 p-3 bg-accent/40 rounded-xl border border-border/50 text-left hover:bg-accent/60 transition-colors">
             <Avatar className="h-9 w-9 shrink-0 ring-1 ring-border">
               <AvatarFallback className="bg-primary/10 text-primary font-bold text-xs">
                 {userInitials}
@@ -401,7 +397,7 @@ export const AppShell: React.FC = () => {
                   {user?.first_name} {user?.last_name}
                 </p>
                 <div className="mt-1">
-                  <Badge variant={getRoleBadgeVariant(activeRole)} className="text-[10px] px-1.5 py-0">
+                  <Badge variant={getRoleBadgeVariant(activeRole)} className="text-[10px] px-2 py-0.5 bg-primary/20 text-primary hover:bg-primary/30 font-bold border-primary/20">
                     {formatRole(activeRole)}
                   </Badge>
                 </div>
@@ -431,14 +427,11 @@ export const AppShell: React.FC = () => {
                   <div className="flex h-9 w-9 items-center justify-center rounded-xl bg-card border border-border/80 shadow-xs overflow-hidden p-0.5">
                     <img src="/logo.svg" alt="Schools Up Pro" className="h-full w-full object-contain" />
                   </div>
-                  <div>
-                    <span className="font-bold text-foreground text-sm leading-tight block">
-                      Schools Up Pro
-                    </span>
-                    <span className="text-[10px] text-muted-foreground font-mono block">
-                      SMS MENU
-                    </span>
-                  </div>
+                  <div className="flex items-center">
+                  <span className="font-bold text-foreground text-sm truncate">
+                    Schools Up Pro
+                  </span>
+                </div>
                 </div>
                 <Button
                   variant="ghost"
@@ -452,13 +445,13 @@ export const AppShell: React.FC = () => {
               </div>
 
               {/* Mobile Navigation Items */}
-              <div className="space-y-8">
+              <div className="space-y-6">
                 {Object.entries(groupedNavItems).map(([category, items]) => (
                   <div key={category}>
-                    <p className="px-3 text-[10px] font-bold text-muted-foreground/80 uppercase tracking-wider mb-2">
+                    <p className="px-3 mt-6 text-[10px] font-bold text-muted-foreground/90 uppercase tracking-[0.15em] mb-2">
                       {category}
                     </p>
-                    <nav className="space-y-0.5">
+                    <nav className="space-y-1 mt-2">
                       {items.map((item) => {
                         const isActive = isNavItemActive(location.pathname, item.href);
                         const Icon = item.icon;
@@ -469,8 +462,8 @@ export const AppShell: React.FC = () => {
                             onClick={() => setSidebarOpen(false)}
                             className={`flex min-h-[44px] items-center gap-3 rounded-xl px-3.5 py-2 text-sm font-medium transition-colors ${
                               isActive
-                                ? 'bg-primary text-primary-foreground font-semibold shadow-sm'
-                                : 'text-muted-foreground hover:bg-accent hover:text-foreground active:bg-accent/80'
+                                ? 'bg-primary/15 text-primary font-bold border-l-4 border-primary rounded-l-none'
+                                : 'text-muted-foreground hover:bg-accent hover:text-foreground active:bg-accent/80 border-l-4 border-transparent'
                             }`}
                           >
                             <Icon className="h-5 w-5 shrink-0" />
@@ -560,11 +553,8 @@ export const AppShell: React.FC = () => {
                 <div className="hidden sm:flex p-1.5 bg-primary/10 text-primary rounded-lg shrink-0">
                   <activeItem.icon className="h-4 w-4" />
                 </div>
-                <div className="flex flex-col min-w-0">
-                  <h1 className="text-sm font-bold text-foreground leading-tight truncate">{activeItem.label}</h1>
-                  {activeItem.description && (
-                    <p className="text-[10px] text-muted-foreground leading-tight truncate hidden sm:block">{activeItem.description}</p>
-                  )}
+                <div className="flex items-center min-w-0">
+                  <h1 className="text-sm font-bold text-foreground truncate">{activeItem.label}</h1>
                 </div>
               </>
             )}
@@ -572,15 +562,10 @@ export const AppShell: React.FC = () => {
 
           {/* Middle: School Name & Address */}
           <div className="hidden md:flex flex-1 items-center justify-center px-6">
-            <div className="flex flex-col items-center justify-center shrink-0">
-              <span className="font-bold text-base whitespace-nowrap bg-gradient-to-r from-[#03045E] via-[#0077B6] to-[#00B4D8] bg-clip-text text-transparent">
+            <div className="flex items-center justify-center shrink-0">
+              <span className="font-bold text-lg tracking-tight whitespace-nowrap bg-gradient-to-r from-[#03045E] via-[#0077B6] to-[#00B4D8] bg-clip-text text-transparent">
                 {activeTenantName || 'Global Platform'}
               </span>
-              {tenant?.address && (
-                <span className="text-[11px] font-medium tracking-wide whitespace-nowrap bg-gradient-to-r from-[#0077B6] to-[#00B4D8] bg-clip-text text-transparent opacity-90">
-                  {tenant.address.tole ? `${tenant.address.tole}, ` : ''}{tenant.address.municipality}-{tenant.address.ward}, {tenant.address.district}
-                </span>
-              )}
             </div>
           </div>
 
@@ -590,7 +575,7 @@ export const AppShell: React.FC = () => {
               <Search className="absolute left-2.5 top-2 h-4 w-4 text-muted-foreground" />
               <Input 
                 placeholder="Search students, parents..."
-                className="w-full bg-muted/50 border-none pl-9 h-8 focus-visible:bg-background transition-colors text-xs rounded-full"
+                className="w-full bg-background border border-input pl-9 h-8 focus-visible:ring-1 focus-visible:ring-primary transition-colors text-xs rounded-full shadow-sm"
                 onChange={handleSearch}
               />
             </div>
