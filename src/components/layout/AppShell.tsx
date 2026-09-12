@@ -568,8 +568,8 @@ export const AppShell: React.FC = () => {
           {/* Middle: School Name Badge */}
           <div className="hidden md:flex flex-1 items-center justify-center px-6">
             <div className="flex items-center justify-center shrink-0">
-              <div className="px-5 py-1.5 rounded-full bg-gradient-to-r from-primary via-[#0077B6] to-[#00B4D8] shadow-sm border border-primary/20">
-                <span className="font-bold text-sm tracking-wide whitespace-nowrap text-white drop-shadow-sm">
+              <div className="px-5 py-1.5 rounded-full bg-primary shadow-sm border border-primary/20">
+                <span className="font-bold text-sm tracking-wide whitespace-nowrap text-primary-foreground">
                   {activeTenantName || 'Global Platform'}
                 </span>
               </div>
