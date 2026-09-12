@@ -12,6 +12,8 @@ import type { Role } from '@/config/permissions';
 import type { LoginFormData } from '@/features/auth/schema';
 import { AuthContext } from './useAuth';
 
+let initPromise: Promise<void> | null = null;
+
 const ROLE_HIERARCHY: Record<string, number> = {
   SUPER_ADMIN: 5,
   ADMIN: 4,
@@ -128,10 +130,13 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({
         setUser(null);
       } finally {
         setIsLoading(false);
+        initPromise = null;
       }
     };
 
-    initSession();
+    if (!initPromise) {
+      initPromise = initSession();
+    }
   }, [clearTenant, clearPersona, refreshProfile]);
 
   const login = async (data: LoginFormData): Promise<UserProfileDTO> => {

@@ -15,22 +15,36 @@ export const getStoredRefreshToken = () => {
   return localStorage.getItem('schools_up_refresh_token') || sessionStorage.getItem('schools_up_refresh_token');
 };
 
-export const setStoredRefreshToken = (token: string | null, remember = true) => {
+export const setStoredRefreshToken = (token: string | null, remember?: boolean) => {
   if (!token) {
     localStorage.removeItem('schools_up_refresh_token');
     sessionStorage.removeItem('schools_up_refresh_token');
     return;
   }
-  if (remember) {
+  
+  let shouldRemember = remember;
+  if (shouldRemember === undefined) {
+    // If not specified, infer from where the token currently lives
+    if (sessionStorage.getItem('schools_up_refresh_token')) {
+      shouldRemember = false;
+    } else {
+      shouldRemember = true;
+    }
+  }
+
+  if (shouldRemember) {
     localStorage.setItem('schools_up_refresh_token', token);
+    sessionStorage.removeItem('schools_up_refresh_token');
   } else {
     sessionStorage.setItem('schools_up_refresh_token', token);
+    localStorage.removeItem('schools_up_refresh_token');
   }
 };
 
 export const clearTokens = () => {
   setAccessToken(null);
   setStoredRefreshToken(null);
+  delete apiClient.defaults.headers.common.Authorization;
 };
 
 export const apiClient = axios.create({
@@ -162,6 +176,8 @@ apiClient.interceptors.response.use(
       } catch (refreshErr) {
         processQueue(refreshErr, null);
         clearTokens();
+        // Redirect to login to clear React state
+        window.location.href = '/login';
         return Promise.reject(
           new ApiError('Session expired. Please log in again.', undefined, 401)
         );
