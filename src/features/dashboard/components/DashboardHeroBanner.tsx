@@ -21,30 +21,30 @@ export const DashboardHeroBanner: React.FC = () => {
 
   return (
     <div
-      className="relative overflow-hidden rounded-2xl bg-gradient-to-r from-emerald-700 via-emerald-600 to-teal-800 dark:from-[#052414] dark:via-[#03140c] dark:to-slate-950 p-4 sm:p-6 lg:p-8 text-white shadow-lg shadow-primary/20 dark:shadow-black/50 border border-emerald-500/30 transition-all duration-500 ease-in-out"
+      className="relative overflow-hidden rounded-2xl bg-primary/5 dark:bg-primary/10 p-5 sm:p-8 border border-primary/20"
     >
-      <div className="relative z-10 space-y-2 max-w-3xl">
-        <div className="flex flex-wrap items-center gap-2">
+      <div className="relative z-10 space-y-3 max-w-3xl">
+        <div className="flex flex-wrap items-center gap-3">
           <Badge
             variant="secondary"
-            className="bg-white/20 text-white hover:bg-white/30 backdrop-blur-sm border-white/20 text-[11px] sm:text-xs font-semibold px-2 py-0.5"
+            className="bg-primary/20 text-primary hover:bg-primary/30 border-none font-semibold px-2.5 py-0.5"
           >
             {activeRole || 'USER'}
           </Badge>
-          <span className="text-xs text-white/90 flex items-center gap-1 font-medium">
-            <Clock className="h-3.5 w-3.5" />
+          <span className="text-sm text-muted-foreground flex items-center gap-1.5 font-medium">
+            <Clock className="h-4 w-4" />
             {formattedDate}
           </span>
         </div>
 
-        <h1 className="text-xl sm:text-2xl lg:text-3xl font-bold tracking-tight text-white leading-tight">
+        <h1 className="text-2xl sm:text-3xl font-bold tracking-tight text-foreground leading-tight">
           Welcome back, {user?.first_name} {user?.last_name}!
         </h1>
 
-        <p className="text-xs sm:text-sm md:text-base text-white/90 leading-relaxed">
+        <p className="text-sm sm:text-base text-muted-foreground leading-relaxed">
           {activeTenantName ? (
             <>
-              Active Portal: <span className="font-semibold underline decoration-white/40">{activeTenantName}</span>
+              Active Portal: <span className="font-semibold text-foreground">{activeTenantName}</span>
             </>
           ) : isSuperAdmin ? (
             'Global Multi-Tenant Administration Platform'
@@ -54,33 +54,26 @@ export const DashboardHeroBanner: React.FC = () => {
         </p>
       </div>
 
-      {/* Decorative Ambient Themed Glows */}
-      <div
-        className="absolute -right-8 -bottom-8 w-48 sm:w-64 h-48 sm:h-64 bg-emerald-400/20 dark:bg-emerald-500/25 rounded-full blur-3xl pointer-events-none transition-colors duration-500"
-      />
-      <div
-        className="absolute -left-10 -top-10 w-36 sm:w-48 h-36 sm:h-48 bg-emerald-400/20 dark:bg-emerald-500/25 rounded-full blur-3xl pointer-events-none transition-colors duration-500"
-      />
-
       {/* Right Side: Tenant Logo or Fallback Brand Logo */}
-      <div className="absolute right-6 sm:right-8 lg:right-10 top-1/2 -translate-y-1/2 hidden sm:flex items-center justify-center pointer-events-none z-10">
+      <div className="absolute right-6 sm:right-10 top-1/2 -translate-y-1/2 hidden md:flex items-center justify-center pointer-events-none z-10">
         {hasValidLogo && tenant?.logo_url ? (
-          <div className="h-20 w-20 sm:h-24 sm:w-24 lg:h-28 lg:w-28 rounded-2xl bg-white/15 backdrop-blur-md border border-white/25 p-2.5 shadow-2xl flex items-center justify-center overflow-hidden">
+          <div className="h-20 w-20 sm:h-24 sm:w-24 rounded-2xl bg-card border border-border/50 p-2 shadow-sm flex items-center justify-center overflow-hidden">
             <img
               src={tenant.logo_url}
               alt={activeTenantName || 'School Logo'}
-              className="h-full w-full object-contain filter drop-shadow-md"
+              className="h-full w-full object-contain filter drop-shadow-sm"
               onError={() => setFailedLogoUrl(tenant.logo_url || null)}
             />
           </div>
         ) : (
           <img
             src="/logo.svg"
-            alt="Schools Up Pro"
-            className="h-24 w-24 sm:h-32 sm:w-32 opacity-20 drop-shadow-lg object-contain select-none"
+            alt="School Logo"
+            className="h-24 w-24 sm:h-32 sm:w-32 opacity-10 drop-shadow-sm object-contain select-none grayscale"
           />
         )}
       </div>
     </div>
   );
 };
+
