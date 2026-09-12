@@ -565,12 +565,14 @@ export const AppShell: React.FC = () => {
             )}
           </div>
 
-          {/* Middle: School Name & Address */}
+          {/* Middle: School Name Badge */}
           <div className="hidden md:flex flex-1 items-center justify-center px-6">
             <div className="flex items-center justify-center shrink-0">
-              <span className="font-bold text-lg tracking-tight whitespace-nowrap bg-gradient-to-r from-[#03045E] via-[#0077B6] to-[#00B4D8] bg-clip-text text-transparent">
-                {activeTenantName || 'Global Platform'}
-              </span>
+              <div className="px-5 py-1.5 rounded-full bg-gradient-to-r from-primary via-[#0077B6] to-[#00B4D8] shadow-sm border border-primary/20">
+                <span className="font-bold text-sm tracking-wide whitespace-nowrap text-white drop-shadow-sm">
+                  {activeTenantName || 'Global Platform'}
+                </span>
+              </div>
             </div>
           </div>
 
@@ -579,7 +581,7 @@ export const AppShell: React.FC = () => {
             <div className="relative hidden lg:block w-[300px] xl:w-[400px] mr-2 transition-all duration-300">
               <Search className="absolute left-2.5 top-2 h-4 w-4 text-muted-foreground" />
               <Input 
-                placeholder="Search students, parents..."
+                placeholder="Search students, classes, and more..."
                 className="w-full bg-background border border-input pl-9 h-8 focus-visible:ring-1 focus-visible:ring-primary transition-colors text-xs rounded-full shadow-sm"
                 onChange={handleSearch}
               />
