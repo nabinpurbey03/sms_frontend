@@ -326,11 +326,11 @@ export const SchoolResultsDashboardHub: React.FC = () => {
   return (
     <Card className="border-border/60 shadow-sm rounded-2xl overflow-hidden">
       {/* 1. Header & Controls */}
-      <CardHeader className="p-4 sm:p-6 pb-4 border-b bg-card/60">
-        <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-4">
+      <CardHeader className="p-5 pb-4 border-b bg-card/60">
+        <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-5">
           <div className="space-y-1">
-            <div className="flex items-center gap-2">
-              <div className="p-2 rounded-xl bg-primary/10 text-primary shrink-0">
+            <div className="flex items-center gap-2.5">
+              <div className="p-2.5 rounded-xl bg-primary/10 text-primary shrink-0">
                 <GraduationCap className="h-5 w-5" />
               </div>
               <CardTitle className="text-lg sm:text-xl font-bold tracking-tight text-foreground">
@@ -343,30 +343,30 @@ export const SchoolResultsDashboardHub: React.FC = () => {
           </div>
 
           {/* Action Buttons */}
-          <div className="flex items-center flex-wrap gap-2">
+          <div className="flex items-center flex-wrap gap-3">
             <Button
               variant="outline"
               size="sm"
               onClick={handleExportCsv}
               disabled={!analytics || isLoading}
-              className="text-xs h-9 font-medium"
+              className="text-xs h-10 px-4 font-medium"
             >
-              <Download className="h-3.5 w-3.5 mr-1.5" />
+              <Download className="h-4 w-4 mr-2" />
               Export CSV
             </Button>
             <Button
               variant="outline"
-              size="sm"
+              size="icon"
               onClick={() => refetch()}
               disabled={isFetching}
-              className="text-xs h-9"
+              className="h-10 w-10"
               title="Refresh results data"
             >
-              <RefreshCw className={`h-3.5 w-3.5 ${isFetching ? 'animate-spin' : ''}`} />
+              <RefreshCw className={`h-4 w-4 ${isFetching ? 'animate-spin' : ''}`} />
             </Button>
-            <Button size="sm" asChild className="text-xs h-9 font-semibold">
+            <Button size="sm" asChild className="text-xs h-10 px-4 font-semibold">
               <Link to="/examination/exams/create">
-                <Plus className="h-3.5 w-3.5 mr-1" />
+                <Plus className="h-4 w-4 mr-1.5" />
                 Create Exam
               </Link>
             </Button>
@@ -374,16 +374,16 @@ export const SchoolResultsDashboardHub: React.FC = () => {
         </div>
 
         {/* Filters Bar */}
-        <div className="grid grid-cols-1 sm:grid-cols-3 gap-2.5 pt-4">
+        <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 pt-5">
           {/* Class Filter */}
-          <div className="space-y-1">
+          <div className="space-y-1.5">
             <label className="text-[11px] font-semibold text-muted-foreground uppercase">
               Filter by Class
             </label>
             <select
               value={selectedClassId}
               onChange={(e) => setSelectedClassId(e.target.value)}
-              className="w-full h-9 px-3 rounded-lg border border-input bg-background text-xs focus:outline-none focus:ring-2 focus:ring-primary"
+              className="w-full h-10 px-3 rounded-lg border border-input bg-background text-sm focus:outline-none focus:ring-2 focus:ring-primary"
             >
               <option value="">All Classes</option>
               {classes.map((c) => (
@@ -395,14 +395,14 @@ export const SchoolResultsDashboardHub: React.FC = () => {
           </div>
 
           {/* Exam Name Filter */}
-          <div className="space-y-1">
+          <div className="space-y-1.5">
             <label className="text-[11px] font-semibold text-muted-foreground uppercase">
               Filter by Exam
             </label>
             <select
               value={selectedExamName}
               onChange={(e) => setSelectedExamName(e.target.value)}
-              className="w-full h-9 px-3 rounded-lg border border-input bg-background text-xs focus:outline-none focus:ring-2 focus:ring-primary"
+              className="w-full h-10 px-3 rounded-lg border border-input bg-background text-sm focus:outline-none focus:ring-2 focus:ring-primary"
             >
               <option value="">All Exams</option>
               {availableExams.map((exam) => (
@@ -414,34 +414,34 @@ export const SchoolResultsDashboardHub: React.FC = () => {
           </div>
 
           {/* Search Filter */}
-          <div className="space-y-1">
+          <div className="space-y-1.5">
             <label className="text-[11px] font-semibold text-muted-foreground uppercase">
               Search Results
             </label>
             <div className="relative">
-              <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
+              <Search className="absolute left-3 top-3 h-4 w-4 text-muted-foreground" />
               <Input
                 placeholder="Search class, subject, student..."
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
-                className="h-9 pl-8 text-xs"
+                className="h-10 pl-9 text-sm"
               />
             </div>
           </div>
         </div>
       </CardHeader>
 
-      <CardContent className="p-4 sm:p-6 space-y-6">
+      <CardContent className="p-5 space-y-6">
         {/* 2. Urgent Attention Banner: Exams Awaiting Admin Approval */}
         {analytics?.pending_approvals && analytics.pending_approvals.length > 0 && (
-          <div className="rounded-xl border border-amber-500/30 bg-amber-500/10 p-4 text-amber-900 dark:text-amber-200">
-            <div className="flex flex-col md:flex-row md:items-center justify-between gap-3">
-              <div className="flex items-start gap-3">
-                <div className="p-2 rounded-lg bg-amber-500/20 text-amber-700 dark:text-amber-300 shrink-0">
+          <div className="rounded-xl border border-amber-500/30 bg-amber-500/10 p-5 text-amber-900 dark:text-amber-200">
+            <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
+              <div className="flex items-start gap-4">
+                <div className="p-2.5 rounded-lg bg-amber-500/20 text-amber-700 dark:text-amber-300 shrink-0">
                   <AlertTriangle className="h-5 w-5 animate-pulse" />
                 </div>
                 <div>
-                  <h3 className="text-sm font-bold flex items-center gap-2">
+                  <h3 className="text-base font-bold flex items-center gap-2.5">
                     <span>
                       {analytics.pending_approvals.length}{' '}
                       {analytics.pending_approvals.length === 1
@@ -453,16 +453,16 @@ export const SchoolResultsDashboardHub: React.FC = () => {
                       Action Required
                     </Badge>
                   </h3>
-                  <p className="text-xs text-muted-foreground mt-0.5">
+                  <p className="text-sm text-amber-700/80 dark:text-amber-300/80 mt-1">
                     Teachers have submitted all subject scores. Review score matrices and publish official student results.
                   </p>
                 </div>
               </div>
 
-              <div className="flex items-center gap-2 shrink-0">
+              <div className="flex items-center gap-3 shrink-0">
                 <Button
                   size="sm"
-                  className="bg-amber-600 hover:bg-amber-700 text-white text-xs h-8 font-semibold shadow-sm"
+                  className="bg-amber-600 hover:bg-amber-700 text-white text-sm h-10 px-4 font-semibold shadow-sm"
                   onClick={() =>
                     navigate({
                       to: `/examination/exams/${analytics.pending_approvals[0].exam_id}/review` as any,
@@ -470,29 +470,29 @@ export const SchoolResultsDashboardHub: React.FC = () => {
                   }
                 >
                   Review First ({analytics.pending_approvals[0].class_name})
-                  <ArrowRight className="h-3.5 w-3.5 ml-1.5" />
+                  <ArrowRight className="h-4 w-4 ml-2" />
                 </Button>
               </div>
             </div>
 
             {/* List of pending exams if more than 1 */}
             {analytics.pending_approvals.length > 1 && (
-              <div className="mt-3 pt-3 border-t border-amber-500/20 grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-2">
+              <div className="mt-4 pt-4 border-t border-amber-500/20 grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-3">
                 {analytics.pending_approvals.map((item) => (
                   <div
                     key={item.exam_id}
-                    className="flex items-center justify-between p-2 rounded-lg bg-background/60 border border-amber-500/20 text-xs"
+                    className="flex items-center justify-between p-3 rounded-lg bg-background/60 border border-amber-500/20 text-sm"
                   >
-                    <div className="truncate mr-2">
+                    <div className="truncate mr-3">
                       <p className="font-semibold truncate">{item.exam_name}</p>
-                      <p className="text-[11px] text-muted-foreground">
+                      <p className="text-xs text-muted-foreground mt-0.5">
                         {item.class_name} • {item.student_count} students
                       </p>
                     </div>
                     <Button
                       variant="ghost"
                       size="sm"
-                      className="h-7 text-[11px] text-primary hover:underline px-2"
+                      className="h-8 text-xs text-primary hover:underline px-3"
                       onClick={() => navigate({ to: `/examination/exams/${item.exam_id}/review` as any })}
                     >
                       Review
@@ -505,10 +505,10 @@ export const SchoolResultsDashboardHub: React.FC = () => {
         )}
 
         {/* 3. Executive KPI Cards */}
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4">
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 sm:gap-6">
           {/* KPI 1: Overall Pass Rate */}
           <Card className="border-border/60 bg-card/60 shadow-none rounded-xl">
-            <CardHeader className="flex flex-row items-center justify-between pb-2 p-4 space-y-0">
+            <CardHeader className="flex flex-row items-center justify-between p-5 pb-2 space-y-0">
               <CardTitle className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">
                 Overall Pass Rate
               </CardTitle>
@@ -516,13 +516,13 @@ export const SchoolResultsDashboardHub: React.FC = () => {
                 <CheckCircle2 className="h-4 w-4" />
               </div>
             </CardHeader>
-            <CardContent className="p-4 pt-0">
+            <CardContent className="p-5 pt-0">
               <div className="text-2xl font-bold text-foreground">
                 {analytics?.kpis?.school_pass_rate !== undefined
                   ? `${analytics.kpis.school_pass_rate}%`
                   : '0%'}
               </div>
-              <p className="text-xs text-muted-foreground mt-1 flex items-center gap-1 truncate">
+              <p className="text-xs text-muted-foreground mt-1 flex items-center gap-1.5 truncate">
                 <span className="font-medium text-foreground">
                   {analytics?.kpis?.total_passed || 0}
                 </span>{' '}
@@ -533,7 +533,7 @@ export const SchoolResultsDashboardHub: React.FC = () => {
 
           {/* KPI 2: School Average Marks */}
           <Card className="border-border/60 bg-card/60 shadow-none rounded-xl">
-            <CardHeader className="flex flex-row items-center justify-between pb-2 p-4 space-y-0">
+            <CardHeader className="flex flex-row items-center justify-between p-5 pb-2 space-y-0">
               <CardTitle className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">
                 School Average Score
               </CardTitle>
@@ -541,7 +541,7 @@ export const SchoolResultsDashboardHub: React.FC = () => {
                 <TrendingUp className="h-4 w-4" />
               </div>
             </CardHeader>
-            <CardContent className="p-4 pt-0">
+            <CardContent className="p-5 pt-0">
               <div className="text-2xl font-bold text-foreground">
                 {analytics?.kpis?.school_average_percentage !== undefined
                   ? `${analytics.kpis.school_average_percentage}%`
@@ -555,7 +555,7 @@ export const SchoolResultsDashboardHub: React.FC = () => {
 
           {/* KPI 3: Exam Pipeline */}
           <Card className="border-border/60 bg-card/60 shadow-none rounded-xl">
-            <CardHeader className="flex flex-row items-center justify-between pb-2 p-4 space-y-0">
+            <CardHeader className="flex flex-row items-center justify-between p-5 pb-2 space-y-0">
               <CardTitle className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">
                 Exam Pipeline
               </CardTitle>
@@ -563,22 +563,22 @@ export const SchoolResultsDashboardHub: React.FC = () => {
                 <Clock className="h-4 w-4" />
               </div>
             </CardHeader>
-            <CardContent className="p-4 pt-0 space-y-1.5">
+            <CardContent className="p-5 pt-0 space-y-2">
               <div className="text-2xl font-bold text-foreground">
                 {analytics?.pipeline?.total_exams || 0}{' '}
                 <span className="text-xs font-normal text-muted-foreground">Exams Total</span>
               </div>
-              <div className="flex flex-wrap gap-1">
-                <Badge variant="outline" className="text-[10px] px-1.5 py-0 bg-muted/40">
+              <div className="flex flex-wrap gap-1.5">
+                <Badge variant="outline" className="text-[10px] px-1.5 py-0.5 bg-muted/40">
                   {analytics?.pipeline?.draft_count || 0} Draft
                 </Badge>
-                <Badge variant="outline" className="text-[10px] px-1.5 py-0 bg-blue-500/10 text-blue-700 dark:text-blue-400 border-blue-500/30">
+                <Badge variant="outline" className="text-[10px] px-1.5 py-0.5 bg-blue-500/10 text-blue-700 dark:text-blue-400 border-blue-500/30">
                   {analytics?.pipeline?.in_progress_count || 0} Grading
                 </Badge>
-                <Badge variant="outline" className="text-[10px] px-1.5 py-0 bg-amber-500/10 text-amber-700 dark:text-amber-400 border-amber-500/30">
+                <Badge variant="outline" className="text-[10px] px-1.5 py-0.5 bg-amber-500/10 text-amber-700 dark:text-amber-400 border-amber-500/30">
                   {analytics?.pipeline?.pending_approval_count || 0} Pending
                 </Badge>
-                <Badge variant="outline" className="text-[10px] px-1.5 py-0 bg-emerald-500/10 text-emerald-700 dark:text-emerald-400 border-emerald-500/30">
+                <Badge variant="outline" className="text-[10px] px-1.5 py-0.5 bg-emerald-500/10 text-emerald-700 dark:text-emerald-400 border-emerald-500/30">
                   {analytics?.pipeline?.approved_count || 0} Published
                 </Badge>
               </div>
@@ -587,7 +587,7 @@ export const SchoolResultsDashboardHub: React.FC = () => {
 
           {/* KPI 4: Academic Attention / At-Risk */}
           <Card className="border-border/60 bg-card/60 shadow-none rounded-xl">
-            <CardHeader className="flex flex-row items-center justify-between pb-2 p-4 space-y-0">
+            <CardHeader className="flex flex-row items-center justify-between p-5 pb-2 space-y-0">
               <CardTitle className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">
                 Academic Attention
               </CardTitle>
@@ -595,7 +595,7 @@ export const SchoolResultsDashboardHub: React.FC = () => {
                 <AlertTriangle className="h-4 w-4" />
               </div>
             </CardHeader>
-            <CardContent className="p-4 pt-0">
+            <CardContent className="p-5 pt-0">
               <div className="text-2xl font-bold text-rose-600 dark:text-rose-400">
                 {analytics?.kpis?.total_failed || 0}
               </div>

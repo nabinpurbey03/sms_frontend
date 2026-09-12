@@ -366,13 +366,13 @@ export const AttendanceDashboardHub: React.FC = () => {
   return (
     <div className="space-y-4">
       {/* Attendance Header & Filter Controls */}
-      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 bg-card p-4 rounded-xl border border-border/60 shadow-2xs">
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 bg-card p-5 rounded-xl border border-border/60 shadow-sm">
         <div>
           <h2 className="text-base sm:text-lg font-bold tracking-tight text-foreground flex items-center gap-2">
             <CalendarCheck className="h-5 w-5 text-primary shrink-0" />
             <span>Attendance Reporting Hub</span>
           </h2>
-          <p className="text-xs text-muted-foreground">
+          <p className="text-xs text-muted-foreground mt-1">
             {timeframe === 'today'
               ? `Daily presence status for ${selectedDate === todayStr ? "Today (" + todayStr + ")" : selectedDate}`
               : `Aggregated attendance analysis from ${startDate} to ${endDate}`}
@@ -380,14 +380,14 @@ export const AttendanceDashboardHub: React.FC = () => {
         </div>
 
         {/* Timeframe selector pills and Date Picker */}
-        <div className="flex flex-wrap items-center gap-2">
+        <div className="flex flex-wrap items-center gap-3">
           <div className="inline-flex rounded-lg bg-muted p-1 text-xs">
             <button
               type="button"
               onClick={() => setTimeframe('today')}
-              className={`px-3 py-1 font-medium rounded-md transition-all ${
+              className={`px-3 py-1.5 font-medium rounded-md transition-all ${
                 timeframe === 'today'
-                  ? 'bg-background text-foreground shadow-2xs'
+                  ? 'bg-background text-foreground shadow-sm'
                   : 'text-muted-foreground hover:text-foreground'
               }`}
             >
@@ -396,9 +396,9 @@ export const AttendanceDashboardHub: React.FC = () => {
             <button
               type="button"
               onClick={() => setTimeframe('7d')}
-              className={`px-3 py-1 font-medium rounded-md transition-all ${
+              className={`px-3 py-1.5 font-medium rounded-md transition-all ${
                 timeframe === '7d'
-                  ? 'bg-background text-foreground shadow-2xs'
+                  ? 'bg-background text-foreground shadow-sm'
                   : 'text-muted-foreground hover:text-foreground'
               }`}
             >
@@ -407,9 +407,9 @@ export const AttendanceDashboardHub: React.FC = () => {
             <button
               type="button"
               onClick={() => setTimeframe('30d')}
-              className={`px-3 py-1 font-medium rounded-md transition-all ${
+              className={`px-3 py-1.5 font-medium rounded-md transition-all ${
                 timeframe === '30d'
-                  ? 'bg-background text-foreground shadow-2xs'
+                  ? 'bg-background text-foreground shadow-sm'
                   : 'text-muted-foreground hover:text-foreground'
               }`}
             >
@@ -419,20 +419,20 @@ export const AttendanceDashboardHub: React.FC = () => {
 
           {/* Date Picker (enabled for single-date inspection) */}
           {timeframe === 'today' && (
-            <div className="flex items-center gap-1.5">
+            <div className="flex items-center gap-2">
               <Input
                 type="date"
                 max={todayStr}
                 value={selectedDate}
                 onChange={(e) => setSelectedDate(e.target.value)}
-                className="h-8 text-xs w-[140px]"
+                className="h-9 text-xs w-[140px]"
               />
               {selectedDate !== todayStr && (
                 <Button
                   variant="ghost"
                   size="sm"
                   onClick={() => setSelectedDate(todayStr)}
-                  className="h-8 text-[11px] px-2 text-primary"
+                  className="h-9 text-xs px-3 text-primary"
                 >
                   Reset
                 </Button>
@@ -441,13 +441,13 @@ export const AttendanceDashboardHub: React.FC = () => {
           )}
 
           <Button
-            variant="ghost"
+            variant="outline"
             size="icon"
             onClick={handleRefresh}
-            className="h-8 w-8 text-muted-foreground hover:text-foreground"
+            className="h-9 w-9 text-muted-foreground hover:text-foreground"
             title="Refresh Attendance Data"
           >
-            <RefreshCw className="h-3.5 w-3.5" />
+            <RefreshCw className="h-4 w-4" />
           </Button>
         </div>
       </div>
@@ -456,24 +456,24 @@ export const AttendanceDashboardHub: React.FC = () => {
       {/* 1. ADMIN & OFFICE ADMIN VIEW                         */}
       {/* ==================================================== */}
       {isAdminOrOfficeAdmin && (
-        <div className="space-y-4">
+        <div className="space-y-4 sm:space-y-6">
           {/* Key Metric Stats Cards */}
-          <div className="grid grid-cols-2 lg:grid-cols-4 gap-3">
+          <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 sm:gap-6">
             {/* Overall Rate */}
-            <Card className="border-border/60 rounded-xl">
-              <CardContent className="p-4 space-y-1">
+            <Card className="border-border/60 rounded-xl hover:shadow-md transition-shadow">
+              <CardContent className="p-5 space-y-2">
                 <div className="flex items-center justify-between">
                   <span className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">
                     Presence Rate
                   </span>
-                  <div className="p-1.5 bg-purple-500/10 text-purple-600 rounded-lg">
+                  <div className="p-2 bg-purple-500/10 text-purple-600 rounded-lg">
                     <TrendingUp className="h-4 w-4" />
                   </div>
                 </div>
                 <div className="text-2xl font-bold text-foreground">
                   {metrics.percentage}%
                 </div>
-                <p className="text-[11px] text-muted-foreground">
+                <p className="text-xs text-muted-foreground">
                   {metrics.totalStudents > 0
                     ? `${metrics.presentCount} of ${metrics.totalStudents} students`
                     : 'No attendance records yet'}
@@ -482,60 +482,60 @@ export const AttendanceDashboardHub: React.FC = () => {
             </Card>
 
             {/* Total Students Enrolled */}
-            <Card className="border-border/60 rounded-xl">
-              <CardContent className="p-4 space-y-1">
+            <Card className="border-border/60 rounded-xl hover:shadow-md transition-shadow">
+              <CardContent className="p-5 space-y-2">
                 <div className="flex items-center justify-between">
                   <span className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">
                     Total Students
                   </span>
-                  <div className="p-1.5 bg-blue-500/10 text-blue-600 rounded-lg">
+                  <div className="p-2 bg-blue-500/10 text-blue-600 rounded-lg">
                     <Users className="h-4 w-4" />
                   </div>
                 </div>
                 <div className="text-2xl font-bold text-foreground">
                   {metrics.totalStudents}
                 </div>
-                <p className="text-[11px] text-muted-foreground">
+                <p className="text-xs text-muted-foreground">
                   Across active classes
                 </p>
               </CardContent>
             </Card>
 
             {/* Present Count */}
-            <Card className="border-border/60 rounded-xl">
-              <CardContent className="p-4 space-y-1">
+            <Card className="border-border/60 rounded-xl hover:shadow-md transition-shadow">
+              <CardContent className="p-5 space-y-2">
                 <div className="flex items-center justify-between">
                   <span className="text-xs font-semibold text-emerald-600 dark:text-emerald-400 uppercase tracking-wider">
                     Present
                   </span>
-                  <div className="p-1.5 bg-emerald-500/10 text-emerald-600 rounded-lg">
+                  <div className="p-2 bg-emerald-500/10 text-emerald-600 rounded-lg">
                     <CheckCircle2 className="h-4 w-4" />
                   </div>
                 </div>
                 <div className="text-2xl font-bold text-emerald-600 dark:text-emerald-400">
                   {metrics.presentCount}
                 </div>
-                <p className="text-[11px] text-muted-foreground">
+                <p className="text-xs text-muted-foreground">
                   Confirmed attendees
                 </p>
               </CardContent>
             </Card>
 
             {/* Absent Count */}
-            <Card className="border-border/60 rounded-xl">
-              <CardContent className="p-4 space-y-1">
+            <Card className="border-border/60 rounded-xl hover:shadow-md transition-shadow">
+              <CardContent className="p-5 space-y-2">
                 <div className="flex items-center justify-between">
                   <span className="text-xs font-semibold text-rose-600 dark:text-rose-400 uppercase tracking-wider">
                     Absent
                   </span>
-                  <div className="p-1.5 bg-rose-500/10 text-rose-600 rounded-lg">
+                  <div className="p-2 bg-rose-500/10 text-rose-600 rounded-lg">
                     <AlertTriangle className="h-4 w-4" />
                   </div>
                 </div>
                 <div className="text-2xl font-bold text-rose-600 dark:text-rose-400">
                   {metrics.absentCount}
                 </div>
-                <p className="text-[11px] text-muted-foreground">
+                <p className="text-xs text-muted-foreground">
                   Marked absent
                 </p>
               </CardContent>
@@ -545,27 +545,27 @@ export const AttendanceDashboardHub: React.FC = () => {
           {/* Section Submission Progress & Checklist (In Today Mode) */}
           {timeframe === 'today' && (
             <Card className="border-border/60 rounded-xl overflow-hidden">
-              <CardHeader className="p-4 sm:p-5 pb-3">
-                <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2">
+              <CardHeader className="p-5 pb-3">
+                <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
                   <div>
                     <CardTitle className="text-sm font-semibold flex items-center gap-2">
                       <Clock className="h-4 w-4 text-primary" />
                       <span>Daily Section Submission Status</span>
                     </CardTitle>
-                    <CardDescription className="text-xs">
+                    <CardDescription className="text-xs mt-1">
                       Submission progress for {selectedDate === todayStr ? "Today" : selectedDate}
                     </CardDescription>
                   </div>
                   <div className="flex items-center gap-2 text-xs">
                     <span className="text-muted-foreground">Progress:</span>
-                    <Badge variant="outline" className="font-semibold text-xs">
+                    <Badge variant="outline" className="font-semibold text-xs px-2 py-0.5">
                       {metrics.markedSectionsCount} / {metrics.totalSectionsCount} Sections Marked
                     </Badge>
                   </div>
                 </div>
 
                 {/* Overall Submission Progress Bar */}
-                <div className="w-full bg-secondary rounded-full h-2 mt-2 overflow-hidden">
+                <div className="w-full bg-secondary rounded-full h-2 mt-3 overflow-hidden">
                   <div
                     className="bg-emerald-500 h-2 rounded-full transition-all duration-500"
                     style={{
@@ -579,7 +579,7 @@ export const AttendanceDashboardHub: React.FC = () => {
                 </div>
               </CardHeader>
 
-              <CardContent className="p-4 sm:p-5 pt-0">
+              <CardContent className="p-5 pt-0">
                 {isDailyStatusLoading ? (
                   <div className="py-6 text-center text-xs text-muted-foreground animate-pulse">
                     Loading section attendance status...
@@ -589,41 +589,41 @@ export const AttendanceDashboardHub: React.FC = () => {
                     No classes or sections configured yet.
                   </p>
                 ) : (
-                  <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-2.5 pt-2">
+                  <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3 pt-3">
                     {sectionsStatusList.map((sec) => (
                       <div
                         key={sec.sectionId}
-                        className={`p-3 rounded-lg border flex items-center justify-between transition-colors ${
+                        className={`p-4 rounded-xl border flex items-center justify-between transition-colors ${
                           sec.isMarked
-                            ? 'bg-emerald-500/5 border-emerald-500/20'
-                            : 'bg-amber-500/5 border-amber-500/20'
+                            ? 'bg-emerald-500/5 border-emerald-500/20 hover:bg-emerald-500/10'
+                            : 'bg-amber-500/5 border-amber-500/20 hover:bg-amber-500/10'
                         }`}
                       >
-                        <div className="space-y-0.5 min-w-0">
-                          <p className="text-xs font-semibold text-foreground truncate">
+                        <div className="space-y-1 min-w-0">
+                          <p className="text-sm font-semibold text-foreground truncate">
                             {sec.className} - {sec.sectionName}
                           </p>
-                          <p className="text-[11px] text-muted-foreground">
+                          <p className="text-xs text-muted-foreground">
                             {sec.isMarked
                               ? `${sec.presentCount} present / ${sec.totalStudents} enrolled`
                               : `${sec.totalStudents} enrolled • Pending`}
                           </p>
                         </div>
 
-                        <div className="flex items-center gap-1.5 shrink-0">
+                        <div className="flex items-center gap-2 shrink-0">
                           {sec.isMarked ? (
                             <Badge
                               variant="outline"
-                              className="text-[10px] px-2 py-0.5 font-medium bg-emerald-500/10 text-emerald-700 dark:text-emerald-400 border-emerald-500/30 gap-1"
+                              className="text-xs px-2.5 py-1 font-medium bg-emerald-500/10 text-emerald-700 dark:text-emerald-400 border-emerald-500/30 gap-1.5"
                             >
-                              <Check className="h-3 w-3" />
+                              <Check className="h-3.5 w-3.5" />
                               Recorded
                             </Badge>
                           ) : (
                             <Button
                               variant="outline"
                               size="sm"
-                              className="h-7 text-[10px] px-2 text-primary border-primary/30 hover:bg-primary/10"
+                              className="h-8 text-xs px-3 font-semibold text-primary border-primary/30 hover:bg-primary/10"
                               asChild
                             >
                               <Link
