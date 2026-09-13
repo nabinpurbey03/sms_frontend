@@ -4,8 +4,6 @@ import {
   Layers,
   Users,
   Plus,
-  Lock,
-  Sparkles,
   MoreVertical,
   Edit2,
   Trash2,
@@ -37,9 +35,9 @@ interface ClassCardProps {
   cls: ClassWithDetails;
   canManage: boolean;
   teacherScope?: TeacherClassScope;
-  onOpenDetails: (cls: ClassWithDetails) => void;
-  onOpenDetailsPage: (clsId: string) => void; // New prop for page navigation
-  onAddSection: (cls: ClassWithDetails) => void;
+  onOpenDetails?: (cls: ClassWithDetails) => void;
+  onOpenDetailsPage: (clsId: string) => void;
+  onAddSection?: (cls: ClassWithDetails) => void;
   onEditClass: (cls: ClassWithDetails) => void;
   onDeleteClass: (cls: ClassWithDetails) => void;
   onMarkAttendance?: (clsId: string, sectionId?: string) => void;
@@ -49,7 +47,6 @@ export const ClassCard: React.FC<ClassCardProps> = ({
   cls,
   canManage,
   teacherScope,
-  onOpenDetails,
   onOpenDetailsPage,
   onAddSection,
   onEditClass,
@@ -57,24 +54,34 @@ export const ClassCard: React.FC<ClassCardProps> = ({
   onMarkAttendance,
 }) => {
   const sections = cls.sections || [];
-  const lastSection = sections.length > 0 ? sections[sections.length - 1] : null;
-  const lastSectionStudentCount = lastSection?.student_count ?? 0;
-  const isEligibleForNext = lastSectionStudentCount >= 20;
-  const nextSectionLetter = String.fromCharCode(65 + sections.length);
 
   return (
-    <div className="flex flex-col justify-between rounded-xl border border-border/70 bg-card p-5 shadow-xs hover:shadow-md transition-all duration-200">
+    <div
+      role="button"
+      tabIndex={0}
+      onClick={() => onOpenDetailsPage(cls.id)}
+      onKeyDown={(e) => {
+        if (e.key === 'Enter' || e.key === ' ') {
+          e.preventDefault();
+          onOpenDetailsPage(cls.id);
+        }
+      }}
+      className="group flex flex-col justify-between rounded-xl border border-border/70 bg-card p-5 shadow-xs hover:shadow-md hover:border-primary/50 transition-all duration-200 cursor-pointer text-left"
+    >
       <div className="space-y-4">
         {/* Card Header */}
         <div className="flex items-start justify-between gap-3">
-          <div>
+          <div className="min-w-0 flex-1">
             <div className="flex items-center gap-2">
-              <div className="p-2 rounded-lg bg-primary/10 text-primary border border-primary/20">
+              <div className="p-2 rounded-lg bg-primary/10 text-primary border border-primary/20 group-hover:bg-primary group-hover:text-primary-foreground transition-colors">
                 <BookOpen className="w-4 h-4" />
               </div>
-              <h3 className="font-bold text-base text-foreground tracking-tight">{cls.name}</h3>
+              <h3 className="font-bold text-base text-foreground tracking-tight group-hover:text-primary transition-colors flex items-center gap-1.5">
+                <span>{cls.name}</span>
+                <ArrowRight className="w-4 h-4 opacity-0 -translate-x-1 group-hover:opacity-100 group-hover:translate-x-0 transition-all text-primary shrink-0" />
+              </h3>
             </div>
-            <p className="text-xs text-muted-foreground mt-1 flex items-center gap-3">
+            <p className="text-xs text-muted-foreground mt-1 flex items-center gap-2 flex-wrap">
               <span className="flex items-center gap-1">
                 <Users className="w-3.5 h-3.5" />
                 {cls.students.length} students
@@ -90,36 +97,61 @@ export const ClassCard: React.FC<ClassCardProps> = ({
           </div>
 
           {canManage && (
-            <DropdownMenu>
-              <DropdownMenuTrigger asChild>
-                <Button variant="ghost" size="icon" className="h-8 w-8 text-muted-foreground">
-                  <MoreVertical className="w-4 h-4" />
-                  <span className="sr-only">Actions</span>
-                </Button>
-              </DropdownMenuTrigger>
-              <DropdownMenuContent align="end" className="w-44 text-xs">
-                <DropdownMenuItem onClick={() => onOpenDetails(cls)} className="gap-2 cursor-pointer">
-                  <BookOpen className="w-3.5 h-3.5" />
-                  Open Class Roster
-                </DropdownMenuItem>
-                <DropdownMenuItem onClick={() => onOpenDetailsPage(cls.id)} className="gap-2 cursor-pointer">
-                  <BookOpen className="w-3.5 h-3.5" />
-                  View Roster (Page)
-                </DropdownMenuItem>
-                <DropdownMenuItem onClick={() => onEditClass(cls)} className="gap-2 cursor-pointer">
-                  <Edit2 className="w-3.5 h-3.5" />
-                  Rename Class
-                </DropdownMenuItem>
-                <DropdownMenuSeparator />
-                <DropdownMenuItem
-                  onClick={() => onDeleteClass(cls)}
-                  className="gap-2 cursor-pointer text-destructive focus:text-destructive focus:bg-destructive/10"
-                >
-                  <Trash2 className="w-3.5 h-3.5" />
-                  Delete Class
-                </DropdownMenuItem>
-              </DropdownMenuContent>
-            </DropdownMenu>
+            <div onClick={(e) => e.stopPropagation()}>
+              <DropdownMenu>
+                <DropdownMenuTrigger asChild>
+                  <Button variant="ghost" size="icon" className="h-8 w-8 text-muted-foreground hover:text-foreground">
+                    <MoreVertical className="w-4 h-4" />
+                    <span className="sr-only">Actions</span>
+                  </Button>
+                </DropdownMenuTrigger>
+                <DropdownMenuContent align="end" className="w-44 text-xs">
+                  <DropdownMenuItem
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      onOpenDetailsPage(cls.id);
+                    }}
+                    className="gap-2 cursor-pointer"
+                  >
+                    <BookOpen className="w-3.5 h-3.5" />
+                    View Details
+                  </DropdownMenuItem>
+                  {onAddSection && (
+                    <DropdownMenuItem
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        onAddSection(cls);
+                      }}
+                      className="gap-2 cursor-pointer"
+                    >
+                      <Plus className="w-3.5 h-3.5" />
+                      Add Section
+                    </DropdownMenuItem>
+                  )}
+                  <DropdownMenuItem
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      onEditClass(cls);
+                    }}
+                    className="gap-2 cursor-pointer"
+                  >
+                    <Edit2 className="w-3.5 h-3.5" />
+                    Rename Class
+                  </DropdownMenuItem>
+                  <DropdownMenuSeparator />
+                  <DropdownMenuItem
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      onDeleteClass(cls);
+                    }}
+                    className="gap-2 cursor-pointer text-destructive focus:text-destructive focus:bg-destructive/10"
+                  >
+                    <Trash2 className="w-3.5 h-3.5" />
+                    Delete Class
+                  </DropdownMenuItem>
+                </DropdownMenuContent>
+              </DropdownMenu>
+            </div>
           )}
         </div>
 
@@ -155,83 +187,38 @@ export const ClassCard: React.FC<ClassCardProps> = ({
             Sections Roster
           </p>
           <div className="flex flex-wrap gap-2">
-            {sections.map((sec) => (
-              <div
-                key={sec.id}
-                className="flex items-center gap-1.5 px-2.5 py-1 rounded-lg border border-border/60 bg-muted/30 text-xs font-medium"
-              >
-                <span className="font-bold text-foreground">Sec {sec.name}</span>
-                <span className="text-[11px] text-muted-foreground">
-                  ({sec.student_count ?? 0} students)
-                </span>
-              </div>
-            ))}
-          </div>
-        </div>
-
-        {/* 20-Student Rule Eligibility Monitor */}
-        {lastSection && (
-          <div className="pt-2 border-t border-border/40">
-            {isEligibleForNext ? (
-              <div className="flex items-center justify-between p-2.5 rounded-lg bg-emerald-500/10 border border-emerald-500/20 text-emerald-700 dark:text-emerald-400">
-                <div className="flex items-center gap-2">
-                  <Sparkles className="w-4 h-4 shrink-0" />
-                  <span className="text-xs font-medium">
-                    Section {lastSection.name} has {lastSectionStudentCount} students. Eligible for Section {nextSectionLetter}!
-                  </span>
-                </div>
-                {canManage && (
-                  <Button
-                    size="sm"
-                    variant="outline"
-                    onClick={() => onAddSection(cls)}
-                    className="h-7 text-xs border-emerald-500/30 text-emerald-700 dark:text-emerald-400 hover:bg-emerald-500/15"
-                  >
-                    <Plus className="w-3 h-3 mr-1" />
-                    Add Sec {nextSectionLetter}
-                  </Button>
-                )}
-              </div>
+            {sections.length === 0 ? (
+              <span className="text-xs text-muted-foreground italic">No sections created</span>
             ) : (
-              <div className="space-y-1.5 p-2.5 rounded-lg bg-muted/40 border border-border/50 text-xs text-muted-foreground">
-                <div className="flex items-center justify-between">
-                  <span className="flex items-center gap-1.5 text-xs font-medium text-foreground">
-                    <Lock className="w-3.5 h-3.5 text-amber-500 shrink-0" />
-                    Section {nextSectionLetter} Expansion Lock
-                  </span>
-                  <span className="font-semibold text-xs">
-                    {lastSectionStudentCount} / 20 Students
+              sections.map((sec) => (
+                <div
+                  key={sec.id}
+                  className="flex items-center gap-1.5 px-2.5 py-1 rounded-lg border border-border/60 bg-muted/30 text-xs font-medium"
+                >
+                  <span className="font-bold text-foreground">Sec {sec.name}</span>
+                  <span className="text-[11px] text-muted-foreground">
+                    ({sec.student_count ?? 0} students)
                   </span>
                 </div>
-                {/* Progress bar */}
-                <div className="w-full h-1.5 rounded-full bg-muted overflow-hidden">
-                  <div
-                    className="h-full bg-amber-500 rounded-full transition-all duration-300"
-                    style={{ width: `${Math.min(100, (lastSectionStudentCount / 20) * 100)}%` }}
-                  />
-                </div>
-                <p className="text-[11px] text-muted-foreground">
-                  Section {lastSection.name} requires {20 - lastSectionStudentCount} more students to open Section {nextSectionLetter}.
-                </p>
-              </div>
+              ))
             )}
           </div>
-        )}
+        </div>
       </div>
 
-      {/* Card Footer */}
-      <div
-        className={`pt-4 mt-4 border-t border-border/50 flex items-center ${
-          teacherScope?.isClassTeacher ? 'justify-between' : 'justify-end'
-        }`}
-      >
-        {teacherScope?.isClassTeacher && (
+      {/* Card Footer (only shown if class teacher attendance action is present) */}
+      {teacherScope?.isClassTeacher && (
+        <div
+          className="pt-3 mt-4 border-t border-border/50 flex items-center justify-between"
+          onClick={(e) => e.stopPropagation()}
+        >
           <div className="flex items-center gap-2">
             {teacherScope.isTodayAttendanceMarked ? (
               <>
                 <Button
                   size="sm"
-                  onClick={() => {
+                  onClick={(e) => {
+                    e.stopPropagation();
                     const targetSecId = teacherScope.classTeacherSections[0]?.id;
                     onMarkAttendance?.(cls.id, targetSecId);
                   }}
@@ -248,7 +235,8 @@ export const ClassCard: React.FC<ClassCardProps> = ({
             ) : (
               <Button
                 size="sm"
-                onClick={() => {
+                onClick={(e) => {
+                  e.stopPropagation();
                   const targetSecId = teacherScope.classTeacherSections[0]?.id;
                   onMarkAttendance?.(cls.id, targetSecId);
                 }}
@@ -259,17 +247,8 @@ export const ClassCard: React.FC<ClassCardProps> = ({
               </Button>
             )}
           </div>
-        )}
-        <Button
-          variant="ghost"
-          size="sm"
-          onClick={() => onOpenDetailsPage(cls.id)}
-          className="text-xs gap-1.5 text-primary hover:text-primary"
-        >
-          <span>{teacherScope?.isClassTeacher ? 'View Roster' : 'View Sections & Roster'}</span>
-          <ArrowRight className="w-3.5 h-3.5" />
-        </Button>
-      </div>
+        </div>
+      )}
     </div>
   );
 };
