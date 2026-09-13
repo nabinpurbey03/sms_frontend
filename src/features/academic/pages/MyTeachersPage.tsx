@@ -1,5 +1,4 @@
 import React, { useState } from 'react';
-import { Link } from '@tanstack/react-router';
 import { useAuth } from '@/auth/useAuth';
 import { useMyChildrenTeachers } from '../hooks';
 import { TenantRequiredState } from '@/components/common/TenantRequiredState';
@@ -19,9 +18,6 @@ import {
   School,
   Sparkles,
   ArrowDown,
-  Users,
-  Baby,
-  Award,
 } from 'lucide-react';
 import { toast } from 'sonner';
 
@@ -102,31 +98,6 @@ export const MyTeachersPage: React.FC = () => {
 
   return (
     <div className="space-y-6 pb-16">
-      {/* Navigation & Status Actions */}
-      <div className="flex justify-end items-center gap-2 flex-wrap">
-        <Button variant="outline" size="sm" asChild className="text-xs font-medium gap-1.5">
-          <Link to="/academic/my-children">
-            <Baby className="w-3.5 h-3.5 text-primary" />
-            <span>My Children</span>
-          </Link>
-        </Button>
-        <Button variant="outline" size="sm" asChild className="text-xs font-medium gap-1.5">
-          <Link to="/academic/report-cards">
-            <Award className="w-3.5 h-3.5 text-amber-500" />
-            <span>Report Cards</span>
-          </Link>
-        </Button>
-        <Badge
-          variant="outline"
-          className="px-3 py-1 text-xs font-semibold gap-1.5 bg-primary/5 text-primary border-primary/20"
-        >
-          <GraduationCap className="w-3.5 h-3.5" />
-          <span>
-            {childrenTeachers.length} {childrenTeachers.length === 1 ? 'Class Teacher' : 'Class Teachers'}
-          </span>
-        </Badge>
-      </div>
-
       {/* Quick Jump Bar for multiple children - wraps naturally, zero horizontal scroll */}
       {childrenTeachers.length > 1 && (
         <div className="flex flex-wrap items-center gap-2 p-3 bg-muted/40 rounded-xl border border-border/50">

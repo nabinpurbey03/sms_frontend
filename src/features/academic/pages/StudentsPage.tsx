@@ -292,30 +292,6 @@ export const StudentsPage: React.FC = () => {
 
   return (
     <div className="space-y-6 pb-12">
-      {/* Actions */}
-      {canManage && (
-        <div className="flex justify-end">
-          <div className="flex items-center gap-2 shrink-0">
-            <Button
-              variant="outline"
-              onClick={() => setIsBulkOpen(true)}
-              className="gap-1.5 text-xs shadow-2xs font-semibold"
-            >
-              <UploadCloud className="w-3.5 h-3.5" />
-              <span>Bulk Upload</span>
-            </Button>
-            <Button
-              onClick={() => setIsEnrollOpen(true)}
-              disabled={classesWithDetails.length === 0}
-              className="gap-1.5 text-xs shadow-xs"
-            >
-              <Plus className="w-3.5 h-3.5" />
-              <span>Enroll Student</span>
-            </Button>
-          </div>
-        </div>
-      )}
-
       {/* KPI Stats Cards */}
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4">
         <div className="p-4 rounded-2xl bg-card border shadow-2xs space-y-1">
@@ -381,21 +357,43 @@ export const StudentsPage: React.FC = () => {
           </div>
 
           {/* Export Action & Record Counter */}
-          <div className="flex items-center justify-between sm:justify-end gap-3">
+          <div className="flex items-center justify-between sm:justify-end gap-2 flex-wrap">
+            <span className="text-xs text-muted-foreground hidden lg:inline mr-1">
+              Showing <strong className="text-foreground">{filteredStudents.length}</strong> of{' '}
+              {allStudents.length}
+            </span>
             <Button
               variant="outline"
               size="sm"
               onClick={handleExportCSV}
               disabled={filteredStudents.length === 0}
-              className="h-9 gap-1.5 text-xs"
+              className="h-9 gap-1.5 text-xs shadow-2xs"
             >
               <Download className="w-3.5 h-3.5" />
-              Export CSV
+              <span className="hidden sm:inline">Export CSV</span>
             </Button>
-            <span className="text-xs text-muted-foreground">
-              Showing <strong className="text-foreground">{filteredStudents.length}</strong> of{' '}
-              {allStudents.length}
-            </span>
+            {canManage && (
+              <>
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={() => setIsBulkOpen(true)}
+                  className="h-9 gap-1.5 text-xs font-semibold shadow-2xs"
+                >
+                  <UploadCloud className="w-3.5 h-3.5" />
+                  <span>Bulk Upload</span>
+                </Button>
+                <Button
+                  size="sm"
+                  onClick={() => setIsEnrollOpen(true)}
+                  disabled={classesWithDetails.length === 0}
+                  className="h-9 gap-1.5 text-xs shadow-xs"
+                >
+                  <Plus className="w-3.5 h-3.5" />
+                  <span>Enroll Student</span>
+                </Button>
+              </>
+            )}
           </div>
         </div>
 

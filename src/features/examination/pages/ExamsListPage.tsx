@@ -171,57 +171,56 @@ export const ExamsListPage: React.FC = () => {
 
   return (
     <div className="space-y-6 max-w-7xl mx-auto pb-16">
-      {/* Action Header */}
-      {canManageExams && (
-        <div className="flex justify-end">
-          <Button asChild className="gap-2 font-semibold shadow-xs">
-            <Link to={'/examination/exams/create' as any}>
-              <Plus className="w-4 h-4" />
-              Create Examination
-            </Link>
-          </Button>
-        </div>
-      )}
-
-      {/* Tabs Switcher */}
-      <div className="flex items-center gap-2 border-b pb-2">
-        <Button
-          type="button"
-          variant={activeTab === 'all-exams' ? 'default' : 'ghost'}
-          size="sm"
-          onClick={() => setActiveTab('all-exams')}
-          className="gap-2 font-medium"
-        >
-          <Layers className="w-4 h-4" />
-          All School Exams
-          {exams.length > 0 && (
-            <Badge
-              variant={activeTab === 'all-exams' ? 'secondary' : 'outline'}
-              className="ml-1 text-[11px] px-1.5 py-0"
-            >
-              {exams.length}
-            </Badge>
-          )}
-        </Button>
-
-        {canGrade && (
+      {/* Tabs Switcher & Action */}
+      <div className="flex items-center justify-between gap-3 border-b pb-2 flex-wrap">
+        <div className="flex items-center gap-2 flex-wrap">
           <Button
             type="button"
-            variant={activeTab === 'my-duties' ? 'default' : 'ghost'}
+            variant={activeTab === 'all-exams' ? 'default' : 'ghost'}
             size="sm"
-            onClick={() => setActiveTab('my-duties')}
+            onClick={() => setActiveTab('all-exams')}
             className="gap-2 font-medium"
           >
-            <BookOpen className="w-4 h-4" />
-            My Grading Duties
-            {teacherAssignments.length > 0 && (
+            <Layers className="w-4 h-4" />
+            All School Exams
+            {exams.length > 0 && (
               <Badge
-                variant={pendingDutiesCount > 0 ? 'warning' : 'secondary'}
-                className="ml-1 text-[11px] px-1.5 py-0 font-bold"
+                variant={activeTab === 'all-exams' ? 'secondary' : 'outline'}
+                className="ml-1 text-[11px] px-1.5 py-0"
               >
-                {pendingDutiesCount > 0 ? `${pendingDutiesCount} Pending` : teacherAssignments.length}
+                {exams.length}
               </Badge>
             )}
+          </Button>
+
+          {canGrade && (
+            <Button
+              type="button"
+              variant={activeTab === 'my-duties' ? 'default' : 'ghost'}
+              size="sm"
+              onClick={() => setActiveTab('my-duties')}
+              className="gap-2 font-medium"
+            >
+              <BookOpen className="w-4 h-4" />
+              My Grading Duties
+              {teacherAssignments.length > 0 && (
+                <Badge
+                  variant={pendingDutiesCount > 0 ? 'warning' : 'secondary'}
+                  className="ml-1 text-[11px] px-1.5 py-0 font-bold"
+                >
+                  {pendingDutiesCount > 0 ? `${pendingDutiesCount} Pending` : teacherAssignments.length}
+                </Badge>
+              )}
+            </Button>
+          )}
+        </div>
+
+        {canManageExams && (
+          <Button asChild size="sm" className="gap-1.5 font-semibold shadow-xs h-9">
+            <Link to={'/examination/exams/create' as any}>
+              <Plus className="w-3.5 h-3.5" />
+              Create Examination
+            </Link>
           </Button>
         )}
       </div>

@@ -233,31 +233,6 @@ export const SubjectsPage: React.FC = () => {
 
   return (
     <div className="space-y-6 pb-12">
-      {/* Actions */}
-      {canManage && (
-        <div className="flex justify-end">
-          <div className="flex items-center gap-2 shrink-0">
-            <Button
-              variant="outline"
-              onClick={() => setIsBulkOpen(true)}
-              disabled={classesWithDetails.length === 0}
-              className="gap-1.5 text-xs shadow-2xs font-semibold"
-            >
-              <UploadCloud className="w-3.5 h-3.5" />
-              <span>Bulk Upload</span>
-            </Button>
-            <Button
-              onClick={() => setIsCreateOpen(true)}
-              disabled={classesWithDetails.length === 0}
-              className="gap-1.5 text-xs shadow-xs"
-            >
-              <Plus className="w-3.5 h-3.5" />
-              <span>Add Subject</span>
-            </Button>
-          </div>
-        </div>
-      )}
-
       {/* KPI Stats Cards */}
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4">
         <div className="p-4 rounded-2xl bg-card border shadow-2xs space-y-1">
@@ -322,22 +297,45 @@ export const SubjectsPage: React.FC = () => {
             )}
           </div>
 
-          {/* Export & Record Count */}
-          <div className="flex items-center justify-between sm:justify-end gap-3">
+          {/* Export & Actions & Record Count */}
+          <div className="flex items-center justify-between sm:justify-end gap-2 flex-wrap">
+            <span className="text-xs text-muted-foreground hidden lg:inline mr-1">
+              Showing <strong className="text-foreground">{filteredSubjects.length}</strong> of{' '}
+              {allSubjects.length}
+            </span>
             <Button
               variant="outline"
               size="sm"
               onClick={handleExportCSV}
               disabled={filteredSubjects.length === 0}
-              className="h-9 gap-1.5 text-xs"
+              className="h-9 gap-1.5 text-xs shadow-2xs"
             >
               <Download className="w-3.5 h-3.5" />
-              Export CSV
+              <span className="hidden sm:inline">Export CSV</span>
             </Button>
-            <span className="text-xs text-muted-foreground">
-              Showing <strong className="text-foreground">{filteredSubjects.length}</strong> of{' '}
-              {allSubjects.length}
-            </span>
+            {canManage && (
+              <>
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={() => setIsBulkOpen(true)}
+                  disabled={classesWithDetails.length === 0}
+                  className="h-9 gap-1.5 text-xs shadow-2xs font-semibold"
+                >
+                  <UploadCloud className="w-3.5 h-3.5" />
+                  <span>Bulk Upload</span>
+                </Button>
+                <Button
+                  size="sm"
+                  onClick={() => setIsCreateOpen(true)}
+                  disabled={classesWithDetails.length === 0}
+                  className="h-9 gap-1.5 text-xs shadow-xs"
+                >
+                  <Plus className="w-3.5 h-3.5" />
+                  <span>Add Subject</span>
+                </Button>
+              </>
+            )}
           </div>
         </div>
 

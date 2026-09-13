@@ -1,14 +1,12 @@
 import React, { useState, useMemo } from 'react';
-import { Link } from '@tanstack/react-router';
 import {
   Award,
   CheckCircle2,
   AlertCircle,
   FileText,
   CalendarCheck,
-  Baby,
   Filter,
-  GraduationCap,
+  Baby,
 } from 'lucide-react';
 
 import { useAuth } from '@/auth/useAuth';
@@ -96,22 +94,6 @@ export const ParentReportCardsPage: React.FC = () => {
 
   return (
     <div className="space-y-6">
-      {/* Navigation Actions */}
-      <div className="flex justify-end items-center gap-2">
-        <Button variant="outline" size="sm" asChild className="text-xs font-medium gap-1.5">
-          <Link to="/academic/my-children">
-            <Baby className="w-3.5 h-3.5 text-primary" />
-            <span>My Children</span>
-          </Link>
-        </Button>
-        <Button variant="outline" size="sm" asChild className="text-xs font-medium gap-1.5">
-          <Link to="/academic/my-teachers">
-            <GraduationCap className="w-3.5 h-3.5 text-emerald-600" />
-            <span>Class Teacher</span>
-          </Link>
-        </Button>
-      </div>
-
       {/* Loading State */}
       {isLoading && (
         <div className="space-y-4">

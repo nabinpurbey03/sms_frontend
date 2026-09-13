@@ -111,31 +111,6 @@ export const TeacherAssignmentsPage: React.FC = () => {
 
   return (
     <div className="space-y-6 pb-12">
-      {/* Actions */}
-      {canAssign && !isReadOnly && (
-        <div className="flex justify-end">
-          <div className="flex items-center gap-2 shrink-0">
-            <Button
-              variant="outline"
-              size="sm"
-              onClick={() => openDialog('class_teacher')}
-              className="gap-1.5"
-            >
-              <UserCheck className="w-4 h-4 text-purple-600 dark:text-purple-400" />
-              <span>Appoint Class Teacher</span>
-            </Button>
-            <Button
-              size="sm"
-              onClick={() => openDialog('subject')}
-              className="gap-1.5"
-            >
-              <Plus className="w-4 h-4" />
-              <span>Assign Subject Teacher</span>
-            </Button>
-          </div>
-        </div>
-      )}
-
       {/* Summary KPI Cards */}
       <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
         <Card className="bg-card shadow-xs border-border/70 p-4">
@@ -186,18 +161,18 @@ export const TeacherAssignmentsPage: React.FC = () => {
       </div>
 
       {/* Filter Toolbar */}
-      <div className="flex flex-col sm:flex-row items-center justify-between gap-3 bg-card p-3 rounded-xl border shadow-xs">
-        <div className="relative w-full sm:w-72">
-          <Search className="w-4 h-4 absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground" />
-          <Input
-            placeholder="Search teacher, subject, class..."
-            value={searchQuery}
-            onChange={(e) => setSearchQuery(e.target.value)}
-            className="pl-9 h-9 text-xs"
-          />
-        </div>
+      <div className="flex flex-col lg:flex-row items-stretch lg:items-center justify-between gap-3 bg-card p-3 rounded-xl border shadow-xs">
+        <div className="flex flex-1 items-center gap-2 flex-wrap">
+          <div className="relative w-full sm:w-64">
+            <Search className="w-4 h-4 absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground" />
+            <Input
+              placeholder="Search teacher, subject, class..."
+              value={searchQuery}
+              onChange={(e) => setSearchQuery(e.target.value)}
+              className="pl-9 h-9 text-xs"
+            />
+          </div>
 
-        <div className="flex flex-wrap items-center gap-2 w-full sm:w-auto">
           {/* Filter by Type */}
           <div className="flex items-center gap-1 bg-muted p-1 rounded-lg text-xs font-medium">
             <button
@@ -243,6 +218,28 @@ export const TeacherAssignmentsPage: React.FC = () => {
             ))}
           </select>
         </div>
+
+        {canAssign && !isReadOnly && (
+          <div className="flex items-center gap-2 shrink-0">
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={() => openDialog('class_teacher')}
+              className="h-9 gap-1.5 text-xs shadow-2xs"
+            >
+              <UserCheck className="w-3.5 h-3.5 text-purple-600 dark:text-purple-400" />
+              <span>Appoint Class Teacher</span>
+            </Button>
+            <Button
+              size="sm"
+              onClick={() => openDialog('subject')}
+              className="h-9 gap-1.5 text-xs shadow-xs"
+            >
+              <Plus className="w-3.5 h-3.5" />
+              <span>Assign Subject Teacher</span>
+            </Button>
+          </div>
+        )}
       </div>
 
       {/* Error Alert */}

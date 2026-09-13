@@ -294,48 +294,47 @@ export const ClassesPage: React.FC = () => {
         </div>
       ) : (
         <>
-          {/* Actions */}
-      {canManage && (
-        <div className="flex justify-end">
-          <Button
-            onClick={() => setIsCreateClassOpen(true)}
-            className="gap-2 shadow-xs shrink-0"
-          >
-            <Plus className="w-4 h-4" />
-            <span>Create Class</span>
-          </Button>
-        </div>
-      )}
+          {/* KPI Stats */}
+          <AcademicStatsCards stats={stats} isLoading={isLoading} />
 
-      {/* KPI Stats */}
-      <AcademicStatsCards stats={stats} isLoading={isLoading} />
+          {/* Search Bar */}
+          <div className="flex items-center justify-between gap-3 p-4 rounded-xl border border-border/60 bg-card shadow-xs">
+            <div className="relative flex-1 max-w-md">
+              <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
+              <Input
+                value={searchQuery}
+                onChange={(e) => setSearchQuery(e.target.value)}
+                placeholder="Search classes by name or section..."
+                className="pl-9 pr-8 h-9 text-xs"
+              />
+              {searchQuery && (
+                <button
+                  type="button"
+                  onClick={() => setSearchQuery('')}
+                  className="absolute right-2.5 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground"
+                >
+                  <X className="w-3.5 h-3.5" />
+                </button>
+              )}
+            </div>
 
-      {/* Search Bar */}
-      <div className="flex items-center justify-between gap-3 p-4 rounded-xl border border-border/60 bg-card shadow-xs">
-        <div className="relative flex-1 max-w-md">
-          <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
-          <Input
-            value={searchQuery}
-            onChange={(e) => setSearchQuery(e.target.value)}
-            placeholder="Search classes by name or section..."
-            className="pl-9 pr-8 h-9 text-xs"
-          />
-          {searchQuery && (
-            <button
-              type="button"
-              onClick={() => setSearchQuery('')}
-              className="absolute right-2.5 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground"
-            >
-              <X className="w-3.5 h-3.5" />
-            </button>
-          )}
-        </div>
-
-        <div className="text-xs text-muted-foreground">
-          Showing <span className="font-semibold text-foreground">{filteredClasses.length}</span>{' '}
-          {filteredClasses.length === 1 ? 'class' : 'classes'}
-        </div>
-      </div>
+            <div className="flex items-center gap-3">
+              <div className="text-xs text-muted-foreground hidden sm:inline">
+                Showing <span className="font-semibold text-foreground">{filteredClasses.length}</span>{' '}
+                {filteredClasses.length === 1 ? 'class' : 'classes'}
+              </div>
+              {canManage && (
+                <Button
+                  onClick={() => setIsCreateClassOpen(true)}
+                  size="sm"
+                  className="gap-1.5 h-9 shadow-xs shrink-0 text-xs font-semibold"
+                >
+                  <Plus className="w-3.5 h-3.5" />
+                  <span>Create Class</span>
+                </Button>
+              )}
+            </div>
+          </div>
 
       {/* Error Alert */}
       {isError && (

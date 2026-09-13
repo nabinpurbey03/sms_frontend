@@ -1,11 +1,10 @@
 import React from 'react';
 import { Link } from '@tanstack/react-router';
-import { Baby, Users, AlertCircle, BookOpen, Hash, Building2, Award, GraduationCap } from 'lucide-react';
+import { Baby, AlertCircle, BookOpen, Hash, Building2, GraduationCap, Award } from 'lucide-react';
 import { useAuth } from '@/auth/useAuth';
 import { usePermission } from '@/auth/usePermission';
 import { TenantRequiredState } from '@/components/common/TenantRequiredState';
 import { Button } from '@/components/ui/button';
-import { Badge } from '@/components/ui/badge';
 import { useParentChildren } from '../hooks';
 import type { ParentChildDTO } from '../types';
 
@@ -55,28 +54,6 @@ export const MyChildrenPage: React.FC = () => {
 
   return (
     <div className="space-y-6">
-      {/* Navigation Actions */}
-      <div className="flex justify-end items-center gap-2 flex-wrap">
-        <Button variant="outline" size="sm" asChild className="text-xs font-medium gap-1.5">
-          <Link to="/academic/my-teachers">
-            <GraduationCap className="w-3.5 h-3.5 text-emerald-600" />
-            <span>Class Teacher</span>
-          </Link>
-        </Button>
-        <Button variant="outline" size="sm" asChild className="text-xs font-medium gap-1.5">
-          <Link to="/academic/report-cards">
-            <Award className="w-3.5 h-3.5 text-amber-500" />
-            <span>Report Cards</span>
-          </Link>
-        </Button>
-        {!isLoading && (
-          <Badge variant="outline" className="px-3 py-1 text-xs font-semibold gap-1.5 bg-primary/5 text-primary border-primary/20">
-            <Users className="w-3.5 h-3.5" />
-            <span>{children.length} {children.length === 1 ? 'Child' : 'Children'}</span>
-          </Badge>
-        )}
-      </div>
-
       {/* Content */}
       {isLoading && (
         <div className="space-y-3">

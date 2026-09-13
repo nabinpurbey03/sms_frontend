@@ -252,36 +252,9 @@ export const AttendanceReportsPage: React.FC = () => {
 
   return (
     <div className="space-y-6 pb-12">
-      {/* Global Action Buttons */}
-      <div className="flex justify-end items-center gap-2 flex-wrap sm:flex-nowrap">
-        <Button
-          type="button"
-          variant="outline"
-          size="sm"
-          onClick={handleRefresh}
-          disabled={isSchoolLoading || isSchoolRefetching}
-          className="h-9 gap-1.5 text-xs cursor-pointer"
-        >
-          <RotateCw
-            className={cn('w-3.5 h-3.5', (isSchoolRefetching || isClassRefetching) && 'animate-spin')}
-          />
-          <span>Refresh</span>
-        </Button>
-        <Button
-          type="button"
-          size="sm"
-          onClick={handleExportCsv}
-          disabled={!schoolReport || isSchoolLoading}
-          className="h-9 gap-1.5 text-xs bg-emerald-600 hover:bg-emerald-700 text-white cursor-pointer"
-        >
-          <Download className="w-3.5 h-3.5" />
-          <span>Export CSV</span>
-        </Button>
-      </div>
-
       {/* Timeframe Controls Bar */}
       <Card className="p-4 bg-card shadow-xs border-border/70">
-        <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
+        <div className="flex flex-col xl:flex-row xl:items-center justify-between gap-4">
           {/* Preset Buttons */}
           <div className="flex items-center gap-1.5 flex-wrap">
             <span className="text-xs font-semibold text-muted-foreground mr-1 flex items-center gap-1">
@@ -326,40 +299,68 @@ export const AttendanceReportsPage: React.FC = () => {
             </Button>
           </div>
 
-          {/* Date Range Inputs */}
-          <div className="flex items-center gap-2 flex-wrap sm:flex-nowrap">
-            <div className="flex items-center gap-1.5">
-              <label htmlFor="fromDate" className="text-xs text-muted-foreground font-medium">
-                From:
-              </label>
-              <Input
-                id="fromDate"
-                type="date"
-                value={fromDate}
-                max={todayStr}
-                onChange={(e) => handleFromDateChange(e.target.value)}
-                className="h-8 text-xs w-36"
-              />
+          {/* Date Range Inputs & Actions */}
+          <div className="flex items-center gap-3 flex-wrap justify-between xl:justify-end">
+            <div className="flex items-center gap-2 flex-wrap sm:flex-nowrap">
+              <div className="flex items-center gap-1.5">
+                <label htmlFor="fromDate" className="text-xs text-muted-foreground font-medium">
+                  From:
+                </label>
+                <Input
+                  id="fromDate"
+                  type="date"
+                  value={fromDate}
+                  max={todayStr}
+                  onChange={(e) => handleFromDateChange(e.target.value)}
+                  className="h-8 text-xs w-36"
+                />
+              </div>
+              <div className="flex items-center gap-1.5">
+                <label htmlFor="toDate" className="text-xs text-muted-foreground font-medium">
+                  To:
+                </label>
+                <Input
+                  id="toDate"
+                  type="date"
+                  value={toDate}
+                  min={fromDate}
+                  max={todayStr}
+                  onChange={(e) => handleToDateChange(e.target.value)}
+                  className="h-8 text-xs w-36"
+                />
+              </div>
+              {activePreset === 'custom' && (
+                <Badge variant="secondary" className="text-[10px] h-6 font-normal">
+                  Custom Range
+                </Badge>
+              )}
             </div>
-            <div className="flex items-center gap-1.5">
-              <label htmlFor="toDate" className="text-xs text-muted-foreground font-medium">
-                To:
-              </label>
-              <Input
-                id="toDate"
-                type="date"
-                value={toDate}
-                min={fromDate}
-                max={todayStr}
-                onChange={(e) => handleToDateChange(e.target.value)}
-                className="h-8 text-xs w-36"
-              />
+
+            <div className="flex items-center gap-2 shrink-0">
+              <Button
+                type="button"
+                variant="outline"
+                size="sm"
+                onClick={handleRefresh}
+                disabled={isSchoolLoading || isSchoolRefetching}
+                className="h-8 gap-1.5 text-xs cursor-pointer shadow-2xs"
+              >
+                <RotateCw
+                  className={cn('w-3.5 h-3.5', (isSchoolRefetching || isClassRefetching) && 'animate-spin')}
+                />
+                <span>Refresh</span>
+              </Button>
+              <Button
+                type="button"
+                size="sm"
+                onClick={handleExportCsv}
+                disabled={!schoolReport || isSchoolLoading}
+                className="h-8 gap-1.5 text-xs bg-emerald-600 hover:bg-emerald-700 text-white cursor-pointer shadow-xs"
+              >
+                <Download className="w-3.5 h-3.5" />
+                <span>Export CSV</span>
+              </Button>
             </div>
-            {activePreset === 'custom' && (
-              <Badge variant="secondary" className="text-[10px] h-6 font-normal">
-                Custom Range
-              </Badge>
-            )}
           </div>
         </div>
       </Card>

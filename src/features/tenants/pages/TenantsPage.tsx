@@ -181,19 +181,6 @@ export const TenantsPage: React.FC = () => {
 
   return (
     <div className="space-y-6 w-full min-w-0">
-      {/* Action Header */}
-      <div className="flex justify-end items-center gap-2">
-        <div className="flex items-center gap-3">
-          <Button onClick={handleOpenCreate} size="sm" className="gap-1.5 rounded-xl shadow-xs">
-            <Plus className="h-4 w-4" />
-            <span className="hidden sm:inline">Onboard New School</span>
-          </Button>
-          <Button variant="outline" size="icon" onClick={() => refetch()} className="h-9 w-9 rounded-xl border-dashed">
-            <RefreshCw className={`h-4 w-4 ${isLoading ? 'animate-spin text-primary' : ''}`} />
-          </Button>
-        </div>
-      </div>
-
       {/* KPI Stats Cards */}
       <TenantStatsCards 
         tenants={allTenants} 
@@ -293,6 +280,14 @@ export const TenantsPage: React.FC = () => {
               <LayoutGrid className="h-4 w-4" />
             </button>
           </div>
+
+          <Button onClick={handleOpenCreate} size="sm" className="h-9 gap-1.5 rounded-xl shadow-xs">
+            <Plus className="h-4 w-4" />
+            <span className="hidden sm:inline">Onboard New School</span>
+          </Button>
+          <Button variant="outline" size="icon" onClick={() => refetch()} className="h-9 w-9 rounded-xl border-dashed">
+            <RefreshCw className={`h-4 w-4 ${isLoading ? 'animate-spin text-primary' : ''}`} />
+          </Button>
         </div>
       </div>
 

@@ -23,6 +23,7 @@ import {
   GraduationCap,
   ShieldCheck,
   UserPlus,
+  RefreshCw,
 } from 'lucide-react';
 import { toast } from 'sonner';
 import { ParentStudentLinkDialog } from '@/features/members/components/ParentStudentLinkDialog';
@@ -91,18 +92,6 @@ export const TeacherParentDirectoryPage: React.FC = () => {
 
   return (
     <div className="space-y-6 pb-16">
-      {/* Actions */}
-      <div className="flex justify-end">
-        <Button
-          variant="outline"
-          size="sm"
-          onClick={() => refetch()}
-          className="gap-2 cursor-pointer text-xs"
-        >
-          Refresh Directory
-        </Button>
-      </div>
-
       {/* KPI Metrics Ribbon */}
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-3.5">
         <Card className="p-4 bg-card border-border/70 shadow-2xs">
@@ -235,6 +224,16 @@ export const TeacherParentDirectoryPage: React.FC = () => {
                 Unlinked
               </button>
             </div>
+
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={() => refetch()}
+              className="h-8 gap-1.5 cursor-pointer text-xs shadow-2xs"
+            >
+              <RefreshCw className={`w-3.5 h-3.5 ${isLoading ? 'animate-spin' : ''}`} />
+              <span>Refresh</span>
+            </Button>
           </div>
         </div>
       </Card>
