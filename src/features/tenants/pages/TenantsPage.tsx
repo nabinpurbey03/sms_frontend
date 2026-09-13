@@ -1,5 +1,5 @@
 import React, { useState, useMemo, useEffect } from 'react';
-import { useSearch } from '@tanstack/react-router';
+import { useSearch, useNavigate } from '@tanstack/react-router';
 import {
   Plus,
   Search,
@@ -54,6 +54,7 @@ export const TenantsPage: React.FC = () => {
   const pageSize = 20;
 
   const searchParams = useSearch({ strict: false }) as any;
+  const navigate = useNavigate();
 
   // Dialog State
   const [formDialogOpen, setFormDialogOpen] = useState(false);
@@ -64,6 +65,13 @@ export const TenantsPage: React.FC = () => {
       setOnboardDialogOpen(true);
     }
   }, [searchParams?.action]);
+
+  const handleOnboardOpenChange = (open: boolean) => {
+    setOnboardDialogOpen(open);
+    if (!open && searchParams?.action === 'onboard') {
+      navigate({ search: (prev: any) => ({ ...prev, action: undefined }), replace: true });
+    }
+  };
 
   const [tenantToEdit, setTenantToEdit] = useState<Tenant | null>(null);
 
@@ -368,7 +376,7 @@ export const TenantsPage: React.FC = () => {
       {/* Dialog Modals */}
       <TenantOnboardDialog
         open={onboardDialogOpen}
-        onOpenChange={setOnboardDialogOpen}
+        onOpenChange={handleOnboardOpenChange}
       />
       
       <TenantFormDialog
