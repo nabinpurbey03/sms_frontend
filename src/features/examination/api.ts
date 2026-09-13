@@ -19,7 +19,8 @@ export const examinationApi = {
     tenantId: string,
     params?: { class_id?: string; status?: string }
   ): Promise<ExamResponse[]> => {
-    return apiClient.get(`/academic/tenants/${tenantId}/exams`, { params });
+    const res = await apiClient.get(`/academic/tenants/${tenantId}/exams`, { params }) as any;
+    return res.meta ? res.data : res;
   },
 
   createExam: async (tenantId: string, data: ExamCreateDTO): Promise<ExamResponse> => {

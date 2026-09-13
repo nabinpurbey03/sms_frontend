@@ -21,7 +21,8 @@ export const academicApi = {
   // Classes
   // ==========================================
   getClasses: async (tenantId: string, academicYearId?: string | null): Promise<AcademicClass[]> => {
-    return apiClient.get(`/academic/tenants/${tenantId}/classes`, { params: { academic_year_id: academicYearId || undefined } });
+    const res = await apiClient.get(`/academic/tenants/${tenantId}/classes`, { params: { academic_year_id: academicYearId || undefined } }) as any;
+    return res.meta ? res.data : res;
   },
 
   createClass: async (tenantId: string, data: ClassCreateDTO): Promise<AcademicClass> => {
@@ -48,7 +49,8 @@ export const academicApi = {
   // Sections
   // ==========================================
   getSections: async (tenantId: string, classId: string, academicYearId?: string | null): Promise<AcademicSection[]> => {
-    return apiClient.get(`/academic/tenants/${tenantId}/classes/${classId}/sections`, { params: { academic_year_id: academicYearId || undefined } });
+    const res = await apiClient.get(`/academic/tenants/${tenantId}/classes/${classId}/sections`, { params: { academic_year_id: academicYearId || undefined } }) as any;
+    return res.meta ? res.data : res;
   },
 
   checkSectionEligibility: async (
@@ -137,7 +139,8 @@ export const academicApi = {
   // Subjects
   // ==========================================
   getSubjects: async (tenantId: string, classId: string, academicYearId?: string | null): Promise<AcademicSubject[]> => {
-    return apiClient.get(`/academic/tenants/${tenantId}/classes/${classId}/subjects`, { params: { academic_year_id: academicYearId || undefined } });
+    const res = await apiClient.get(`/academic/tenants/${tenantId}/classes/${classId}/subjects`, { params: { academic_year_id: academicYearId || undefined } }) as any;
+    return res.meta ? res.data : res;
   },
 
   createSubject: async (
@@ -229,7 +232,8 @@ export const academicApi = {
     tenantId: string,
     params?: { teacher_id?: string; class_id?: string; academic_year_id?: string | null }
   ): Promise<TeacherAssignment[]> => {
-    return apiClient.get(`/academic/tenants/${tenantId}/assignments`, { params });
+    const res = await apiClient.get(`/academic/tenants/${tenantId}/assignments`, { params }) as any;
+    return res.meta ? res.data : res;
   },
 
   assignClassTeacher: async (

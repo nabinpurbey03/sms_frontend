@@ -30,7 +30,8 @@ export const membersApi = {
     if (roleFilter && roleFilter !== 'ALL') {
       params.role = roleFilter;
     }
-    return apiClient.get(`/tenants/${tenantId}/members`, { params });
+    const res = await apiClient.get(`/tenants/${tenantId}/members`, { params }) as any;
+    return res.meta ? res.data : res;
   },
 
   searchUserByPhone: async (
