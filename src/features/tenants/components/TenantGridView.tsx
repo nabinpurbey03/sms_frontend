@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React from 'react';
 import {
   Building2,
   MapPin,
@@ -13,20 +13,10 @@ import {
   PowerOff,
   Globe,
   Sparkles,
-  Loader2,
 } from 'lucide-react';
 import { Card, CardContent, CardFooter, CardHeader } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
-import {
-  Dialog,
-  DialogContent,
-  DialogDescription,
-  DialogFooter,
-  DialogHeader,
-  DialogTitle,
-} from '@/components/ui/dialog';
-import { useUpdateTenantStatus } from '../hooks';
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -174,12 +164,12 @@ export const TenantGridView: React.FC<TenantGridViewProps> = ({
                           {tenant.is_active ? (
                             <>
                               <PowerOff className="h-3.5 w-3.5 mr-2 text-amber-500" />
-                              <span>Suspend Portal</span>
+                              <span>Suspend School</span>
                             </>
                           ) : (
                             <>
                               <Power className="h-3.5 w-3.5 mr-2 text-emerald-500" />
-                              <span>Activate Portal</span>
+                              <span>Activate School</span>
                             </>
                           )}
                         </DropdownMenuItem>

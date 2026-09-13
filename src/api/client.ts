@@ -74,6 +74,11 @@ apiClient.interceptors.request.use(
     const viewAsState = useViewAsStore.getState();
     if (viewAsState.activeToken) {
       config.headers['X-View-As'] = viewAsState.activeToken;
+
+      // Allow logout to proceed even during View As session
+      if (config.url?.includes('logout')) {
+        return config;
+      }
       
       const method = config.method?.toUpperCase();
       if (method && ['POST', 'PUT', 'PATCH', 'DELETE'].includes(method)) {

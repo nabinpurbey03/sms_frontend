@@ -211,12 +211,12 @@ export const TenantTableView: React.FC<TenantTableViewProps> = ({
                 {tenant.is_active ? (
                   <>
                     <PowerOff className="h-3.5 w-3.5 mr-2 text-amber-500" />
-                    <span>Suspend Portal</span>
+                    <span>Suspend School</span>
                   </>
                 ) : (
                   <>
                     <Power className="h-3.5 w-3.5 mr-2 text-emerald-500" />
-                    <span>Activate Portal</span>
+                    <span>Activate School</span>
                   </>
                 )}
               </DropdownMenuItem>

@@ -1,11 +1,19 @@
 import React, { useState } from 'react';
 import { useAuth } from '@/auth/useAuth';
 import { usePermission } from '@/auth/usePermission';
-import { Navigate } from '@tanstack/react-router';
+import { Navigate, useNavigate } from '@tanstack/react-router';
 import { Card } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from '@/components/ui/dialog';
 import {
   Table,
   TableBody,
@@ -21,7 +29,7 @@ import {
   DropdownMenuTrigger,
   DropdownMenuSeparator,
 } from '@/components/ui/dropdown-menu';
-import { UsersRound, Search, MoreVertical, Loader2, Trash, UserMinus, ShieldAlert, CheckCircle2, AlertTriangle, ShieldCheck, UserCog, Briefcase, GraduationCap, Users, Eye } from 'lucide-react';
+import { UsersRound, Search, MoreVertical, Loader2, Trash, UserMinus, CheckCircle2, AlertTriangle, ShieldCheck, UserCog, Briefcase, GraduationCap, Users, Eye } from 'lucide-react';
 import { usePlatformUsers, useSoftDeleteUser, useHardDeleteUser, PlatformUser } from '../api';
 import { useStartViewSession } from '../hooks';
 import { useDebounce } from 'use-debounce';
@@ -33,6 +41,7 @@ import { useViewAsStore } from '@/stores/viewAsStore';
 export const PlatformUsersPage: React.FC = () => {
   const { user } = useAuth();
   const { isSuperAdmin } = usePermission();
+  const navigate = useNavigate();
   const [searchTerm, setSearchTerm] = useState('');
   const [debouncedSearch] = useDebounce(searchTerm, 500);
   const [statusFilter, setStatusFilter] = useState<'all' | 'active' | 'inactive'>('all');
@@ -41,6 +50,7 @@ export const PlatformUsersPage: React.FC = () => {
   const pageSize = 20;
 
   const [selectedUserForMemberships, setSelectedUserForMemberships] = useState<PlatformUser | null>(null);
+  const [viewAsUser, setViewAsUser] = useState<PlatformUser | null>(null);
 
   const { data, isLoading } = usePlatformUsers({
     search: debouncedSearch,
@@ -79,16 +89,23 @@ export const PlatformUsersPage: React.FC = () => {
     }
   };
 
-  const handleViewAs = async (u: PlatformUser) => {
+  const handleOpenViewAs = (u: PlatformUser) => {
     if (u.id === user?.id) {
       toast.error('Cannot view as yourself');
       return;
     }
+    setViewAsUser(u);
+  };
+
+  const handleConfirmViewAs = async () => {
+    if (!viewAsUser) return;
     try {
-      const res = await startViewSessionMutation.mutateAsync(u.id);
-      startSession(res.token, u.id);
-      toast.success(`Started View As session for ${u.first_name}`);
-    } catch (error) {
+      const res = await startViewSessionMutation.mutateAsync(viewAsUser.id);
+      startSession(res.token, viewAsUser.id);
+      toast.success(`Started View As session for ${viewAsUser.first_name}`);
+      setViewAsUser(null);
+      navigate({ to: '/dashboard' });
+    } catch {
       toast.error('Failed to start View As session');
     }
   };
@@ -368,7 +385,7 @@ export const PlatformUsersPage: React.FC = () => {
                           </DropdownMenuItem>
                           <DropdownMenuItem
                             className="cursor-pointer text-blue-600 focus:bg-blue-50 focus:text-blue-700"
-                            onClick={() => handleViewAs(u)}
+                            onClick={() => handleOpenViewAs(u)}
                             disabled={startViewSessionMutation.isPending}
                           >
                             <Eye className="w-4 h-4 mr-2" />
@@ -435,6 +452,52 @@ export const PlatformUsersPage: React.FC = () => {
         isOpen={!!selectedUserForMemberships}
         onClose={() => setSelectedUserForMemberships(null)}
       />
+
+      <Dialog open={!!viewAsUser} onOpenChange={(open) => !open && setViewAsUser(null)}>
+        <DialogContent className="sm:max-w-[440px]">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2">
+              <Eye className="h-5 w-5 text-blue-600" />
+              View As User Session
+            </DialogTitle>
+            <DialogDescription className="space-y-2 pt-2">
+              <p>
+                You are about to start a session viewing as{' '}
+                <span className="font-semibold text-foreground">
+                  {viewAsUser?.first_name} {viewAsUser?.last_name}
+                </span>{' '}
+                ({viewAsUser?.email}).
+              </p>
+              <div className="rounded-lg bg-amber-500/10 border border-amber-500/20 p-3 text-amber-700 dark:text-amber-400 text-xs space-y-1">
+                <p className="font-medium">Audited & Read-Only Access:</p>
+                <p>
+                  All mutating actions (create, update, delete) are strictly disabled during this session.
+                  All actions taken during this session are recorded in the audit trail for security and compliance.
+                </p>
+              </div>
+            </DialogDescription>
+          </DialogHeader>
+          <DialogFooter className="gap-2 sm:gap-0">
+            <Button
+              variant="outline"
+              onClick={() => setViewAsUser(null)}
+              disabled={startViewSessionMutation.isPending}
+            >
+              Cancel
+            </Button>
+            <Button
+              onClick={handleConfirmViewAs}
+              disabled={startViewSessionMutation.isPending}
+              className="bg-blue-600 hover:bg-blue-700 text-white"
+            >
+              {startViewSessionMutation.isPending && (
+                <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+              )}
+              Start View Session
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 };

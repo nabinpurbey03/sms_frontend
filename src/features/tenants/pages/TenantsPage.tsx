@@ -69,7 +69,7 @@ export const TenantsPage: React.FC = () => {
   const handleOnboardOpenChange = (open: boolean) => {
     setOnboardDialogOpen(open);
     if (!open && searchParams?.action === 'onboard') {
-      navigate({ search: (prev: any) => ({ ...prev, action: undefined }), replace: true });
+      navigate({ search: (prev: any) => ({ ...prev, action: undefined }), replace: true } as any);
     }
   };
 

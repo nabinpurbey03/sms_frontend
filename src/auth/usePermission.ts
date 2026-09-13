@@ -7,7 +7,7 @@ export const usePermission = () => {
   const viewAsActive = useViewAsStore((state) => !!state.activeToken);
 
   const can = (permission: PermissionKey): boolean => {
-    if (viewAsActive && !permission.startsWith('read:')) {
+    if (viewAsActive && !permission.startsWith('VIEW_') && !permission.startsWith('READ_')) {
       return false;
     }
     if (user?.is_super_admin) return true;
