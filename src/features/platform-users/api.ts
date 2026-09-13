@@ -83,3 +83,22 @@ export const useHardDeleteUser = () => {
     },
   });
 };
+
+export interface UserMembershipDetail {
+  id: string;
+  tenant_id: string;
+  tenant_name: string;
+  roles: string[];
+}
+
+export const useUserMemberships = (userId: string | null) => {
+  return useQuery({
+    queryKey: ['user_memberships', userId],
+    queryFn: async () => {
+      if (!userId) return [];
+      const res = await apiClient.get(`/users/${userId}/memberships`) as any;
+      return res as UserMembershipDetail[];
+    },
+    enabled: !!userId,
+  });
+};

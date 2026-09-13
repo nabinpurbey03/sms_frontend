@@ -26,6 +26,7 @@ import { usePlatformUsers, useSoftDeleteUser, useHardDeleteUser, PlatformUser } 
 import { useDebounce } from 'use-debounce';
 import { useSuperAdminDashboard } from '@/features/dashboard/hooks';
 import { toast } from 'sonner';
+import { UserMembershipsDrawer } from '../components/UserMembershipsDrawer';
 
 export const PlatformUsersPage: React.FC = () => {
   const { user } = useAuth();
@@ -36,6 +37,8 @@ export const PlatformUsersPage: React.FC = () => {
   const [roleFilter, setRoleFilter] = useState<'all' | 'super_admin' | 'user'>('all');
   const [page, setPage] = useState(1);
   const pageSize = 20;
+
+  const [selectedUserForMemberships, setSelectedUserForMemberships] = useState<PlatformUser | null>(null);
 
   const { data, isLoading } = usePlatformUsers({
     search: debouncedSearch,
@@ -261,7 +264,7 @@ export const PlatformUsersPage: React.FC = () => {
                   roleFilter === 'super_admin' ? 'bg-primary/10 text-primary' : 'text-muted-foreground hover:text-foreground'
                 }`}
               >
-                Super Admins
+                Platform Admins
               </button>
               <button
                 type="button"
@@ -339,6 +342,14 @@ export const PlatformUsersPage: React.FC = () => {
                         </DropdownMenuTrigger>
                         <DropdownMenuContent align="end">
                           <DropdownMenuItem
+                            className="cursor-pointer"
+                            onClick={() => setSelectedUserForMemberships(u)}
+                          >
+                            <Briefcase className="w-4 h-4 mr-2" />
+                            View Memberships
+                          </DropdownMenuItem>
+                          <DropdownMenuSeparator />
+                          <DropdownMenuItem
                             className="text-orange-600 focus:bg-orange-50 focus:text-orange-700 cursor-pointer"
                             onClick={() => handleSoftDelete(u)}
                             disabled={softDeleteMutation.isPending || hardDeleteMutation.isPending}
@@ -393,6 +404,11 @@ export const PlatformUsersPage: React.FC = () => {
         )}
       </Card>
       </div>
+      <UserMembershipsDrawer
+        user={selectedUserForMemberships}
+        isOpen={!!selectedUserForMemberships}
+        onClose={() => setSelectedUserForMemberships(null)}
+      />
     </div>
   );
 };
