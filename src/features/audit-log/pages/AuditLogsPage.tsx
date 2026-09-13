@@ -11,13 +11,21 @@ import { Button } from '@/components/ui/button';
 export const AuditLogsPage: React.FC = () => {
   const [page, setPage] = useState(1);
   const [actionFilter, setActionFilter] = useState('');
+  const [debouncedActionFilter, setDebouncedActionFilter] = useState('');
   const [startDate, setStartDate] = useState('');
   const [endDate, setEndDate] = useState('');
+
+  React.useEffect(() => {
+    const handler = setTimeout(() => {
+      setDebouncedActionFilter(actionFilter);
+    }, 500);
+    return () => clearTimeout(handler);
+  }, [actionFilter]);
 
   const { data: response, isLoading, isError } = useAuditLogs({
     page,
     page_size: 20,
-    action: actionFilter || undefined,
+    action: debouncedActionFilter || undefined,
     start_date: startDate || undefined,
     end_date: endDate || undefined,
   });
@@ -117,7 +125,7 @@ export const AuditLogsPage: React.FC = () => {
             <div className="p-8 text-center text-sm text-red-500">Failed to load audit logs.</div>
           ) : (
             <ResponsiveDataTable
-              data={response?.data || []}
+              data={response?.data?.data || []}
               columns={columns}
               keyExtractor={(item) => item.id}
               onRowClick={(item) => setSelectedLog(item)}
@@ -125,15 +133,15 @@ export const AuditLogsPage: React.FC = () => {
             />
           )}
         </div>
-        {response?.meta && response.meta.total_pages > 1 && (
+        {response?.data?.meta && response.data.meta.total_pages > 1 && (
           <div className="p-4 border-t border-border flex justify-between items-center">
             <span className="text-sm text-muted-foreground">
-              Page {response.meta.page} of {response.meta.total_pages}
+              Page {response.data.meta.page} of {response.data.meta.total_pages}
             </span>
             <div className="space-x-2">
               <Button
                 variant="outline"
-                size="sm"
+                className="min-h-[44px] min-w-[44px]"
                 onClick={() => setPage((p) => Math.max(1, p - 1))}
                 disabled={page === 1}
               >
@@ -141,9 +149,9 @@ export const AuditLogsPage: React.FC = () => {
               </Button>
               <Button
                 variant="outline"
-                size="sm"
+                className="min-h-[44px] min-w-[44px]"
                 onClick={() => setPage((p) => p + 1)}
-                disabled={page >= response.meta.total_pages}
+                disabled={page >= response.data.meta.total_pages}
               >
                 Next
               </Button>
