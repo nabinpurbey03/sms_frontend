@@ -6,15 +6,25 @@ import {
   List,
   ShieldCheck,
   RefreshCw,
+  Loader2,
 } from 'lucide-react';
 import { useAuth } from '@/auth/useAuth';
 import { usePermission } from '@/auth/usePermission';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from '@/components/ui/dialog';
+import {
   useTenants,
   useCreateTenant,
   useUpdateTenant,
+  useUpdateTenantStatus,
   useUploadTenantLogo,
   useDeleteTenant,
 } from '../hooks';
@@ -51,6 +61,8 @@ export const TenantsPage: React.FC = () => {
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
   const [tenantToDelete, setTenantToDelete] = useState<Tenant | null>(null);
 
+  const [statusDialogTenant, setStatusDialogTenant] = useState<Tenant | null>(null);
+
   // Queries & Mutations
   const { data: tenantsResponse, isLoading, refetch } = useTenants({
     search: debouncedSearch,
@@ -64,6 +76,7 @@ export const TenantsPage: React.FC = () => {
 
   const createMutation = useCreateTenant();
   const updateMutation = useUpdateTenant();
+  const statusMutation = useUpdateTenantStatus();
   const uploadLogoMutation = useUploadTenantLogo();
   const deleteMutation = useDeleteTenant();
 
@@ -96,11 +109,16 @@ export const TenantsPage: React.FC = () => {
     setDeleteDialogOpen(true);
   };
 
-  const handleToggleStatus = async (tenant: Tenant) => {
-    await updateMutation.mutateAsync({
-      tenantId: tenant.id,
-      data: { is_active: !tenant.is_active },
-    });
+  const handleConfirmStatusChange = async () => {
+    if (!statusDialogTenant) return;
+    try {
+      await statusMutation.mutateAsync({
+        tenantId: statusDialogTenant.id,
+        isActive: !statusDialogTenant.is_active,
+      });
+    } finally {
+      setStatusDialogTenant(null);
+    }
   };
 
   const handleFormSubmit = async (data: TenantFormData) => {
@@ -267,7 +285,7 @@ export const TenantsPage: React.FC = () => {
           onSwitchTenant={handleSwitchTenant}
           onEdit={handleOpenEdit}
           onUploadLogo={handleOpenLogo}
-          onToggleStatus={handleToggleStatus}
+          onToggleStatus={setStatusDialogTenant}
           onDelete={handleOpenDelete}
         />
       ) : (
@@ -277,7 +295,7 @@ export const TenantsPage: React.FC = () => {
           onSwitchTenant={handleSwitchTenant}
           onEdit={handleOpenEdit}
           onUploadLogo={handleOpenLogo}
-          onToggleStatus={handleToggleStatus}
+          onToggleStatus={setStatusDialogTenant}
           onDelete={handleOpenDelete}
         />
       )}
@@ -360,6 +378,38 @@ export const TenantsPage: React.FC = () => {
         onConfirmDelete={handleDeleteConfirm}
         isDeleting={deleteMutation.isPending}
       />
+
+      <Dialog open={!!statusDialogTenant} onOpenChange={(open) => !open && setStatusDialogTenant(null)}>
+        <DialogContent className="sm:max-w-[400px]">
+          <DialogHeader>
+            <DialogTitle>
+              {statusDialogTenant?.is_active ? 'Suspend School?' : 'Activate School?'}
+            </DialogTitle>
+            <DialogDescription>
+              {statusDialogTenant?.is_active
+                ? 'Suspend this school? Users will be unable to log in until reactivated.'
+                : 'Reactivate this school? Users will be able to log in again.'}
+            </DialogDescription>
+          </DialogHeader>
+          <DialogFooter>
+            <Button
+              variant="outline"
+              onClick={() => setStatusDialogTenant(null)}
+              disabled={statusMutation.isPending}
+            >
+              Cancel
+            </Button>
+            <Button
+              variant={statusDialogTenant?.is_active ? 'destructive' : 'default'}
+              onClick={handleConfirmStatusChange}
+              disabled={statusMutation.isPending}
+            >
+              {statusMutation.isPending && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+              {statusDialogTenant?.is_active ? 'Suspend' : 'Activate'}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 };

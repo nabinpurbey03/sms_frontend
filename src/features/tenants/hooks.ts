@@ -65,6 +65,26 @@ export const useUpdateTenant = () => {
   });
 };
 
+export const useUpdateTenantStatus = () => {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: ({ tenantId, isActive }: { tenantId: string; isActive: boolean }) =>
+      tenantsApi.updateTenantStatus(tenantId, isActive),
+    onSuccess: (updated) => {
+      queryClient.invalidateQueries({ queryKey: [TENANTS_QUERY_KEY] });
+      toast.success('School Status Updated', {
+        description: `${updated.name} has been ${updated.is_active ? 'activated' : 'suspended'}.`,
+      });
+    },
+    onError: (error: any) => {
+      toast.error('Status Update Failed', {
+        description: error.message || 'Could not update school status.',
+      });
+    },
+  });
+};
+
 export const useUploadTenantLogo = () => {
   const queryClient = useQueryClient();
 

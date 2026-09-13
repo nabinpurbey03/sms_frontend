@@ -44,6 +44,13 @@ export const tenantsApi = {
     return apiClient.put(`/tenants/${tenantId}`, data);
   },
 
+  updateTenantStatus: async (
+    tenantId: string,
+    isActive: boolean
+  ): Promise<Tenant> => {
+    return apiClient.patch(`/tenants/${tenantId}/status`, { is_active: isActive });
+  },
+
   uploadLogo: async (tenantId: string, file: File): Promise<Tenant> => {
     const formData = new FormData();
     formData.append('file', file);
