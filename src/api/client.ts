@@ -52,6 +52,7 @@ export const apiClient = axios.create({
   headers: {
     'Content-Type': 'application/json',
   },
+  timeout: 15000,
 });
 
 // Request Interceptor
@@ -93,11 +94,14 @@ const processQueue = (error: unknown, token: string | null = null) => {
 
 apiClient.interceptors.response.use(
   (response) => {
-    const data = response.data as ApiResponse<unknown>;
+    const data = response.data as any;
     // Check universal API envelope
     if (data && typeof data === 'object' && 'status' in data) {
       if (data.status === true) {
-        return data.data as any;
+        if ('meta' in data) {
+          return data;
+        }
+        return data.data;
       }
       throw new ApiError(
         data.message || 'Request failed',

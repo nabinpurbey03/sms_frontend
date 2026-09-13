@@ -25,11 +25,98 @@ import { useNavigate } from '@tanstack/react-router';
 import { TenantRequiredState } from '@/components/common/TenantRequiredState';
 import { EmptyState } from '@/components/common/EmptyState';
 import type { ClassWithDetails, AcademicClass, AcademicStats } from '../types';
+import { useTenants } from '@/features/tenants/hooks';
+import { useDebounce } from 'use-debounce';
+
+const SchoolSearchSelector = ({
+  tenants,
+  value,
+  onChange,
+  onSearchChange,
+}: {
+  tenants: any[];
+  value: string | null;
+  onChange: (id: string | null) => void;
+  onSearchChange: (search: string) => void;
+}) => {
+  const [isOpen, setIsOpen] = useState(false);
+  const [searchTerm, setSearchTerm] = useState('');
+  
+  // No internal filtering, the parent passes filtered tenants
+  const filtered = tenants;
+
+  const selectedTenant = tenants.find(t => t.id === value);
+
+  return (
+    <div className="relative w-full sm:w-[300px]">
+      <div 
+        className="flex h-10 w-full items-center justify-between rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background cursor-pointer"
+        onClick={() => setIsOpen(!isOpen)}
+      >
+        <span className="truncate">
+          {selectedTenant ? selectedTenant.name : "-- Select a School --"}
+        </span>
+      </div>
+      {isOpen && (
+        <>
+          <div className="fixed inset-0 z-40" onClick={() => setIsOpen(false)} />
+          <div className="absolute top-full mt-1 w-full rounded-md border bg-popover text-popover-foreground shadow-md z-50">
+            <div className="p-2 border-b">
+              <input 
+                className="flex h-8 w-full rounded-sm border border-input bg-transparent px-3 py-1 text-sm shadow-sm transition-colors focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring" 
+                placeholder="Search schools..."
+                value={searchTerm}
+                onChange={e => {
+                  setSearchTerm(e.target.value);
+                  onSearchChange(e.target.value);
+                }}
+                autoFocus
+              />
+            </div>
+            <ul className="max-h-[190px] overflow-auto p-1 custom-scrollbar">
+              {filtered.length === 0 ? (
+                <li className="p-2 text-sm text-muted-foreground text-center">No schools found.</li>
+              ) : (
+                filtered.map(t => (
+                  <li
+                    key={t.id}
+                    className={`relative flex w-full cursor-pointer select-none items-center rounded-sm py-1.5 px-2 text-sm outline-none hover:bg-accent hover:text-accent-foreground ${t.id === value ? 'bg-accent font-medium' : ''}`}
+                    onClick={() => {
+                      onChange(t.id);
+                      setIsOpen(false);
+                      setSearchTerm('');
+                      onSearchChange('');
+                    }}
+                  >
+                    {t.name}
+                  </li>
+                ))
+              )}
+            </ul>
+          </div>
+        </>
+      )}
+    </div>
+  );
+};
 
 export const ClassesPage: React.FC = () => {
   const { activeTenantId, activeRole } = useAuth();
   const { isSuperAdmin, can } = usePermission();
   const navigate = useNavigate();
+
+  const [pageTenantId, setPageTenantId] = useState<string | null>(activeTenantId);
+  
+  React.useEffect(() => {
+    setPageTenantId(activeTenantId);
+  }, [activeTenantId]);
+
+  const [tenantSearch, setTenantSearch] = useState('');
+  const [debouncedTenantSearch] = useDebounce(tenantSearch, 400);
+
+  // We fetch up to 100 since the backend max is 100
+  const { data: tenantsResponse } = useTenants({ page: 1, page_size: 100, search: debouncedTenantSearch || undefined });
+  const allTenants = tenantsResponse?.items || [];
 
   const canManage =
     isSuperAdmin || can('MANAGE_CLASSES_SUBJECTS') || activeRole === 'ADMIN' || activeRole === 'OFFICE_ADMIN';
@@ -54,16 +141,16 @@ export const ClassesPage: React.FC = () => {
     isLoading,
     isError,
     refetch,
-  } = useAllClassesWithDetails(activeTenantId);
+  } = useAllClassesWithDetails(pageTenantId);
 
   const { data: myTeacherAssignments = [] } = useMyTeacherAssignments(
-    activeTenantId,
+    pageTenantId,
     { enabled: isTeacherOnly }
   );
 
   const todayStr = useMemo(() => new Date().toISOString().split('T')[0], []);
-  const { data: dailyStatus } = useDailyAttendanceStatus(activeTenantId, todayStr, undefined, {
-    enabled: !!activeTenantId,
+  const { data: dailyStatus } = useDailyAttendanceStatus(pageTenantId, todayStr, undefined, {
+    enabled: !!pageTenantId,
   });
   const markedSectionIds = useMemo(() => {
     return new Set(dailyStatus?.marked_section_ids || []);
@@ -176,14 +263,38 @@ export const ClassesPage: React.FC = () => {
     return classesWithDetails.find((c) => c.id === detailModalClass.id) || detailModalClass;
   }, [classesWithDetails, detailModalClass]);
 
-  // If no tenant selected
-  if (!activeTenantId) {
+  if (!pageTenantId && !isSuperAdmin) {
     return <TenantRequiredState featureName="academic classes and sections" />;
   }
 
   return (
     <div className="space-y-6 pb-12">
-      {/* Actions */}
+      {/* Super Admin Tenant Selector */}
+      {isSuperAdmin && (
+        <div className="bg-muted/30 p-4 rounded-xl border border-border/50 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
+          <div>
+            <h3 className="font-semibold text-foreground flex items-center gap-2">
+              <ShieldCheck className="w-4 h-4 text-primary" />
+              Super Admin View
+            </h3>
+            <p className="text-sm text-muted-foreground">Select a school to view its classes and sections.</p>
+          </div>
+            <SchoolSearchSelector 
+              tenants={allTenants} 
+              value={pageTenantId} 
+              onChange={setPageTenantId} 
+              onSearchChange={setTenantSearch}
+            />
+        </div>
+      )}
+
+      {!pageTenantId && isSuperAdmin ? (
+        <div className="text-center py-12 text-muted-foreground">
+          Please select a school from the dropdown above to view its classes.
+        </div>
+      ) : (
+        <>
+          {/* Actions */}
       {canManage && (
         <div className="flex justify-end">
           <Button
@@ -393,6 +504,8 @@ export const ClassesPage: React.FC = () => {
         isAddingStudent={addStudentMutation.isPending}
         isAddingSection={createSectionMutation.isPending}
       />
+        </>
+      )}
     </div>
   );
 };

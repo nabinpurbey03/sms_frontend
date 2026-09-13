@@ -54,7 +54,13 @@ export const TenantFormDialog: React.FC<TenantFormDialogProps> = ({
     reset,
     formState: { errors },
   } = useForm<TenantFormData>({
-    resolver: zodResolver(tenantFormSchema),
+    resolver: async (data, context, options) => {
+      const cleanedData = { ...data };
+      if (cleanedData.address && !cleanedData.address.province && !cleanedData.address.district && !cleanedData.address.municipality) {
+        cleanedData.address = null;
+      }
+      return zodResolver(tenantFormSchema)(cleanedData, context, options);
+    },
     defaultValues: {
       name: '',
       domain_name: '',

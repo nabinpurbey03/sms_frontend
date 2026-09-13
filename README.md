@@ -16,6 +16,7 @@ A production-grade, domain-aligned **React 19 Single Page Application (SPA)** fo
 
 ## 📑 Table of Contents
 
+- [✨ Recent Updates](#-recent-updates)
 - [✨ Features](#-features)
 - [🏛 Architecture & Design Principles](#-architecture--design-principles)
   - [Layered Domain Alignment](#layered-domain-alignment)
@@ -44,6 +45,15 @@ A production-grade, domain-aligned **React 19 Single Page Application (SPA)** fo
 - [🧹 Client-Side Validation Rules (Zod)](#-client-side-validation-rules-zod)
 - [⚙️ Environment Configuration Reference](#️-environment-configuration-reference)
 - [📄 License](#-license)
+
+---
+
+## ✨ Recent Updates
+
+- **Super Admin Global User Dashboard**: Added an 8-card metric dashboard on the Platform Users page, providing a live aggregate of all registered user roles across all schools.
+- **Tenant API Enhancements**: Expanded tenant and user APIs to support robust server-side status/role filtering and dynamic search.
+- **Form Resiliency**: Addressed Zod validation bugs in tenant setting addresses where empty strings previously caused silent form submission failures.
+- **Asynchronous Search Combobox**: Upgraded the Classes & Sections portal for Super Admins with a sleek, `useDebounce`-powered school selector dropdown, utilizing a remote-search constraint mapping up to 400+ schools without triggering backend pagination limits.
 
 ---
 

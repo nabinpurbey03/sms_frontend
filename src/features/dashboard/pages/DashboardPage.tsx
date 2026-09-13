@@ -29,6 +29,9 @@ import { useAttendanceSummary } from '@/features/attendance/hooks';
 import { useAllClassesWithDetails, useMyTeacherAssignments } from '@/features/academic/hooks';
 import { useParentChildren } from '@/features/members/hooks';
 import { useMyChildrenReportCards } from '@/features/examination/hooks';
+import { useSuperAdminDashboard, useTenantDashboard } from '../hooks';
+
+import { SuperAdminGrid } from '../components/SuperAdminGrid';
 
 export const DashboardPage: React.FC = () => {
   const { user, activeRole, activeTenantName, activeTenantId } = useAuth();
@@ -56,6 +59,9 @@ export const DashboardPage: React.FC = () => {
     { enabled: !!activeTenantId && isParent }
   );
 
+  const { data: superAdminMetrics } = useSuperAdminDashboard(isSuperAdmin && !activeTenantId);
+  const { data: tenantMetrics } = useTenantDashboard(activeTenantId);
+
   // Computed total students
   const totalEnrolledStudents = useMemo(() => {
     return classes.reduce((sum, c) => {
@@ -77,9 +83,13 @@ export const DashboardPage: React.FC = () => {
       {/* Welcome Hero Banner (Dynamic Theme-Adaptive) */}
       <DashboardHeroBanner />
 
-      {/* KPI Stats Grid (1 col phone, 2 cols tablet, 4 cols desktop) */}
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 sm:gap-6">
-        {/* Metric 1 */}
+      {isSuperAdmin && !activeTenantId ? (
+        <SuperAdminGrid metrics={superAdminMetrics} />
+      ) : (
+        <>
+          {/* KPI Stats Grid (1 col phone, 2 cols tablet, 4 cols desktop) */}
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 sm:gap-6">
+            {/* Metric 1 */}
         <Card className="border-border/60 hover:shadow-md transition-shadow rounded-xl">
           <CardHeader className="flex flex-row items-center justify-between p-5 pb-2 space-y-0">
             <CardTitle className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">
@@ -93,8 +103,8 @@ export const DashboardPage: React.FC = () => {
             <div className="text-2xl font-bold text-foreground">
               {isParent
                 ? `${parentChildren.length} ${parentChildren.length === 1 ? 'Child' : 'Children'}`
-                : totalEnrolledStudents > 0
-                ? `${totalEnrolledStudents}`
+                : (tenantMetrics?.total_students ?? totalEnrolledStudents) > 0
+                ? `${tenantMetrics?.total_students ?? totalEnrolledStudents}`
                 : '0 Enrolled'}
             </div>
             <p className="text-xs text-muted-foreground mt-1 flex items-center gap-1.5 truncate">
@@ -118,13 +128,13 @@ export const DashboardPage: React.FC = () => {
             <div className="text-2xl font-bold text-foreground">
               {isTeacher
                 ? `${teacherAssignments.length} ${teacherAssignments.length === 1 ? 'Duty' : 'Duties'}`
-                : `${classes.length} ${classes.length === 1 ? 'Class' : 'Classes'}`}
+                : `${tenantMetrics?.total_classes ?? classes.length} ${(tenantMetrics?.total_classes ?? classes.length) === 1 ? 'Class' : 'Classes'}`}
             </div>
             <p className="text-xs text-muted-foreground mt-1 flex items-center gap-1.5 truncate">
               <span className="font-medium text-foreground">
                 {isTeacher
                   ? `${teacherAssignments.filter((a) => a.is_class_teacher).length} Class Teacher designation(s)`
-                  : 'Auto-provisioned sections'}
+                  : `${tenantMetrics?.total_sections ?? 'Auto-provisioned'} sections`}
               </span>
             </p>
           </CardContent>
@@ -195,8 +205,10 @@ export const DashboardPage: React.FC = () => {
                 : `Scoped to ${activeTenantName || 'Current School'}`}
             </p>
           </CardContent>
-        </Card>
-      </div>
+          </Card>
+          </div>
+        </>
+      )}
 
 
       {/* Quick Action Hub (1 col mobile, 2 cols tablet, 3 cols desktop) */}

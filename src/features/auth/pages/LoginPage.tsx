@@ -125,7 +125,7 @@ export const LoginPage: React.FC<LoginPageProps> = ({ defaultTab = 'signin' }) =
       toast.success('Login Successful', {
         description: `Welcome back to Schools Up Pro, ${fullName}!`,
       });
-      navigate({ to: '/dashboard' });
+      // Navigation is handled by the useEffect above once isAuthenticated becomes true
     } catch (err: unknown) {
       let errorMessage = 'Invalid email or password. Please try again.';
       if (err instanceof ApiError) {

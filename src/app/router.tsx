@@ -13,6 +13,7 @@ import { ProtectedLayout } from './ProtectedLayout';
 import { DashboardPage } from '@/features/dashboard/pages/DashboardPage';
 import { TenantsPage } from '@/features/tenants/pages/TenantsPage';
 import { PlaceholderPage } from '@/components/common/PlaceholderPage';
+import { TenantSettingsPage } from '@/features/tenants/pages/TenantSettingsPage';
 import { MembersPage } from '@/features/members/pages/MembersPage';
 import { MyChildrenPage } from '@/features/members/pages/MyChildrenPage';
 import { ClassesPage } from '@/features/academic/pages/ClassesPage';
@@ -35,6 +36,7 @@ import { ErrorState } from '@/components/common/ErrorState';
 import { Button } from '@/components/ui/button';
 import { Toaster } from '@/components/ui/sonner';
 import { AcademicYearsPage } from '@/features/academic-year/pages/AcademicYearsPage';
+import { PlatformUsersPage } from '@/features/platform-users/pages/PlatformUsersPage';
 
 // Root Route
 const rootRoute = createRootRoute({
@@ -188,7 +190,7 @@ const academicYearsRoute = createRoute({
 const tenantSettingsRoute = createRoute({
   getParentRoute: () => protectedLayoutRoute,
   path: '/tenant-settings',
-  component: () => <PlaceholderPage title="School Settings & Logo Upload" />,
+  component: TenantSettingsPage,
 });
 
 const examsRoute = createRoute({
@@ -215,6 +217,12 @@ const scoreEntryRoute = createRoute({
   component: ScoreEntryPage,
 });
 
+const platformUsersRoute = createRoute({
+  getParentRoute: () => protectedLayoutRoute,
+  path: '/platform-users',
+  component: PlatformUsersPage,
+});
+
 // Build Route Tree
 const routeTree = rootRoute.addChildren([
   indexRoute,
@@ -238,6 +246,7 @@ const routeTree = rootRoute.addChildren([
     attendanceReportsRoute,
     membersRoute,
     tenantsRoute,
+    platformUsersRoute,
     academicYearsRoute,
     tenantSettingsRoute,
     examsRoute,

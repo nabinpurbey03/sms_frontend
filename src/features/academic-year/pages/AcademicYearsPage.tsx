@@ -20,7 +20,7 @@ import { CalendarDays, Plus, CheckCircle2, Lock, Loader2 } from 'lucide-react';
 export const AcademicYearsPage: React.FC = () => {
   const { activeTenantId } = useAuth();
   const { can, isSuperAdmin } = usePermission();
-  const canManage = can('MANAGE_TENANT') || isSuperAdmin;
+  const canManage = can('MANAGE_TENANT_SETTINGS') || isSuperAdmin;
 
   const { data: years = [], isLoading } = useAcademicYears(activeTenantId);
   const setCurrentMutation = useSetCurrentAcademicYear();

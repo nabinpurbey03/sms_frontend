@@ -5,16 +5,18 @@ import type { Tenant } from '../types';
 
 interface TenantStatsCardsProps {
   tenants: Tenant[];
+  globalStats?: { total: number; active: number; inactive: number };
   isLoading?: boolean;
 }
 
 export const TenantStatsCards: React.FC<TenantStatsCardsProps> = ({
   tenants,
+  globalStats,
   isLoading = false,
 }) => {
-  const total = tenants.length;
-  const active = tenants.filter((t) => t.is_active).length;
-  const inactive = total - active;
+  const total = globalStats ? globalStats.total : tenants.length;
+  const active = globalStats ? globalStats.active : tenants.filter((t) => t.is_active).length;
+  const inactive = globalStats ? globalStats.inactive : (total - active);
   const activePercentage = total > 0 ? Math.round((active / total) * 100) : 100;
 
   return (

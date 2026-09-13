@@ -41,7 +41,7 @@ export const StudentEnrollmentHistoryDialog: React.FC<StudentEnrollmentHistoryDi
     queryFn: async (): Promise<EnrollmentHistoryItem[]> => {
       if (!activeTenantId || !student) return [];
       const res = await apiClient.get(`/academic/tenants/${activeTenantId}/students/${student.id}/enrollments`);
-      return res as EnrollmentHistoryItem[]; // Adjust this if there is a data envelope
+      return res as unknown as EnrollmentHistoryItem[]; // Adjust this if there is a data envelope
     },
     enabled: !!activeTenantId && !!student && open,
   });
