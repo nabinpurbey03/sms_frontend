@@ -77,7 +77,7 @@ apiClient.interceptors.request.use(
       
       const method = config.method?.toUpperCase();
       if (method && ['POST', 'PUT', 'PATCH', 'DELETE'].includes(method)) {
-        return Promise.reject(new Error('Mutating actions are disabled during a View As session.'));
+        return Promise.reject(new ApiError('Mutating actions are disabled during a View As session.', undefined, 403));
       }
     }
 

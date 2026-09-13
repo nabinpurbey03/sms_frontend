@@ -22,7 +22,8 @@ import {
   DropdownMenuSeparator,
 } from '@/components/ui/dropdown-menu';
 import { UsersRound, Search, MoreVertical, Loader2, Trash, UserMinus, ShieldAlert, CheckCircle2, AlertTriangle, ShieldCheck, UserCog, Briefcase, GraduationCap, Users, Eye } from 'lucide-react';
-import { usePlatformUsers, useSoftDeleteUser, useHardDeleteUser, useStartViewSession, PlatformUser } from '../api';
+import { usePlatformUsers, useSoftDeleteUser, useHardDeleteUser, PlatformUser } from '../api';
+import { useStartViewSession } from '../hooks';
 import { useDebounce } from 'use-debounce';
 import { useSuperAdminDashboard } from '@/features/dashboard/hooks';
 import { toast } from 'sonner';
