@@ -37,6 +37,7 @@ import { Button } from '@/components/ui/button';
 import { Toaster } from '@/components/ui/sonner';
 import { AcademicYearsPage } from '@/features/academic-year/pages/AcademicYearsPage';
 import { PlatformUsersPage } from '@/features/platform-users/pages/PlatformUsersPage';
+import { AuditLogsPage } from '@/features/audit-log/pages/AuditLogsPage';
 
 // Root Route
 const rootRoute = createRootRoute({
@@ -223,6 +224,12 @@ const platformUsersRoute = createRoute({
   component: PlatformUsersPage,
 });
 
+const auditLogsRoute = createRoute({
+  getParentRoute: () => protectedLayoutRoute,
+  path: '/audit-logs',
+  component: AuditLogsPage,
+});
+
 // Build Route Tree
 const routeTree = rootRoute.addChildren([
   indexRoute,
@@ -253,6 +260,7 @@ const routeTree = rootRoute.addChildren([
     createExamRoute,
     examReviewRoute,
     scoreEntryRoute,
+    auditLogsRoute,
   ]),
 ]);
 

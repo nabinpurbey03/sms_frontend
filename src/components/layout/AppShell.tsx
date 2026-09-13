@@ -24,6 +24,7 @@ import {
   ChevronRight,
   Bell,
   Search,
+  Shield,
 } from 'lucide-react';
 
 import { useAuth } from '@/auth/useAuth';
@@ -125,6 +126,14 @@ export const AppShell: React.FC = () => {
       href: '/platform-users',
       icon: UsersRound,
       description: 'Manage all global platform user accounts.',
+      show: isSuperAdmin,
+      category: 'Administration',
+    },
+    {
+      label: 'Audit Logs',
+      href: '/audit-logs',
+      icon: Shield,
+      description: 'View system audit trails.',
       show: isSuperAdmin,
       category: 'Administration',
     },

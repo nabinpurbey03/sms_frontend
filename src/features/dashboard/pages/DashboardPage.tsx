@@ -399,6 +399,35 @@ export const DashboardPage: React.FC = () => {
             </Card>
           )}
 
+          {/* Super Admin Audit Trail */}
+          {isSuperAdmin && (
+            <Card className="group border-border/60 hover:border-primary/50 transition-all rounded-xl">
+              <CardHeader className="p-5 pb-3">
+                <div className="flex items-center justify-between">
+                  <div className="p-2 bg-slate-500/10 text-slate-600 rounded-lg group-hover:scale-105 transition-transform">
+                    <ShieldCheck className="h-5 w-5" />
+                  </div>
+                  <ArrowRight className="h-4 w-4 text-muted-foreground group-hover:text-primary group-hover:translate-x-1 transition-all" />
+                </div>
+                <CardTitle className="text-base font-semibold pt-2">
+                  View Audit Trail
+                </CardTitle>
+                <CardDescription className="text-xs">
+                  Review system activities, access logs, and security events
+                </CardDescription>
+              </CardHeader>
+              <CardContent className="p-5 pt-0">
+                <Button
+                  variant="outline"
+                  className="w-full text-xs font-semibold h-10"
+                  asChild
+                >
+                  <Link to="/audit-logs">Open Audit Logs</Link>
+                </Button>
+              </CardContent>
+            </Card>
+          )}
+
           {/* School Member Management */}
           {can('CREATE_TEACHER_PARENT') && (
             <Card className="group border-border/60 hover:border-primary/50 transition-all rounded-xl">

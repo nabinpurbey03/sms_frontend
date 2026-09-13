@@ -25,6 +25,7 @@ export interface ResponsiveDataTableProps<T> {
   renderCard?: (item: T, index: number) => React.ReactNode;
   emptyMessage?: string;
   className?: string;
+  onRowClick?: (item: T) => void;
 }
 
 export function ResponsiveDataTable<T>({
@@ -34,6 +35,7 @@ export function ResponsiveDataTable<T>({
   renderCard,
   emptyMessage = 'No records found.',
   className,
+  onRowClick,
 }: ResponsiveDataTableProps<T>) {
   if (!data || data.length === 0) {
     return (
@@ -55,7 +57,11 @@ export function ResponsiveDataTable<T>({
 
           // Fallback auto-stacked card renderer if custom card is not supplied
           return (
-            <Card key={key} className="border-border/60 shadow-sm transition-shadow hover:shadow-md overflow-hidden">
+            <Card 
+              key={key} 
+              className={cn("border-border/60 shadow-sm transition-shadow overflow-hidden", onRowClick ? "cursor-pointer hover:shadow-md" : "hover:shadow-sm")}
+              onClick={onRowClick ? () => onRowClick(item) : undefined}
+            >
               <CardContent className="p-4 space-y-3">
                 {columns.map((col, colIdx) => (
                   <div
@@ -96,7 +102,8 @@ export function ResponsiveDataTable<T>({
             {data.map((item, index) => (
               <TableRow 
                 key={keyExtractor(item, index)}
-                className="hover:bg-muted/40 transition-colors border-b border-border/40 last:border-0"
+                className={cn("transition-colors border-b border-border/40 last:border-0", onRowClick ? "cursor-pointer hover:bg-muted/40" : "hover:bg-muted/40")}
+                onClick={onRowClick ? () => onRowClick(item) : undefined}
               >
                 {columns.map((col, colIdx) => (
                   <TableCell key={colIdx} className={cn("py-3", col.className)}>
