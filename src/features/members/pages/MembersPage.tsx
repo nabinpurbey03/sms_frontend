@@ -16,7 +16,7 @@ import { MemberAddDialog } from '../components/MemberAddDialog';
 import { MemberRoleDialog } from '../components/MemberRoleDialog';
 import { MemberDetailDrawer } from '../components/MemberDetailDrawer';
 import { MemberDeleteDialog } from '../components/MemberDeleteDialog';
-import { Building2, Users } from 'lucide-react';
+import { Building2 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Link } from '@tanstack/react-router';
 import { toast } from 'sonner';
@@ -189,19 +189,6 @@ export const MembersPage: React.FC = () => {
 
   return (
     <div className="space-y-6 pb-12">
-      {/* Action Header */}
-      {canManageMembers && (
-        <div className="flex justify-end">
-          <Button
-            onClick={() => setIsAddOpen(true)}
-            className="gap-2 shadow-xs shrink-0"
-          >
-            <Users className="w-4 h-4" />
-            <span>Add Member</span>
-          </Button>
-        </div>
-      )}
-
       {/* KPI Stats Cards */}
       <MemberStatsCards
         stats={stats}
