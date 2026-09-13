@@ -116,7 +116,7 @@ export const AppShell: React.FC = () => {
     switchTenant,
     switchPersona,
   } = useAuth();
-  const { can, isSuperAdmin, isTeacher, isParent } = usePermission();
+  const { can, isSuperAdmin, isTeacher, isParent, isAdmin } = usePermission();
   const { theme, setTheme } = useThemeStore();
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const [isDesktopSidebarCollapsed, setIsDesktopSidebarCollapsed] = useState(false);
@@ -297,7 +297,7 @@ export const AppShell: React.FC = () => {
       show: isParent,
       category: 'Parent Portal',
     },
-  ], [isSuperAdmin, can, isTeacher, isParent]);
+  ], [isSuperAdmin, can, isTeacher, isParent, activeRole]);
 
   const currentMembership = user?.memberships?.find(
     (m) => m.tenant_id === activeTenantId

@@ -1,8 +1,8 @@
 # 🎓 Schools Up Pro — Multi-Tenant School Management Platform (Frontend)
 
 [![React 19](https://img.shields.io/badge/React-19.2%2B-61DAFB?logo=react&logoColor=black)](https://react.dev)
-[![TypeScript](https://img.shields.io/badge/TypeScript-5.0%2B-3178C6?logo=typescript&logoColor=white)](https://typescriptlang.org)
-[![Vite](https://img.shields.io/badge/Vite-6.0%2B-646CFF?logo=vite&logoColor=white)](https://vitejs.dev)
+[![TypeScript](https://img.shields.io/badge/TypeScript-5.8%2B-3178C6?logo=typescript&logoColor=white)](https://typescriptlang.org)
+[![Vite](https://img.shields.io/badge/Vite-6.2%2B-646CFF?logo=vite&logoColor=white)](https://vitejs.dev)
 [![Tailwind CSS v4](https://img.shields.io/badge/Tailwind_CSS-v4.0%2B-06B6D4?logo=tailwindcss&logoColor=white)](https://tailwindcss.com)
 [![TanStack Router](https://img.shields.io/badge/TanStack_Router-v1.0%2B-FF4154?logo=react-query&logoColor=white)](https://tanstack.com/router)
 [![TanStack Query](https://img.shields.io/badge/TanStack_Query-v5.0%2B-FF4154?logo=react-query&logoColor=white)](https://tanstack.com/query)
@@ -10,7 +10,7 @@
 [![Zod](https://img.shields.io/badge/Zod-3.24%2B-3E67B1?logo=zod&logoColor=white)](https://zod.dev)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](LICENSE)
 
-A production-grade, domain-aligned **React 19 Single Page Application (SPA)** for the **PBAC** Multi-Tenant School Management Platform. Designed with a **hybrid authorization UX engine (Strict RBAC + ReBAC + ABAC)**, multi-role active persona support, dynamic tenant isolation, mobile-first responsive architecture with stacked data cards, and centralized Axios interceptors for automatic JWT refresh rotation.
+A production-grade, domain-aligned **React 19 Single Page Application (SPA)** for the **PBAC** Multi-Tenant School Management Platform. Designed with a **hybrid authorization UX engine (Strict RBAC + ReBAC + ABAC)**, multi-role active persona support, dynamic tenant isolation, mobile-first responsive architecture with stacked data cards, centralized Axios interceptors for automatic JWT refresh rotation, and a comprehensive **Super Admin Governance & Audit Trail** suite.
 
 ---
 
@@ -22,6 +22,7 @@ A production-grade, domain-aligned **React 19 Single Page Application (SPA)** fo
   - [Layered Domain Alignment](#layered-domain-alignment)
   - [Per-Feature 5-File Slice Standard](#per-feature-5-file-slice-standard)
   - [Hybrid Authorization System (RBAC + ReBAC + ABAC)](#hybrid-authorization-system-rbac--rebac--abac)
+  - ["View As" Support Sessions & Client-Side Guardrails](#view-as-support-sessions--client-side-guardrails)
   - [Multi-Role Active Persona Switching](#multi-role-active-persona-switching)
   - [Multi-Tenant Header & Path Resolution](#multi-tenant-header--path-resolution)
 - [🛠 Tech Stack](#-tech-stack)
@@ -41,6 +42,7 @@ A production-grade, domain-aligned **React 19 Single Page Application (SPA)** fo
 - [🔌 API Client & Network Pipeline](#-api-client--network-pipeline)
   - [Response Envelope Unwrapping](#response-envelope-unwrapping)
   - [Automatic Token Refresh Queue](#automatic-token-refresh-queue)
+  - [Defense-in-Depth "View As" Interceptor Block](#defense-in-depth-view-as-interceptor-block)
   - [Typed Error Handling](#typed-error-handling)
 - [🧹 Client-Side Validation Rules (Zod)](#-client-side-validation-rules-zod)
 - [⚙️ Environment Configuration Reference](#️-environment-configuration-reference)
@@ -50,10 +52,20 @@ A production-grade, domain-aligned **React 19 Single Page Application (SPA)** fo
 
 ## ✨ Recent Updates
 
-- **Super Admin Global User Dashboard**: Added an 8-card metric dashboard on the Platform Users page, providing a live aggregate of all registered user roles across all schools.
-- **Tenant API Enhancements**: Expanded tenant and user APIs to support robust server-side status/role filtering and dynamic search.
-- **Form Resiliency**: Addressed Zod validation bugs in tenant setting addresses where empty strings previously caused silent form submission failures.
-- **Asynchronous Search Combobox**: Upgraded the Classes & Sections portal for Super Admins with a sleek, `useDebounce`-powered school selector dropdown, utilizing a remote-search constraint mapping up to 400+ schools without triggering backend pagination limits.
+- **Audit Logs Governance Slice (`src/features/audit-log/`)**:
+  - Full 5-file feature slice adhering strictly to project conventions (`pages/`, `components/`, `hooks.ts`, `api.ts`, `schema.ts`).
+  - High-performance audit trail table using `ResponsiveDataTable` with debounced action filtering, date-from/date-to pickers, and responsive slide-out detail drawer (`AuditLogDetailDrawer`).
+  - Integrated "View Audit Trail" quick-action workflow card on the Super Admin dashboard.
+- **Tenant Management Lifecycle**:
+  - Added suspend/reactivate toggles with confirmation dialogs across Table and Grid views.
+  - Interactive 3-step School Onboarding Wizard (`TenantOnboardDialog`) provisioning new schools, primary admins, and instant invitation link generators.
+- **Platform Users & Memberships**:
+  - Slide-out Memberships Drawer displaying user tenant affiliations, active roles, and school assignments.
+  - "View As" support session activation with explicit confirmation modals.
+- **"View As" Support Sessions (Client-Side Defense in Depth)**:
+  - Global Zustand session store (`viewAsStore`) managing short-lived 15-minute support tokens.
+  - Top-level sticky warning banner (`ViewAsBanner`) displaying real-time countdown timer and one-click session termination.
+  - Client-side write prevention: `apiClient` interceptor rejects all mutating HTTP requests (`POST`, `PUT`, `PATCH`, `DELETE` excluding `/logout`), while `usePermission` locks UI action buttons for non-read capabilities.
 
 ---
 
@@ -62,6 +74,9 @@ A production-grade, domain-aligned **React 19 Single Page Application (SPA)** fo
 | Category | Capabilities |
 |---|---|
 | **Multi-Tenancy** | Automatic `X-Tenant-ID` header injection across all API requests; persistent active school selection; instant tenant switcher for users holding memberships across multiple schools. |
+| **Audit Logs** | Centralized global audit stream with debounced action filtering, date range constraints, pagination, and structured forensic detail drawers. |
+| **Tenant Lifecycle** | Suspend, reactivate, and edit school tenants; automated 3-step school onboarding wizard (`/tenants?action=onboard`). |
+| **View As Support Sessions** | 15-minute time-boxed impersonation sessions with client-side write blocking, permission lockdown, and a persistent countdown banner. |
 | **Hybrid Authorization** | **RBAC** route guards (`beforeLoad` & `usePermission`), **ReBAC** relation scoping (Teacher assignments & linked parent children), and **ABAC** UX safeguards (future attendance date lock, 7-day edit window). |
 | **Multi-Role Personas** | Decoupled user identity supporting simultaneous roles within a school (e.g. Teacher who is also a Parent) with dynamic persona switching in global UI state without URL disruption. |
 | **Authentication & Session** | Email/Password login with Zod validation, password show/hide toggle, "Remember Me" local storage, in-memory access token storage, and background refresh rotation via `/api/v1/auth/refresh`. |
@@ -75,14 +90,14 @@ A production-grade, domain-aligned **React 19 Single Page Application (SPA)** fo
 
 ## 🏛 Architecture & Design Principles
 
-The frontend directly mirrors the backend domain architecture (`identity`, `tenant`, `academic`, `attendance`, `finance`), creating a unified mental model across both repositories.
+The frontend directly mirrors the backend domain architecture (`identity`, `tenant`, `academic`, `attendance`, `examination`), creating a unified mental model across both repositories.
 
 ```
 ┌──────────────────────────────────────────────────────────────┐
 │                      React Application                        │
 │  ┌──────────────┐  ┌───────────────┐  ┌────────────────────┐ │
 │  │ QueryClient  │  │ AuthProvider  │  │  TenantStore /     │ │
-│  │  Provider    │  │  (Context)    │  │  PersonaStore      │ │
+│  │  Provider    │  │  (Context)    │  │  ViewAsStore       │ │
 │  │ (TanStack Q) │  │               │  │  (Zustand)         │ │
 │  └──────────────┘  └───────────────┘  └────────────────────┘ │
 ├──────────────────────────────────────────────────────────────┤
@@ -91,8 +106,8 @@ The frontend directly mirrors the backend domain architecture (`identity`, `tena
 ├──────────────────────────────────────────────────────────────┤
 │                Feature Layer (Domain Slices)                  │
 │  ┌────────┐ ┌────────┐ ┌──────────┐ ┌──────────┐ ┌────────┐ │
-│  │  auth  │ │ tenant │ │ academic │ │attendance│ │members │ │
-│  │        │ │ -admin │ │          │ │          │ │        │ │
+│  │  auth  │ │tenant/ │ │ academic │ │attendance│ │ audit  │ │
+│  │        │ │settings│ │          │ │          │ │  -log  │ │
 │  │ pages/ components/ hooks/ api.ts schema.ts  (same shape) │ │
 │  └───┬────┘ └───┬────┘ └────┬─────┘ └────┬─────┘ └───┬────┘ │
 ├──────┼───────────┼───────────┼────────────┼────────────┼─────┤
@@ -113,7 +128,7 @@ The frontend directly mirrors the backend domain architecture (`identity`, `tena
 
 - **Core Layer (`src/api`, `src/auth`, `src/config`, `src/components/ui`)**: Encapsulates cross-cutting concerns: Axios interceptors, JWT refresh queues, tenant headers, global permissions, and design tokens.
 - **Feature Layer (`src/features/*`)**: Feature slices containing domain logic, components, data fetching, and forms.
-- **State Layer (`src/stores/*`, `src/auth/*`)**: Minimal Zustand stores for UI state (`tenantStore`, `personaStore`), while TanStack Query owns server cache.
+- **State Layer (`src/stores/*`, `src/auth/*`)**: Minimal Zustand stores for UI state (`tenantStore`, `viewAsStore`, `themeStore`), while TanStack Query owns server cache.
 
 ### Per-Feature 5-File Slice Standard
 
@@ -121,9 +136,9 @@ Every feature slice under `src/features/` follows this standard structure:
 
 ```
 src/features/<domain>/
-  pages/          # Route page components (e.g. ClassesPage, StudentsPage)
-  components/     # Feature-local UI (e.g. BulkUploadDialog, SectionEligibilityBadge)
-  hooks/          # TanStack Query wrappers (e.g. useClasses, useCreateClass)
+  pages/          # Route page components (e.g. AuditLogsPage, TenantSettingsPage)
+  components/     # Feature-local UI (e.g. AuditLogDetailDrawer, TenantOnboardDialog)
+  hooks.ts        # TanStack Query wrappers (e.g. useAuditLogs, useTenant)
   api.ts          # Strongly typed Axios fetch functions for this domain
   schema.ts       # Zod validation schemas & inferred TypeScript types
 ```
@@ -150,6 +165,7 @@ PBAC coordinates 3 tiers of authorization driving both UI visibility and server 
 │  Tier 3: Attribute-Based Access Control (ABAC)           │
 │  - Client-side future date lock on attendance picker     │
 │  - Graceful handling of backend 403 edit window rules    │
+│  - "View As" read-only session client-side lockdown      │
 └──────────────────────────────────────────────────────────┘
 ```
 
@@ -159,10 +175,19 @@ PBAC coordinates 3 tiers of authorization driving both UI visibility and server 
 
 ---
 
+### "View As" Support Sessions & Client-Side Guardrails
+
+For troubleshooting and support, Super Admins can initiate a **15-minute read-only support session** to view the platform through the lens of a specific user:
+- **Client-Side Request Interceptor**: While `viewAsStore.activeToken` is present, the Axios interceptor immediately rejects all mutating methods (`POST`, `PUT`, `PATCH`, `DELETE`) with a 403 `ApiError`, bypassing only the logout endpoint.
+- **Permission Guard**: `usePermission().can()` intercepts calls during a view session and returns `false` for any non-read action (`!permission.startsWith('VIEW_') && !permission.startsWith('READ_')`).
+- **Global Countdown Banner**: `ViewAsBanner.tsx` displays remaining time with automated client-side expiry and a prominent "End Session" action.
+
+---
+
 ### Multi-Role Active Persona Switching
 
 Users with multiple responsibilities in a school (such as a Teacher who also has a child enrolled as a Parent) do not need separate accounts:
-- Global state tracks `activePersona` (`SUPER_ADMIN`, `ADMIN`, `OFFICE_ADMIN`, `TEACHER`, `PARENT`).
+- Global state tracks `activeRole` (`SUPER_ADMIN`, `ADMIN`, `OFFICE_ADMIN`, `TEACHER`, `PARENT`).
 - The top header provides an instant **Persona Switcher** allowing users to switch contexts seamlessly.
 - Navigation links and action capabilities instantly update based on the selected persona.
 
@@ -189,8 +214,8 @@ To support multi-tenancy seamlessly across all backend modules:
 | **Server State** | [TanStack Query](https://tanstack.com/query) | `^5.69.0` | Caching, background refetching & mutation invalidation |
 | **Form Validation** | [React Hook Form](https://react-hook-form.com) + [Zod](https://zod.dev) | `^7.55.0` / `^3.24.0` | Type-safe form validation mirroring backend Pydantic schemas |
 | **Data Tables** | [TanStack Table](https://tanstack.com/table) + Custom Responsive Table | `^8.21.0` | Mobile stacked card view + desktop data grid |
-| **HTTP Client** | [Axios](https://axios-http.com) | `^1.8.0` | Interceptors for JWT attach, tenant header & refresh token queue |
-| **Client State** | [Zustand](https://zustand-demo.pmnd.rs) | `^5.0.0` | Minimal persisted stores (`tenantStore`, `personaStore`) |
+| **HTTP Client** | [Axios](https://axios-http.com) | `^1.8.0` | Interceptors for JWT attach, tenant header, refresh queue & View As lockdown |
+| **Client State** | [Zustand](https://zustand-demo.pmnd.rs) | `^5.0.0` | Lightweight stores (`tenantStore`, `viewAsStore`, `themeStore`) |
 | **Icons** | [Lucide React](https://lucide.dev) | `^0.479.0` | Clean, modern vector icons |
 | **Notifications** | [Sonner](https://sonner.emilkowal.ski) | `^2.0.0` | Accessible rich toast alerts |
 | **Linter** | [Oxlint](https://oxc.rs) | `^1.79.0` | High-speed Rust-based JavaScript/TypeScript linter |
@@ -220,7 +245,7 @@ frontend/
     ├── vite-env.d.ts                 # Ambient TypeScript declarations for Vite env
     │
     ├── api/                          # Core HTTP Client Layer
-    │   ├── client.ts                 # Axios instance, Bearer attach, X-Tenant-ID & 401 refresh queue
+    │   ├── client.ts                 # Axios instance, Bearer attach, X-Tenant-ID & View As lockdown
     │   ├── errors.ts                 # Typed ApiError hierarchy
     │   └── types.ts                  # Universal ApiResponse<T>, TokenResponse, UserProfileDTO
     │
@@ -240,11 +265,14 @@ frontend/
     │
     ├── stores/                       # Lightweight Zustand Stores
     │   ├── tenantStore.ts            # Active tenant ID & name state
-    │   └── personaStore.ts           # Active role persona state
+    │   ├── viewAsStore.ts            # 15-minute "View As" session store
+    │   └── themeStore.ts             # Theme mode (light, dark, system) state
     │
     ├── components/                   # Shared UI Primitives & Layouts
     │   ├── layout/
-    │   │   └── AppShell.tsx          # Responsive mobile drawer + desktop sidebar layout
+    │   │   ├── AppShell.tsx          # Responsive mobile drawer + desktop sidebar layout
+    │   │   ├── ViewAsBanner.tsx      # Sticky warning banner with countdown timer
+    │   │   └── SchoolHeaderBadge.tsx # Tenant indicator and switcher badge
     │   ├── common/
     │   │   ├── ResponsiveDataTable.tsx # Auto dual-mode: stacked cards (<md) & table (md+)
     │   │   └── PlaceholderPage.tsx   # Scaffold placeholder for upcoming feature routes
@@ -258,16 +286,21 @@ frontend/
     │       ├── dropdown-menu.tsx
     │       ├── input.tsx             # Mobile 16px/14px anti-zoom input
     │       ├── label.tsx
+    │       ├── sheet.tsx             # Drawer primitive for detail views
     │       ├── sonner.tsx            # Rich toast notifications
     │       └── table.tsx
     │
     ├── features/                     # Domain Feature Slices (5-file standard)
-    │   ├── auth/
-    │   │   ├── pages/LoginPage.tsx   # Responsive login page with Zod validation
-    │   │   ├── api.ts                # Auth API fetch methods (/login, /me, /refresh, /logout)
-    │   │   └── schema.ts             # Zod validation schema for login
-    │   └── dashboard/
-    │       └── pages/DashboardPage.tsx # Role-tailored KPI cards, quick actions & log table
+    │   ├── auth/                     # Authentication & Login
+    │   ├── dashboard/                # Unified and Super Admin KPI Hubs
+    │   ├── audit-log/                # System audit trail & detail drawers
+    │   ├── tenants/                  # Tenant management & onboarding wizard
+    │   ├── platform-users/           # Platform user directory & memberships
+    │   ├── academic/                 # Classes, sections, subjects & teacher assignments
+    │   ├── academic-year/            # Academic year management & selector
+    │   ├── attendance/               # Daily attendance & reporting
+    │   ├── examination/              # Exams, grading & report cards
+    │   └── members/                  # School member directory & parent-student links
     │
     └── lib/
         └── utils.ts                  # cn() class merging utility (clsx + twMerge)
@@ -313,6 +346,7 @@ VITE_APP_NAME=Schools Up Pro
 ### Running the Development Server
 
 ```bash
+```bash
 npm run dev
 ```
 
@@ -347,7 +381,11 @@ Defined in [`src/config/permissions.ts`](file:///E:/PBAC/frontend/src/config/per
 
 | Feature / Resource | `SUPER_ADMIN` | `ADMIN` (Principal) | `OFFICE_ADMIN` (Vice Principal) | `TEACHER` (Faculty) | `PARENT` (Guardian) |
 |---|:---:|:---:|:---:|:---:|:---:|
-| **Create Tenant (School)** | ✅ | ❌ | ❌ | ❌ | ❌ |
+| **Onboard / Create Tenant** | ✅ | ❌ | ❌ | ❌ | ❌ |
+| **Suspend / Reactivate Tenant** | ✅ | ❌ | ❌ | ❌ | ❌ |
+| **View Audit Logs** | ✅ | ❌ | ❌ | ❌ | ❌ |
+| **Start "View As" Session** | ✅ | ❌ | ❌ | ❌ | ❌ |
+| **Manage Platform Users** | ✅ | ❌ | ❌ | ❌ | ❌ |
 | **Manage School Settings / Logo** | ✅ | ✅ | 👁️ (View Only) | ❌ | ❌ |
 | **Create Office Admin** | ✅ | ✅ | ❌ | ❌ | ❌ |
 | **Create Teacher / Parent User** | ✅ | ✅ | ✅ | ❌ | ❌ |
@@ -378,12 +416,12 @@ Defined in [`src/config/permissions.ts`](file:///E:/PBAC/frontend/src/config/per
 ### Automatic Stacked Data Tables
 
 Using [`ResponsiveDataTable`](file:///E:/PBAC/frontend/src/components/common/ResponsiveDataTable.tsx):
-- **On `< 768px` (`< md`)**: Automatically renders each record as an individual stacked card with roll numbers, names, status tags, and action buttons.
-- **On `≥ 768px` (`md+`)**: Automatically switches to the full data table with sticky headers.
+- **On `< 768px` (`< md`)**: Automatically renders each record as an individual stacked card with identifiers, names, status tags, and action buttons. Supports interactive row clicking with accessible chevron prompts.
+- **On `≥ 768px` (`md+`)**: Automatically switches to the full desktop data table with sticky headers.
 
 ### Touch Target Compliance (WCAG 2.5.5)
 
-- All buttons, navigation items, checkboxes, password show/hide toggles, and dropdown triggers enforce a minimum **44x44px touch area** on touch devices.
+- All buttons, navigation items, checkboxes, password show/hide toggles, pagination controls, and dropdown triggers enforce a minimum **44x44px touch area** on touch devices.
 - Inputs enforce a minimum `16px` (`text-base`) font size on mobile devices to prevent automatic iOS Safari zooming.
 
 ---
@@ -403,7 +441,7 @@ All backend responses arrive in the standard envelope:
   "error": null
 }
 ```
-The response interceptor automatically unwraps `data` and returns it directly to callers.
+The response interceptor automatically unwraps `data` and returns it directly to callers. If top-level pagination `meta` is present, the envelope is preserved to allow seamless paging.
 
 ### Automatic Token Refresh Queue
 
@@ -411,6 +449,12 @@ The response interceptor automatically unwraps `data` and returns it directly to
 2. An automatic refresh request is dispatched to `POST /api/v1/auth/refresh` using the stored refresh token.
 3. Upon receiving new tokens, in-memory access tokens are updated, the authorization header is refreshed, and queued requests are replayed seamlessly.
 4. If token refresh fails, tokens are cleared and the user is redirected to `/login`.
+
+### Defense-in-Depth "View As" Interceptor Block
+
+During active support impersonation sessions:
+- Client-side Axios interceptors immediately reject any mutating requests (`POST`, `PUT`, `PATCH`, `DELETE`) with a 403 `ApiError` before network dispatch.
+- Authentication endpoints like `/auth/logout` are explicitly bypassed to ensure administrators never become trapped in a support session.
 
 ### Typed Error Handling
 
@@ -440,7 +484,7 @@ Client validation rules match the backend Pydantic sanitization layer:
 | **Email** | Valid email format required | Trimmed & lowercased |
 | **Password** | Min 8 chars (registration), requires uppercase, lowercase, digit, and special char | Whitespace preserved |
 | **Phone** | 10-digit Nepali mobile: `^(98\|97)\d{8}$` | Trimmed & spaces removed |
-| **Domain Name** | Alphanumeric & hyphens: `^[a-zA-Z0-9-]+$` | Lowercased & trimmed |
+| **Domain Name** | Alphanumeric & hyphens: `^[a-z0-9-]+$` | Lowercased & trimmed |
 | **Names** | Required 1-50 chars | Leading/trailing whitespace stripped |
 | **Subject Codes** | Max 50 chars | Trimmed & converted to uppercase |
 | **Attendance Date** | Cannot be a future date | ISO `YYYY-MM-DD` |
