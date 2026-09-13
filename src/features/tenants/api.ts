@@ -4,6 +4,8 @@ import type {
   TenantListResponse,
   TenantFilterParams,
   TenantFormData,
+  TenantOnboardPayload,
+  TenantOnboardResponse,
 } from './types';
 
 export const tenantsApi = {
@@ -64,6 +66,10 @@ export const tenantsApi = {
   deleteTenant: async (tenantId: string): Promise<{ success: boolean }> => {
     await apiClient.delete(`/tenants/${tenantId}`);
     return { success: true };
+  },
+
+  onboardTenant: async (data: TenantOnboardPayload): Promise<TenantOnboardResponse> => {
+    return apiClient.post('/tenants/onboard', data);
   },
 };
 

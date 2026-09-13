@@ -66,3 +66,15 @@ export const tenantFormSchema = z.object({
 
 export type TenantFormData = z.infer<typeof tenantFormSchema>;
 export type AddressFormData = z.infer<typeof addressSchema>;
+
+export interface TenantOnboardPayload {
+  tenant: TenantFormData;
+  admin_phone?: string;
+}
+
+export interface TenantOnboardResponse {
+  tenant: Tenant;
+  status: string;
+  invite_link?: string;
+  admin_phone?: string;
+}

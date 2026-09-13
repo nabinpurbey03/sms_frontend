@@ -14,6 +14,7 @@ import {
   AlertCircle,
   GraduationCap,
   Award,
+  Plus,
 } from 'lucide-react';
 
 import { useAuth } from '@/auth/useAuth';
@@ -372,31 +373,59 @@ export const DashboardPage: React.FC = () => {
 
           {/* Super Admin Tenant Manager */}
           {isSuperAdmin && (
-            <Card className="group border-border/60 hover:border-primary/50 transition-all rounded-xl">
-              <CardHeader className="p-5 pb-3">
-                <div className="flex items-center justify-between">
-                  <div className="p-2 bg-purple-500/10 text-purple-600 rounded-lg group-hover:scale-105 transition-transform">
-                    <Building2 className="h-5 w-5" />
+            <>
+              <Card className="group border-border/60 hover:border-primary/50 transition-all rounded-xl">
+                <CardHeader className="p-5 pb-3">
+                  <div className="flex items-center justify-between">
+                    <div className="p-2 bg-emerald-500/10 text-emerald-600 rounded-lg group-hover:scale-105 transition-transform">
+                      <Plus className="h-5 w-5" />
+                    </div>
+                    <ArrowRight className="h-4 w-4 text-muted-foreground group-hover:text-primary group-hover:translate-x-1 transition-all" />
                   </div>
-                  <ArrowRight className="h-4 w-4 text-muted-foreground group-hover:text-primary group-hover:translate-x-1 transition-all" />
-                </div>
-                <CardTitle className="text-base font-semibold pt-2">
-                  Tenant Administration
-                </CardTitle>
-                <CardDescription className="text-xs">
-                  Provision new school tenants, domains, and global platform users
-                </CardDescription>
-              </CardHeader>
-              <CardContent className="p-5 pt-0">
-                <Button
-                  variant="outline"
-                  className="w-full text-xs font-semibold h-10"
-                  asChild
-                >
-                  <Link to="/tenants">Manage Tenants</Link>
-                </Button>
-              </CardContent>
-            </Card>
+                  <CardTitle className="text-base font-semibold pt-2">
+                    Onboard New School
+                  </CardTitle>
+                  <CardDescription className="text-xs">
+                    Quick wizard to provision a new school and invite an admin
+                  </CardDescription>
+                </CardHeader>
+                <CardContent className="p-5 pt-0">
+                  <Button
+                    variant="outline"
+                    className="w-full text-xs font-semibold h-10"
+                    asChild
+                  >
+                    <Link to="/tenants" search={{ action: 'onboard' }}>Launch Wizard</Link>
+                  </Button>
+                </CardContent>
+              </Card>
+
+              <Card className="group border-border/60 hover:border-primary/50 transition-all rounded-xl">
+                <CardHeader className="p-5 pb-3">
+                  <div className="flex items-center justify-between">
+                    <div className="p-2 bg-purple-500/10 text-purple-600 rounded-lg group-hover:scale-105 transition-transform">
+                      <Building2 className="h-5 w-5" />
+                    </div>
+                    <ArrowRight className="h-4 w-4 text-muted-foreground group-hover:text-primary group-hover:translate-x-1 transition-all" />
+                  </div>
+                  <CardTitle className="text-base font-semibold pt-2">
+                    Tenant Administration
+                  </CardTitle>
+                  <CardDescription className="text-xs">
+                    Manage school tenants, domains, and global platform users
+                  </CardDescription>
+                </CardHeader>
+                <CardContent className="p-5 pt-0">
+                  <Button
+                    variant="outline"
+                    className="w-full text-xs font-semibold h-10"
+                    asChild
+                  >
+                    <Link to="/tenants">Manage Tenants</Link>
+                  </Button>
+                </CardContent>
+              </Card>
+            </>
           )}
 
           {/* Super Admin Audit Trail */}

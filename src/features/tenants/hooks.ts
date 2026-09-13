@@ -1,7 +1,7 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { toast } from 'sonner';
 import { tenantsApi } from './api';
-import type { TenantFilterParams, TenantFormData } from './types';
+import type { TenantFilterParams, TenantFormData, TenantOnboardPayload } from './types';
 
 export const TENANTS_QUERY_KEY = 'tenants';
 
@@ -119,6 +119,25 @@ export const useDeleteTenant = () => {
     onError: (error: any) => {
       toast.error('Deletion Failed', {
         description: error.message || 'Could not delete school tenant.',
+      });
+    },
+  });
+};
+
+export const useOnboardTenant = () => {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: (data: TenantOnboardPayload) => tenantsApi.onboardTenant(data),
+    onSuccess: (response) => {
+      queryClient.invalidateQueries({ queryKey: [TENANTS_QUERY_KEY] });
+      toast.success('School Onboarded Successfully', {
+        description: `${response.tenant.name} has been created and domain '${response.tenant.domain_name}' is ready.`,
+      });
+    },
+    onError: (error: any) => {
+      toast.error('Failed to Onboard School', {
+        description: error.message || 'An unexpected error occurred while onboarding the tenant.',
       });
     },
   });
