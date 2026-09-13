@@ -94,10 +94,9 @@ export interface UserMembershipDetail {
 export const useUserMemberships = (userId: string | null) => {
   return useQuery({
     queryKey: ['user_memberships', userId],
-    queryFn: async () => {
+    queryFn: async (): Promise<UserMembershipDetail[]> => {
       if (!userId) return [];
-      const res = await apiClient.get(`/users/${userId}/memberships`) as any;
-      return res as UserMembershipDetail[];
+      return apiClient.get(`/users/${userId}/memberships`) as Promise<UserMembershipDetail[]>;
     },
     enabled: !!userId,
   });
