@@ -1,10 +1,15 @@
 import { useAuth } from './useAuth';
 import { hasPermission, type PermissionKey, type Role } from '@/config/permissions';
+import { useViewAsStore } from '@/stores/viewAsStore';
 
 export const usePermission = () => {
   const { activeRole, user } = useAuth();
+  const viewAsActive = useViewAsStore((state) => !!state.activeToken);
 
   const can = (permission: PermissionKey): boolean => {
+    if (viewAsActive && !permission.startsWith('read:')) {
+      return false;
+    }
     if (user?.is_super_admin) return true;
     return hasPermission(activeRole, permission);
   };

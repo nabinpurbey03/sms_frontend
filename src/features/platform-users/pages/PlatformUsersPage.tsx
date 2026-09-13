@@ -21,12 +21,13 @@ import {
   DropdownMenuTrigger,
   DropdownMenuSeparator,
 } from '@/components/ui/dropdown-menu';
-import { UsersRound, Search, MoreVertical, Loader2, Trash, UserMinus, ShieldAlert, CheckCircle2, AlertTriangle, ShieldCheck, UserCog, Briefcase, GraduationCap, Users } from 'lucide-react';
-import { usePlatformUsers, useSoftDeleteUser, useHardDeleteUser, PlatformUser } from '../api';
+import { UsersRound, Search, MoreVertical, Loader2, Trash, UserMinus, ShieldAlert, CheckCircle2, AlertTriangle, ShieldCheck, UserCog, Briefcase, GraduationCap, Users, Eye } from 'lucide-react';
+import { usePlatformUsers, useSoftDeleteUser, useHardDeleteUser, useStartViewSession, PlatformUser } from '../api';
 import { useDebounce } from 'use-debounce';
 import { useSuperAdminDashboard } from '@/features/dashboard/hooks';
 import { toast } from 'sonner';
 import { UserMembershipsDrawer } from '../components/UserMembershipsDrawer';
+import { useViewAsStore } from '@/stores/viewAsStore';
 
 export const PlatformUsersPage: React.FC = () => {
   const { user } = useAuth();
@@ -50,6 +51,8 @@ export const PlatformUsersPage: React.FC = () => {
 
   const softDeleteMutation = useSoftDeleteUser();
   const hardDeleteMutation = useHardDeleteUser();
+  const startViewSessionMutation = useStartViewSession();
+  const startSession = useViewAsStore((state) => state.startSession);
 
   const { data: dashboardMetrics, isLoading: isDashboardLoading } = useSuperAdminDashboard(isSuperAdmin);
 
@@ -72,6 +75,20 @@ export const PlatformUsersPage: React.FC = () => {
     }
     if (window.confirm(`Are you sure you want to permanently delete ${u.first_name}? This cannot be undone.`)) {
       await hardDeleteMutation.mutateAsync(u.id);
+    }
+  };
+
+  const handleViewAs = async (u: PlatformUser) => {
+    if (u.id === user?.id) {
+      toast.error('Cannot view as yourself');
+      return;
+    }
+    try {
+      const res = await startViewSessionMutation.mutateAsync(u.id);
+      startSession(res.token, u.id);
+      toast.success(`Started View As session for ${u.first_name}`);
+    } catch (error) {
+      toast.error('Failed to start View As session');
     }
   };
 
@@ -347,6 +364,14 @@ export const PlatformUsersPage: React.FC = () => {
                           >
                             <Briefcase className="w-4 h-4 mr-2" />
                             View Memberships
+                          </DropdownMenuItem>
+                          <DropdownMenuItem
+                            className="cursor-pointer text-blue-600 focus:bg-blue-50 focus:text-blue-700"
+                            onClick={() => handleViewAs(u)}
+                            disabled={startViewSessionMutation.isPending}
+                          >
+                            <Eye className="w-4 h-4 mr-2" />
+                            View As User
                           </DropdownMenuItem>
                           <DropdownMenuSeparator />
                           <DropdownMenuItem

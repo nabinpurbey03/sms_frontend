@@ -101,3 +101,13 @@ export const useUserMemberships = (userId: string | null) => {
     enabled: !!userId,
   });
 };
+
+export const startViewSession = async (userId: string) => {
+  return apiClient.post(`/users/${userId}/view-session`) as Promise<{ token: string }>;
+};
+
+export const useStartViewSession = () => {
+  return useMutation({
+    mutationFn: startViewSession,
+  });
+};

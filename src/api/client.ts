@@ -3,6 +3,7 @@ import { ENV } from '@/config/env';
 import { ApiError } from './errors';
 import type { ApiResponse, TokenResponse } from './types';
 import { useTenantStore } from '@/stores/tenantStore';
+import { useViewAsStore } from '@/stores/viewAsStore';
 
 let inMemoryAccessToken: string | null = null;
 
@@ -67,6 +68,17 @@ apiClient.interceptors.request.use(
     const activeTenantId = useTenantStore.getState().activeTenantId;
     if (activeTenantId) {
       config.headers[ENV.TENANT_HEADER_NAME] = activeTenantId;
+    }
+
+    // View As session logic
+    const viewAsState = useViewAsStore.getState();
+    if (viewAsState.activeToken) {
+      config.headers['X-View-As'] = viewAsState.activeToken;
+      
+      const method = config.method?.toUpperCase();
+      if (method && ['POST', 'PUT', 'PATCH', 'DELETE'].includes(method)) {
+        return Promise.reject(new Error('Mutating actions are disabled during a View As session.'));
+      }
     }
 
     return config;

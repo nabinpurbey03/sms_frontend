@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Outlet, Link, useNavigate, useRouterState } from '@tanstack/react-router';
 import {
   LayoutDashboard,
@@ -30,6 +30,7 @@ import {
 import { useAuth } from '@/auth/useAuth';
 import { usePermission } from '@/auth/usePermission';
 import { useThemeStore } from '@/stores/themeStore';
+import { useViewAsStore } from '@/stores/viewAsStore';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Badge } from '@/components/ui/badge';
@@ -54,6 +55,53 @@ import type { Role } from '@/config/permissions';
 
 const isNavItemActive = (currentPath: string, navHref: string): boolean => {
   return currentPath === navHref || currentPath.startsWith(`${navHref}/`);
+};
+
+const ViewAsBanner: React.FC = () => {
+  const { activeToken, targetUserId, expiresAt, endSession } = useViewAsStore();
+  const [timeLeft, setTimeLeft] = useState<string>('');
+
+  useEffect(() => {
+    if (!activeToken || !expiresAt) return;
+
+    const updateTimer = () => {
+      const now = new Date().getTime();
+      const expiry = new Date(expiresAt).getTime();
+      const diff = expiry - now;
+
+      if (diff <= 0) {
+        endSession();
+        return;
+      }
+
+      const minutes = Math.floor(diff / 1000 / 60);
+      const seconds = Math.floor((diff / 1000) % 60);
+      setTimeLeft(`${minutes.toString().padStart(2, '0')}:${seconds.toString().padStart(2, '0')}`);
+    };
+
+    updateTimer();
+    const interval = setInterval(updateTimer, 1000);
+
+    return () => clearInterval(interval);
+  }, [activeToken, expiresAt, endSession]);
+
+  if (!activeToken) return null;
+
+  return (
+    <div className="bg-orange-500 text-white px-4 py-2 flex items-center justify-between z-50">
+      <div className="text-sm font-medium">
+        Support Session Active: Viewing as User {targetUserId}. All mutating actions are disabled. Time remaining: {timeLeft}.
+      </div>
+      <Button
+        variant="outline"
+        size="sm"
+        onClick={endSession}
+        className="text-orange-500 bg-white hover:bg-orange-50 border-white h-8"
+      >
+        End Session
+      </Button>
+    </div>
+  );
 };
 
 export const AppShell: React.FC = () => {
@@ -282,10 +330,12 @@ export const AppShell: React.FC = () => {
   };
 
   return (
-    <div className="min-h-screen flex flex-col lg:flex-row bg-background text-foreground antialiased selection:bg-primary/20">
-      {/* Mobile-Only Header (< lg screens) */}
-      <header className="lg:hidden sticky top-0 z-40 flex h-14 w-full items-center justify-between border-b bg-card/95 px-4 backdrop-blur-md shadow-xs shrink-0">
-        <div className="flex items-center gap-2.5 min-w-0">
+    <div className="flex flex-col min-h-screen">
+      <ViewAsBanner />
+      <div className="flex-1 flex flex-col lg:flex-row bg-background text-foreground antialiased selection:bg-primary/20">
+        {/* Mobile-Only Header (< lg screens) */}
+        <header className="lg:hidden sticky top-0 z-40 flex h-14 w-full items-center justify-between border-b bg-card/95 px-4 backdrop-blur-md shadow-xs shrink-0">
+          <div className="flex items-center gap-2.5 min-w-0">
           <Button
             variant="ghost"
             size="icon"
@@ -786,6 +836,7 @@ export const AppShell: React.FC = () => {
             <Outlet />
           </div>
         </main>
+      </div>
       </div>
     </div>
   );
