@@ -26,8 +26,8 @@ export const AuditLogsPage: React.FC = () => {
     page,
     page_size: 20,
     action: debouncedActionFilter || undefined,
-    start_date: startDate || undefined,
-    end_date: endDate || undefined,
+    date_from: startDate || undefined,
+    date_to: endDate || undefined,
   });
 
   const [selectedLog, setSelectedLog] = useState<AuditLog | null>(null);
@@ -125,7 +125,7 @@ export const AuditLogsPage: React.FC = () => {
             <div className="p-8 text-center text-sm text-red-500">Failed to load audit logs.</div>
           ) : (
             <ResponsiveDataTable
-              data={response?.data?.data || []}
+              data={(response?.data as any) || []}
               columns={columns}
               keyExtractor={(item) => item.id}
               onRowClick={(item) => setSelectedLog(item)}
@@ -133,10 +133,10 @@ export const AuditLogsPage: React.FC = () => {
             />
           )}
         </div>
-        {response?.data?.meta && response.data.meta.total_pages > 1 && (
+        {(response as any)?.meta && (response as any)?.meta.total_pages > 1 && (
           <div className="p-4 border-t border-border flex justify-between items-center">
             <span className="text-sm text-muted-foreground">
-              Page {response.data.meta.page} of {response.data.meta.total_pages}
+              Page {(response as any)?.meta.page} of {(response as any)?.meta.total_pages}
             </span>
             <div className="space-x-2">
               <Button
@@ -151,7 +151,7 @@ export const AuditLogsPage: React.FC = () => {
                 variant="outline"
                 className="min-h-[44px] min-w-[44px]"
                 onClick={() => setPage((p) => p + 1)}
-                disabled={page >= response.data.meta.total_pages}
+                disabled={page >= ((response as any)?.meta?.total_pages || 1)}
               >
                 Next
               </Button>

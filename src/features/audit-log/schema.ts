@@ -25,6 +25,6 @@ export interface AuditLogQueryParams {
   page?: number;
   page_size?: number;
   action?: string;
-  start_date?: string;
-  end_date?: string;
+  date_from?: string;
+  date_to?: string;
 }
