@@ -330,9 +330,9 @@ export const AppShell: React.FC = () => {
   };
 
   return (
-    <div className="flex flex-col min-h-screen">
+    <div className="flex flex-col h-screen h-dvh overflow-hidden">
       <ViewAsBanner />
-      <div className="flex-1 flex flex-col lg:flex-row bg-background text-foreground antialiased selection:bg-primary/20">
+      <div className="flex-1 min-h-0 flex flex-col lg:flex-row bg-background text-foreground antialiased selection:bg-primary/20 overflow-hidden">
         {/* Mobile-Only Header (< lg screens) */}
         <header className="lg:hidden sticky top-0 z-40 flex h-14 w-full items-center justify-between border-b bg-card/95 px-4 backdrop-blur-md shadow-xs shrink-0">
           <div className="flex items-center gap-2.5 min-w-0">
@@ -618,7 +618,7 @@ export const AppShell: React.FC = () => {
       )}
 
       {/* Dashboard Main Area */}
-      <div className="flex-1 min-w-0 flex flex-col h-screen bg-background">
+      <div className="flex-1 min-w-0 flex flex-col h-full lg:h-screen min-h-0 bg-background overflow-hidden">
         
         {/* Sticky Top Header */}
         <header className="sticky top-0 z-20 flex h-14 items-center justify-between px-4 sm:px-6 border-b border-border/40 bg-card/95 backdrop-blur-md shrink-0 gap-4">
@@ -831,7 +831,7 @@ export const AppShell: React.FC = () => {
           </div>
         </header>
 
-        <main className="flex-1 overflow-y-auto px-3 py-4 sm:px-6 sm:py-6 lg:px-8 lg:py-8 bg-muted/20">
+        <main className="flex-1 relative overflow-y-auto px-3 py-4 sm:px-6 sm:py-6 lg:px-8 lg:py-8 bg-muted/20 min-h-0">
           <div className="w-full max-w-7xl mx-auto">
             <Outlet />
           </div>

@@ -64,3 +64,7 @@ desktop.ini
 # Project documentation / plans
 PLAN.md
 BACKEND_ARCHITECTURE.md
+
+# Scratch scripts and artifacts
+scratch/
+

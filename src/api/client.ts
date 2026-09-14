@@ -10,6 +10,13 @@ let inMemoryAccessToken: string | null = null;
 export const getAccessToken = () => inMemoryAccessToken;
 export const setAccessToken = (token: string | null) => {
   inMemoryAccessToken = token;
+  if (typeof apiClient !== 'undefined' && apiClient?.defaults?.headers?.common) {
+    if (token) {
+      apiClient.defaults.headers.common.Authorization = `Bearer ${token}`;
+    } else {
+      delete apiClient.defaults.headers.common.Authorization;
+    }
+  }
 };
 
 export const getStoredRefreshToken = () => {
@@ -47,6 +54,73 @@ export const clearTokens = () => {
   setStoredRefreshToken(null);
   delete apiClient.defaults.headers.common.Authorization;
 };
+
+let lastRefreshTimestamp = Date.now();
+export const getLastRefreshTime = () => lastRefreshTimestamp;
+
+let activeRefreshPromise: Promise<TokenResponse> | null = null;
+
+export const refreshTokens = async (): Promise<TokenResponse> => {
+  if (activeRefreshPromise) {
+    return activeRefreshPromise;
+  }
+
+  const refreshToken = getStoredRefreshToken();
+  if (!refreshToken) {
+    clearTokens();
+    throw new ApiError('Session expired. Please log in again.', undefined, 401);
+  }
+
+  activeRefreshPromise = (async () => {
+    try {
+      const refreshResponse = await axios.post<ApiResponse<TokenResponse>>(
+        `${ENV.API_BASE_URL.replace(/\/$/, '')}${ENV.API_VERSION}/auth/refresh`,
+        { refresh_token: refreshToken }
+      );
+
+      const tokenData = (refreshResponse.data?.data || refreshResponse.data) as TokenResponse;
+      const newAccessToken = tokenData?.access_token;
+      const newRefreshToken = tokenData?.refresh_token;
+
+      if (!newAccessToken) {
+        throw new Error('No access token returned');
+      }
+
+      setAccessToken(newAccessToken);
+      if (newRefreshToken) {
+        setStoredRefreshToken(newRefreshToken);
+      }
+      apiClient.defaults.headers.common.Authorization = `Bearer ${newAccessToken}`;
+      lastRefreshTimestamp = Date.now();
+
+      return tokenData;
+    } catch (refreshErr: any) {
+      const errStatus = refreshErr?.response?.status;
+      // ONLY clear tokens and redirect if definitive 401 Unauthorized or 403 Forbidden
+      if (errStatus === 401 || errStatus === 403) {
+        clearTokens();
+        if (typeof window !== 'undefined' && window.location.pathname !== '/login') {
+          window.location.href = '/login';
+        }
+      }
+      throw refreshErr;
+    } finally {
+      activeRefreshPromise = null;
+    }
+  })();
+
+  return activeRefreshPromise;
+};
+
+// Cross-tab token synchronization: when another tab logs out, clear in-memory state
+if (typeof window !== 'undefined') {
+  window.addEventListener('storage', (event) => {
+    if (event.key === 'schools_up_refresh_token' && !event.newValue) {
+      setAccessToken(null);
+      delete apiClient.defaults.headers.common.Authorization;
+    }
+  });
+}
 
 export const apiClient = axios.create({
   baseURL: `${ENV.API_BASE_URL.replace(/\/$/, '')}${ENV.API_VERSION}`,
@@ -91,24 +165,7 @@ apiClient.interceptors.request.use(
   (error) => Promise.reject(error)
 );
 
-// Response Interceptor & Token Refresh Queue
-let isRefreshing = false;
-let failedQueue: Array<{
-  resolve: (value?: unknown) => void;
-  reject: (reason?: unknown) => void;
-}> = [];
-
-const processQueue = (error: unknown, token: string | null = null) => {
-  failedQueue.forEach((prom) => {
-    if (error) {
-      prom.reject(error);
-    } else {
-      prom.resolve(token);
-    }
-  });
-  failedQueue = [];
-};
-
+// Response Interceptor
 apiClient.interceptors.response.use(
   (response) => {
     const data = response.data as any;
@@ -142,68 +199,22 @@ apiClient.interceptors.response.use(
       originalRequest &&
       !originalRequest._retry &&
       !originalRequest.url?.includes('/auth/login') &&
-      !originalRequest.url?.includes('/auth/refresh')
+      !originalRequest.url?.includes('/auth/refresh') &&
+      !originalRequest.url?.includes('/auth/logout')
     ) {
-      if (isRefreshing) {
-        return new Promise((resolve, reject) => {
-          failedQueue.push({ resolve, reject });
-        })
-          .then((token) => {
-            if (token && originalRequest.headers) {
-              originalRequest.headers.Authorization = `Bearer ${token}`;
-            }
-            return apiClient(originalRequest);
-          })
-          .catch((err) => Promise.reject(err));
-      }
-
       originalRequest._retry = true;
-      isRefreshing = true;
-
-      const refreshToken = getStoredRefreshToken();
-
-      if (!refreshToken) {
-        clearTokens();
-        isRefreshing = false;
-        return Promise.reject(
-          new ApiError('Session expired. Please log in again.', undefined, 401)
-        );
-      }
 
       try {
-        const refreshResponse = await axios.post<ApiResponse<TokenResponse>>(
-          `${ENV.API_BASE_URL.replace(/\/$/, '')}${ENV.API_VERSION}/auth/refresh`,
-          { refresh_token: refreshToken }
-        );
-
-        const tokenData = refreshResponse.data?.data || refreshResponse.data;
-        const newAccessToken = (tokenData as TokenResponse)?.access_token;
-        const newRefreshToken = (tokenData as TokenResponse)?.refresh_token;
-
-        if (newAccessToken) {
-          setAccessToken(newAccessToken);
-          if (newRefreshToken) {
-            setStoredRefreshToken(newRefreshToken);
+        const tokenData = await refreshTokens();
+        if (originalRequest.headers) {
+          originalRequest.headers.Authorization = `Bearer ${tokenData.access_token}`;
+          if (typeof (originalRequest.headers as any).set === 'function') {
+            (originalRequest.headers as any).set('Authorization', `Bearer ${tokenData.access_token}`);
           }
-          apiClient.defaults.headers.common.Authorization = `Bearer ${newAccessToken}`;
-          processQueue(null, newAccessToken);
-          if (originalRequest.headers) {
-            originalRequest.headers.Authorization = `Bearer ${newAccessToken}`;
-          }
-          return apiClient(originalRequest);
-        } else {
-          throw new Error('No access token returned');
         }
+        return apiClient(originalRequest);
       } catch (refreshErr) {
-        processQueue(refreshErr, null);
-        clearTokens();
-        // Redirect to login to clear React state
-        window.location.href = '/login';
-        return Promise.reject(
-          new ApiError('Session expired. Please log in again.', undefined, 401)
-        );
-      } finally {
-        isRefreshing = false;
+        return Promise.reject(refreshErr);
       }
     }
 

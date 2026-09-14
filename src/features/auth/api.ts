@@ -1,4 +1,4 @@
-import { apiClient } from '@/api/client';
+import { apiClient, refreshTokens } from '@/api/client';
 import type { RegisterPayload, TokenResponse, UserProfileDTO } from '@/api/types';
 
 export interface LoginPayload {
@@ -27,11 +27,8 @@ export const authApi = {
     return data;
   },
 
-  refreshToken: async (refreshToken: string): Promise<TokenResponse> => {
-    const data = await apiClient.post<any, TokenResponse>('/auth/refresh', {
-      refresh_token: refreshToken,
-    });
-    return data;
+  refreshToken: async (_refreshToken?: string): Promise<TokenResponse> => {
+    return refreshTokens();
   },
 
   logout: async (): Promise<{ logged_out: boolean }> => {

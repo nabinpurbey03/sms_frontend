@@ -6,13 +6,13 @@ import {
   setAccessToken,
   setStoredRefreshToken,
   clearTokens,
+  refreshTokens,
+  getLastRefreshTime,
 } from '@/api/client';
 import { useTenantStore } from '@/stores/tenantStore';
 import type { Role } from '@/config/permissions';
 import type { LoginFormData } from '@/features/auth/schema';
 import { AuthContext } from './useAuth';
-
-let activeRefreshPromise: Promise<any> | null = null;
 
 const ROLE_HIERARCHY: Record<string, number> = {
   SUPER_ADMIN: 5,
@@ -65,8 +65,9 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({
       setUser(profile);
 
       // Handle Tenant Selection
-      let selectedTenantId = activeTenantId;
-      let selectedTenantName = activeTenantName;
+      const tenantStore = useTenantStore.getState();
+      let selectedTenantId = tenantStore.activeTenantId;
+      let selectedTenantName = tenantStore.activeTenantName;
 
       if (profile.memberships && profile.memberships.length > 0) {
         const found = profile.memberships.find(
@@ -78,14 +79,15 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({
         } else {
           selectedTenantName = found.tenant_name;
         }
-        setActiveTenant(selectedTenantId, selectedTenantName);
+        tenantStore.setActiveTenant(selectedTenantId, selectedTenantName);
 
         // Handle Active Persona
         const currentMembership = profile.memberships.find(
           (m) => m.tenant_id === selectedTenantId
         );
         if (currentMembership && currentMembership.roles.length > 0) {
-          if (!activePersona || !currentMembership.roles.includes(activePersona)) {
+          const storedPersona = (localStorage.getItem('schools_up_persona') as Role) || null;
+          if (!storedPersona || !currentMembership.roles.includes(storedPersona)) {
             setActivePersona(pickPrimaryRole(currentMembership.roles));
           }
         }
@@ -93,7 +95,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({
         setActivePersona('SUPER_ADMIN');
       }
     },
-    [activeTenantId, activeTenantName, activePersona, setActiveTenant, setActivePersona]
+    [setActivePersona]
   );
 
   const refreshProfile = useCallback(async (): Promise<UserProfileDTO | null> => {
@@ -101,44 +103,91 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({
       const profile = await authApi.getMe();
       handleProfileLoaded(profile);
       return profile;
-    } catch {
-      setUser(null);
+    } catch (err: any) {
+      const errStatus = err?.response?.status;
+      if (errStatus === 401 || errStatus === 403) {
+        setUser(null);
+      }
       return null;
     }
   }, [handleProfileLoaded]);
 
-  // Restore session on app load
+  // Restore session on app load - runs strictly once on mount
   useEffect(() => {
+    let isMounted = true;
+
     const initSession = async () => {
       const refreshToken = getStoredRefreshToken();
       if (!refreshToken) {
-        setIsLoading(false);
+        if (isMounted) setIsLoading(false);
         return;
       }
 
       try {
-        if (!activeRefreshPromise) {
-          activeRefreshPromise = authApi.refreshToken(refreshToken);
+        await refreshTokens();
+        if (isMounted) {
+          await refreshProfile();
         }
-        const tokenRes = await activeRefreshPromise;
-        setAccessToken(tokenRes.access_token);
-        if (tokenRes.refresh_token) {
-          setStoredRefreshToken(tokenRes.refresh_token);
+      } catch (err: any) {
+        const errStatus = err?.response?.status;
+        if (errStatus === 401 || errStatus === 403) {
+          clearTokens();
+          clearTenant();
+          clearPersona();
+          if (isMounted) {
+            setUser(null);
+          }
         }
-        await refreshProfile();
-      } catch {
-        clearTokens();
-        clearTenant();
-        clearPersona();
-        setUser(null);
       } finally {
-        setIsLoading(false);
-        activeRefreshPromise = null;
+        if (isMounted) {
+          setIsLoading(false);
+        }
       }
     };
 
     initSession();
-  }, [clearTenant, clearPersona, refreshProfile]);
+
+    return () => {
+      isMounted = false;
+    };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
+  // Proactive background silent refresh to keep session alive while user is active
+  useEffect(() => {
+    if (!user) return;
+
+    // Refresh every 12 minutes (token expires in 30 minutes)
+    const interval = setInterval(async () => {
+      try {
+        await refreshTokens();
+      } catch {
+        // If 401/403, refreshTokens handles clearTokens and redirect
+        // Ignore transient errors to prevent kicking user out
+      }
+    }, 12 * 60 * 1000);
+
+    // Also refresh on tab visibility if more than 5 minutes have elapsed since last refresh
+    const handleVisibilityChange = async () => {
+      if (document.visibilityState === 'visible') {
+        const elapsed = Date.now() - getLastRefreshTime();
+        if (elapsed > 5 * 60 * 1000) {
+          try {
+            await refreshTokens();
+          } catch {
+            // Ignore transient errors
+          }
+        }
+      }
+    };
+
+    document.addEventListener('visibilitychange', handleVisibilityChange);
+
+    return () => {
+      clearInterval(interval);
+      document.removeEventListener('visibilitychange', handleVisibilityChange);
+    };
+  }, [user]);
 
   const login = async (data: LoginFormData): Promise<UserProfileDTO> => {
     setIsLoading(true);

@@ -9,6 +9,11 @@ export default defineConfig({
     react(),
     tailwindcss(),
   ],
+  server: {
+    watch: {
+      ignored: ['**/scratch/**', '**/.git/**']
+    }
+  },
   resolve: {
     alias: {
       '@': path.resolve(import.meta.dirname, './src'),
