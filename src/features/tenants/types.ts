@@ -89,3 +89,137 @@ export interface TenantOnboardResponse {
   invite_link?: string;
   admin_phone?: string;
 }
+
+export interface TenantAdminSummaryDTO {
+  user_id: string;
+  first_name: string;
+  last_name: string;
+  email: string;
+  phone: string;
+}
+
+export interface TenantLiveStatsDTO {
+  total_students: number;
+  total_teachers: number;
+  total_classes: number;
+  total_sections: number;
+  today_attendance_percentage: number | null;
+  student_teacher_ratio: number | null;
+}
+
+export interface TenantDirectoryItemDTO {
+  id: string;
+  name: string;
+  domain_name: string;
+  email?: string | null;
+  phone?: string | null;
+  logo_url?: string | null;
+  is_active: boolean;
+  created_at: string;
+  admin: TenantAdminSummaryDTO | null;
+  metrics: TenantLiveStatsDTO;
+}
+
+export interface TenantDirectoryResponse {
+  items: TenantDirectoryItemDTO[];
+  total: number;
+  page: number;
+  page_size: number;
+  total_pages: number;
+}
+
+export interface TenantDailyAttendancePointDTO {
+  date: string;
+  total_records: number;
+  present_count: number;
+  absent_count: number;
+  attendance_percentage: number | null;
+}
+
+export interface TenantEnrollmentBreakdownDTO {
+  total_students: number;
+  active_students: number;
+  transferred_students: number;
+  graduated_students: number;
+  suspended_students: number;
+}
+
+export interface TenantStaffCommunityBreakdownDTO {
+  total_teachers: number;
+  total_office_admins: number;
+  total_parents: number;
+}
+
+export interface TenantAcademicStructureDTO {
+  total_classes: number;
+  total_sections: number;
+  total_subjects: number;
+  student_teacher_ratio: number | null;
+}
+
+export interface TenantAttendanceOverviewDTO {
+  today_records: number;
+  today_present: number;
+  today_absent: number;
+  today_attendance_percentage: number | null;
+  seven_days_trend: TenantDailyAttendancePointDTO[];
+  thirty_days_average_percentage: number | null;
+}
+
+export interface TenantAcademicYearBriefDTO {
+  id: string;
+  name: string;
+  start_date: string;
+  end_date: string;
+  status: string;
+}
+
+export interface TenantExamsOverviewDTO {
+  total_exams: number;
+  approved_exams: number;
+  pending_exams: number;
+  draft_exams: number;
+}
+
+export interface TenantRecentAuditActivityDTO {
+  id: string;
+  action: string;
+  status: string;
+  user_id?: string | null;
+  actor_email?: string | null;
+  resource_id?: string | null;
+  resource_type?: string | null;
+  created_at: string;
+  details?: string | null;
+}
+
+export interface TenantDeepDiveAnalyticsDTO {
+  tenant_id: string;
+  name: string;
+  domain_name: string;
+  is_active: boolean;
+  created_at: string;
+  enrollment: TenantEnrollmentBreakdownDTO;
+  staff: TenantStaffCommunityBreakdownDTO;
+  academic: TenantAcademicStructureDTO;
+  attendance: TenantAttendanceOverviewDTO;
+  academic_year: TenantAcademicYearBriefDTO | null;
+  exams: TenantExamsOverviewDTO;
+  recent_activity: TenantRecentAuditActivityDTO[];
+}
+
+export interface TenantAdminResponseDTO {
+  user_id: string;
+  first_name: string;
+  last_name: string;
+  email: string;
+  phone: string;
+  is_active: boolean;
+  assigned_at: string;
+}
+
+export interface TenantAdminAssignRequest {
+  phone?: string;
+  email?: string;
+  user_id?: string;
+}
