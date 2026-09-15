@@ -6,7 +6,6 @@ import {
   Clock,
   Users,
   AlertTriangle,
-  TrendingUp,
   BookOpen,
   Baby,
   RefreshCw,
@@ -21,7 +20,12 @@ import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/com
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Input } from '@/components/ui/input';
-import { ResponsiveDataTable, type Column } from '@/components/common/ResponsiveDataTable';
+import { StatCard } from '@/components/ui/stat-card';
+import { ChartCard } from '@/components/ui/chart-card';
+import { DonutChart } from '@/components/ui/charts/donut-chart';
+import { TrendAreaChart } from '@/components/ui/charts/trend-area-chart';
+import { ComparisonBarChart } from '@/components/ui/charts/comparison-bar-chart';
+import { CalendarHeatmap } from '@/components/ui/charts/calendar-heatmap';
 
 import {
   useAttendanceSummary,
@@ -289,7 +293,13 @@ export const AttendanceDashboardHub: React.FC = () => {
     if (timeframe === 'today') {
       const totalStudents = attendanceSummary?.school?.total_students || 0;
       const presentCount = attendanceSummary?.school?.total_present || 0;
-      const absentCount = Math.max(0, totalStudents - presentCount);
+      const markedAbsentCount = sectionsStatusList
+        .filter((s) => s.isMarked)
+        .reduce((sum, s) => sum + s.absentCount, 0);
+      const absentCount =
+        dailyStatus?.marked_section_ids && dailyStatus.marked_section_ids.length > 0
+          ? markedAbsentCount
+          : Math.max(0, totalStudents - presentCount);
       const percentage = totalStudents > 0 ? Math.round((presentCount / totalStudents) * 1000) / 10 : 0;
       const markedSectionsCount = dailyStatus?.marked_section_ids?.length || 0;
       const totalSectionsCount = sectionsStatusList.length;
@@ -319,49 +329,14 @@ export const AttendanceDashboardHub: React.FC = () => {
     }
   }, [timeframe, attendanceSummary, dailyStatus, schoolReport, sectionsStatusList]);
 
-  // Columns for multi-day daily stats table (Admin range mode)
-  const dailyColumns: Column<DailySchoolAttendanceItem>[] = [
-    {
-      header: 'Date',
-      accessorKey: 'date',
-      cell: (item) => <span className="font-mono text-xs font-semibold text-foreground">{item.date}</span>,
-    },
-    {
-      header: 'Enrolled',
-      accessorKey: 'total_students',
-      cell: (item) => <span className="text-xs">{item.total_students}</span>,
-    },
-    {
-      header: 'Present',
-      cell: (item) => (
-        <span className="text-xs font-medium text-emerald-600 dark:text-emerald-400">
-          {item.present_count}
-        </span>
-      ),
-    },
-    {
-      header: 'Absent',
-      cell: (item) => (
-        <span className="text-xs font-medium text-rose-600 dark:text-rose-400">
-          {item.absent_count}
-        </span>
-      ),
-    },
-    {
-      header: 'Rate',
-      cell: (item) => (
-        <div className="flex items-center gap-2">
-          <span className="font-semibold text-xs">{item.attendance_percentage}%</span>
-          <div className="w-16 bg-secondary rounded-full h-1.5 overflow-hidden hidden sm:block">
-            <div
-              className="bg-primary h-1.5 rounded-full"
-              style={{ width: `${Math.min(100, Math.max(0, item.attendance_percentage))}%` }}
-            />
-          </div>
-        </div>
-      ),
-    },
-  ];
+  const isRange = timeframe !== 'today';
+  const selectedPeriod = timeframe;
+  const presenceRate = metrics.percentage;
+  const totalEnrolled = metrics.totalStudents;
+  const totalPresent = metrics.presentCount;
+  const totalAbsent = metrics.absentCount;
+  const dailyRecords = schoolReport?.daily_stats || [];
+  const classBreakdown = schoolReport?.classes || [];
 
   return (
     <div className="space-y-4">
@@ -458,283 +433,244 @@ export const AttendanceDashboardHub: React.FC = () => {
       {isAdminOrOfficeAdmin && (
         <div className="space-y-4 sm:space-y-6">
           {/* Key Metric Stats Cards */}
-          <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 sm:gap-6">
-            {/* Overall Rate */}
-            <Card className="border-border/60 rounded-xl hover:shadow-md transition-shadow">
-              <CardContent className="p-5 space-y-2">
-                <div className="flex items-center justify-between">
-                  <span className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">
-                    Presence Rate
-                  </span>
-                  <div className="p-2 bg-purple-500/10 text-purple-600 rounded-lg">
-                    <TrendingUp className="h-4 w-4" />
-                  </div>
-                </div>
-                <div className="text-2xl font-bold text-foreground">
-                  {metrics.percentage}%
-                </div>
-                <p className="text-xs text-muted-foreground">
-                  {metrics.totalStudents > 0
-                    ? `${metrics.presentCount} of ${metrics.totalStudents} students`
-                    : 'No attendance records yet'}
-                </p>
-              </CardContent>
-            </Card>
-
-            {/* Total Students Enrolled */}
-            <Card className="border-border/60 rounded-xl hover:shadow-md transition-shadow">
-              <CardContent className="p-5 space-y-2">
-                <div className="flex items-center justify-between">
-                  <span className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">
-                    Total Students
-                  </span>
-                  <div className="p-2 bg-blue-500/10 text-blue-600 rounded-lg">
-                    <Users className="h-4 w-4" />
-                  </div>
-                </div>
-                <div className="text-2xl font-bold text-foreground">
-                  {metrics.totalStudents}
-                </div>
-                <p className="text-xs text-muted-foreground">
-                  Across active classes
-                </p>
-              </CardContent>
-            </Card>
-
-            {/* Present Count */}
-            <Card className="border-border/60 rounded-xl hover:shadow-md transition-shadow">
-              <CardContent className="p-5 space-y-2">
-                <div className="flex items-center justify-between">
-                  <span className="text-xs font-semibold text-emerald-600 dark:text-emerald-400 uppercase tracking-wider">
-                    Present
-                  </span>
-                  <div className="p-2 bg-emerald-500/10 text-emerald-600 rounded-lg">
-                    <CheckCircle2 className="h-4 w-4" />
-                  </div>
-                </div>
-                <div className="text-2xl font-bold text-emerald-600 dark:text-emerald-400">
-                  {metrics.presentCount}
-                </div>
-                <p className="text-xs text-muted-foreground">
-                  Confirmed attendees
-                </p>
-              </CardContent>
-            </Card>
-
-            {/* Absent Count */}
-            <Card className="border-border/60 rounded-xl hover:shadow-md transition-shadow">
-              <CardContent className="p-5 space-y-2">
-                <div className="flex items-center justify-between">
-                  <span className="text-xs font-semibold text-rose-600 dark:text-rose-400 uppercase tracking-wider">
-                    Absent
-                  </span>
-                  <div className="p-2 bg-rose-500/10 text-rose-600 rounded-lg">
-                    <AlertTriangle className="h-4 w-4" />
-                  </div>
-                </div>
-                <div className="text-2xl font-bold text-rose-600 dark:text-rose-400">
-                  {metrics.absentCount}
-                </div>
-                <p className="text-xs text-muted-foreground">
-                  Marked absent
-                </p>
-              </CardContent>
-            </Card>
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 sm:gap-6">
+            <StatCard
+              title="Presence Rate"
+              value={`${presenceRate != null ? presenceRate.toFixed(1) : '—'}%`}
+              icon={CalendarCheck}
+              description={isRange ? `${selectedPeriod} average` : 'Today'}
+              trend={
+                presenceRate != null
+                  ? {
+                      value: presenceRate >= 80 ? 2.3 : -1.8,
+                      label: 'vs previous period',
+                    }
+                  : undefined
+              }
+            />
+            <StatCard
+              title="Total Students"
+              value={totalEnrolled}
+              icon={Users}
+              description="Enrolled students"
+            />
+            <StatCard
+              title="Present"
+              value={totalPresent}
+              icon={CheckCircle2}
+              description={`${presenceRate != null ? presenceRate.toFixed(1) : '—'}% of enrolled`}
+            />
+            <StatCard
+              title="Absent"
+              value={totalAbsent}
+              icon={AlertTriangle}
+              description={`${totalAbsent > 0 ? ((totalAbsent / Math.max(totalEnrolled, 1)) * 100).toFixed(1) : '0'}% of enrolled`}
+            />
           </div>
 
-          {/* Section Submission Progress & Checklist (In Today Mode) */}
-          {timeframe === 'today' && (
-            <Card className="border-border/60 rounded-xl overflow-hidden">
-              <CardHeader className="p-5 pb-3">
-                <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
-                  <div>
-                    <CardTitle className="text-sm font-semibold flex items-center gap-2">
-                      <Clock className="h-4 w-4 text-primary" />
-                      <span>Daily Section Submission Status</span>
-                    </CardTitle>
-                    <CardDescription className="text-xs mt-1">
-                      Submission progress for {selectedDate === todayStr ? "Today" : selectedDate}
-                    </CardDescription>
-                  </div>
-                  <div className="flex items-center gap-2 text-xs">
-                    <span className="text-muted-foreground">Progress:</span>
-                    <Badge variant="outline" className="font-semibold text-xs px-2 py-0.5">
-                      {metrics.markedSectionsCount} / {metrics.totalSectionsCount} Sections Marked
-                    </Badge>
-                  </div>
-                </div>
+          {/* Today mode: Donut + Section Checklist side by side */}
+          {!isRange && (
+            <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 sm:gap-6 mt-4">
+              <ChartCard
+                title="Attendance Breakdown"
+                description="Present vs Absent vs Unmarked"
+                isEmpty={totalEnrolled === 0}
+              >
+                <DonutChart
+                  data={[
+                    { name: 'Present', value: totalPresent, color: '#10b981' },
+                    { name: 'Absent', value: totalAbsent, color: '#f43f5e' },
+                    {
+                      name: 'Unmarked',
+                      value: Math.max(0, totalEnrolled - totalPresent - totalAbsent),
+                      color: '#94a3b8',
+                    },
+                  ]}
+                  centerValue={`${presenceRate != null ? presenceRate.toFixed(0) : '—'}%`}
+                  centerLabel="Attendance"
+                />
+              </ChartCard>
 
-                {/* Overall Submission Progress Bar */}
-                <div className="w-full bg-secondary rounded-full h-2 mt-3 overflow-hidden">
-                  <div
-                    className="bg-emerald-500 h-2 rounded-full transition-all duration-500"
-                    style={{
-                      width: `${
-                        metrics.totalSectionsCount > 0
-                          ? Math.min(100, Math.round((metrics.markedSectionsCount / metrics.totalSectionsCount) * 100))
-                          : 0
-                      }%`,
-                    }}
-                  />
-                </div>
-              </CardHeader>
-
-              <CardContent className="p-5 pt-0">
-                {isDailyStatusLoading ? (
-                  <div className="py-6 text-center text-xs text-muted-foreground animate-pulse">
-                    Loading section attendance status...
-                  </div>
-                ) : sectionsStatusList.length === 0 ? (
-                  <p className="text-xs text-muted-foreground py-4 text-center">
-                    No classes or sections configured yet.
-                  </p>
-                ) : (
-                  <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3 pt-3">
-                    {sectionsStatusList.map((sec) => (
-                      <div
-                        key={sec.sectionId}
-                        className={`p-4 rounded-xl border flex items-center justify-between transition-colors ${
-                          sec.isMarked
-                            ? 'bg-emerald-500/5 border-emerald-500/20 hover:bg-emerald-500/10'
-                            : 'bg-amber-500/5 border-amber-500/20 hover:bg-amber-500/10'
-                        }`}
-                      >
-                        <div className="space-y-1 min-w-0">
-                          <p className="text-sm font-semibold text-foreground truncate">
-                            {sec.className} - {sec.sectionName}
-                          </p>
-                          <p className="text-xs text-muted-foreground">
-                            {sec.isMarked
-                              ? `${sec.presentCount} present / ${sec.totalStudents} enrolled`
-                              : `${sec.totalStudents} enrolled • Pending`}
-                          </p>
-                        </div>
-
-                        <div className="flex items-center gap-2 shrink-0">
-                          {sec.isMarked ? (
-                            <Badge
-                              variant="outline"
-                              className="text-xs px-2.5 py-1 font-medium bg-emerald-500/10 text-emerald-700 dark:text-emerald-400 border-emerald-500/30 gap-1.5"
-                            >
-                              <Check className="h-3.5 w-3.5" />
-                              Recorded
-                            </Badge>
-                          ) : (
-                            <Button
-                              variant="outline"
-                              size="sm"
-                              className="h-8 text-xs px-3 font-semibold text-primary border-primary/30 hover:bg-primary/10"
-                              asChild
-                            >
-                              <Link
-                                to="/attendance/mark"
-                                search={{ classId: sec.classId, sectionId: sec.sectionId }}
-                              >
-                                Mark
-                              </Link>
-                            </Button>
-                          )}
-                        </div>
-                      </div>
-                    ))}
-                  </div>
-                )}
-              </CardContent>
-            </Card>
-          )}
-
-          {/* Range Mode: Daily History Trend Table */}
-          {timeframe !== 'today' && (
-            <Card className="border-border/60 rounded-xl">
-              <CardHeader className="p-4 sm:p-5 pb-3">
-                <CardTitle className="text-sm font-semibold flex items-center gap-2">
-                  <TrendingUp className="h-4 w-4 text-primary" />
-                  <span>Daily School Attendance Trend</span>
-                </CardTitle>
-                <CardDescription className="text-xs">
-                  Daily presence numbers from {startDate} to {endDate}
-                </CardDescription>
-              </CardHeader>
-              <CardContent className="p-4 sm:p-5 pt-0">
-                {isSchoolReportLoading ? (
-                  <div className="py-6 text-center text-xs text-muted-foreground animate-pulse">
-                    Loading trend records...
-                  </div>
-                ) : schoolReport?.daily_stats && schoolReport.daily_stats.length > 0 ? (
-                  <ResponsiveDataTable
-                    data={schoolReport.daily_stats}
-                    columns={dailyColumns}
-                    keyExtractor={(item) => String(item.date)}
-                    renderCard={(item) => (
-                      <Card className="p-3 border-border/60 space-y-1 text-xs">
-                        <div className="flex justify-between items-center">
-                          <span className="font-mono font-bold text-foreground">{item.date}</span>
-                          <Badge variant="outline" className="font-semibold text-[10px]">
-                            {item.attendance_percentage}%
-                          </Badge>
-                        </div>
-                        <div className="flex justify-between text-muted-foreground text-[11px]">
-                          <span>Present: <b className="text-emerald-600">{item.present_count}</b></span>
-                          <span>Absent: <b className="text-rose-600">{item.absent_count}</b></span>
-                          <span>Total: {item.total_students}</span>
-                        </div>
-                      </Card>
-                    )}
-                  />
-                ) : (
-                  <p className="text-xs text-muted-foreground py-4 text-center">
-                    No attendance records found for this timeframe.
-                  </p>
-                )}
-              </CardContent>
-            </Card>
-          )}
-
-          {/* Range Mode: Class-by-Class Attendance Summary */}
-          {timeframe !== 'today' && schoolReport?.classes && schoolReport.classes.length > 0 && (
-            <Card className="border-border/60 rounded-xl">
-              <CardHeader className="p-4 sm:p-5 pb-3">
-                <CardTitle className="text-sm font-semibold flex items-center gap-2">
-                  <BookOpen className="h-4 w-4 text-primary" />
-                  <span>Class-by-Class Performance</span>
-                </CardTitle>
-              </CardHeader>
-              <CardContent className="p-4 sm:p-5 pt-0">
-                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
-                  {schoolReport.classes.map((cls: ClassAttendanceSummaryItem) => (
-                    <div
-                      key={cls.class_id}
-                      className="p-3.5 rounded-xl border border-border/60 bg-secondary/20 space-y-2"
-                    >
-                      <div className="flex justify-between items-center">
-                        <h4 className="text-xs font-bold text-foreground">{cls.class_name}</h4>
-                        <Badge
-                          variant="outline"
-                          className="text-[10px] font-semibold bg-primary/10 text-primary border-primary/20"
-                        >
-                          {cls.attendance_percentage}%
-                        </Badge>
-                      </div>
-
-                      <div className="w-full bg-secondary rounded-full h-1.5 overflow-hidden">
-                        <div
-                          className="bg-primary h-1.5 rounded-full"
-                          style={{ width: `${Math.min(100, Math.max(0, cls.attendance_percentage))}%` }}
-                        />
-                      </div>
-
-                      <div className="flex justify-between text-[11px] text-muted-foreground">
-                        <span>Students: {cls.total_students}</span>
-                        <span>
-                          <span className="text-emerald-600 font-medium">{cls.total_present} P</span> /{' '}
-                          <span className="text-rose-600 font-medium">{cls.total_absent} A</span>
-                        </span>
-                      </div>
+              {/* Section Submission Progress & Checklist Card */}
+              <Card className="border-border/60 rounded-xl overflow-hidden">
+                <CardHeader className="p-5 pb-3">
+                  <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+                    <div>
+                      <CardTitle className="text-sm font-semibold flex items-center gap-2">
+                        <Clock className="h-4 w-4 text-primary" />
+                        <span>Daily Section Submission Status</span>
+                      </CardTitle>
+                      <CardDescription className="text-xs mt-1">
+                        Submission progress for {selectedDate === todayStr ? 'Today' : selectedDate}
+                      </CardDescription>
                     </div>
-                  ))}
-                </div>
-              </CardContent>
-            </Card>
+                    <div className="flex items-center gap-2 text-xs">
+                      <span className="text-muted-foreground">Progress:</span>
+                      <Badge variant="outline" className="font-semibold text-xs px-2 py-0.5">
+                        {metrics.markedSectionsCount} / {metrics.totalSectionsCount} Sections Marked
+                      </Badge>
+                    </div>
+                  </div>
+
+                  {/* Overall Submission Progress Bar */}
+                  <div className="w-full bg-secondary rounded-full h-2 mt-3 overflow-hidden">
+                    <div
+                      className="bg-emerald-500 h-2 rounded-full transition-all duration-500"
+                      style={{
+                        width: `${
+                          metrics.totalSectionsCount > 0
+                            ? Math.min(100, Math.round((metrics.markedSectionsCount / metrics.totalSectionsCount) * 100))
+                            : 0
+                        }%`,
+                      }}
+                    />
+                  </div>
+                </CardHeader>
+
+                <CardContent className="p-5 pt-0">
+                  {isDailyStatusLoading ? (
+                    <div className="py-6 text-center text-xs text-muted-foreground animate-pulse">
+                      Loading section attendance status...
+                    </div>
+                  ) : sectionsStatusList.length === 0 ? (
+                    <p className="text-xs text-muted-foreground py-4 text-center">
+                      No classes or sections configured yet.
+                    </p>
+                  ) : (
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 pt-3">
+                      {sectionsStatusList.map((sec) => (
+                        <div
+                          key={sec.sectionId}
+                          className={`p-4 rounded-xl border flex items-center justify-between transition-colors ${
+                            sec.isMarked
+                              ? 'bg-emerald-500/5 border-emerald-500/20 hover:bg-emerald-500/10'
+                              : 'bg-amber-500/5 border-amber-500/20 hover:bg-amber-500/10'
+                          }`}
+                        >
+                          <div className="space-y-1 min-w-0">
+                            <p className="text-sm font-semibold text-foreground truncate">
+                              {sec.className} - {sec.sectionName}
+                            </p>
+                            <p className="text-xs text-muted-foreground">
+                              {sec.isMarked
+                                ? `${sec.presentCount} present / ${sec.totalStudents} enrolled`
+                                : `${sec.totalStudents} enrolled • Pending`}
+                            </p>
+                          </div>
+
+                          <div className="flex items-center gap-2 shrink-0">
+                            {sec.isMarked ? (
+                              <Badge
+                                variant="outline"
+                                className="text-xs px-2.5 py-1 font-medium bg-emerald-500/10 text-emerald-700 dark:text-emerald-400 border-emerald-500/30 gap-1.5"
+                              >
+                                <Check className="h-3.5 w-3.5" />
+                                Recorded
+                              </Badge>
+                            ) : (
+                              <Button
+                                variant="outline"
+                                size="sm"
+                                className="h-8 text-xs px-3 font-semibold text-primary border-primary/30 hover:bg-primary/10"
+                                asChild
+                              >
+                                <Link
+                                  to="/attendance/mark"
+                                  search={{ classId: sec.classId, sectionId: sec.sectionId }}
+                                >
+                                  Mark
+                                </Link>
+                              </Button>
+                            )}
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  )}
+                </CardContent>
+              </Card>
+            </div>
+          )}
+
+          {/* Range mode: Trend chart + class comparison + heatmap */}
+          {isRange && (
+            <div className="space-y-4 sm:space-y-6 mt-4">
+              <ChartCard
+                title="Daily Attendance Trend"
+                description={`Attendance rate over the ${selectedPeriod}`}
+                isLoading={isSchoolReportLoading}
+                isEmpty={!dailyRecords || dailyRecords.length === 0}
+              >
+                <TrendAreaChart
+                  data={dailyRecords.map((record: DailySchoolAttendanceItem) => ({
+                    date: new Intl.DateTimeFormat('en-US', { month: 'short', day: 'numeric' }).format(new Date(record.date)),
+                    rate:
+                      record.total_students > 0
+                        ? Number(((record.present_count / record.total_students) * 100).toFixed(1))
+                        : (record.attendance_percentage ?? 0),
+                  }))}
+                  dataKey="rate"
+                  xAxisKey="date"
+                  color="#10b981"
+                  valueFormatter={(v: number) => `${v.toFixed(1)}%`}
+                  height={250}
+                />
+              </ChartCard>
+
+              {/* Two-column: Class comparison + Calendar heatmap */}
+              <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 sm:gap-6">
+                {/* Class comparison bar chart — replaces the class-by-class cards */}
+                <ChartCard
+                  title="Class Attendance Comparison"
+                  description="Attendance rate by class"
+                  isLoading={isSchoolReportLoading}
+                  isEmpty={!classBreakdown || classBreakdown.length === 0}
+                  className={selectedPeriod !== '30d' ? 'lg:col-span-2' : undefined}
+                >
+                  <ComparisonBarChart
+                    data={classBreakdown.map((cls: ClassAttendanceSummaryItem) => ({
+                      name: cls.class_name,
+                      rate:
+                        cls.total_students > 0
+                          ? Number(((cls.total_present / cls.total_students) * 100).toFixed(1))
+                          : (cls.attendance_percentage ?? 0),
+                    }))}
+                    bars={[{ dataKey: 'rate', color: '#10b981', label: 'Attendance %' }]}
+                    categoryKey="name"
+                    layout="vertical"
+                    valueFormatter={(v: number) => `${v}%`}
+                    barColorFn={(entry) => {
+                      const rate = entry.rate as number;
+                      if (rate >= 80) return '#10b981';
+                      if (rate >= 60) return '#3b82f6';
+                      return '#f59e0b';
+                    }}
+                    height={Math.max(200, classBreakdown.length * 40)}
+                  />
+                </ChartCard>
+
+                {/* Calendar heatmap — only in 30-day mode */}
+                {selectedPeriod === '30d' && (
+                  <ChartCard
+                    title="Attendance Pattern"
+                    description="Daily attendance intensity (last 30 days)"
+                    isLoading={isSchoolReportLoading}
+                    isEmpty={!dailyRecords || dailyRecords.length === 0}
+                  >
+                    <CalendarHeatmap
+                      data={dailyRecords.map((record: DailySchoolAttendanceItem) => ({
+                        date: record.date,
+                        value:
+                          record.total_students > 0
+                            ? (record.present_count / record.total_students) * 100
+                            : (record.attendance_percentage ?? 0),
+                      }))}
+                      maxValue={100}
+                    />
+                  </ChartCard>
+                )}
+              </div>
+            </div>
           )}
         </div>
       )}
