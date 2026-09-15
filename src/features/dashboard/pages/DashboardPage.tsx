@@ -6,27 +6,27 @@ import {
   CalendarCheck,
   Building2,
   ShieldCheck,
-  CheckCircle2,
   ArrowRight,
   FileSpreadsheet,
   Baby,
   Sparkles,
-  AlertCircle,
   GraduationCap,
   Award,
   Plus,
+  ChevronDown,
 } from 'lucide-react';
 
 import { useAuth } from '@/auth/useAuth';
 import { usePermission } from '@/auth/usePermission';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
+import { StatCard } from '@/components/ui/stat-card';
 import { Button } from '@/components/ui/button';
 import { DashboardHeroBanner } from '../components/DashboardHeroBanner';
 import { AttendanceDashboardHub } from '../components/AttendanceDashboardHub';
 import { SchoolResultsDashboardHub } from '../components/SchoolResultsDashboardHub';
 import { ParentReportCardsDashboardHub } from '@/features/examination/components/ParentReportCardsDashboardHub';
 
-import { useAttendanceSummary } from '@/features/attendance/hooks';
+import { useAttendanceSummary, useDailyAttendanceStatus } from '@/features/attendance/hooks';
 import { useAllClassesWithDetails, useMyTeacherAssignments } from '@/features/academic/hooks';
 import { useParentChildren } from '@/features/members/hooks';
 import { useMyChildrenReportCards } from '@/features/examination/hooks';
@@ -46,6 +46,12 @@ export const DashboardPage: React.FC = () => {
   const { data: attendanceSummary } = useAttendanceSummary(
     !isParent ? activeTenantId : null,
     todayStr,
+    { enabled: !!activeTenantId && !isParent }
+  );
+  const { data: dailyAttendanceStatus } = useDailyAttendanceStatus(
+    !isParent ? activeTenantId : null,
+    todayStr,
+    undefined,
     { enabled: !!activeTenantId && !isParent }
   );
   const { data: classes = [] } = useAllClassesWithDetails(!isParent ? activeTenantId : null);
@@ -73,8 +79,23 @@ export const DashboardPage: React.FC = () => {
     }, 0);
   }, [classes]);
 
+  // Computed total sections
+  const totalSections = useMemo(() => {
+    return tenantMetrics?.total_sections ?? classes.reduce((sum, c) => sum + (c.sections?.length || 0), 0);
+  }, [tenantMetrics?.total_sections, classes]);
+
+  // Computed confirmed / marked sections today
+  const confirmedSections = useMemo(() => {
+    return dailyAttendanceStatus?.marked_section_ids?.length ?? 0;
+  }, [dailyAttendanceStatus?.marked_section_ids]);
+
+  // Computed class teacher duties
+  const classTeacherDuties = useMemo(() => {
+    return teacherAssignments.filter((a) => a.is_class_teacher).length;
+  }, [teacherAssignments]);
+
   // Computed today's attendance rate
-  const todayAttendanceRate = useMemo(() => {
+  const attendanceRate = useMemo(() => {
     const total = attendanceSummary?.school?.total_students || 0;
     const present = attendanceSummary?.school?.total_present || 0;
     if (!total || total === 0) return null;
@@ -98,123 +119,58 @@ export const DashboardPage: React.FC = () => {
         <>
           {/* KPI Stats Grid (1 col phone, 2 cols tablet, 4 cols desktop) */}
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 sm:gap-6">
-            {/* Metric 1 */}
-        <Card className="border-border/60 hover:shadow-md transition-shadow rounded-xl">
-          <CardHeader className="flex flex-row items-center justify-between p-5 pb-2 space-y-0">
-            <CardTitle className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">
-              {isParent ? 'Linked Children' : 'Active Students'}
-            </CardTitle>
-            <div className="p-2 bg-blue-500/10 text-blue-600 dark:text-blue-400 rounded-lg">
-              {isParent ? <Baby className="h-4 w-4" /> : <Users className="h-4 w-4" />}
-            </div>
-          </CardHeader>
-          <CardContent className="p-5 pt-0">
-            <div className="text-2xl font-bold text-foreground">
-              {isParent
-                ? `${parentChildren.length} ${parentChildren.length === 1 ? 'Child' : 'Children'}`
-                : (tenantMetrics?.total_students ?? totalEnrolledStudents) > 0
-                ? `${tenantMetrics?.total_students ?? totalEnrolledStudents}`
-                : '0 Enrolled'}
-            </div>
-            <p className="text-xs text-muted-foreground mt-1 flex items-center gap-1.5 truncate">
-              <CheckCircle2 className="h-3.5 w-3.5 text-emerald-500 shrink-0" />
-              <span>{isParent ? 'Enrolled in current school' : 'Enrolled across all classes'}</span>
-            </p>
-          </CardContent>
-        </Card>
+            <StatCard
+              title={isParent ? 'Linked Children' : 'Active Students'}
+              value={isParent ? (parentChildren?.length ?? 0) : (tenantMetrics?.total_students ?? totalEnrolledStudents)}
+              icon={isParent ? Baby : GraduationCap}
+              description={isParent ? 'Children linked to your account' : 'Total enrolled students'}
+            />
 
-        {/* Metric 2 */}
-        <Card className="border-border/60 hover:shadow-md transition-shadow rounded-xl">
-          <CardHeader className="flex flex-row items-center justify-between p-5 pb-2 space-y-0">
-            <CardTitle className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">
-              {isTeacher ? 'My Assignments' : 'Classes & Sections'}
-            </CardTitle>
-            <div className="p-2 bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 rounded-lg">
-              <BookOpen className="h-4 w-4" />
-            </div>
-          </CardHeader>
-          <CardContent className="p-5 pt-0">
-            <div className="text-2xl font-bold text-foreground">
-              {isTeacher
-                ? `${teacherAssignments.length} ${teacherAssignments.length === 1 ? 'Duty' : 'Duties'}`
-                : `${tenantMetrics?.total_classes ?? classes.length} ${(tenantMetrics?.total_classes ?? classes.length) === 1 ? 'Class' : 'Classes'}`}
-            </div>
-            <p className="text-xs text-muted-foreground mt-1 flex items-center gap-1.5 truncate">
-              <span className="font-medium text-foreground">
-                {isTeacher
-                  ? `${teacherAssignments.filter((a) => a.is_class_teacher).length} Class Teacher designation(s)`
-                  : `${tenantMetrics?.total_sections ?? 'Auto-provisioned'} sections`}
-              </span>
-            </p>
-          </CardContent>
-        </Card>
+            <StatCard
+              title={isTeacher ? 'My Assignments' : 'Classes & Sections'}
+              value={isTeacher ? (teacherAssignments?.length ?? 0) : (tenantMetrics?.total_classes ?? classes.length)}
+              icon={BookOpen}
+              description={
+                isTeacher
+                  ? `${classTeacherDuties} class teacher duties`
+                  : `${totalSections} sections`
+              }
+            />
 
-        {/* Metric 3: Today's Live Attendance */}
-        <Card className="border-border/60 hover:shadow-md transition-shadow rounded-xl">
-          <CardHeader className="flex flex-row items-center justify-between p-5 pb-2 space-y-0">
-            <CardTitle className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">
-              {isParent ? 'Children Attendance' : "Today's Attendance"}
-            </CardTitle>
-            <div className="p-2 bg-purple-500/10 text-purple-600 dark:text-purple-400 rounded-lg">
-              <CalendarCheck className="h-4 w-4" />
-            </div>
-          </CardHeader>
-          <CardContent className="p-5 pt-0">
-            <div className="text-2xl font-bold text-foreground">
-              {isParent
-                ? `${parentChildren.length > 0 ? 'Active' : 'Pending'}`
-                : todayAttendanceRate !== null
-                ? `${todayAttendanceRate}%`
-                : 'Pending'}
-            </div>
-            <p className="text-xs text-muted-foreground mt-1 flex items-center gap-1.5 truncate">
-              {isParent ? (
-                <>
-                  <CheckCircle2 className="h-3.5 w-3.5 text-emerald-500 shrink-0" />
-                  <span>Individual tracking below</span>
-                </>
-              ) : todayAttendanceRate !== null ? (
-                <>
-                  <CheckCircle2 className="h-3.5 w-3.5 text-emerald-500 shrink-0" />
-                  <span>
-                    {attendanceSummary?.school?.total_present} of {attendanceSummary?.school?.total_students} confirmed
-                  </span>
-                </>
-              ) : (
-                <>
-                  <AlertCircle className="h-3.5 w-3.5 text-amber-500 shrink-0" />
-                  <span>No sections marked yet today</span>
-                </>
-              )}
-            </p>
-          </CardContent>
-        </Card>
+            <StatCard
+              title="Attendance Today"
+              value={
+                isParent
+                  ? (parentChildren?.length ? 'Active' : 'Pending')
+                  : `${attendanceRate != null ? `${attendanceRate.toFixed(1)}%` : 'Pending'}`
+              }
+              icon={CalendarCheck}
+              description={
+                isParent
+                  ? 'Children tracking status'
+                  : `${confirmedSections} of ${totalSections} sections confirmed`
+              }
+              trend={
+                !isParent && attendanceRate != null
+                  ? { value: attendanceRate >= 80 ? 2.1 : -1.5, label: 'vs yesterday' }
+                  : undefined
+              }
+            />
 
-        {/* Metric 4 */}
-        <Card className="border-border/60 hover:shadow-md transition-shadow rounded-xl">
-          <CardHeader className="flex flex-row items-center justify-between p-5 pb-2 space-y-0">
-            <CardTitle className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">
-              {isParent ? 'Published Report Cards' : 'Authorization Status'}
-            </CardTitle>
-            <div className="p-2 bg-amber-500/10 text-amber-600 dark:text-amber-400 rounded-lg">
-              {isParent ? <Award className="h-4 w-4" /> : <ShieldCheck className="h-4 w-4" />}
-            </div>
-          </CardHeader>
-          <CardContent className="p-5 pt-0">
-            <div className="text-2xl font-bold text-foreground">
-              {isParent
-                ? `${parentReportCards?.total_published_exams ?? 0} Available`
-                : 'RBAC + ReBAC'}
-            </div>
-            <p className="text-xs text-muted-foreground mt-1 truncate">
-              {isParent
-                ? 'Official examination transcripts'
-                : isSuperAdmin
-                ? 'Super Admin Platform Access'
-                : `Scoped to ${activeTenantName || 'Current School'}`}
-            </p>
-          </CardContent>
-          </Card>
+            <StatCard
+              title={isParent ? 'Report Cards' : 'Staff Members'}
+              value={
+                isParent
+                  ? (parentReportCards?.total_published_exams ?? 0)
+                  : (tenantMetrics?.total_teachers ?? 0)
+              }
+              icon={isParent ? Award : Users}
+              description={
+                isParent
+                  ? 'Published exam report cards'
+                  : 'Teachers & staff in your school'
+              }
+            />
           </div>
         </>
       )}
@@ -245,6 +201,11 @@ export const DashboardPage: React.FC = () => {
                   {isTeacher
                     ? 'Submit attendance for your designated Class Teacher section'
                     : 'Record daily attendance across school sections'}
+                  {totalSections > 0 && (
+                    <span className="block text-xs mt-1 font-medium text-primary">
+                      {confirmedSections} of {totalSections} sections marked today
+                    </span>
+                  )}
                 </CardDescription>
               </CardHeader>
               <CardContent className="p-5 pt-0">
@@ -274,6 +235,11 @@ export const DashboardPage: React.FC = () => {
                 </CardTitle>
                 <CardDescription className="text-xs">
                   View classes, student rosters, and sequential section expansion
+                  {totalSections > 0 && (
+                    <span className="block text-xs mt-1 font-medium text-emerald-600 dark:text-emerald-400">
+                      {classes.length} classes, {totalSections} sections active
+                    </span>
+                  )}
                 </CardDescription>
               </CardHeader>
               <CardContent className="p-5 pt-0">
@@ -365,6 +331,11 @@ export const DashboardPage: React.FC = () => {
                 </CardTitle>
                 <CardDescription className="text-xs">
                   View child profile details, class assignments, and teacher contacts
+                  {parentChildren.length > 0 && (
+                    <span className="block text-xs mt-1 font-medium text-amber-600 dark:text-amber-400">
+                      {parentChildren.length} {parentChildren.length === 1 ? 'child' : 'children'} linked
+                    </span>
+                  )}
                 </CardDescription>
               </CardHeader>
               <CardContent className="p-5 pt-0">
@@ -508,33 +479,29 @@ export const DashboardPage: React.FC = () => {
       <AttendanceDashboardHub />
 
 
-      {/* System Security & RBAC Summary */}
-      <Card className="border-border/60 bg-card/90 rounded-2xl">
-        <CardHeader className="p-5">
-          <CardTitle className="text-xs sm:text-sm font-semibold flex items-center gap-2">
-            <ShieldCheck className="h-4 w-4 text-emerald-500 shrink-0" />
-            <span>Active Session Security Context</span>
-          </CardTitle>
-        </CardHeader>
-        <CardContent className="p-5 pt-0 text-xs text-muted-foreground">
-          <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
-            <div className="p-3 rounded-xl bg-secondary/60 border">
-              <p className="font-semibold text-foreground">User ID</p>
-              <p className="font-mono text-[11px] truncate pt-0.5">{user?.id}</p>
-            </div>
-            <div className="p-3 rounded-xl bg-secondary/60 border">
-              <p className="font-semibold text-foreground">Active Tenant (X-Tenant-ID)</p>
-              <p className="font-mono text-[11px] truncate pt-0.5">
-                {activeTenantId || 'None (Super Admin Global Scope)'}
-              </p>
-            </div>
-            <div className="p-3 rounded-xl bg-secondary/60 border">
-              <p className="font-semibold text-foreground">Active Role Persona</p>
-              <p className="font-bold text-primary pt-0.5">{activeRole || 'NONE'}</p>
-            </div>
+      {/* Session Context — collapsed by default */}
+      <details className="mt-6">
+        <summary className="text-xs text-muted-foreground cursor-pointer hover:text-foreground transition-colors flex items-center gap-1 select-none">
+          <ChevronDown className="h-3 w-3" />
+          Session Context
+        </summary>
+        <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 mt-3">
+          <div className="p-3 rounded-xl bg-secondary/60 border text-xs text-muted-foreground">
+            <p className="font-semibold text-foreground">User ID</p>
+            <p className="font-mono text-[11px] truncate pt-0.5">{user?.id}</p>
           </div>
-        </CardContent>
-      </Card>
+          <div className="p-3 rounded-xl bg-secondary/60 border text-xs text-muted-foreground">
+            <p className="font-semibold text-foreground">Active Tenant (X-Tenant-ID)</p>
+            <p className="font-mono text-[11px] truncate pt-0.5">
+              {activeTenantId || 'None (Super Admin Global Scope)'}
+            </p>
+          </div>
+          <div className="p-3 rounded-xl bg-secondary/60 border text-xs text-muted-foreground">
+            <p className="font-semibold text-foreground">Active Role Persona</p>
+            <p className="font-bold text-primary pt-0.5">{activeRole || 'NONE'}</p>
+          </div>
+        </div>
+      </details>
     </div>
   );
 };
