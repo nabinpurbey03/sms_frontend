@@ -22,7 +22,7 @@ import {
   DialogTitle,
 } from '@/components/ui/dialog';
 import {
-  useTenants,
+  useTenantDirectory,
   useCreateTenant,
   useUpdateTenant,
   useUpdateTenantStatus,
@@ -34,9 +34,10 @@ import { TenantStatsCards } from '../components/TenantStatsCards';
 import { TenantFormDialog } from '../components/TenantFormDialog';
 import { TenantLogoDialog } from '../components/TenantLogoDialog';
 import { TenantDeleteDialog } from '../components/TenantDeleteDialog';
+import { TenantAdminsDialog } from '../components/TenantAdminsDialog';
 import { TenantGridView } from '../components/TenantGridView';
 import { TenantTableView } from '../components/TenantTableView';
-import type { Tenant, TenantFormData } from '../types';
+import type { Tenant, TenantFormData, TenantDirectoryItemDTO } from '../types';
 
 import { useDebounce } from 'use-debounce';
 
@@ -64,18 +65,23 @@ export const TenantsPage: React.FC = () => {
     }
   }, [searchParams?.action, navigate]);
 
-  const [tenantToEdit, setTenantToEdit] = useState<Tenant | null>(null);
-
+  const [tenantToEdit, setTenantToEdit] = useState<any>(null);
   const [logoDialogOpen, setLogoDialogOpen] = useState(false);
-  const [tenantForLogo, setTenantForLogo] = useState<Tenant | null>(null);
-
+  const [tenantForLogo, setTenantForLogo] = useState<any>(null);
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
-  const [tenantToDelete, setTenantToDelete] = useState<Tenant | null>(null);
+  const [tenantToDelete, setTenantToDelete] = useState<any>(null);
+  const [statusDialogTenant, setStatusDialogTenant] = useState<any>(null);
 
-  const [statusDialogTenant, setStatusDialogTenant] = useState<Tenant | null>(null);
+  // Admin Management Dialog State
+  const [adminDialogOpen, setAdminDialogOpen] = useState(false);
+  const [selectedTenantForAdmins, setSelectedTenantForAdmins] = useState<any>(null);
 
   // Queries & Mutations
-  const { data: tenantsResponse, isLoading, refetch } = useTenants({
+  const {
+    data: directoryResponse,
+    isLoading,
+    refetch,
+  } = useTenantDirectory({
     search: debouncedSearch,
     is_active:
       statusFilter === 'active' ? true : statusFilter === 'inactive' ? false : undefined,
@@ -91,7 +97,10 @@ export const TenantsPage: React.FC = () => {
   const uploadLogoMutation = useUploadTenantLogo();
   const deleteMutation = useDeleteTenant();
 
-  const allTenants = useMemo(() => tenantsResponse?.items || [], [tenantsResponse]);
+  const allTenants: (TenantDirectoryItemDTO | Tenant)[] = useMemo(
+    () => directoryResponse?.items || [],
+    [directoryResponse]
+  );
 
   const globalStats = {
     total: dashboardMetrics?.total_tenants ?? 0,
@@ -100,19 +109,24 @@ export const TenantsPage: React.FC = () => {
   };
 
   // Handlers
-  const handleOpenEdit = (tenant: Tenant) => {
+  const handleOpenEdit = (tenant: any) => {
     setTenantToEdit(tenant);
     setFormDialogOpen(true);
   };
 
-  const handleOpenLogo = (tenant: Tenant) => {
+  const handleOpenLogo = (tenant: any) => {
     setTenantForLogo(tenant);
     setLogoDialogOpen(true);
   };
 
-  const handleOpenDelete = (tenant: Tenant) => {
+  const handleOpenDelete = (tenant: any) => {
     setTenantToDelete(tenant);
     setDeleteDialogOpen(true);
+  };
+
+  const handleManageAdmins = (tenant: any) => {
+    setSelectedTenantForAdmins(tenant);
+    setAdminDialogOpen(true);
   };
 
   const handleConfirmStatusChange = async () => {
@@ -150,7 +164,7 @@ export const TenantsPage: React.FC = () => {
     await deleteMutation.mutateAsync(tenantId);
   };
 
-  const handleSwitchTenant = (tenant: Tenant) => {
+  const handleSwitchTenant = (tenant: any) => {
     switchTenant(tenant.id);
   };
 
@@ -170,7 +184,7 @@ export const TenantsPage: React.FC = () => {
     <div className="space-y-6 w-full min-w-0">
       {/* KPI Stats Cards */}
       <TenantStatsCards 
-        tenants={allTenants} 
+        tenants={allTenants as any} 
         globalStats={globalStats}
         isLoading={isLoading} 
       />
@@ -290,6 +304,7 @@ export const TenantsPage: React.FC = () => {
           onUploadLogo={handleOpenLogo}
           onToggleStatus={setStatusDialogTenant}
           onDelete={handleOpenDelete}
+          onManageAdmins={handleManageAdmins}
         />
       ) : (
         <TenantGridView
@@ -300,14 +315,15 @@ export const TenantsPage: React.FC = () => {
           onUploadLogo={handleOpenLogo}
           onToggleStatus={setStatusDialogTenant}
           onDelete={handleOpenDelete}
+          onManageAdmins={handleManageAdmins}
         />
       )}
 
       {/* Pagination Controls */}
-      {tenantsResponse && tenantsResponse.total_pages > 1 && (
+      {directoryResponse && directoryResponse.total_pages > 1 && (
         <div className="flex flex-col sm:flex-row items-center justify-between gap-4 p-4 mt-6 text-sm text-muted-foreground bg-transparent">
           <div>
-            Showing <span className="font-semibold text-foreground">{(page - 1) * pageSize + 1}</span> to <span className="font-semibold text-foreground">{Math.min(page * pageSize, tenantsResponse.total)}</span> of <span className="font-semibold text-foreground">{tenantsResponse.total}</span> schools
+            Showing <span className="font-semibold text-foreground">{(page - 1) * pageSize + 1}</span> to <span className="font-semibold text-foreground">{Math.min(page * pageSize, directoryResponse.total)}</span> of <span className="font-semibold text-foreground">{directoryResponse.total}</span> schools
           </div>
           
           <div className="flex items-center gap-1 font-medium select-none">
@@ -320,10 +336,9 @@ export const TenantsPage: React.FC = () => {
             </button>
             
             <div className="flex items-center gap-0.5 px-2">
-              {Array.from({ length: tenantsResponse.total_pages }).map((_, i) => {
+              {Array.from({ length: directoryResponse.total_pages }).map((_, i) => {
                 const p = i + 1;
-                // Simple logic to show current, prev, next, first, last
-                if (p === 1 || p === tenantsResponse.total_pages || Math.abs(p - page) <= 1) {
+                if (p === 1 || p === directoryResponse.total_pages || Math.abs(p - page) <= 1) {
                   return (
                     <button
                       key={p}
@@ -339,7 +354,7 @@ export const TenantsPage: React.FC = () => {
                   );
                 } else if (p === 2 && page > 3) {
                   return <span key="dots-1" className="px-1 text-muted-foreground/50">...</span>;
-                } else if (p === tenantsResponse.total_pages - 1 && page < tenantsResponse.total_pages - 2) {
+                } else if (p === directoryResponse.total_pages - 1 && page < directoryResponse.total_pages - 2) {
                   return <span key="dots-2" className="px-1 text-muted-foreground/50">...</span>;
                 }
                 return null;
@@ -347,8 +362,8 @@ export const TenantsPage: React.FC = () => {
             </div>
 
             <button
-              onClick={() => setPage((p) => Math.min(tenantsResponse.total_pages, p + 1))}
-              disabled={page === tenantsResponse.total_pages}
+              onClick={() => setPage((p) => Math.min(directoryResponse.total_pages, p + 1))}
+              disabled={page === directoryResponse.total_pages}
               className="px-2 py-1 flex items-center gap-1 hover:text-foreground disabled:opacity-50 disabled:hover:text-muted-foreground transition-colors"
             >
               next &raquo;
@@ -381,6 +396,16 @@ export const TenantsPage: React.FC = () => {
         onConfirmDelete={handleDeleteConfirm}
         isDeleting={deleteMutation.isPending}
       />
+
+      {/* School Administrator Management Dialog */}
+      {selectedTenantForAdmins && (
+        <TenantAdminsDialog
+          open={adminDialogOpen}
+          onOpenChange={setAdminDialogOpen}
+          tenantId={selectedTenantForAdmins.id}
+          tenantName={selectedTenantForAdmins.name}
+        />
+      )}
 
       <Dialog open={!!statusDialogTenant} onOpenChange={(open) => !open && setStatusDialogTenant(null)}>
         <DialogContent className="sm:max-w-[400px]">
