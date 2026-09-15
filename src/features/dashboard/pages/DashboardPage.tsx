@@ -33,6 +33,8 @@ import { useMyChildrenReportCards } from '@/features/examination/hooks';
 import { useSuperAdminDashboard, useTenantDashboard } from '../hooks';
 
 import { SuperAdminGrid } from '../components/SuperAdminGrid';
+import { PlatformTrendsSection } from '../components/PlatformTrendsSection';
+import { PlatformRankingsSection } from '../components/PlatformRankingsSection';
 
 export const DashboardPage: React.FC = () => {
   const { user, activeRole, activeTenantName, activeTenantId } = useAuth();
@@ -85,7 +87,13 @@ export const DashboardPage: React.FC = () => {
       <DashboardHeroBanner />
 
       {isSuperAdmin && !activeTenantId ? (
-        <SuperAdminGrid metrics={superAdminMetrics} />
+        <div className="space-y-6">
+          <SuperAdminGrid metrics={superAdminMetrics} />
+          <div className="grid grid-cols-1 xl:grid-cols-2 gap-6">
+            <PlatformTrendsSection />
+            <PlatformRankingsSection />
+          </div>
+        </div>
       ) : (
         <>
           {/* KPI Stats Grid (1 col phone, 2 cols tablet, 4 cols desktop) */}
