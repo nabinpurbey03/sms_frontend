@@ -67,14 +67,25 @@ export const tenantFormSchema = z.object({
 export type TenantFormData = z.infer<typeof tenantFormSchema>;
 export type AddressFormData = z.infer<typeof addressSchema>;
 
-export interface TenantOnboardPayload {
-  tenant: TenantFormData;
-  admin_phone?: string;
-}
+export type TenantOnboardPayload =
+  | {
+      name: string;
+      domain_name: string;
+      email?: string | null;
+      phone?: string | null;
+      is_active?: boolean;
+      address?: AddressFormData | null;
+      admin_phone?: string | null;
+    }
+  | {
+      tenant: TenantFormData;
+      admin_phone?: string;
+    };
 
 export interface TenantOnboardResponse {
   tenant: Tenant;
-  status: string;
+  admin_assignment_status?: 'assigned' | 'pending_registration' | 'not_requested' | string;
+  status?: string;
   invite_link?: string;
   admin_phone?: string;
 }

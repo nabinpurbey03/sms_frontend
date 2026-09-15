@@ -1,5 +1,5 @@
 import React, { useState, useMemo, useEffect } from 'react';
-import { useSearch, useNavigate } from '@tanstack/react-router';
+import { useSearch, useNavigate, Link } from '@tanstack/react-router';
 import {
   Plus,
   Search,
@@ -36,7 +36,6 @@ import { TenantLogoDialog } from '../components/TenantLogoDialog';
 import { TenantDeleteDialog } from '../components/TenantDeleteDialog';
 import { TenantGridView } from '../components/TenantGridView';
 import { TenantTableView } from '../components/TenantTableView';
-import { TenantOnboardDialog } from '../components/TenantOnboardDialog';
 import type { Tenant, TenantFormData } from '../types';
 
 import { useDebounce } from 'use-debounce';
@@ -58,20 +57,12 @@ export const TenantsPage: React.FC = () => {
 
   // Dialog State
   const [formDialogOpen, setFormDialogOpen] = useState(false);
-  const [onboardDialogOpen, setOnboardDialogOpen] = useState(false);
 
   useEffect(() => {
     if (searchParams?.action === 'onboard') {
-      setOnboardDialogOpen(true);
+      navigate({ to: '/tenants/onboard', replace: true });
     }
-  }, [searchParams?.action]);
-
-  const handleOnboardOpenChange = (open: boolean) => {
-    setOnboardDialogOpen(open);
-    if (!open && searchParams?.action === 'onboard') {
-      navigate({ search: (prev: any) => ({ ...prev, action: undefined }), replace: true } as any);
-    }
-  };
+  }, [searchParams?.action, navigate]);
 
   const [tenantToEdit, setTenantToEdit] = useState<Tenant | null>(null);
 
@@ -109,10 +100,6 @@ export const TenantsPage: React.FC = () => {
   };
 
   // Handlers
-  const handleOpenCreate = () => {
-    setOnboardDialogOpen(true);
-  };
-
   const handleOpenEdit = (tenant: Tenant) => {
     setTenantToEdit(tenant);
     setFormDialogOpen(true);
@@ -281,9 +268,11 @@ export const TenantsPage: React.FC = () => {
             </button>
           </div>
 
-          <Button onClick={handleOpenCreate} size="sm" className="h-9 gap-1.5 rounded-xl shadow-xs">
-            <Plus className="h-4 w-4" />
-            <span className="hidden sm:inline">Onboard New School</span>
+          <Button asChild size="sm" className="h-9 gap-1.5 rounded-xl shadow-xs">
+            <Link to="/tenants/onboard">
+              <Plus className="h-4 w-4" />
+              <span className="hidden sm:inline">Onboard New School</span>
+            </Link>
           </Button>
           <Button variant="outline" size="icon" onClick={() => refetch()} className="h-9 w-9 rounded-xl border-dashed">
             <RefreshCw className={`h-4 w-4 ${isLoading ? 'animate-spin text-primary' : ''}`} />
@@ -369,11 +358,6 @@ export const TenantsPage: React.FC = () => {
       )}
 
       {/* Dialog Modals */}
-      <TenantOnboardDialog
-        open={onboardDialogOpen}
-        onOpenChange={handleOnboardOpenChange}
-      />
-      
       <TenantFormDialog
         open={formDialogOpen}
         onOpenChange={setFormDialogOpen}

@@ -12,6 +12,7 @@ import { LoginPage } from '@/features/auth/pages/LoginPage';
 import { ProtectedLayout } from './ProtectedLayout';
 import { DashboardPage } from '@/features/dashboard/pages/DashboardPage';
 import { TenantsPage } from '@/features/tenants/pages/TenantsPage';
+import { TenantOnboardPage } from '@/features/tenants/pages/TenantOnboardPage';
 import { MembersPage } from '@/features/members/pages/MembersPage';
 import { MyChildrenPage } from '@/features/members/pages/MyChildrenPage';
 import { ClassesPage } from '@/features/academic/pages/ClassesPage';
@@ -180,6 +181,12 @@ const tenantsRoute = createRoute({
   component: TenantsPage,
 });
 
+const tenantOnboardRoute = createRoute({
+  getParentRoute: () => protectedLayoutRoute,
+  path: '/tenants/onboard',
+  component: TenantOnboardPage,
+});
+
 const academicYearsRoute = createRoute({
   getParentRoute: () => protectedLayoutRoute,
   path: '/academic-years',
@@ -245,6 +252,7 @@ const routeTree = rootRoute.addChildren([
     attendanceReportsRoute,
     membersRoute,
     tenantsRoute,
+    tenantOnboardRoute,
     platformUsersRoute,
     academicYearsRoute,
     examsRoute,

@@ -68,8 +68,45 @@ export const tenantsApi = {
     return { success: true };
   },
 
-  onboardTenant: async (data: TenantOnboardPayload): Promise<TenantOnboardResponse> => {
-    return apiClient.post('/tenants/onboard', data);
+  onboardTenant: async (payload: TenantOnboardPayload): Promise<TenantOnboardResponse> => {
+    const data: any = 'tenant' in payload ? { ...payload.tenant, admin_phone: payload.admin_phone } : payload;
+
+    const cleanPhone = (val?: string | null) => {
+      if (!val) return null;
+      const stripped = String(val).trim().replace(/[\s-]/g, '');
+      if (!stripped) return null;
+      if (stripped.startsWith('+977')) return stripped.slice(4);
+      if (stripped.startsWith('977') && stripped.length === 13) return stripped.slice(3);
+      return stripped;
+    };
+
+    const cleanPayload: Record<string, any> = {
+      name: data.name?.trim(),
+      domain_name: data.domain_name?.trim()?.toLowerCase(),
+      email: data.email?.trim() || null,
+      phone: cleanPhone(data.phone),
+      is_active: data.is_active ?? true,
+      admin_phone: cleanPhone(data.admin_phone),
+    };
+
+    if (
+      data.address &&
+      (data.address.province?.trim() ||
+        data.address.district?.trim() ||
+        data.address.municipality?.trim())
+    ) {
+      cleanPayload.address = {
+        province: data.address.province?.trim() || '',
+        district: data.address.district?.trim() || '',
+        municipality: data.address.municipality?.trim() || '',
+        ward: Number(data.address.ward) || 1,
+        tole: data.address.tole?.trim() || null,
+      };
+    } else {
+      cleanPayload.address = null;
+    }
+
+    return apiClient.post('/tenants/onboard', cleanPayload);
   },
 };
 

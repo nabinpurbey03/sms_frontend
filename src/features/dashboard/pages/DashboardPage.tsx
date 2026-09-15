@@ -395,7 +395,7 @@ export const DashboardPage: React.FC = () => {
                     className="w-full text-xs font-semibold h-10"
                     asChild
                   >
-                    <Link to="/tenants" search={{ action: 'onboard' }}>Launch Wizard</Link>
+                    <Link to="/tenants/onboard">Launch Wizard</Link>
                   </Button>
                 </CardContent>
               </Card>
