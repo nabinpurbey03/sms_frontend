@@ -37,7 +37,7 @@ import { PlatformTrendsSection } from '../components/PlatformTrendsSection';
 import { PlatformRankingsSection } from '../components/PlatformRankingsSection';
 
 export const DashboardPage: React.FC = () => {
-  const { user, activeRole, activeTenantName, activeTenantId } = useAuth();
+  const { user, activeRole, activeTenantId } = useAuth();
   const { can, isSuperAdmin, isTeacher, isParent } = usePermission();
 
   const todayStr = useMemo(() => new Date().toISOString().split('T')[0], []);
