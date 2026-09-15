@@ -13,6 +13,7 @@ import { ProtectedLayout } from './ProtectedLayout';
 import { DashboardPage } from '@/features/dashboard/pages/DashboardPage';
 import { TenantsPage } from '@/features/tenants/pages/TenantsPage';
 import { TenantOnboardPage } from '@/features/tenants/pages/TenantOnboardPage';
+import { TenantAnalyticsPage } from '@/features/tenants/pages/TenantAnalyticsPage';
 import { MembersPage } from '@/features/members/pages/MembersPage';
 import { MyChildrenPage } from '@/features/members/pages/MyChildrenPage';
 import { ClassesPage } from '@/features/academic/pages/ClassesPage';
@@ -181,6 +182,12 @@ const tenantsRoute = createRoute({
   component: TenantsPage,
 });
 
+const tenantDetailRoute = createRoute({
+  getParentRoute: () => protectedLayoutRoute,
+  path: '/tenants/$tenantId',
+  component: TenantAnalyticsPage,
+});
+
 const tenantOnboardRoute = createRoute({
   getParentRoute: () => protectedLayoutRoute,
   path: '/tenants/onboard',
@@ -252,6 +259,7 @@ const routeTree = rootRoute.addChildren([
     attendanceReportsRoute,
     membersRoute,
     tenantsRoute,
+    tenantDetailRoute,
     tenantOnboardRoute,
     platformUsersRoute,
     academicYearsRoute,
