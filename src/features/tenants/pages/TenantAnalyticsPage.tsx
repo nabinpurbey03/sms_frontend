@@ -21,7 +21,6 @@ import {
   User,
   Clock,
   TrendingUp,
-  Award,
   AlertTriangle,
   Fingerprint,
 } from 'lucide-react';

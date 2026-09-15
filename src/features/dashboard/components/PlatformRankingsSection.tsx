@@ -13,7 +13,6 @@ import {
   Clock,
   AlertCircle,
   RefreshCw,
-  Loader2,
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { useTenantRankings } from '../hooks';
