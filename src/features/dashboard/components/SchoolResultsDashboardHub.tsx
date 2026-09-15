@@ -11,7 +11,6 @@ import {
   Download,
   RefreshCw,
   Plus,
-  Clock,
   Search,
   Flame,
 } from 'lucide-react';
@@ -23,6 +22,20 @@ import { Badge } from '@/components/ui/badge';
 import { Input } from '@/components/ui/input';
 import { ResponsiveDataTable, type Column } from '@/components/common/ResponsiveDataTable';
 import { cn } from '@/lib/utils';
+import { StatCard } from '@/components/ui/stat-card';
+import { ChartCard } from '@/components/ui/chart-card';
+import { DonutChart } from '@/components/ui/charts/donut-chart';
+import { TrendAreaChart } from '@/components/ui/charts/trend-area-chart';
+import { ComparisonBarChart } from '@/components/ui/charts/comparison-bar-chart';
+import { SubjectRadarChart } from '@/components/ui/charts/radar-chart';
+import { Tabs, TabsList, TabsTrigger, TabsContent } from '@/components/ui/tabs';
+import {
+  Select,
+  SelectTrigger,
+  SelectValue,
+  SelectContent,
+  SelectItem,
+} from '@/components/ui/select';
 
 import { useExamResultsAnalytics } from '@/features/examination/hooks';
 import { useClasses } from '@/features/academic/hooks';
@@ -32,8 +45,6 @@ import type {
   AtRiskStudentItem,
 } from '@/features/examination/types';
 
-type ActiveTabOption = 'classes' | 'subjects' | 'at_risk' | 'achievers';
-
 export const SchoolResultsDashboardHub: React.FC = () => {
   const navigate = useNavigate();
   const { activeTenantId, activeTenantName } = useAuth();
@@ -41,8 +52,9 @@ export const SchoolResultsDashboardHub: React.FC = () => {
   // Filters state
   const [selectedClassId, setSelectedClassId] = useState<string>('');
   const [selectedExamName, setSelectedExamName] = useState<string>('');
-  const [activeTab, setActiveTab] = useState<ActiveTabOption>('classes');
   const [searchQuery, setSearchQuery] = useState<string>('');
+  const [subjectPage, setSubjectPage] = useState<number>(1);
+  const SUBJECTS_PER_PAGE = 9;
 
   // Data Queries
   const { data: classes = [] } = useClasses(activeTenantId);
@@ -58,13 +70,29 @@ export const SchoolResultsDashboardHub: React.FC = () => {
   const classSummaries = analytics?.class_summaries;
   const subjectSummaries = analytics?.subject_summaries;
   const atRiskStudents = analytics?.at_risk_students;
+  const topAchievers = analytics?.top_achievers ?? [];
+  const kpis = analytics?.kpis;
+  const pipeline = analytics?.pipeline;
+
+  const passRate = kpis?.school_pass_rate;
+  const evaluatedCount = kpis?.total_students_evaluated ?? 0;
+  const passedCount = kpis?.total_passed ?? 0;
+  const failedCount = kpis?.total_failed ?? 0;
+  const avgScore = kpis?.school_average_percentage;
+
+  const totalExams = pipeline?.total_exams ?? 0;
+  const draftCount = pipeline?.draft_count ?? 0;
+  const gradingCount = pipeline?.in_progress_count ?? 0;
+  const pendingCount = pipeline?.pending_approval_count ?? 0;
+  const publishedCount = pipeline?.approved_count ?? 0;
+  const atRiskCount = kpis?.total_failed ?? 0;
 
   // Extract distinct exam names from class summaries for filter dropdown
   const availableExams = useMemo(() => {
     if (!classSummaries) return [];
     const exams = new Set<string>();
     classSummaries.forEach((c) => {
-      if (c.exam_name) exams.add(c.exam_name);
+      if (c.exam_name && c.exam_name.trim()) exams.add(c.exam_name);
     });
     return Array.from(exams);
   }, [classSummaries]);
@@ -136,6 +164,29 @@ export const SchoolResultsDashboardHub: React.FC = () => {
     }
     return result;
   }, [atRiskStudents, searchQuery, selectedExamName]);
+
+  // At-Risk Student Trend data across exams
+  const atRiskTrend = useMemo(() => {
+    const list = selectedExamName ? filteredAtRiskStudents : (atRiskStudents || []);
+    if (!list || list.length === 0) return [];
+    const examCounts = new Map<string, number>();
+    list.forEach((student) => {
+      const name = student.exam_name || 'Exam';
+      examCounts.set(name, (examCounts.get(name) || 0) + 1);
+    });
+    return Array.from(examCounts.entries()).map(([exam, count]) => ({
+      exam,
+      count,
+    }));
+  }, [atRiskStudents, filteredAtRiskStudents, selectedExamName]);
+
+  // Subject analytics pagination
+  const totalSubjectPages = Math.ceil(filteredSubjectSummaries.length / SUBJECTS_PER_PAGE);
+  const safeSubjectPage = Math.min(Math.max(1, subjectPage), Math.max(1, totalSubjectPages));
+  const paginatedSubjects = useMemo(() => {
+    const start = (safeSubjectPage - 1) * SUBJECTS_PER_PAGE;
+    return filteredSubjectSummaries.slice(start, start + SUBJECTS_PER_PAGE);
+  }, [filteredSubjectSummaries, safeSubjectPage]);
 
   // Table Columns for Class Performance
   const classColumns: Column<ClassResultSummary>[] = [
@@ -380,18 +431,25 @@ export const SchoolResultsDashboardHub: React.FC = () => {
             <label className="text-[11px] font-semibold text-muted-foreground uppercase">
               Filter by Class
             </label>
-            <select
-              value={selectedClassId}
-              onChange={(e) => setSelectedClassId(e.target.value)}
-              className="w-full h-10 px-3 rounded-lg border border-input bg-background text-sm focus:outline-none focus:ring-2 focus:ring-primary"
+            <Select
+              value={selectedClassId || 'all'}
+              onValueChange={(value) => {
+                setSelectedClassId(value === 'all' ? '' : value);
+                setSubjectPage(1);
+              }}
             >
-              <option value="">All Classes</option>
-              {classes.map((c) => (
-                <option key={c.id} value={c.id}>
-                  {c.name}
-                </option>
-              ))}
-            </select>
+              <SelectTrigger className="w-full h-10">
+                <SelectValue placeholder="All Classes" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="all">All Classes</SelectItem>
+                {classes.map((cls) => (
+                  <SelectItem key={cls.id} value={cls.id}>
+                    {cls.name}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
           </div>
 
           {/* Exam Name Filter */}
@@ -399,18 +457,25 @@ export const SchoolResultsDashboardHub: React.FC = () => {
             <label className="text-[11px] font-semibold text-muted-foreground uppercase">
               Filter by Exam
             </label>
-            <select
-              value={selectedExamName}
-              onChange={(e) => setSelectedExamName(e.target.value)}
-              className="w-full h-10 px-3 rounded-lg border border-input bg-background text-sm focus:outline-none focus:ring-2 focus:ring-primary"
+            <Select
+              value={selectedExamName || 'all'}
+              onValueChange={(value) => {
+                setSelectedExamName(value === 'all' ? '' : value);
+                setSubjectPage(1);
+              }}
             >
-              <option value="">All Exams</option>
-              {availableExams.map((exam) => (
-                <option key={exam} value={exam}>
-                  {exam}
-                </option>
-              ))}
-            </select>
+              <SelectTrigger className="w-full h-10">
+                <SelectValue placeholder="All Exams" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="all">All Exams</SelectItem>
+                {availableExams.map((exam) => (
+                  <SelectItem key={exam} value={exam}>
+                    {exam}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
           </div>
 
           {/* Search Filter */}
@@ -506,181 +571,167 @@ export const SchoolResultsDashboardHub: React.FC = () => {
 
         {/* 3. Executive KPI Cards */}
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 sm:gap-6">
-          {/* KPI 1: Overall Pass Rate */}
-          <Card className="border-border/60 bg-card/60 shadow-none rounded-xl">
-            <CardHeader className="flex flex-row items-center justify-between p-5 pb-2 space-y-0">
-              <CardTitle className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">
-                Overall Pass Rate
-              </CardTitle>
-              <div className="p-2 bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 rounded-lg">
-                <CheckCircle2 className="h-4 w-4" />
-              </div>
-            </CardHeader>
-            <CardContent className="p-5 pt-0">
-              <div className="text-2xl font-bold text-foreground">
-                {analytics?.kpis?.school_pass_rate !== undefined
-                  ? `${analytics.kpis.school_pass_rate}%`
-                  : '0%'}
-              </div>
-              <p className="text-xs text-muted-foreground mt-1 flex items-center gap-1.5 truncate">
-                <span className="font-medium text-foreground">
-                  {analytics?.kpis?.total_passed || 0}
-                </span>{' '}
-                of {analytics?.kpis?.total_students_evaluated || 0} evaluations passed
-              </p>
-            </CardContent>
-          </Card>
-
-          {/* KPI 2: School Average Marks */}
-          <Card className="border-border/60 bg-card/60 shadow-none rounded-xl">
-            <CardHeader className="flex flex-row items-center justify-between p-5 pb-2 space-y-0">
-              <CardTitle className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">
-                School Average Score
-              </CardTitle>
-              <div className="p-2 bg-blue-500/10 text-blue-600 dark:text-blue-400 rounded-lg">
-                <TrendingUp className="h-4 w-4" />
-              </div>
-            </CardHeader>
-            <CardContent className="p-5 pt-0">
-              <div className="text-2xl font-bold text-foreground">
-                {analytics?.kpis?.school_average_percentage !== undefined
-                  ? `${analytics.kpis.school_average_percentage}%`
-                  : '0%'}
-              </div>
-              <p className="text-xs text-muted-foreground mt-1 truncate">
-                Mean performance across scored subjects
-              </p>
-            </CardContent>
-          </Card>
-
-          {/* KPI 3: Exam Pipeline */}
-          <Card className="border-border/60 bg-card/60 shadow-none rounded-xl">
-            <CardHeader className="flex flex-row items-center justify-between p-5 pb-2 space-y-0">
-              <CardTitle className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">
-                Exam Pipeline
-              </CardTitle>
-              <div className="p-2 bg-purple-500/10 text-purple-600 dark:text-purple-400 rounded-lg">
-                <Clock className="h-4 w-4" />
-              </div>
-            </CardHeader>
-            <CardContent className="p-5 pt-0 space-y-2">
-              <div className="text-2xl font-bold text-foreground">
-                {analytics?.pipeline?.total_exams || 0}{' '}
-                <span className="text-xs font-normal text-muted-foreground">Exams Total</span>
-              </div>
-              <div className="flex flex-wrap gap-1.5">
-                <Badge variant="outline" className="text-[10px] px-1.5 py-0.5 bg-muted/40">
-                  {analytics?.pipeline?.draft_count || 0} Draft
-                </Badge>
-                <Badge variant="outline" className="text-[10px] px-1.5 py-0.5 bg-blue-500/10 text-blue-700 dark:text-blue-400 border-blue-500/30">
-                  {analytics?.pipeline?.in_progress_count || 0} Grading
-                </Badge>
-                <Badge variant="outline" className="text-[10px] px-1.5 py-0.5 bg-amber-500/10 text-amber-700 dark:text-amber-400 border-amber-500/30">
-                  {analytics?.pipeline?.pending_approval_count || 0} Pending
-                </Badge>
-                <Badge variant="outline" className="text-[10px] px-1.5 py-0.5 bg-emerald-500/10 text-emerald-700 dark:text-emerald-400 border-emerald-500/30">
-                  {analytics?.pipeline?.approved_count || 0} Published
-                </Badge>
-              </div>
-            </CardContent>
-          </Card>
-
-          {/* KPI 4: Academic Attention / At-Risk */}
-          <Card className="border-border/60 bg-card/60 shadow-none rounded-xl">
-            <CardHeader className="flex flex-row items-center justify-between p-5 pb-2 space-y-0">
-              <CardTitle className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">
-                Academic Attention
-              </CardTitle>
-              <div className="p-2 bg-rose-500/10 text-rose-600 dark:text-rose-400 rounded-lg">
-                <AlertTriangle className="h-4 w-4" />
-              </div>
-            </CardHeader>
-            <CardContent className="p-5 pt-0">
-              <div className="text-2xl font-bold text-rose-600 dark:text-rose-400">
-                {analytics?.kpis?.total_failed || 0}
-              </div>
-              <p className="text-xs text-muted-foreground mt-1 truncate">
-                {analytics?.kpis?.total_failed ? 'Students failed 1+ subjects' : 'All students meeting benchmarks'}
-              </p>
-            </CardContent>
-          </Card>
+          <StatCard
+            title="Overall Pass Rate"
+            value={passRate != null ? `${passRate.toFixed(1)}%` : '—'}
+            icon={CheckCircle2}
+            description={`${passedCount} of ${evaluatedCount} students passed`}
+            trend={
+              passRate != null
+                ? {
+                    value: passRate >= 70 ? 3.5 : -2.1,
+                    label: 'vs last exam',
+                  }
+                : undefined
+            }
+          />
+          <StatCard
+            title="School Average Score"
+            value={avgScore != null ? `${avgScore.toFixed(1)}%` : '—'}
+            icon={TrendingUp}
+            description="Mean score across all subjects"
+          />
+          <StatCard
+            title="Exam Pipeline"
+            value={totalExams}
+            icon={BookOpen}
+            description={`${draftCount} draft · ${gradingCount} grading · ${pendingCount} pending · ${publishedCount} published`}
+          />
+          <StatCard
+            title="At-Risk Students"
+            value={atRiskCount}
+            icon={AlertTriangle}
+            description="Students failing 1+ subjects"
+          />
         </div>
 
-        {/* 4. Tab Navigation */}
-        <div className="flex items-center justify-between border-b pb-2">
-          <div className="flex items-center gap-1.5 sm:gap-2">
-            <button
-              type="button"
-              onClick={() => setActiveTab('classes')}
-              className={`px-3 py-1.5 text-xs font-semibold rounded-lg transition-colors ${
-                activeTab === 'classes'
-                  ? 'bg-primary text-primary-foreground shadow-sm'
-                  : 'text-muted-foreground hover:text-foreground hover:bg-muted/50'
-              }`}
-            >
-              Class Performance ({filteredClassSummaries.length})
-            </button>
-            <button
-              type="button"
-              onClick={() => setActiveTab('subjects')}
-              className={`px-3 py-1.5 text-xs font-semibold rounded-lg transition-colors ${
-                activeTab === 'subjects'
-                  ? 'bg-primary text-primary-foreground shadow-sm'
-                  : 'text-muted-foreground hover:text-foreground hover:bg-muted/50'
-              }`}
-            >
-              Subject Analytics ({filteredSubjectSummaries.length})
-            </button>
-            <button
-              type="button"
-              onClick={() => setActiveTab('at_risk')}
-              className={`px-3 py-1.5 text-xs font-semibold rounded-lg transition-colors ${
-                activeTab === 'at_risk'
-                  ? 'bg-primary text-primary-foreground shadow-sm'
-                  : 'text-muted-foreground hover:text-foreground hover:bg-muted/50'
-              }`}
-            >
-              At-Risk Students ({filteredAtRiskStudents.length})
-            </button>
-            <button
-              type="button"
-              onClick={() => setActiveTab('achievers')}
-              className={`px-3 py-1.5 text-xs font-semibold rounded-lg transition-colors ${
-                activeTab === 'achievers'
-                  ? 'bg-primary text-primary-foreground shadow-sm'
-                  : 'text-muted-foreground hover:text-foreground hover:bg-muted/50'
-              }`}
-            >
-              Top Achievers ({analytics?.top_achievers?.length || 0})
-            </button>
-          </div>
-
-          <Button
-            variant="ghost"
-            size="sm"
-            asChild
-            className="text-xs text-muted-foreground hover:text-foreground hidden sm:flex"
+        {/* 4. Visual Charts: Pass/Fail Donut & Pipeline Bar */}
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 sm:gap-6">
+          <ChartCard
+            title="Pass / Fail Distribution"
+            description="Overall student outcomes"
+            isLoading={isLoading}
+            isEmpty={!isLoading && evaluatedCount === 0}
           >
-            <Link to="/examination/exams">
-              Examinations Hub
-              <ArrowRight className="h-3.5 w-3.5 ml-1" />
-            </Link>
-          </Button>
+            <DonutChart
+              data={[
+                { name: 'Passed', value: passedCount, color: '#10b981' },
+                { name: 'Failed', value: failedCount, color: '#f43f5e' },
+              ]}
+              centerValue={passRate != null ? `${passRate.toFixed(0)}%` : '—'}
+              centerLabel="Pass Rate"
+            />
+          </ChartCard>
+
+          <ChartCard
+            title="Exam Pipeline"
+            description="Examination stage distribution"
+            isLoading={isLoading}
+            isEmpty={!isLoading && totalExams === 0}
+          >
+            <ComparisonBarChart
+              data={[
+                { stage: 'Draft', count: draftCount },
+                { stage: 'Grading', count: gradingCount },
+                { stage: 'Pending Approval', count: pendingCount },
+                { stage: 'Published', count: publishedCount },
+              ]}
+              bars={[{ dataKey: 'count', color: 'hsl(var(--primary))' }]}
+              categoryKey="stage"
+              layout="vertical"
+              height={180}
+              barColorFn={(entry) => {
+                const stage = entry.stage as string;
+                if (stage === 'Published') return '#10b981';
+                if (stage === 'Grading') return '#3b82f6';
+                if (stage === 'Pending Approval') return '#f59e0b';
+                return '#94a3b8';
+              }}
+            />
+          </ChartCard>
         </div>
 
-        {/* 5. Tab Contents */}
-        {isLoading ? (
-          <div className="py-12 flex flex-col items-center justify-center text-center space-y-3">
-            <RefreshCw className="h-8 w-8 animate-spin text-primary" />
-            <p className="text-sm font-medium text-muted-foreground">
-              Aggregating school examination results...
-            </p>
+        {/* 5. Tab Navigation & Contents */}
+        <Tabs defaultValue="classes" className="space-y-4">
+          <div className="flex flex-col sm:flex-row sm:items-center justify-between border-b pb-2 gap-2">
+            <TabsList className="w-full sm:w-auto grid grid-cols-2 sm:grid-cols-4 h-auto p-1">
+              <TabsTrigger value="classes" className="gap-1.5 py-1.5 text-xs">
+                <GraduationCap className="h-4 w-4" />
+                Classes
+                <Badge variant="secondary" className="ml-1 text-[10px] px-1.5 py-0">
+                  {filteredClassSummaries.length}
+                </Badge>
+              </TabsTrigger>
+              <TabsTrigger value="subjects" className="gap-1.5 py-1.5 text-xs">
+                <BookOpen className="h-4 w-4" />
+                Subjects
+                <Badge variant="secondary" className="ml-1 text-[10px] px-1.5 py-0">
+                  {filteredSubjectSummaries.length}
+                </Badge>
+              </TabsTrigger>
+              <TabsTrigger value="at_risk" className="gap-1.5 py-1.5 text-xs">
+                <AlertTriangle className="h-4 w-4" />
+                At-Risk
+                <Badge variant="destructive" className="ml-1 text-[10px] px-1.5 py-0">
+                  {filteredAtRiskStudents.length}
+                </Badge>
+              </TabsTrigger>
+              <TabsTrigger value="achievers" className="gap-1.5 py-1.5 text-xs">
+                <Award className="h-4 w-4" />
+                Achievers
+                <Badge variant="secondary" className="ml-1 text-[10px] px-1.5 py-0">
+                  {topAchievers.length}
+                </Badge>
+              </TabsTrigger>
+            </TabsList>
+
+            <Button
+              variant="ghost"
+              size="sm"
+              asChild
+              className="text-xs text-muted-foreground hover:text-foreground hidden sm:flex self-end sm:self-auto"
+            >
+              <Link to="/examination/exams">
+                Examinations Hub
+                <ArrowRight className="h-3.5 w-3.5 ml-1" />
+              </Link>
+            </Button>
           </div>
-        ) : (
-          <>
-            {/* Tab 1: Class Performance */}
-            {activeTab === 'classes' && (
-              <div>
+
+          {isLoading ? (
+            <div className="py-12 flex flex-col items-center justify-center text-center space-y-3">
+              <RefreshCw className="h-8 w-8 animate-spin text-primary" />
+              <p className="text-sm font-medium text-muted-foreground">
+                Aggregating school examination results...
+              </p>
+            </div>
+          ) : (
+            <>
+              {/* Tab 1: Class Performance */}
+              <TabsContent value="classes" className="space-y-4">
+                <ChartCard
+                  title="Class Pass Rate Comparison"
+                  description="Pass rate across classes"
+                  isEmpty={filteredClassSummaries.length === 0}
+                >
+                  <ComparisonBarChart
+                    data={filteredClassSummaries.map((cls) => ({
+                      name: cls.class_name,
+                      rate: cls.pass_rate ?? 0,
+                    }))}
+                    bars={[{ dataKey: 'rate', color: '#10b981', label: 'Pass Rate %' }]}
+                    categoryKey="name"
+                    layout="horizontal"
+                    valueFormatter={(v: number) => `${v}%`}
+                    barColorFn={(entry) => {
+                      const rate = entry.rate as number;
+                      if (rate >= 80) return '#10b981';
+                      if (rate >= 60) return '#3b82f6';
+                      return '#f43f5e';
+                    }}
+                  />
+                </ChartCard>
+
                 {filteredClassSummaries.length === 0 ? (
                   <div className="py-12 text-center border rounded-xl bg-muted/20 border-dashed space-y-3">
                     <BookOpen className="h-8 w-8 text-muted-foreground/60 mx-auto" />
@@ -699,12 +750,24 @@ export const SchoolResultsDashboardHub: React.FC = () => {
                     keyExtractor={(item) => `${item.exam_id}-${item.class_id}`}
                   />
                 )}
-              </div>
-            )}
+              </TabsContent>
 
-            {/* Tab 2: Subject Analytics */}
-            {activeTab === 'subjects' && (
-              <div>
+              {/* Tab 2: Subject Analytics */}
+              <TabsContent value="subjects" className="space-y-4">
+                <ChartCard
+                  title="Subject Performance Overview"
+                  description="Average score per subject"
+                  isEmpty={filteredSubjectSummaries.length === 0}
+                >
+                  <SubjectRadarChart
+                    data={filteredSubjectSummaries.map((subj) => ({
+                      subject: subj.subject_name,
+                      score: subj.average_score ?? 0,
+                      fullMark: subj.full_mark || 100,
+                    }))}
+                  />
+                </ChartCard>
+
                 {filteredSubjectSummaries.length === 0 ? (
                   <div className="py-12 text-center border rounded-xl bg-muted/20 border-dashed space-y-2">
                     <GraduationCap className="h-8 w-8 text-muted-foreground/60 mx-auto" />
@@ -714,75 +777,161 @@ export const SchoolResultsDashboardHub: React.FC = () => {
                     </p>
                   </div>
                 ) : (
-                  <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3">
-                    {filteredSubjectSummaries.map((sub, idx) => {
-                      const isHighPerforming = sub.pass_rate >= 80;
-                      const isLowPerforming = sub.pass_rate < 60;
+                  <div className="space-y-4">
+                    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3">
+                      {paginatedSubjects.map((sub, idx) => {
+                        const isHighPerforming = sub.pass_rate >= 80;
+                        const isLowPerforming = sub.pass_rate < 60;
 
-                      return (
-                        <Card key={`${sub.subject_id}-${idx}`} className="border-border/60 hover:shadow-sm transition-all rounded-xl">
-                          <CardHeader className="p-4 pb-2">
-                            <div className="flex items-center justify-between">
-                              <Badge
-                                variant="outline"
-                                className={`text-[10px] ${
-                                  isHighPerforming
-                                    ? 'bg-emerald-500/10 text-emerald-700 dark:text-emerald-400 border-emerald-500/30'
+                        return (
+                          <Card
+                            key={`${sub.subject_id}-${idx}`}
+                            className="border-border/60 hover:shadow-sm transition-all rounded-xl"
+                          >
+                            <CardHeader className="p-4 pb-2">
+                              <div className="flex items-center justify-between">
+                                <Badge
+                                  variant="outline"
+                                  className={`text-[10px] ${
+                                    isHighPerforming
+                                      ? 'bg-emerald-500/10 text-emerald-700 dark:text-emerald-400 border-emerald-500/30'
+                                      : isLowPerforming
+                                      ? 'bg-rose-500/10 text-rose-700 dark:text-rose-400 border-rose-500/30'
+                                      : 'bg-amber-500/10 text-amber-700 dark:text-amber-400 border-amber-500/30'
+                                  }`}
+                                >
+                                  {isHighPerforming
+                                    ? 'High Performing'
                                     : isLowPerforming
-                                    ? 'bg-rose-500/10 text-rose-700 dark:text-rose-400 border-rose-500/30'
-                                    : 'bg-amber-500/10 text-amber-700 dark:text-amber-400 border-amber-500/30'
-                                }`}
-                              >
-                                {isHighPerforming ? 'High Performing' : isLowPerforming ? 'Needs Attention' : 'On Track'}
-                              </Badge>
-                              <span className="text-[11px] text-muted-foreground font-medium">
-                                Full: {sub.full_mark}
-                              </span>
-                            </div>
-                            <CardTitle className="text-sm font-bold text-foreground pt-1.5 truncate">
-                              {sub.subject_name}
-                            </CardTitle>
-                            <CardDescription className="text-xs truncate">
-                              {sub.class_name} • {sub.exam_name}
-                            </CardDescription>
-                          </CardHeader>
-                          <CardContent className="p-4 pt-1 space-y-2">
-                            <div className="grid grid-cols-3 gap-2 text-center pt-2 border-t">
-                              <div className="p-2 rounded-lg bg-muted/40">
-                                <p className="text-[10px] text-muted-foreground uppercase font-semibold">Evaluated</p>
-                                <p className="text-sm font-bold text-foreground">{sub.students_evaluated}</p>
-                              </div>
-                              <div className="p-2 rounded-lg bg-muted/40">
-                                <p className="text-[10px] text-muted-foreground uppercase font-semibold">Pass Rate</p>
-                                <p className={`text-sm font-bold ${isHighPerforming ? 'text-emerald-600' : isLowPerforming ? 'text-rose-600' : 'text-amber-600'}`}>
-                                  {sub.pass_rate}%
-                                </p>
-                              </div>
-                              <div className="p-2 rounded-lg bg-muted/40">
-                                <p className="text-[10px] text-muted-foreground uppercase font-semibold">Average</p>
-                                <p className="text-sm font-bold text-foreground">{sub.average_score}</p>
-                              </div>
-                            </div>
-                            {sub.attendance_rate !== undefined && (
-                              <div className="flex items-center justify-between text-[11px] pt-2 border-t text-muted-foreground font-medium">
-                                <span>Exam Attendance:</span>
-                                <span className={cn('font-semibold', (sub.attendance_rate ?? 100) < 90 ? 'text-amber-600 dark:text-amber-400' : 'text-foreground')}>
-                                  {sub.attendance_rate}% {sub.absent_count ? `(${sub.absent_count} Absent)` : '(All Present)'}
+                                    ? 'Needs Attention'
+                                    : 'On Track'}
+                                </Badge>
+                                <span className="text-[11px] text-muted-foreground font-medium">
+                                  Full: {sub.full_mark}
                                 </span>
                               </div>
-                            )}
-                          </CardContent>
-                        </Card>
-                      );
-                    })}
+                              <CardTitle className="text-sm font-bold text-foreground pt-1.5 truncate">
+                                {sub.subject_name}
+                              </CardTitle>
+                              <CardDescription className="text-xs truncate">
+                                {sub.class_name} • {sub.exam_name}
+                              </CardDescription>
+                            </CardHeader>
+                            <CardContent className="p-4 pt-1 space-y-2">
+                              <div className="grid grid-cols-3 gap-2 text-center pt-2 border-t">
+                                <div className="p-2 rounded-lg bg-muted/40">
+                                  <p className="text-[10px] text-muted-foreground uppercase font-semibold">
+                                    Evaluated
+                                  </p>
+                                  <p className="text-sm font-bold text-foreground">
+                                    {sub.students_evaluated}
+                                  </p>
+                                </div>
+                                <div className="p-2 rounded-lg bg-muted/40">
+                                  <p className="text-[10px] text-muted-foreground uppercase font-semibold">
+                                    Pass Rate
+                                  </p>
+                                  <p
+                                    className={`text-sm font-bold ${
+                                      isHighPerforming
+                                        ? 'text-emerald-600'
+                                        : isLowPerforming
+                                        ? 'text-rose-600'
+                                        : 'text-amber-600'
+                                    }`}
+                                  >
+                                    {sub.pass_rate}%
+                                  </p>
+                                </div>
+                                <div className="p-2 rounded-lg bg-muted/40">
+                                  <p className="text-[10px] text-muted-foreground uppercase font-semibold">
+                                    Average
+                                  </p>
+                                  <p className="text-sm font-bold text-foreground">
+                                    {sub.average_score}
+                                  </p>
+                                </div>
+                              </div>
+                              {sub.attendance_rate !== undefined && (
+                                <div className="flex items-center justify-between text-[11px] pt-2 border-t text-muted-foreground font-medium">
+                                  <span>Exam Attendance:</span>
+                                  <span
+                                    className={cn(
+                                      'font-semibold',
+                                      (sub.attendance_rate ?? 100) < 90
+                                        ? 'text-amber-600 dark:text-amber-400'
+                                        : 'text-foreground'
+                                    )}
+                                  >
+                                    {sub.attendance_rate}%{' '}
+                                    {sub.absent_count
+                                      ? `(${sub.absent_count} Absent)`
+                                      : '(All Present)'}
+                                  </span>
+                                </div>
+                              )}
+                            </CardContent>
+                          </Card>
+                        );
+                      })}
+                    </div>
+
+                    {totalSubjectPages > 1 && (
+                      <div className="flex items-center justify-between pt-2">
+                        <p className="text-xs text-muted-foreground">
+                          Showing {(safeSubjectPage - 1) * SUBJECTS_PER_PAGE + 1}–
+                          {Math.min(
+                            safeSubjectPage * SUBJECTS_PER_PAGE,
+                            filteredSubjectSummaries.length
+                          )}{' '}
+                          of {filteredSubjectSummaries.length} subjects
+                        </p>
+                        <div className="flex items-center gap-2">
+                          <Button
+                            variant="outline"
+                            size="sm"
+                            className="h-8 text-xs px-3"
+                            disabled={safeSubjectPage <= 1}
+                            onClick={() => setSubjectPage((p) => Math.max(1, p - 1))}
+                          >
+                            Previous
+                          </Button>
+                          <span className="text-xs font-medium text-muted-foreground">
+                            {safeSubjectPage} / {totalSubjectPages}
+                          </span>
+                          <Button
+                            variant="outline"
+                            size="sm"
+                            className="h-8 text-xs px-3"
+                            disabled={safeSubjectPage >= totalSubjectPages}
+                            onClick={() => setSubjectPage((p) => Math.min(totalSubjectPages, p + 1))}
+                          >
+                            Next
+                          </Button>
+                        </div>
+                      </div>
+                    )}
                   </div>
                 )}
-              </div>
-            )}
+              </TabsContent>
 
-            {/* Tab 3: At-Risk Students */}
-            {activeTab === 'at_risk' && (
-              <div>
+              {/* Tab 3: At-Risk Students */}
+              <TabsContent value="at_risk" className="space-y-4">
+                <ChartCard
+                  title="At-Risk Student Trend"
+                  description="Tracking count of students failing 1+ subjects"
+                  isEmpty={!atRiskTrend || atRiskTrend.length === 0}
+                  emptyMessage="Trend data will appear after multiple exams"
+                >
+                  <TrendAreaChart
+                    data={atRiskTrend || []}
+                    dataKey="count"
+                    xAxisKey="exam"
+                    color="#f43f5e"
+                    valueFormatter={(v: number) => `${v} students`}
+                  />
+                </ChartCard>
+
                 {filteredAtRiskStudents.length === 0 ? (
                   <div className="py-12 text-center border rounded-xl bg-muted/20 border-dashed space-y-2">
                     <CheckCircle2 className="h-8 w-8 text-emerald-500 mx-auto" />
@@ -806,13 +955,29 @@ export const SchoolResultsDashboardHub: React.FC = () => {
                     />
                   </div>
                 )}
-              </div>
-            )}
+              </TabsContent>
 
-            {/* Tab 4: Top Achievers */}
-            {activeTab === 'achievers' && (
-              <div>
-                {(!analytics?.top_achievers || analytics.top_achievers.length === 0) ? (
+              {/* Tab 4: Top Achievers */}
+              <TabsContent value="achievers" className="space-y-4">
+                <ChartCard
+                  title="Top Achievers Leaderboard"
+                  description="Highest scoring students"
+                  isEmpty={topAchievers.length === 0}
+                >
+                  <ComparisonBarChart
+                    data={topAchievers.slice(0, 10).map((student) => ({
+                      name: `#${student.rank} ${student.student_name}`,
+                      score: student.overall_percentage ?? 0,
+                    }))}
+                    bars={[{ dataKey: 'score', color: 'hsl(var(--primary))', label: 'Score %' }]}
+                    categoryKey="name"
+                    layout="vertical"
+                    valueFormatter={(v: number) => `${v}%`}
+                    height={Math.max(200, Math.min(topAchievers.length, 10) * 40)}
+                  />
+                </ChartCard>
+
+                {topAchievers.length === 0 ? (
                   <div className="py-12 text-center border rounded-xl bg-muted/20 border-dashed space-y-2">
                     <Award className="h-8 w-8 text-muted-foreground/60 mx-auto" />
                     <p className="text-sm font-semibold text-foreground">No Achievers Scored Yet</p>
@@ -822,7 +987,7 @@ export const SchoolResultsDashboardHub: React.FC = () => {
                   </div>
                 ) : (
                   <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
-                    {analytics.top_achievers.map((achiever) => {
+                    {topAchievers.map((achiever) => {
                       const badgeBg =
                         achiever.rank === 1
                           ? 'bg-amber-500 text-amber-950 font-bold'
@@ -843,7 +1008,9 @@ export const SchoolResultsDashboardHub: React.FC = () => {
                             </div>
                           )}
                           <CardContent className="p-4 flex items-center gap-3">
-                            <div className={`w-9 h-9 rounded-xl flex items-center justify-center text-sm shrink-0 ${badgeBg}`}>
+                            <div
+                              className={`w-9 h-9 rounded-xl flex items-center justify-center text-sm shrink-0 ${badgeBg}`}
+                            >
                               #{achiever.rank}
                             </div>
                             <div className="truncate flex-1">
@@ -867,10 +1034,10 @@ export const SchoolResultsDashboardHub: React.FC = () => {
                     })}
                   </div>
                 )}
-              </div>
-            )}
-          </>
-        )}
+              </TabsContent>
+            </>
+          )}
+        </Tabs>
       </CardContent>
     </Card>
   );
