@@ -1,7 +1,12 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { toast } from 'sonner';
 import { tenantsApi } from './api';
-import type { TenantFilterParams, TenantFormData, TenantOnboardPayload } from './types';
+import type {
+  TenantFilterParams,
+  TenantFormData,
+  TenantOnboardPayload,
+  TenantAdminAssignRequest,
+} from './types';
 
 export const TENANTS_QUERY_KEY = 'tenants';
 
@@ -142,3 +147,63 @@ export const useOnboardTenant = () => {
     },
   });
 };
+
+export const TENANT_DIRECTORY_QUERY_KEY = 'tenants-directory';
+export const TENANT_ANALYTICS_QUERY_KEY = 'tenant-analytics';
+export const TENANT_ADMINS_QUERY_KEY = 'tenant-admins';
+
+export const useTenantDirectory = (
+  params?: TenantFilterParams,
+  options?: { enabled?: boolean }
+) => {
+  return useQuery({
+    queryKey: [TENANT_DIRECTORY_QUERY_KEY, params],
+    queryFn: () => tenantsApi.getTenantDirectory(params),
+    enabled: options?.enabled !== undefined ? options.enabled : true,
+    placeholderData: (prev) => prev,
+  });
+};
+
+export const useTenantAnalytics = (
+  tenantId: string | null | undefined,
+  options?: { enabled?: boolean }
+) => {
+  return useQuery({
+    queryKey: [TENANT_ANALYTICS_QUERY_KEY, tenantId],
+    queryFn: () => tenantsApi.getTenantAnalytics(tenantId!),
+    enabled: Boolean(tenantId) && (options?.enabled !== undefined ? options.enabled : true),
+  });
+};
+
+export const useTenantAdmins = (
+  tenantId: string | null | undefined,
+  options?: { enabled?: boolean }
+) => {
+  return useQuery({
+    queryKey: [TENANT_ADMINS_QUERY_KEY, tenantId],
+    queryFn: () => tenantsApi.getTenantAdmins(tenantId!),
+    enabled: Boolean(tenantId) && (options?.enabled !== undefined ? options.enabled : true),
+  });
+};
+
+export const useAssignTenantAdmin = () => {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: ({
+      tenantId,
+      payload,
+    }: {
+      tenantId: string;
+      payload: TenantAdminAssignRequest;
+    }) => tenantsApi.assignTenantAdmin(tenantId, payload),
+    onSuccess: (_, variables) => {
+      queryClient.invalidateQueries({ queryKey: [TENANT_ADMINS_QUERY_KEY, variables.tenantId] });
+      queryClient.invalidateQueries({ queryKey: [TENANT_DIRECTORY_QUERY_KEY] });
+      toast.success('School Administrator assigned successfully');
+    },
+    onError: (error: any) => {
+      toast.error(error?.message || 'Failed to assign school administrator');
+    },
+  });
+};
+

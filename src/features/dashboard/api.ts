@@ -88,6 +88,16 @@ export const dashboardApi = {
     const data = await apiClient.get('/dashboard/super-admin');
     return data as unknown as SuperAdminDashboardMetrics;
   },
+
+  getPlatformTrends: async (days: number = 7): Promise<PlatformTrendsResponseDTO> => {
+    const data = await apiClient.get('/dashboard/super-admin/trends', { params: { days } });
+    return data as unknown as PlatformTrendsResponseDTO;
+  },
+
+  getTenantRankings: async (limit: number = 5): Promise<TenantRankingsResponseDTO> => {
+    const data = await apiClient.get('/dashboard/super-admin/rankings', { params: { limit } });
+    return data as unknown as TenantRankingsResponseDTO;
+  },
   
   getTenantMetrics: async (): Promise<TenantDashboardMetrics> => {
     const data = await apiClient.get('/dashboard/tenant');
