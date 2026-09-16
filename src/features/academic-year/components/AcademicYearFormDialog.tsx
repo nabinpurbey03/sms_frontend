@@ -20,13 +20,18 @@ import { Loader2 } from 'lucide-react';
 interface AcademicYearFormDialogProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
+  targetTenantId?: string | null;
+  targetTenantName?: string | null;
 }
 
 export const AcademicYearFormDialog: React.FC<AcademicYearFormDialogProps> = ({
   open,
   onOpenChange,
+  targetTenantId,
+  targetTenantName,
 }) => {
   const { activeTenantId } = useAuth();
+  const tenantIdToUse = targetTenantId || activeTenantId;
   const createMutation = useCreateAcademicYear();
 
   const {
@@ -49,14 +54,14 @@ export const AcademicYearFormDialog: React.FC<AcademicYearFormDialogProps> = ({
   };
 
   const onSubmit = async (data: AcademicYearForm) => {
-    if (!activeTenantId) return;
+    if (!tenantIdToUse) return;
     try {
       await createMutation.mutateAsync({
-        tenantId: activeTenantId,
+        tenantId: tenantIdToUse,
         data,
       });
       handleClose();
-    } catch (err) {
+    } catch {
       // Error handled by mutation
     }
   };
@@ -70,7 +75,9 @@ export const AcademicYearFormDialog: React.FC<AcademicYearFormDialogProps> = ({
         <DialogHeader>
           <DialogTitle>Create Academic Year</DialogTitle>
           <DialogDescription>
-            Define a new academic year for the school. Start and end dates are required.
+            {targetTenantName
+              ? `Define a new academic year for ${targetTenantName}. Start and end dates are required.`
+              : 'Define a new academic year for the school. Start and end dates are required.'}
           </DialogDescription>
         </DialogHeader>
 

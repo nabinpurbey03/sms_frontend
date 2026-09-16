@@ -16,14 +16,23 @@ import {
   TableHeader,
   TableRow,
 } from '@/components/ui/table';
-import { CalendarDays, Plus, CheckCircle2, Lock, Loader2, RefreshCw } from 'lucide-react';
+import { CalendarDays, Plus, CheckCircle2, Lock, Loader2, RefreshCw, School, Filter } from 'lucide-react';
+import { useTenants } from '@/features/tenants/hooks';
 
 export const AcademicYearsPage: React.FC = () => {
-  const { activeTenantId } = useAuth();
+  const { activeTenantId, activeTenantName } = useAuth();
   const { can, isSuperAdmin } = usePermission();
   const canManage = can('MANAGE_TENANT_SETTINGS') || isSuperAdmin;
 
-  const { data: years = [], isLoading } = useAcademicYears(activeTenantId);
+  // For Super Admins, allow selecting a specific tenant to inspect and manage, defaulting to activeTenantId if available
+  const { data: tenantsResponse } = useTenants({ page_size: 100 });
+  const tenants = tenantsResponse?.items || [];
+  const [selectedTenantId, setSelectedTenantId] = useState<string>('');
+
+  const effectiveTenantId = selectedTenantId || activeTenantId || '';
+  const effectiveTenant = tenants.find((t: import('@/features/tenants/types').Tenant) => t.id === effectiveTenantId);
+
+  const { data: years = [], isLoading } = useAcademicYears(effectiveTenantId || null);
   const setCurrentMutation = useSetCurrentAcademicYear();
   const closeMutation = useCloseAcademicYear();
 
@@ -37,26 +46,26 @@ export const AcademicYearsPage: React.FC = () => {
   }
 
   const handleSetCurrent = async (yearId: string, name: string) => {
-    if (!activeTenantId) return;
+    if (!effectiveTenantId) return;
     if (!window.confirm(`Are you sure you want to set ${name} as the current academic year for the whole school?`)) {
       return;
     }
     setProcessingId(yearId);
     try {
-      await setCurrentMutation.mutateAsync({ tenantId: activeTenantId, yearId });
+      await setCurrentMutation.mutateAsync({ tenantId: effectiveTenantId, yearId });
     } finally {
       setProcessingId(null);
     }
   };
 
   const handleCloseYear = async (yearId: string, name: string) => {
-    if (!activeTenantId) return;
+    if (!effectiveTenantId) return;
     if (!window.confirm(`Are you sure you want to close ${name}? This action might make data read-only.`)) {
       return;
     }
     setProcessingId(yearId);
     try {
-      await closeMutation.mutateAsync({ tenantId: activeTenantId, yearId });
+      await closeMutation.mutateAsync({ tenantId: effectiveTenantId, yearId });
     } finally {
       setProcessingId(null);
     }
@@ -86,7 +95,12 @@ export const AcademicYearsPage: React.FC = () => {
             </Button>
           )}
           {canManage && (
-            <Button onClick={() => setIsFormOpen(true)} className="w-full sm:w-auto shrink-0">
+            <Button
+              onClick={() => setIsFormOpen(true)}
+              disabled={!effectiveTenantId}
+              className="w-full sm:w-auto shrink-0"
+              title={!effectiveTenantId ? "Please select a school to create a year" : undefined}
+            >
               <Plus className="w-4 h-4 mr-2" />
               Create Year
             </Button>
@@ -94,12 +108,40 @@ export const AcademicYearsPage: React.FC = () => {
         </div>
       </div>
 
+      {/* Super Admin School Context Selector */}
+      {isSuperAdmin && (
+        <Card className="p-4 bg-muted/40 border-dashed flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+          <div className="flex items-center gap-2 text-sm text-foreground">
+            <School className="w-4 h-4 text-primary shrink-0" />
+            <span className="font-semibold">School Scope:</span>
+            <span className="text-muted-foreground text-xs">
+              {effectiveTenant ? effectiveTenant.name : 'Select a school to inspect its sessions'}
+            </span>
+          </div>
+          <div className="flex items-center gap-2">
+            <select
+              value={effectiveTenantId}
+              onChange={(e) => setSelectedTenantId(e.target.value)}
+              aria-label="Select School Scope"
+              className="h-9 px-3 rounded-lg border border-border bg-background text-xs font-medium focus:outline-none focus:ring-2 focus:ring-primary min-w-[200px]"
+            >
+              <option value="">-- Choose School to View --</option>
+              {tenants.map((t: import('@/features/tenants/types').Tenant) => (
+                <option key={t.id} value={t.id}>
+                  {t.name}
+                </option>
+              ))}
+            </select>
+          </div>
+        </Card>
+      )}
+
       <Card className="overflow-hidden">
-        {!activeTenantId ? (
+        {!effectiveTenantId ? (
           <div className="p-8 text-center text-muted-foreground">
             <p className="font-medium text-foreground">Global Platform View</p>
             <p className="text-xs mt-1">
-              Select a specific school tenant from the top bar to inspect its individual academic sessions, or click <strong>Platform Rollover</strong> above to advance sessions across all schools.
+              Select a school from the dropdown above to view its academic sessions, or click <strong>Platform Rollover</strong> to advance all schools platform-wide.
             </p>
           </div>
         ) : isLoading ? (
@@ -109,7 +151,7 @@ export const AcademicYearsPage: React.FC = () => {
           </div>
         ) : years.length === 0 ? (
           <div className="p-8 text-center text-muted-foreground">
-            No academic years found for this school. Create one to get started.
+            No academic years found for {effectiveTenant?.name || 'this school'}. Click "Create Year" to add one.
           </div>
         ) : (
           <div className="overflow-x-auto">
@@ -185,7 +227,12 @@ export const AcademicYearsPage: React.FC = () => {
         )}
       </Card>
 
-      <AcademicYearFormDialog open={isFormOpen} onOpenChange={setIsFormOpen} />
+      <AcademicYearFormDialog
+        open={isFormOpen}
+        onOpenChange={setIsFormOpen}
+        targetTenantId={effectiveTenantId}
+        targetTenantName={effectiveTenant?.name}
+      />
       <PlatformRolloverDialog open={isRolloverOpen} onOpenChange={setIsRolloverOpen} />
     </div>
   );
