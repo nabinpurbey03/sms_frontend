@@ -1,5 +1,11 @@
 import { apiClient } from '@/api/client';
-import type { AcademicYear, AcademicYearCreateDTO, AcademicYearUpdateDTO } from './types';
+import type {
+  AcademicYear,
+  AcademicYearCreateDTO,
+  AcademicYearUpdateDTO,
+  PlatformRolloverDTO,
+  PlatformRolloverSummaryDTO,
+} from './types';
 
 export const academicYearApi = {
   getAcademicYears: async (tenantId: string): Promise<AcademicYear[]> => {
@@ -20,5 +26,9 @@ export const academicYearApi = {
 
   closeAcademicYear: async (tenantId: string, yearId: string): Promise<AcademicYear> => {
     return apiClient.post(`/academic/tenants/${tenantId}/academic-years/${yearId}/close`, {});
-  }
+  },
+
+  platformRollover: async (data: PlatformRolloverDTO): Promise<PlatformRolloverSummaryDTO> => {
+    return apiClient.post('/academic/platform/academic-years/rollover', data);
+  },
 };
