@@ -21,7 +21,6 @@ import { usePermission } from '@/auth/usePermission';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { StatCard } from '@/components/ui/stat-card';
 import { Button } from '@/components/ui/button';
-import { DashboardHeroBanner } from '../components/DashboardHeroBanner';
 import { AttendanceDashboardHub } from '../components/AttendanceDashboardHub';
 import { SchoolResultsDashboardHub } from '../components/SchoolResultsDashboardHub';
 import { ParentReportCardsDashboardHub } from '@/features/examination/components/ParentReportCardsDashboardHub';
@@ -104,9 +103,6 @@ export const DashboardPage: React.FC = () => {
 
   return (
     <div className="space-y-6 w-full min-w-0">
-      {/* Welcome Hero Banner (Dynamic Theme-Adaptive) */}
-      <DashboardHeroBanner />
-
       {isSuperAdmin && !activeTenantId ? (
         <div className="space-y-6">
           <SuperAdminGrid metrics={superAdminMetrics} />
@@ -172,6 +168,17 @@ export const DashboardPage: React.FC = () => {
               }
             />
           </div>
+
+          {/* Live Attendance Reporting Hub */}
+          <AttendanceDashboardHub />
+
+          {/* School Examination Results & Academic Performance Hub (Admin & Office Admin only) */}
+          {(can('MANAGE_EXAMS') || isSuperAdmin) && (
+            <SchoolResultsDashboardHub />
+          )}
+
+          {/* Parent Official Academic Report Cards Hub */}
+          {isParent && <ParentReportCardsDashboardHub />}
         </>
       )}
 
@@ -466,17 +473,6 @@ export const DashboardPage: React.FC = () => {
           )}
         </div>
       </div>
-
-      {/* School Examination Results & Academic Performance Hub (Admin & Office Admin only) */}
-      {(can('MANAGE_EXAMS') || isSuperAdmin) && (
-        <SchoolResultsDashboardHub />
-      )}
-
-      {/* Parent Official Academic Report Cards Hub */}
-      {isParent && <ParentReportCardsDashboardHub />}
-
-      {/* Live Attendance Reporting Hub */}
-      <AttendanceDashboardHub />
 
 
       {/* Session Context — collapsed by default */}
