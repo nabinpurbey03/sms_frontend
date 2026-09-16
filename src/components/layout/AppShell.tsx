@@ -25,6 +25,7 @@ import {
   Bell,
   Search,
   Shield,
+  CalendarDays,
 } from 'lucide-react';
 
 import { useAuth } from '@/auth/useAuth';
@@ -184,6 +185,14 @@ export const AppShell: React.FC = () => {
       description: 'View system audit trails.',
       show: isSuperAdmin,
       category: 'Administration',
+    },
+    {
+      label: 'Academic Years',
+      href: '/academic-years',
+      icon: CalendarDays,
+      description: 'Manage academic calendar sessions and platform rollovers.',
+      show: isSuperAdmin || can('MANAGE_TENANT_SETTINGS'),
+      category: isSuperAdmin ? 'Administration' : 'Academics',
     },
     {
       label: 'School Members',

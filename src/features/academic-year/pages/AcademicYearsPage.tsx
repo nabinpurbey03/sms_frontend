@@ -31,11 +31,13 @@ export const AcademicYearsPage: React.FC = () => {
   const [isRolloverOpen, setIsRolloverOpen] = useState(false);
   const [processingId, setProcessingId] = useState<string | null>(null);
 
-  if (!activeTenantId) {
+  // Non-superadmins require an active tenant to view or manage local academic years
+  if (!activeTenantId && !isSuperAdmin) {
     return <TenantRequiredState featureName="academic years management" />;
   }
 
   const handleSetCurrent = async (yearId: string, name: string) => {
+    if (!activeTenantId) return;
     if (!window.confirm(`Are you sure you want to set ${name} as the current academic year for the whole school?`)) {
       return;
     }
@@ -48,6 +50,7 @@ export const AcademicYearsPage: React.FC = () => {
   };
 
   const handleCloseYear = async (yearId: string, name: string) => {
+    if (!activeTenantId) return;
     if (!window.confirm(`Are you sure you want to close ${name}? This action might make data read-only.`)) {
       return;
     }
@@ -92,14 +95,21 @@ export const AcademicYearsPage: React.FC = () => {
       </div>
 
       <Card className="overflow-hidden">
-        {isLoading ? (
+        {!activeTenantId ? (
+          <div className="p-8 text-center text-muted-foreground">
+            <p className="font-medium text-foreground">Global Platform View</p>
+            <p className="text-xs mt-1">
+              Select a specific school tenant from the top bar to inspect its individual academic sessions, or click <strong>Platform Rollover</strong> above to advance sessions across all schools.
+            </p>
+          </div>
+        ) : isLoading ? (
           <div className="p-8 text-center text-muted-foreground flex flex-col items-center justify-center">
             <Loader2 className="w-8 h-8 animate-spin mb-2" />
             Loading academic years...
           </div>
         ) : years.length === 0 ? (
           <div className="p-8 text-center text-muted-foreground">
-            No academic years found. Create one to get started.
+            No academic years found for this school. Create one to get started.
           </div>
         ) : (
           <div className="overflow-x-auto">
