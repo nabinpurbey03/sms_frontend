@@ -26,6 +26,7 @@ import {
   Search,
   Shield,
   CalendarDays,
+  TrendingUp,
 } from 'lucide-react';
 
 import { useAuth } from '@/auth/useAuth';
@@ -240,6 +241,14 @@ export const AppShell: React.FC = () => {
       icon: UserCheck,
       description: 'Assign teachers to specific classes and subjects.',
       show: can('ASSIGN_TEACHERS'),
+      category: 'Academics',
+    },
+    {
+      label: 'Analytics',
+      href: '/academic/analytics',
+      icon: TrendingUp,
+      description: 'Student retention, progression, and cohort analytics.',
+      show: isSuperAdmin || can('MANAGE_TENANT_SETTINGS') || can('VIEW_TENANT_SETTINGS'),
       category: 'Academics',
     },
     {

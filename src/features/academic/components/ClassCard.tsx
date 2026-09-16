@@ -12,6 +12,8 @@ import {
   CalendarCheck,
   Edit3,
   CheckCircle2,
+  GitCommit,
+  GraduationCap,
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import {
@@ -35,6 +37,10 @@ interface ClassCardProps {
   cls: ClassWithDetails;
   canManage: boolean;
   teacherScope?: TeacherClassScope;
+  sequenceIndex?: number;
+  totalClasses?: number;
+  nextClassName?: string | null;
+  isHighestGrade?: boolean;
   onOpenDetails?: (cls: ClassWithDetails) => void;
   onOpenDetailsPage: (clsId: string) => void;
   onAddSection?: (cls: ClassWithDetails) => void;
@@ -47,6 +53,10 @@ export const ClassCard: React.FC<ClassCardProps> = ({
   cls,
   canManage,
   teacherScope,
+  sequenceIndex,
+  totalClasses,
+  nextClassName,
+  isHighestGrade,
   onOpenDetailsPage,
   onAddSection,
   onEditClass,
@@ -80,6 +90,11 @@ export const ClassCard: React.FC<ClassCardProps> = ({
                 <span>{cls.name}</span>
                 <ArrowRight className="w-4 h-4 opacity-0 -translate-x-1 group-hover:opacity-100 group-hover:translate-x-0 transition-all text-primary shrink-0" />
               </h3>
+              {(cls.sequence_order !== undefined || sequenceIndex !== undefined) && (
+                <span className="text-[10px] font-bold px-1.5 py-0.5 rounded-md bg-muted border border-border/70 text-muted-foreground">
+                  Step #{cls.sequence_order ?? sequenceIndex}
+                </span>
+              )}
             </div>
             <p className="text-xs text-muted-foreground mt-1 flex items-center gap-2 flex-wrap">
               <span className="flex items-center gap-1">
@@ -203,6 +218,30 @@ export const ClassCard: React.FC<ClassCardProps> = ({
               ))
             )}
           </div>
+        </div>
+
+        {/* Progression & Promotion Pathway */}
+        <div className="pt-2.5 border-t border-border/50 flex items-center justify-between text-xs gap-2">
+          <div className="flex items-center gap-1.5 text-muted-foreground min-w-0">
+            <GitCommit className="w-3.5 h-3.5 text-primary shrink-0" />
+            <span className="text-[11px] font-medium text-foreground shrink-0">Progression:</span>
+            <span className="text-[11px] truncate">
+              Step #{cls.sequence_order ?? sequenceIndex ?? '—'}
+              {totalClasses ? ` of ${totalClasses}` : ''}
+            </span>
+          </div>
+          {isHighestGrade ? (
+            <div className="flex items-center gap-1 text-[10px] font-semibold text-amber-700 dark:text-amber-300 bg-amber-500/15 px-2 py-0.5 rounded-md border border-amber-500/25 shrink-0">
+              <GraduationCap className="w-3 h-3 text-amber-600 dark:text-amber-400" />
+              <span>Graduating Cohort</span>
+            </div>
+          ) : nextClassName ? (
+            <div className="flex items-center gap-1 text-[10px] text-muted-foreground bg-muted/60 px-2 py-0.5 rounded-md border border-border/60 shrink-0">
+              <span>Promotes to</span>
+              <span className="font-semibold text-foreground">{nextClassName}</span>
+              <ArrowRight className="w-2.5 h-2.5 text-primary" />
+            </div>
+          ) : null}
         </div>
       </div>
 

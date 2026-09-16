@@ -7,6 +7,7 @@ import type {
   SectionAddEligibility,
   ClassCreateDTO,
   ClassUpdateDTO,
+  ClassReorderDTO,
   StudentCreateDTO,
   SubjectCreateDTO,
   TeacherAssignment,
@@ -14,6 +15,7 @@ import type {
   ClassWithDetails,
   ChildTeachersResponse,
   TeacherStudentsParentsResponse,
+  AcademicYearRetentionResponse,
 } from './types';
 
 export const academicApi = {
@@ -35,6 +37,14 @@ export const academicApi = {
     data: ClassUpdateDTO
   ): Promise<AcademicClass> => {
     return apiClient.patch(`/academic/tenants/${tenantId}/classes/${classId}`, data);
+  },
+
+  reorderClasses: async (
+    tenantId: string,
+    data: ClassReorderDTO
+  ): Promise<AcademicClass[]> => {
+    const res = await apiClient.put(`/academic/tenants/${tenantId}/classes/reorder`, data) as any;
+    return res.data || res;
   },
 
   deleteClass: async (tenantId: string, classId: string, hard = false): Promise<boolean> => {
@@ -286,6 +296,20 @@ export const academicApi = {
       `/academic/tenants/${tenantId}/teachers/my-students-parents`,
       { params }
     );
+  },
+
+  // ==========================================
+  // Retention & Cohort Analytics
+  // ==========================================
+  getRetentionAnalytics: async (
+    tenantId: string,
+    academicYearId: string
+  ): Promise<AcademicYearRetentionResponse> => {
+    const res = await apiClient.get(
+      `/academic/tenants/${tenantId}/analytics/retention`,
+      { params: { academic_year_id: academicYearId } }
+    ) as any;
+    return res.data || res;
   },
 };
 

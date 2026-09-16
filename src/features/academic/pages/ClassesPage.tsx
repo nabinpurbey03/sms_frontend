@@ -18,6 +18,8 @@ import { ClassEditDialog } from '../components/ClassEditDialog';
 import { ClassDeleteDialog } from '../components/ClassDeleteDialog';
 import { SectionAddDialog } from '../components/SectionAddDialog';
 import { ClassDetailModal } from '../components/ClassDetailModal';
+import { ClassProgressionPipeline } from '../components/ClassProgressionPipeline';
+import { ClassReorderDialog } from '../components/ClassReorderDialog';
 import { Plus, Search, X, BookOpen, ShieldCheck } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -134,6 +136,7 @@ export const ClassesPage: React.FC = () => {
   const [editingClass, setEditingClass] = useState<AcademicClass | null>(null);
   const [deletingClass, setDeletingClass] = useState<AcademicClass | null>(null);
   const [addingSectionClass, setAddingSectionClass] = useState<AcademicClass | null>(null);
+  const [isReorderOpen, setIsReorderOpen] = useState(false);
 
   // Queries & Mutations
   const {
@@ -218,11 +221,36 @@ export const ClassesPage: React.FC = () => {
     return { assignedClassIds: classIds, teacherScopeByClassId: scopeMap };
   }, [isTeacherOnly, myTeacherAssignments, markedSectionIds]);
 
-  // Filter classes for teacher
+  // Sort classes strictly by sequence_order ascending so chronology is preserved everywhere
+  const sortedClasses = useMemo(() => {
+    return [...classesWithDetails].sort((a, b) => {
+      const seqA = a.sequence_order ?? 0;
+      const seqB = b.sequence_order ?? 0;
+      if (seqA !== seqB) return seqA - seqB;
+      return a.name.localeCompare(b.name);
+    });
+  }, [classesWithDetails]);
+
+  // Progression lookup map for each class
+  const progressionMetaMap = useMemo(() => {
+    const map = new Map<string, { sequenceIndex: number; nextClassName: string | null; isHighestGrade: boolean }>();
+    sortedClasses.forEach((c, idx) => {
+      const isFinal = idx === sortedClasses.length - 1;
+      const nextCls = !isFinal ? sortedClasses[idx + 1] : null;
+      map.set(c.id, {
+        sequenceIndex: c.sequence_order ?? (idx + 1),
+        nextClassName: nextCls ? nextCls.name : null,
+        isHighestGrade: isFinal && sortedClasses.length > 1,
+      });
+    });
+    return map;
+  }, [sortedClasses]);
+
+  // Filter classes for teacher while preserving chronological sequence
   const scopedClasses = useMemo(() => {
-    if (!isTeacherOnly || !assignedClassIds) return classesWithDetails;
-    return classesWithDetails.filter((c) => assignedClassIds.has(c.id));
-  }, [classesWithDetails, isTeacherOnly, assignedClassIds]);
+    if (!isTeacherOnly || !assignedClassIds) return sortedClasses;
+    return sortedClasses.filter((c) => assignedClassIds.has(c.id));
+  }, [sortedClasses, isTeacherOnly, assignedClassIds]);
 
   // Compute Stats
   const stats: AcademicStats = useMemo(() => {
@@ -392,26 +420,42 @@ export const ClassesPage: React.FC = () => {
         />
       ) : (
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-          {filteredClasses.map((cls) => (
-            <ClassCard
-              key={cls.id}
-              cls={cls}
-              canManage={canManage}
-              teacherScope={teacherScopeByClassId.get(cls.id)}
-              onMarkAttendance={(clsId, secId) =>
-                navigate({
-                  to: '/attendance/mark',
-                  search: { classId: clsId, sectionId: secId } as any,
-                })
-              }
-              onOpenDetails={() => {}}
-              onOpenDetailsPage={(id) => navigate({ to: '/academic/classes/$classId', params: { classId: id } })}
-              onAddSection={(c) => setAddingSectionClass(c)}
-              onEditClass={(c) => setEditingClass(c)}
-              onDeleteClass={(c) => setDeletingClass(c)}
-            />
-          ))}
+          {filteredClasses.map((cls) => {
+            const meta = progressionMetaMap.get(cls.id);
+            return (
+              <ClassCard
+                key={cls.id}
+                cls={cls}
+                canManage={canManage}
+                teacherScope={teacherScopeByClassId.get(cls.id)}
+                sequenceIndex={meta?.sequenceIndex}
+                totalClasses={sortedClasses.length}
+                nextClassName={meta?.nextClassName}
+                isHighestGrade={meta?.isHighestGrade}
+                onMarkAttendance={(clsId, secId) =>
+                  navigate({
+                    to: '/attendance/mark',
+                    search: { classId: clsId, sectionId: secId } as any,
+                  })
+                }
+                onOpenDetails={() => {}}
+                onOpenDetailsPage={(id) => navigate({ to: '/academic/classes/$classId', params: { classId: id } })}
+                onAddSection={(c) => setAddingSectionClass(c)}
+                onEditClass={(c) => setEditingClass(c)}
+                onDeleteClass={(c) => setDeletingClass(c)}
+              />
+            );
+          })}
         </div>
+      )}
+
+      {/* Academic Progression Chronology */}
+      {sortedClasses.length > 0 && (
+        <ClassProgressionPipeline
+          classes={sortedClasses}
+          onSelectClass={(id) => navigate({ to: '/academic/classes/$classId', params: { classId: id } })}
+          onOpenReorder={canManage ? () => setIsReorderOpen(true) : undefined}
+        />
       )}
 
       {/* Dialog: Create Class */}
@@ -502,6 +546,14 @@ export const ClassesPage: React.FC = () => {
         }}
         isAddingStudent={addStudentMutation.isPending}
         isAddingSection={createSectionMutation.isPending}
+      />
+
+      {/* Dialog: Reorder Progression Sequence */}
+      <ClassReorderDialog
+        isOpen={isReorderOpen}
+        onClose={() => setIsReorderOpen(false)}
+        classes={sortedClasses}
+        tenantId={pageTenantId || activeTenantId || ''}
       />
         </>
       )}

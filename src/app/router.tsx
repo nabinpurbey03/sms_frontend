@@ -9,6 +9,7 @@ import {
 } from '@tanstack/react-router';
 
 import { LoginPage } from '@/features/auth/pages/LoginPage';
+import { RegisterPage } from '@/features/auth/pages/RegisterPage';
 import { ProtectedLayout } from './ProtectedLayout';
 import { DashboardPage } from '@/features/dashboard/pages/DashboardPage';
 import { TenantsPage } from '@/features/tenants/pages/TenantsPage';
@@ -23,6 +24,7 @@ import { SubjectsPage } from '@/features/academic/pages/SubjectsPage';
 import { TeacherAssignmentsPage } from '@/features/academic/pages/TeacherAssignmentsPage';
 import { MyTeachersPage } from '@/features/academic/pages/MyTeachersPage';
 import { TeacherParentDirectoryPage } from '@/features/academic/pages/TeacherParentDirectoryPage';
+import { AcademicAnalyticsPage } from '@/features/academic/pages/AcademicAnalyticsPage';
 import { MarkAttendancePage } from '@/features/attendance/pages/MarkAttendancePage';
 import { MyAssignmentsPage } from '@/features/attendance/pages/MyAssignmentsPage';
 import { AttendanceReportsPage } from '@/features/attendance/pages/AttendanceReportsPage';
@@ -60,14 +62,14 @@ const indexRoute = createRoute({
 const loginRoute = createRoute({
   getParentRoute: () => rootRoute,
   path: '/login',
-  component: () => <LoginPage defaultTab="signin" />,
+  component: () => <LoginPage />,
 });
 
 // Register Route
 const registerRoute = createRoute({
   getParentRoute: () => rootRoute,
   path: '/register',
-  component: () => <LoginPage defaultTab="signup" />,
+  component: () => <RegisterPage />,
 });
 
 // Protected Layout Route
@@ -156,6 +158,12 @@ const reportCardsRoute = createRoute({
   getParentRoute: () => protectedLayoutRoute,
   path: '/academic/report-cards',
   component: ParentReportCardsPage,
+});
+
+const academicAnalyticsRoute = createRoute({
+  getParentRoute: () => protectedLayoutRoute,
+  path: '/academic/analytics',
+  component: AcademicAnalyticsPage,
 });
 
 const attendanceMarkRoute = createRoute({
@@ -255,6 +263,7 @@ const routeTree = rootRoute.addChildren([
     myTeachersRoute,
     myChildrenRoute,
     reportCardsRoute,
+    academicAnalyticsRoute,
     attendanceMarkRoute,
     attendanceReportsRoute,
     membersRoute,

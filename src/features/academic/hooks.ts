@@ -4,6 +4,7 @@ import { academicApi } from './api';
 import type {
   ClassCreateDTO,
   ClassUpdateDTO,
+  ClassReorderDTO,
   StudentCreateDTO,
   SubjectCreateDTO,
   ClassWithDetails,
@@ -187,6 +188,26 @@ export const useDeleteClass = () => {
     onError: (error: any) => {
       toast.error('Failed to Delete Class', {
         description: error.message || 'Could not delete class.',
+      });
+    },
+  });
+};
+
+export const useReorderClasses = () => {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: ({ tenantId, data }: { tenantId: string; data: ClassReorderDTO }) =>
+      academicApi.reorderClasses(tenantId, data),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: [CLASSES_QUERY_KEY] });
+      toast.success('Sequence Reordered', {
+        description: 'Class progression sequence updated successfully.',
+      });
+    },
+    onError: (error: any) => {
+      toast.error('Failed to Reorder Classes', {
+        description: error.message || 'Could not update class sequence.',
       });
     },
   });
@@ -604,5 +625,22 @@ export const useTeacherStudentsAndParents = (
     queryFn: () => academicApi.getTeacherStudentsAndParents(tenantId!, params),
     enabled: !!tenantId,
     staleTime: 1000 * 30,
+  });
+};
+
+// ==========================================
+// Cohort Retention & Analytics Hooks
+// ==========================================
+export const ACADEMIC_ANALYTICS_QUERY_KEY = 'academic_analytics';
+
+export const useAcademicRetention = (
+  tenantId: string | null,
+  academicYearId?: string | null
+) => {
+  return useQuery({
+    queryKey: [ACADEMIC_ANALYTICS_QUERY_KEY, 'retention', tenantId, academicYearId],
+    queryFn: () => academicApi.getRetentionAnalytics(tenantId!, academicYearId!),
+    enabled: !!tenantId && !!academicYearId,
+    staleTime: 1000 * 60 * 2, // 2 minutes
   });
 };

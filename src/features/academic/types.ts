@@ -2,6 +2,7 @@ export interface AcademicClass {
   id: string;
   tenant_id: string;
   name: string;
+  sequence_order?: number;
   created_at?: string;
   updated_at?: string;
 }
@@ -53,6 +54,10 @@ export interface ClassCreateDTO {
 
 export interface ClassUpdateDTO {
   name: string;
+}
+
+export interface ClassReorderDTO {
+  class_ids: string[];
 }
 
 export interface StudentCreateDTO {
@@ -169,4 +174,31 @@ export interface TeacherStudentsParentsResponse {
   students: TeacherStudentParentItem[];
   total_students: number;
   total_linked_parents: number;
+}
+
+// ==========================================
+// Cohort Retention & Analytics Interfaces
+// ==========================================
+export interface CohortRetentionMetric {
+  class_id: string;
+  class_name: string;
+  sequence_order: number;
+  starting_enrolled: number;
+  retained_next_year: number;
+  graduated: number;
+  transferred_out: number;
+  retention_rate: number;
+}
+
+export interface AcademicYearRetentionResponse {
+  academic_year_id: string;
+  academic_year_name: string;
+  next_academic_year_id?: string | null;
+  next_academic_year_name?: string | null;
+  overall_retention_rate: number;
+  total_starting_enrolled: number;
+  total_retained: number;
+  total_graduated: number;
+  total_transferred_out: number;
+  grade_breakdown: CohortRetentionMetric[];
 }

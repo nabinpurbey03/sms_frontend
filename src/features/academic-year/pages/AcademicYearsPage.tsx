@@ -27,6 +27,9 @@ import {
 } from 'lucide-react';
 import { useTenant } from '@/features/tenants/hooks';
 import { SchoolSearchSelect } from '../components/SchoolSearchSelect';
+import { useAllClassesWithDetails } from '@/features/academic/hooks';
+import { ClassProgressionPipeline } from '@/features/academic/components/ClassProgressionPipeline';
+import { ClassReorderDialog } from '@/features/academic/components/ClassReorderDialog';
 
 export const AcademicYearsPage: React.FC = () => {
   const { activeTenantId } = useAuth();
@@ -39,11 +42,13 @@ export const AcademicYearsPage: React.FC = () => {
   const { data: effectiveTenant } = useTenant(effectiveTenantId || null);
 
   const { data: years = [], isLoading } = useAcademicYears(effectiveTenantId || null);
+  const { data: tenantClasses = [] } = useAllClassesWithDetails(effectiveTenantId || null);
   const setCurrentMutation = useSetCurrentAcademicYear();
   const closeMutation = useCloseAcademicYear();
 
   const [isFormOpen, setIsFormOpen] = useState(false);
   const [isRolloverOpen, setIsRolloverOpen] = useState(false);
+  const [isReorderOpen, setIsReorderOpen] = useState(false);
   const [processingId, setProcessingId] = useState<string | null>(null);
 
   // Non-superadmins require an active tenant to view or manage local academic years
@@ -224,6 +229,15 @@ export const AcademicYearsPage: React.FC = () => {
         )}
       </Card>
 
+      {/* School Class Progression Chronology */}
+      {effectiveTenantId && tenantClasses.length > 0 && (
+        <ClassProgressionPipeline
+          classes={tenantClasses}
+          defaultExpanded={false}
+          onOpenReorder={canManage ? () => setIsReorderOpen(true) : undefined}
+        />
+      )}
+
       <AcademicYearFormDialog
         open={isFormOpen}
         onOpenChange={setIsFormOpen}
@@ -231,6 +245,12 @@ export const AcademicYearsPage: React.FC = () => {
         targetTenantName={effectiveTenant?.name}
       />
       <PlatformRolloverDialog open={isRolloverOpen} onOpenChange={setIsRolloverOpen} />
+      <ClassReorderDialog
+        isOpen={isReorderOpen}
+        onClose={() => setIsReorderOpen(false)}
+        classes={tenantClasses}
+        tenantId={effectiveTenantId}
+      />
     </div>
   );
 };
