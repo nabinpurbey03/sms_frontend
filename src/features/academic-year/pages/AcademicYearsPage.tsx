@@ -24,44 +24,19 @@ import {
   Loader2,
   RefreshCw,
   School,
-  Search,
-  ChevronDown,
-  Check,
-  Building2,
 } from 'lucide-react';
-import {
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuItem,
-  DropdownMenuLabel,
-  DropdownMenuSeparator,
-  DropdownMenuTrigger,
-} from '@/components/ui/dropdown-menu';
-import { useTenants } from '@/features/tenants/hooks';
+import { useTenant } from '@/features/tenants/hooks';
+import { SchoolSearchSelect } from '../components/SchoolSearchSelect';
 
 export const AcademicYearsPage: React.FC = () => {
-  const { activeTenantId, activeTenantName } = useAuth();
+  const { activeTenantId } = useAuth();
   const { can, isSuperAdmin } = usePermission();
   const canManage = can('MANAGE_TENANT_SETTINGS') || isSuperAdmin;
 
   // For Super Admins, allow selecting a specific tenant with search capability
-  const [tenantSearch, setTenantSearch] = useState('');
-  const { data: tenantsResponse } = useTenants({ page_size: 500 });
-  const tenants = tenantsResponse?.items || [];
   const [selectedTenantId, setSelectedTenantId] = useState<string>('');
-
-  const filteredTenants = React.useMemo(() => {
-    if (!tenantSearch.trim()) return tenants;
-    const query = tenantSearch.toLowerCase();
-    return tenants.filter(
-      (t: import('@/features/tenants/types').Tenant) =>
-        t.name.toLowerCase().includes(query) ||
-        t.domain_name.toLowerCase().includes(query)
-    );
-  }, [tenants, tenantSearch]);
-
   const effectiveTenantId = selectedTenantId || activeTenantId || '';
-  const effectiveTenant = tenants.find((t: import('@/features/tenants/types').Tenant) => t.id === effectiveTenantId);
+  const { data: effectiveTenant } = useTenant(effectiveTenantId || null);
 
   const { data: years = [], isLoading } = useAcademicYears(effectiveTenantId || null);
   const setCurrentMutation = useSetCurrentAcademicYear();
@@ -150,72 +125,10 @@ export const AcademicYearsPage: React.FC = () => {
             </span>
           </div>
           <div className="flex items-center gap-2">
-            <DropdownMenu>
-              <DropdownMenuTrigger asChild>
-                <Button
-                  variant="outline"
-                  size="sm"
-                  className="h-9 px-3 text-xs justify-between gap-2 min-w-[220px] max-w-[320px] bg-background font-medium"
-                >
-                  <div className="flex items-center gap-1.5 truncate">
-                    <Building2 className="w-3.5 h-3.5 text-primary shrink-0" />
-                    <span className="truncate">
-                      {effectiveTenant ? effectiveTenant.name : 'Choose School to View'}
-                    </span>
-                  </div>
-                  <ChevronDown className="w-3.5 h-3.5 opacity-50 shrink-0 ml-1" />
-                </Button>
-              </DropdownMenuTrigger>
-              <DropdownMenuContent align="end" className="w-72 sm:w-80 p-2 shadow-xl rounded-xl max-h-[380px] flex flex-col">
-                <div className="px-1 pb-2">
-                  <div className="relative">
-                    <Search className="w-3.5 h-3.5 text-muted-foreground absolute left-2.5 top-1/2 -translate-y-1/2" />
-                    <input
-                      type="text"
-                      placeholder="Search school by name or domain..."
-                      value={tenantSearch}
-                      onChange={(e) => setTenantSearch(e.target.value)}
-                      onClick={(e) => e.stopPropagation()}
-                      onKeyDown={(e) => e.stopPropagation()}
-                      className="w-full pl-8 pr-3 py-1.5 text-xs bg-muted/50 rounded-lg border border-border/80 focus:outline-none focus:ring-1 focus:ring-primary focus:bg-background"
-                      autoFocus
-                    />
-                  </div>
-                </div>
-                <DropdownMenuSeparator />
-                <div className="overflow-y-auto max-h-[260px] space-y-0.5 py-1">
-                  {filteredTenants.length === 0 ? (
-                    <div className="p-4 text-center text-xs text-muted-foreground">
-                      No schools match "{tenantSearch}"
-                    </div>
-                  ) : (
-                    filteredTenants.map((t: import('@/features/tenants/types').Tenant) => {
-                      const isSelected = t.id === effectiveTenantId;
-                      return (
-                        <DropdownMenuItem
-                          key={t.id}
-                          onClick={() => {
-                            setSelectedTenantId(t.id);
-                            setTenantSearch('');
-                          }}
-                          className={`cursor-pointer text-xs rounded-lg px-2.5 py-2 flex items-center justify-between ${
-                            isSelected ? 'bg-primary/10 font-bold text-primary' : ''
-                          }`}
-                        >
-                          <div className="flex flex-col min-w-0 pr-2">
-                            <span className="truncate">{t.name}</span>
-                            <span className="text-[10px] text-muted-foreground font-mono opacity-80 truncate">
-                              {t.domain_name}
-                            </span>
-                          </div>
-                          {isSelected && <Check className="w-4 h-4 text-primary shrink-0" />}
-                        </DropdownMenuItem>
-                      );
-                    })
-                  )}
-                </div>
-              </DropdownMenuContent>
-            </DropdownMenu>
+            <SchoolSearchSelect
+              selectedTenantId={selectedTenantId}
+              onSelectTenant={setSelectedTenantId}
+            />
           </div>
         </Card>
       )}
