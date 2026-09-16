@@ -3,6 +3,7 @@ import { useAuth } from '@/auth/useAuth';
 import { usePermission } from '@/auth/usePermission';
 import { useAcademicYears, useSetCurrentAcademicYear, useCloseAcademicYear } from '../hooks';
 import { AcademicYearFormDialog } from '../components/AcademicYearFormDialog';
+import { PlatformRolloverDialog } from '../components/PlatformRolloverDialog';
 import { TenantRequiredState } from '@/components/common/TenantRequiredState';
 import { Card } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -15,7 +16,7 @@ import {
   TableHeader,
   TableRow,
 } from '@/components/ui/table';
-import { CalendarDays, Plus, CheckCircle2, Lock, Loader2 } from 'lucide-react';
+import { CalendarDays, Plus, CheckCircle2, Lock, Loader2, RefreshCw } from 'lucide-react';
 
 export const AcademicYearsPage: React.FC = () => {
   const { activeTenantId } = useAuth();
@@ -27,6 +28,7 @@ export const AcademicYearsPage: React.FC = () => {
   const closeMutation = useCloseAcademicYear();
 
   const [isFormOpen, setIsFormOpen] = useState(false);
+  const [isRolloverOpen, setIsRolloverOpen] = useState(false);
   const [processingId, setProcessingId] = useState<string | null>(null);
 
   if (!activeTenantId) {
@@ -69,12 +71,24 @@ export const AcademicYearsPage: React.FC = () => {
             Manage academic sessions, define start and end dates, and set the current active year.
           </p>
         </div>
-        {canManage && (
-          <Button onClick={() => setIsFormOpen(true)} className="w-full sm:w-auto shrink-0">
-            <Plus className="w-4 h-4 mr-2" />
-            Create Year
-          </Button>
-        )}
+        <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-2">
+          {isSuperAdmin && (
+            <Button
+              variant="destructive"
+              onClick={() => setIsRolloverOpen(true)}
+              className="w-full sm:w-auto shrink-0 bg-amber-600 hover:bg-amber-700 text-white"
+            >
+              <RefreshCw className="w-4 h-4 mr-2" />
+              Platform Rollover
+            </Button>
+          )}
+          {canManage && (
+            <Button onClick={() => setIsFormOpen(true)} className="w-full sm:w-auto shrink-0">
+              <Plus className="w-4 h-4 mr-2" />
+              Create Year
+            </Button>
+          )}
+        </div>
       </div>
 
       <Card className="overflow-hidden">
@@ -162,6 +176,7 @@ export const AcademicYearsPage: React.FC = () => {
       </Card>
 
       <AcademicYearFormDialog open={isFormOpen} onOpenChange={setIsFormOpen} />
+      <PlatformRolloverDialog open={isRolloverOpen} onOpenChange={setIsRolloverOpen} />
     </div>
   );
 };
