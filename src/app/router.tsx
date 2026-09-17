@@ -20,6 +20,7 @@ import { MyChildrenPage } from '@/features/members/pages/MyChildrenPage';
 import { ClassesPage } from '@/features/academic/pages/ClassesPage';
 import { ClassDetailPage } from '@/features/academic/pages/ClassDetailPage';
 import { StudentsPage } from '@/features/academic/pages/StudentsPage';
+import { AlumniPage } from '@/features/academic/pages/AlumniPage';
 import { SubjectsPage } from '@/features/academic/pages/SubjectsPage';
 import { TeacherAssignmentsPage } from '@/features/academic/pages/TeacherAssignmentsPage';
 import { MyTeachersPage } from '@/features/academic/pages/MyTeachersPage';
@@ -110,6 +111,12 @@ const studentsRoute = createRoute({
   getParentRoute: () => protectedLayoutRoute,
   path: '/academic/students',
   component: StudentsPage,
+});
+
+const alumniRoute = createRoute({
+  getParentRoute: () => protectedLayoutRoute,
+  path: '/academic/alumni',
+  component: AlumniPage,
 });
 
 const subjectsRoute = createRoute({
@@ -255,6 +262,7 @@ const routeTree = rootRoute.addChildren([
     classesRoute,
     classDetailRoute,
     studentsRoute,
+    alumniRoute,
     subjectsRoute,
     assignmentsRoute,
     myAssignmentsRoute,

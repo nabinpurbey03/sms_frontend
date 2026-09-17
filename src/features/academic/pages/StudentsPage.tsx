@@ -7,6 +7,7 @@ import {
   useBulkAddStudents,
   useDeleteStudent,
   useUpdateStudentStatus,
+  useGraduatedStudents,
 } from '../hooks';
 import type { AcademicStudent, StudentCreateDTO } from '../types';
 import { StudentEnrollGlobalDialog } from '../components/StudentEnrollGlobalDialog';
@@ -15,8 +16,6 @@ import { StudentDeleteDialog } from '../components/StudentDeleteDialog';
 import { ParentStudentLinkDialog } from '@/features/members/components/ParentStudentLinkDialog';
 import { useSelectedAcademicYear } from '@/features/academic-year/hooks/useSelectedAcademicYear';
 import { StudentEnrollmentHistoryDialog } from '../components/StudentEnrollmentHistoryDialog';
-import { GraduatedStudentsTable } from '../components/GraduatedStudentsTable';
-import { Tabs, TabsList, TabsTrigger, TabsContent } from '@/components/ui/tabs';
 import {
   Users,
   GraduationCap,
@@ -65,28 +64,6 @@ export const StudentsPage: React.FC = () => {
   const { can, isSuperAdmin } = usePermission();
   const canManage = can('MANAGE_SECTIONS_STUDENTS') || isSuperAdmin;
 
-  // Tab State
-  const [activeTab, setActiveTab] = useState<'active' | 'graduated'>(() => {
-    if (typeof window !== 'undefined') {
-      const params = new URLSearchParams(window.location.search);
-      if (params.get('tab') === 'graduated') return 'graduated';
-    }
-    return 'active';
-  });
-
-  const handleTabChange = (val: string) => {
-    const nextTab = val as 'active' | 'graduated';
-    setActiveTab(nextTab);
-    if (typeof window !== 'undefined') {
-      const url = new URL(window.location.href);
-      if (nextTab === 'graduated') {
-        url.searchParams.set('tab', 'graduated');
-      } else {
-        url.searchParams.delete('tab');
-      }
-      window.history.replaceState({}, '', url.toString());
-    }
-  };
 
   // Search & Filter State
   const [searchQuery, setSearchQuery] = useState('');
@@ -114,6 +91,8 @@ export const StudentsPage: React.FC = () => {
     isError,
     refetch,
   } = useAllClassesWithDetails(activeTenantId, selectedYearId);
+
+  const { data: graduatedData } = useGraduatedStudents(activeTenantId, { limit: 1 });
 
   const addStudentMutation = useAddStudent();
   const bulkAddMutation = useBulkAddStudents();
@@ -340,32 +319,8 @@ export const StudentsPage: React.FC = () => {
 
   return (
     <div className="space-y-6 pb-12">
-      <Tabs value={activeTab} onValueChange={handleTabChange} className="w-full space-y-6">
-        <TabsList className="grid w-full max-w-md grid-cols-2 p-1 bg-muted/60 rounded-xl">
-          <TabsTrigger
-            value="active"
-            className="flex items-center gap-2 text-xs font-semibold rounded-lg data-[state=active]:bg-background data-[state=active]:shadow-xs"
-          >
-            <Users className="h-3.5 w-3.5" />
-            <span>Enrolled Students</span>
-            {allStudents.length > 0 && (
-              <Badge variant="secondary" className="ml-1 text-[10px] px-1.5 py-0 h-4">
-                {allStudents.length}
-              </Badge>
-            )}
-          </TabsTrigger>
-          <TabsTrigger
-            value="graduated"
-            className="flex items-center gap-2 text-xs font-semibold rounded-lg data-[state=active]:bg-background data-[state=active]:shadow-xs"
-          >
-            <GraduationCap className="h-3.5 w-3.5 text-primary" />
-            <span>Graduated / Alumni</span>
-          </TabsTrigger>
-        </TabsList>
-
-        <TabsContent value="active" className="space-y-6 mt-0">
-          {/* KPI Stats Cards */}
-      <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4">
+      {/* KPI Stats Cards */}
+      <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-3 sm:gap-4">
         <div className="p-4 rounded-2xl bg-card border shadow-2xs space-y-1">
           <div className="flex items-center justify-between text-muted-foreground">
             <span className="text-xs font-semibold">Total Students</span>
@@ -403,6 +358,31 @@ export const StudentsPage: React.FC = () => {
           <p className="text-2xl font-bold text-foreground">{metrics.sectionsCount}</p>
           <p className="text-[11px] text-muted-foreground">Section cohorts</p>
         </div>
+
+        <Link
+          to="/academic/alumni"
+          className="p-4 rounded-2xl bg-card border hover:border-purple-500/40 hover:shadow-md transition-all space-y-1 group relative block"
+        >
+          <div className="flex items-center justify-between text-muted-foreground">
+            <span className="text-xs font-semibold group-hover:text-purple-600 dark:group-hover:text-purple-400 transition-colors">
+              Graduated / Alumni
+            </span>
+            <div className="w-6 h-6 rounded-lg bg-purple-500/10 text-purple-600 dark:text-purple-400 flex items-center justify-center group-hover:scale-110 transition-transform">
+              <GraduationCap className="w-3.5 h-3.5" />
+            </div>
+          </div>
+          <div className="flex items-baseline justify-between">
+            <p className="text-2xl font-bold text-purple-600 dark:text-purple-400">
+              {graduatedData?.total_graduates ?? 0}
+            </p>
+            <span className="text-[11px] font-medium text-purple-600 dark:text-purple-400 flex items-center opacity-0 group-hover:opacity-100 transition-opacity">
+              View alumni &rarr;
+            </span>
+          </div>
+          <p className="text-[11px] text-muted-foreground group-hover:text-muted-foreground/80">
+            Graduated alumni records
+          </p>
+        </Link>
       </div>
 
       {/* Filter and Search Bar */}
@@ -875,12 +855,6 @@ export const StudentsPage: React.FC = () => {
           </div>
         )}
       </div>
-    </TabsContent>
-
-    <TabsContent value="graduated" className="space-y-6 mt-0">
-      <GraduatedStudentsTable tenantId={activeTenantId} />
-    </TabsContent>
-  </Tabs>
 
       {/* Dialog: Single Student Enrollment */}
       <StudentEnrollGlobalDialog
