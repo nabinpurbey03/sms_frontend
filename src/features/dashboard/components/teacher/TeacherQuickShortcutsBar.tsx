@@ -10,6 +10,7 @@ import {
   PhoneCall,
   ArrowRight,
   Zap,
+  GraduationCap,
 } from 'lucide-react';
 import type { TeacherAssignmentResponse } from '@/features/academic/types';
 
@@ -150,21 +151,21 @@ export const TeacherQuickShortcutsBar: React.FC<TeacherQuickShortcutsBarProps> =
           </CardContent>
         </Card>
 
-        {/* 4. Attendance Reports */}
-        <Card className="group border-border/60 hover:border-blue-500/50 transition-all rounded-xl flex flex-col justify-between shadow-xs">
+        {/* 4. Examinations & Grading */}
+        <Card className="group border-border/60 hover:border-indigo-500/50 transition-all rounded-xl flex flex-col justify-between shadow-xs">
           <CardHeader className="p-4 pb-2 space-y-2">
             <div className="flex items-center justify-between">
-              <div className="p-2 bg-blue-500/10 text-blue-600 dark:text-blue-400 rounded-lg group-hover:scale-105 transition-transform">
-                <FileSpreadsheet className="h-5 w-5" />
+              <div className="p-2 bg-indigo-500/10 text-indigo-600 dark:text-indigo-400 rounded-lg group-hover:scale-105 transition-transform">
+                <GraduationCap className="h-5 w-5" />
               </div>
-              <ArrowRight className="h-4 w-4 text-muted-foreground group-hover:text-blue-600 dark:group-hover:text-blue-400 group-hover:translate-x-1 transition-all" />
+              <ArrowRight className="h-4 w-4 text-muted-foreground group-hover:text-indigo-600 dark:group-hover:text-indigo-400 group-hover:translate-x-1 transition-all" />
             </div>
             <div>
               <CardTitle className="text-sm font-semibold">
-                Attendance Reports
+                Examinations & Grading
               </CardTitle>
               <CardDescription className="text-xs text-muted-foreground mt-1 min-h-[32px] leading-relaxed">
-                Analyze monthly presence trends and section summaries
+                Enter student subject scores and manage exam duties
               </CardDescription>
             </div>
           </CardHeader>
@@ -172,10 +173,10 @@ export const TeacherQuickShortcutsBar: React.FC<TeacherQuickShortcutsBarProps> =
             <Button
               variant="outline"
               size="sm"
-              className="w-full text-xs font-semibold h-8 group-hover:border-blue-500/40 cursor-pointer"
+              className="w-full text-xs font-semibold h-8 group-hover:border-indigo-500/40 cursor-pointer"
               asChild
             >
-              <Link to="/attendance/reports">View Reports</Link>
+              <Link to="/examination/exams">Grade Exams</Link>
             </Button>
           </CardContent>
         </Card>

@@ -255,7 +255,7 @@ export const AppShell: React.FC = () => {
       href: '/attendance/reports',
       icon: FileSpreadsheet,
       description: 'View and export attendance records.',
-      show: can('VIEW_ATTENDANCE_REPORTS') && !isParent,
+      show: can('VIEW_ATTENDANCE_REPORTS') && !isParent && !isTeacher,
       category: 'Attendance',
     },
     {
