@@ -7,6 +7,8 @@ import { TeacherHeroBanner } from './TeacherHeroBanner';
 import { TeacherDailyActionAlert } from './TeacherDailyActionAlert';
 import { TeacherClassroomSectionCard } from './TeacherClassroomSectionCard';
 import { TeacherExamGradingQueue } from './TeacherExamGradingQueue';
+import { TeacherTeachingPortfolio } from './TeacherTeachingPortfolio';
+import { TeacherQuickShortcutsBar } from './TeacherQuickShortcutsBar';
 import { ParentStudentLinkDialog } from '@/features/members/components/ParentStudentLinkDialog';
 import { PARENT_MAPPINGS_QUERY_KEY, STUDENT_PARENTS_QUERY_KEY } from '@/features/members/hooks';
 import { StatCard } from '@/components/ui/stat-card';
@@ -216,6 +218,17 @@ export const TeacherMissionControlHub: React.FC<TeacherMissionControlHubProps> =
 
       {/* 5. Examinations & Grading Queue */}
       <TeacherExamGradingQueue tenantId={tenantId} />
+
+      {/* 6. Teaching Portfolio Grid */}
+      <TeacherTeachingPortfolio
+        teacherAssignments={teacherAssignments}
+        tenantId={tenantId}
+      />
+
+      {/* 7. Quick Tools & Shortcuts Bar */}
+      <TeacherQuickShortcutsBar
+        primaryDuty={primaryClassTeacherDuty}
+      />
 
       {/* Associate Parent Dialog */}
       <ParentStudentLinkDialog
