@@ -16,6 +16,7 @@ import {
   Plus,
   ChevronDown,
   TrendingUp,
+  Settings,
 } from 'lucide-react';
 
 import { useAuth } from '@/auth/useAuth';
@@ -196,11 +197,12 @@ export const DashboardPage: React.FC = () => {
               </div>
 
               <div className="flex items-center gap-2.5 self-end sm:self-auto shrink-0 flex-wrap">
-                {academicYears.length > 1 && (
-                  <div className="w-[180px] sm:w-[210px]">
+                {academicYears.length > 0 && (
+                  <div className="w-[180px] sm:w-[220px]">
                     <Select
                       value={selectedAcademicYearId}
                       onValueChange={setSelectedAcademicYearId}
+                      disabled={academicYears.length <= 1}
                     >
                       <SelectTrigger className="h-9 text-xs bg-background">
                         <SelectValue placeholder="Select Session" />
@@ -210,15 +212,26 @@ export const DashboardPage: React.FC = () => {
                           <SelectItem key={ay.id} value={ay.id} className="text-xs">
                             <div className="flex items-center justify-between gap-2 w-full">
                               <span>{ay.name}</span>
-                              {ay.is_current && (
+                              {ay.is_current ? (
                                 <span className="text-[10px] text-emerald-600 font-medium">(Current)</span>
-                              )}
+                              ) : ay.is_closed ? (
+                                <span className="text-[10px] text-muted-foreground font-medium">(Archived)</span>
+                              ) : null}
                             </div>
                           </SelectItem>
                         ))}
                       </SelectContent>
                     </Select>
                   </div>
+                )}
+
+                {(can('MANAGE_TENANT_SETTINGS') || isSuperAdmin) && (
+                  <Button variant="ghost" size="sm" asChild className="h-9 text-xs gap-1.5 font-medium border border-border/60 hover:bg-accent">
+                    <Link to="/academic-years" title="Configure and manage school sessions">
+                      <Settings className="h-3.5 w-3.5 text-muted-foreground" />
+                      <span className="hidden lg:inline">Manage Sessions</span>
+                    </Link>
+                  </Button>
                 )}
 
                 {(can('MANAGE_TENANT_SETTINGS') || can('MANAGE_EXAMS') || isSuperAdmin) && (
