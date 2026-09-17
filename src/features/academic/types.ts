@@ -272,3 +272,50 @@ export interface AcademicGrowthResponse {
   term_growth_trajectory: TermGrowthPoint[];
   subject_mastery: SubjectMasteryMetric[];
 }
+
+// ==========================================
+// Capacity Utilization & Network Benchmark Interfaces
+// ==========================================
+export interface SectionCapacityMetric {
+  section_id: string;
+  section_name: string;
+  class_id: string;
+  class_name: string;
+  enrolled_count: number;
+  target_capacity: number;
+  utilization_rate_pct: number;
+  status: 'OVERCROWDED' | 'OPTIMAL' | 'BALANCED' | 'UNDERUTILIZED';
+}
+
+export interface CapacityUtilizationResponse {
+  academic_year_id: string;
+  academic_year_name: string;
+  total_sections: number;
+  total_enrolled_students: number;
+  average_section_size: number;
+  optimal_sections_count: number;
+  overcrowded_sections_count: number;
+  underutilized_sections_count: number;
+  sections_breakdown: SectionCapacityMetric[];
+}
+
+export interface SchoolBenchmarkCardDTO {
+  tenant_id: string;
+  school_name: string;
+  domain_name?: string | null;
+  active_students_count: number;
+  total_classes_count: number;
+  total_sections_count: number;
+  attendance_rate_pct?: number | null;
+  retention_rate_pct?: number | null;
+  average_gpa?: number | null;
+  performance_tier: 'Top Tier' | 'Strong' | 'Average' | 'Requires Support';
+}
+
+export interface PlatformNetworkBenchmarkResponse {
+  total_schools_evaluated: number;
+  platform_average_attendance: number;
+  platform_average_retention: number;
+  platform_total_students: number;
+  schools_ranked: SchoolBenchmarkCardDTO[];
+}

@@ -18,6 +18,8 @@ import type {
   AcademicYearRetentionResponse,
   AttendanceIntelligenceResponse,
   AcademicGrowthResponse,
+  CapacityUtilizationResponse,
+  PlatformNetworkBenchmarkResponse,
 } from './types';
 
 export const academicApi = {
@@ -333,6 +335,26 @@ export const academicApi = {
       `/academic/tenants/${tenantId}/analytics/growth`,
       { params: { academic_year_id: academicYearId } }
     ) as any;
+    return res.data || res;
+  },
+
+  // ==========================================
+  // Capacity Utilization & Platform Benchmarking
+  // ==========================================
+  getCapacityUtilization: async (
+    tenantId: string,
+    academicYearId: string,
+    targetCapacity: number = 40
+  ): Promise<CapacityUtilizationResponse> => {
+    const res = await apiClient.get(
+      `/academic/tenants/${tenantId}/analytics/capacity`,
+      { params: { academic_year_id: academicYearId, target_capacity: targetCapacity } }
+    ) as any;
+    return res.data || res;
+  },
+
+  getPlatformBenchmark: async (): Promise<PlatformNetworkBenchmarkResponse> => {
+    const res = await apiClient.get('/academic/platform/analytics/benchmark') as any;
     return res.data || res;
   },
 };

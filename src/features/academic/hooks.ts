@@ -668,3 +668,25 @@ export const useAcademicGrowth = (
     staleTime: 1000 * 60 * 2, // 2 minutes
   });
 };
+
+export const useCapacityUtilization = (
+  tenantId: string | null,
+  academicYearId?: string | null,
+  targetCapacity: number = 40
+) => {
+  return useQuery({
+    queryKey: [ACADEMIC_ANALYTICS_QUERY_KEY, 'capacity', tenantId, academicYearId, targetCapacity],
+    queryFn: () => academicApi.getCapacityUtilization(tenantId!, academicYearId!, targetCapacity),
+    enabled: !!tenantId && !!academicYearId,
+    staleTime: 1000 * 60 * 2,
+  });
+};
+
+export const usePlatformBenchmark = (options?: { enabled?: boolean }) => {
+  return useQuery({
+    queryKey: [ACADEMIC_ANALYTICS_QUERY_KEY, 'platform_benchmark'],
+    queryFn: () => academicApi.getPlatformBenchmark(),
+    enabled: options?.enabled ?? true,
+    staleTime: 1000 * 60 * 5,
+  });
+};

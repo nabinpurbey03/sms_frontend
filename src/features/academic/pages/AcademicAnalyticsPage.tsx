@@ -1,9 +1,15 @@
 import React, { useState, useEffect } from 'react';
+import { useQueryClient } from '@tanstack/react-query';
 import { useAuth } from '@/auth/useAuth';
 import { usePermission } from '@/auth/usePermission';
 import { useAcademicYears } from '@/features/academic-year/hooks';
 import { useTenant } from '@/features/tenants/hooks';
-import { useAcademicRetention, useAttendanceIntelligence, useAcademicGrowth } from '../hooks';
+import {
+  useAcademicRetention,
+  useAttendanceIntelligence,
+  useAcademicGrowth,
+  ACADEMIC_ANALYTICS_QUERY_KEY,
+} from '../hooks';
 import { SchoolSearchSelect } from '@/features/academic-year/components/SchoolSearchSelect';
 import { CohortFlowSummaryCard } from '../components/analytics/CohortFlowSummaryCard';
 import { CohortRetentionBarChart } from '../components/analytics/CohortRetentionBarChart';
@@ -12,6 +18,8 @@ import { AtRiskStudentTable } from '../components/analytics/AtRiskStudentTable';
 import { TermGrowthAreaChart } from '../components/analytics/TermGrowthAreaChart';
 import { SubjectMasteryBarChart } from '../components/analytics/SubjectMasteryBarChart';
 import { SubjectMasteryTable } from '../components/analytics/SubjectMasteryTable';
+import { CapacityUtilizationView } from '../components/analytics/CapacityUtilizationView';
+import { PlatformBenchmarkScorecard } from '../components/analytics/PlatformBenchmarkScorecard';
 import { TenantRequiredState } from '@/components/common/TenantRequiredState';
 import { EmptyState } from '@/components/common/EmptyState';
 import { Card, CardHeader, CardTitle, CardDescription, CardContent } from '@/components/ui/card';
@@ -49,9 +57,12 @@ import {
   GraduationCap,
   Award,
   BookOpen,
+  Layers,
+  Globe,
 } from 'lucide-react';
 
 export const AcademicAnalyticsPage: React.FC = () => {
+  const queryClient = useQueryClient();
   const { activeTenantId } = useAuth();
   const { isSuperAdmin } = usePermission();
 
@@ -125,6 +136,7 @@ export const AcademicAnalyticsPage: React.FC = () => {
       refetchRetention(),
       refetchAttendance(),
       refetchGrowth(),
+      queryClient.invalidateQueries({ queryKey: [ACADEMIC_ANALYTICS_QUERY_KEY] }),
     ]);
   };
 
@@ -284,7 +296,7 @@ export const AcademicAnalyticsPage: React.FC = () => {
       ) : (
         /* Tabbed Intelligence Interface */
         <Tabs defaultValue="retention" className="space-y-6">
-          <TabsList className="grid w-full sm:w-auto sm:inline-grid grid-cols-1 sm:grid-cols-3 h-auto sm:h-10 p-1 bg-muted/80">
+          <TabsList className="flex flex-wrap sm:inline-flex h-auto p-1 bg-muted/80 gap-1 rounded-lg">
             <TabsTrigger value="retention" className="flex items-center gap-2 text-xs sm:text-sm font-medium">
               <TrendingUp className="w-4 h-4" />
               <span>Cohort Retention &amp; Progression</span>
@@ -297,6 +309,16 @@ export const AcademicAnalyticsPage: React.FC = () => {
               <GraduationCap className="w-4 h-4" />
               <span>Academic Growth &amp; Mastery</span>
             </TabsTrigger>
+            <TabsTrigger value="capacity" className="flex items-center gap-2 text-xs sm:text-sm font-medium">
+              <Layers className="w-4 h-4" />
+              <span>Capacity &amp; Utilization</span>
+            </TabsTrigger>
+            {isSuperAdmin && (
+              <TabsTrigger value="benchmark" className="flex items-center gap-2 text-xs sm:text-sm font-medium">
+                <Globe className="w-4 h-4" />
+                <span>Network Benchmark</span>
+              </TabsTrigger>
+            )}
           </TabsList>
 
           {/* TAB 1: Retention & Progression */}
@@ -722,6 +744,21 @@ export const AcademicAnalyticsPage: React.FC = () => {
               </div>
             )}
           </TabsContent>
+
+          {/* TAB 4: Capacity & Utilization */}
+          <TabsContent value="capacity" className="space-y-6 mt-4">
+            <CapacityUtilizationView
+              tenantId={effectiveTenantId}
+              academicYearId={selectedYearId}
+            />
+          </TabsContent>
+
+          {/* TAB 5: Network Benchmark (SuperAdmin only) */}
+          {isSuperAdmin && (
+            <TabsContent value="benchmark" className="space-y-6 mt-4">
+              <PlatformBenchmarkScorecard />
+            </TabsContent>
+          )}
         </Tabs>
       )}
     </div>
