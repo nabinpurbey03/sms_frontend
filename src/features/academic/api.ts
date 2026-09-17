@@ -16,6 +16,8 @@ import type {
   ChildTeachersResponse,
   TeacherStudentsParentsResponse,
   AcademicYearRetentionResponse,
+  AttendanceIntelligenceResponse,
+  AcademicGrowthResponse,
 } from './types';
 
 export const academicApi = {
@@ -307,6 +309,28 @@ export const academicApi = {
   ): Promise<AcademicYearRetentionResponse> => {
     const res = await apiClient.get(
       `/academic/tenants/${tenantId}/analytics/retention`,
+      { params: { academic_year_id: academicYearId } }
+    ) as any;
+    return res.data || res;
+  },
+
+  getAttendanceIntelligence: async (
+    tenantId: string,
+    academicYearId: string
+  ): Promise<AttendanceIntelligenceResponse> => {
+    const res = await apiClient.get(
+      `/academic/tenants/${tenantId}/analytics/attendance`,
+      { params: { academic_year_id: academicYearId } }
+    ) as any;
+    return res.data || res;
+  },
+
+  getAcademicGrowth: async (
+    tenantId: string,
+    academicYearId: string
+  ): Promise<AcademicGrowthResponse> => {
+    const res = await apiClient.get(
+      `/academic/tenants/${tenantId}/analytics/growth`,
       { params: { academic_year_id: academicYearId } }
     ) as any;
     return res.data || res;

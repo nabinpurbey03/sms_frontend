@@ -202,3 +202,73 @@ export interface AcademicYearRetentionResponse {
   total_transferred_out: number;
   grade_breakdown: CohortRetentionMetric[];
 }
+
+// ==========================================
+// Attendance & Early Warning Intelligence Interfaces
+// ==========================================
+export interface AtRiskStudentDTO {
+  student_id: string;
+  student_name: string;
+  class_id: string;
+  class_name: string;
+  section_name?: string | null;
+  total_sessions: number;
+  present_days: number;
+  absent_days: number;
+  attendance_rate: number;
+  risk_level: 'CRITICAL' | 'HIGH' | 'MODERATE' | 'WATCHLIST';
+}
+
+export interface DayOfWeekAttendancePoint {
+  day_name: string;
+  day_index: number;
+  present_count: number;
+  total_count: number;
+  attendance_rate: number;
+}
+
+export interface AttendanceIntelligenceResponse {
+  academic_year_id: string;
+  academic_year_name: string;
+  overall_attendance_rate: number;
+  total_attendance_records: number;
+  chronic_absenteeism_count: number;
+  total_evaluated_students: number;
+  at_risk_students: AtRiskStudentDTO[];
+  day_of_week_trends: DayOfWeekAttendancePoint[];
+}
+
+// ==========================================
+// Academic Growth & Curriculum Mastery Interfaces
+// ==========================================
+export interface SubjectMasteryMetric {
+  subject_id: string;
+  subject_name: string;
+  class_name?: string | null;
+  total_scores_evaluated: number;
+  average_score_pct: number;
+  pass_rate_pct: number;
+  highest_score: number;
+  lowest_score: number;
+  difficulty_classification: 'Rigorous' | 'Balanced' | 'High Mastery';
+}
+
+export interface TermGrowthPoint {
+  exam_id: string;
+  term_name: string;
+  exam_date?: string | null;
+  average_percentage: number;
+  average_gpa: number;
+  total_students_assessed: number;
+}
+
+export interface AcademicGrowthResponse {
+  academic_year_id: string;
+  academic_year_name: string;
+  overall_school_average_pct: number;
+  overall_school_gpa: number;
+  total_exams_evaluated: number;
+  total_scores_analyzed: number;
+  term_growth_trajectory: TermGrowthPoint[];
+  subject_mastery: SubjectMasteryMetric[];
+}

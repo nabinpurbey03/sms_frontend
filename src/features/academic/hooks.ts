@@ -644,3 +644,27 @@ export const useAcademicRetention = (
     staleTime: 1000 * 60 * 2, // 2 minutes
   });
 };
+
+export const useAttendanceIntelligence = (
+  tenantId: string | null,
+  academicYearId?: string | null
+) => {
+  return useQuery({
+    queryKey: [ACADEMIC_ANALYTICS_QUERY_KEY, 'attendance', tenantId, academicYearId],
+    queryFn: () => academicApi.getAttendanceIntelligence(tenantId!, academicYearId!),
+    enabled: !!tenantId && !!academicYearId,
+    staleTime: 1000 * 60 * 2, // 2 minutes
+  });
+};
+
+export const useAcademicGrowth = (
+  tenantId: string | null,
+  academicYearId?: string | null
+) => {
+  return useQuery({
+    queryKey: [ACADEMIC_ANALYTICS_QUERY_KEY, 'growth', tenantId, academicYearId],
+    queryFn: () => academicApi.getAcademicGrowth(tenantId!, academicYearId!),
+    enabled: !!tenantId && !!academicYearId,
+    staleTime: 1000 * 60 * 2, // 2 minutes
+  });
+};
