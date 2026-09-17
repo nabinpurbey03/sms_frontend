@@ -22,6 +22,10 @@ import type {
   PlatformNetworkBenchmarkResponse,
   GraduatedStudentDTO,
   GraduatedStudentListResponse,
+  StudentRemarkDTO,
+  StudentRemarkCreateDTO,
+  SectionNoticeDTO,
+  SectionNoticeCreateDTO,
 } from './types';
 
 export const academicApi = {
@@ -378,6 +382,81 @@ export const academicApi = {
       { params }
     ) as any;
     return res.data || res;
+  },
+
+  // ==========================================
+  // Student Observations / Teacher Remarks
+  // ==========================================
+  getStudentRemarks: async (
+    tenantId: string,
+    studentId: string
+  ): Promise<StudentRemarkDTO[]> => {
+    const res = await apiClient.get(
+      `/academic/tenants/${tenantId}/students/${studentId}/remarks`
+    ) as any;
+    return res.data || res;
+  },
+
+  createStudentRemark: async (
+    tenantId: string,
+    studentId: string,
+    data: StudentRemarkCreateDTO
+  ): Promise<StudentRemarkDTO> => {
+    const res = await apiClient.post(
+      `/academic/tenants/${tenantId}/students/${studentId}/remarks`,
+      data
+    ) as any;
+    return res.data || res;
+  },
+
+  deleteStudentRemark: async (
+    tenantId: string,
+    studentId: string,
+    remarkId: string
+  ): Promise<boolean> => {
+    const res = await apiClient.delete(
+      `/academic/tenants/${tenantId}/students/${studentId}/remarks/${remarkId}`
+    ) as any;
+    return res.data !== undefined ? res.data : true;
+  },
+
+  // ==========================================
+  // Section Notices & Homework Broadcaster
+  // ==========================================
+  getSectionNotices: async (
+    tenantId: string,
+    classId: string,
+    sectionId: string
+  ): Promise<SectionNoticeDTO[]> => {
+    const res = await apiClient.get(
+      `/academic/tenants/${tenantId}/classes/${classId}/sections/${sectionId}/notices`
+    ) as any;
+    return res.data || res;
+  },
+
+  createSectionNotice: async (
+    tenantId: string,
+    classId: string,
+    sectionId: string,
+    data: SectionNoticeCreateDTO
+  ): Promise<SectionNoticeDTO> => {
+    const res = await apiClient.post(
+      `/academic/tenants/${tenantId}/classes/${classId}/sections/${sectionId}/notices`,
+      data
+    ) as any;
+    return res.data || res;
+  },
+
+  deleteSectionNotice: async (
+    tenantId: string,
+    classId: string,
+    sectionId: string,
+    noticeId: string
+  ): Promise<boolean> => {
+    const res = await apiClient.delete(
+      `/academic/tenants/${tenantId}/classes/${classId}/sections/${sectionId}/notices/${noticeId}`
+    ) as any;
+    return res.data !== undefined ? res.data : true;
   },
 };
 

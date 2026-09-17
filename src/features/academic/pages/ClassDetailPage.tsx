@@ -41,6 +41,11 @@ import {
   CalendarCheck,
   Edit3,
   CheckCircle2,
+  Printer,
+  Download,
+  Bell,
+  FileSpreadsheet,
+  Eye,
 } from 'lucide-react';
 import { useQueryClient } from '@tanstack/react-query';
 import { useNavigate, useParams } from '@tanstack/react-router';
@@ -60,6 +65,9 @@ import {
 import { TeacherAssignmentBoard } from '../components/TeacherAssignmentBoard';
 import { StudentAddDialog } from '../components/StudentAddDialog';
 import { SectionAddDialog } from '../components/SectionAddDialog';
+import { StudentDetailDrawer } from '../components/StudentDetailDrawer';
+import { SectionNoticeboardTab } from '../components/SectionNoticeboardTab';
+import { PrintableRosterModal } from '../components/PrintableRosterModal';
 import { ParentStudentLinkDialog } from '@/features/members/components/ParentStudentLinkDialog';
 import { TenantRequiredState } from '@/components/common/TenantRequiredState';
 import { ErrorState } from '@/components/common/ErrorState';
@@ -74,7 +82,7 @@ import type { AcademicStudent, AcademicSubject, AcademicSection } from '../types
 export const ClassDetailPage: React.FC = () => {
   const { classId } = useParams({ from: '/_authenticated/academic/classes/$classId' });
   const navigate = useNavigate();
-  const { activeTenantId: tenantId, activeRole } = useAuth();
+  const { user, activeTenantId: tenantId, activeRole } = useAuth();
   const { isSuperAdmin, can } = usePermission();
   const { data: cls, isLoading, isError, error, refetch } = useClassWithDetails(tenantId, classId);
 
@@ -98,8 +106,10 @@ export const ClassDetailPage: React.FC = () => {
     { enabled: isTeacherOnly }
   );
 
-  const [activeTab, setActiveTab] = useState<'roster' | 'subjects' | 'assignments' | 'expansion'>('roster');
+  const [activeTab, setActiveTab] = useState<'roster' | 'notices' | 'subjects' | 'assignments' | 'expansion'>('roster');
   const [selectedSectionId, setSelectedSectionId] = useState<string>('');
+  const [selectedStudentForDrawer, setSelectedStudentForDrawer] = useState<AcademicStudent | null>(null);
+  const [isPrintRosterOpen, setIsPrintRosterOpen] = useState(false);
   const [isEnrollStudentOpen, setIsEnrollStudentOpen] = useState(false);
   const [isAddSectionOpen, setIsAddSectionOpen] = useState(false);
   const [newSubjectName, setNewSubjectName] = useState('');
@@ -293,6 +303,48 @@ export const ClassDetailPage: React.FC = () => {
     invalidateClassData();
   };
 
+  const handleDownloadCsv = () => {
+    const headers = [
+      'Roll No',
+      'Student Name',
+      'Gender',
+      'Class',
+      'Section',
+      'Status',
+      'Parent / Guardian Name',
+      'Parent Contact Phone',
+    ];
+
+    const rows = sectionStudents.map((st, idx) => {
+      const fullName = [st.first_name, st.middle_name, st.last_name].filter(Boolean).join(' ');
+      const parent = parentByStudentId.get(st.id);
+      return [
+        idx + 1,
+        `"${fullName.replace(/"/g, '""')}"`,
+        st.gender || '',
+        `"${cls.name.replace(/"/g, '""')}"`,
+        currentSection?.name || '',
+        st.status,
+        parent?.parent_name ? `"${parent.parent_name.replace(/"/g, '""')}"` : '',
+        parent?.parent_phone || '',
+      ].join(',');
+    });
+
+    const csvContent = '\uFEFF' + [headers.join(','), ...rows].join('\r\n');
+    const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+    const url = URL.createObjectURL(blob);
+    const link = document.createElement('a');
+    link.href = url;
+    link.setAttribute(
+      'download',
+      `${cls.name.replace(/\s+/g, '_')}_Section_${currentSection?.name || 'All'}_Roster.csv`
+    );
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+    URL.revokeObjectURL(url);
+  };
+
   return (
     <div className="space-y-6 pb-12">
       {/* Header */}
@@ -380,6 +432,18 @@ export const ClassDetailPage: React.FC = () => {
         </button>
         <button
           type="button"
+          onClick={() => setActiveTab('notices')}
+          className={`px-3 py-2 text-xs font-semibold border-b-2 transition-colors cursor-pointer flex items-center gap-1.5 whitespace-nowrap ${
+            activeTab === 'notices'
+              ? 'border-primary text-primary'
+              : 'border-transparent text-muted-foreground hover:text-foreground'
+          }`}
+        >
+          <Bell className="w-3.5 h-3.5" />
+          Noticeboard & Homework
+        </button>
+        <button
+          type="button"
           onClick={() => setActiveTab('subjects')}
           className={`px-3 py-2 text-xs font-semibold border-b-2 transition-colors cursor-pointer flex items-center gap-1.5 whitespace-nowrap ${
             activeTab === 'subjects'
@@ -453,29 +517,60 @@ export const ClassDetailPage: React.FC = () => {
                 })}
               </div>
 
-              {canManage && (
-                <div className="flex items-center gap-2">
-                  <Button
-                    size="sm"
-                    onClick={() => setIsEnrollStudentOpen(true)}
-                    className="h-8 gap-1.5 text-xs shadow-xs"
-                  >
-                    <UserPlus className="w-3.5 h-3.5" />
-                    Enroll Student
-                  </Button>
-                  {currentSection && allSections.length > 1 && (
+              <div className="flex items-center gap-2">
+                <DropdownMenu>
+                  <DropdownMenuTrigger asChild>
                     <Button
-                      variant="ghost"
+                      variant="outline"
                       size="sm"
-                      onClick={() => setSectionToDelete(currentSection)}
-                      className="h-8 text-xs text-destructive hover:text-destructive hover:bg-destructive/10 cursor-pointer"
-                      title="Delete this section"
+                      className="h-8 gap-1.5 text-xs shadow-xs cursor-pointer"
                     >
-                      <Trash2 className="w-3.5 h-3.5" />
+                      <Printer className="w-3.5 h-3.5 text-primary" />
+                      <span>Export Roster</span>
                     </Button>
-                  )}
-                </div>
-              )}
+                  </DropdownMenuTrigger>
+                  <DropdownMenuContent align="end" className="w-48 text-xs">
+                    <DropdownMenuItem
+                      onClick={() => setIsPrintRosterOpen(true)}
+                      className="gap-2 cursor-pointer font-medium"
+                    >
+                      <Printer className="w-3.5 h-3.5 text-purple-600" />
+                      Print Register Sheet
+                    </DropdownMenuItem>
+                    <DropdownMenuItem
+                      onClick={handleDownloadCsv}
+                      className="gap-2 cursor-pointer font-medium"
+                    >
+                      <FileSpreadsheet className="w-3.5 h-3.5 text-emerald-600" />
+                      Download CSV Roster
+                    </DropdownMenuItem>
+                  </DropdownMenuContent>
+                </DropdownMenu>
+
+                {canManage && (
+                  <>
+                    <Button
+                      size="sm"
+                      onClick={() => setIsEnrollStudentOpen(true)}
+                      className="h-8 gap-1.5 text-xs shadow-xs"
+                    >
+                      <UserPlus className="w-3.5 h-3.5" />
+                      Enroll Student
+                    </Button>
+                    {currentSection && allSections.length > 1 && (
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        onClick={() => setSectionToDelete(currentSection)}
+                        className="h-8 text-xs text-destructive hover:text-destructive hover:bg-destructive/10 cursor-pointer"
+                        title="Delete this section"
+                      >
+                        <Trash2 className="w-3.5 h-3.5" />
+                      </Button>
+                    )}
+                  </>
+                )}
+              </div>
             </div>
 
             {/* Section Capacity Pill */}
@@ -531,7 +626,10 @@ export const ClassDetailPage: React.FC = () => {
                           <TableCell className="font-mono text-xs text-muted-foreground">
                             {index + 1}
                           </TableCell>
-                          <TableCell className="font-semibold text-xs text-foreground">
+                          <TableCell
+                            onClick={() => setSelectedStudentForDrawer(st)}
+                            className="font-semibold text-xs text-foreground cursor-pointer hover:text-primary hover:underline transition-colors"
+                          >
                             {fullName}
                           </TableCell>
                           <TableCell>
@@ -567,7 +665,14 @@ export const ClassDetailPage: React.FC = () => {
                                   <span className="sr-only">Open actions</span>
                                 </Button>
                               </DropdownMenuTrigger>
-                              <DropdownMenuContent align="end" className="w-44 text-xs">
+                              <DropdownMenuContent align="end" className="w-48 text-xs">
+                                <DropdownMenuItem
+                                  onClick={() => setSelectedStudentForDrawer(st)}
+                                  className="gap-2 cursor-pointer font-medium"
+                                >
+                                  <Eye className="w-3.5 h-3.5 text-primary" />
+                                  Profile & Observations
+                                </DropdownMenuItem>
                                 <DropdownMenuItem
                                   onClick={() => setLinkParentStudent(st)}
                                   className="gap-2 cursor-pointer"
@@ -586,6 +691,20 @@ export const ClassDetailPage: React.FC = () => {
               </div>
             )}
           </div>
+        )}
+
+        {/* Tab: Noticeboard & Homework */}
+        {activeTab === 'notices' && (
+          <SectionNoticeboardTab
+            tenantId={tenantId}
+            classId={cls.id}
+            className={cls.name}
+            currentSection={currentSection}
+            allSections={visibleSections}
+            canPostNotice={isClassTeacherForThisClass || canManage}
+            currentUserId={user?.id}
+            isAdmin={canManage}
+          />
         )}
 
         {/* Tab: Teacher Assignments */}
@@ -922,6 +1041,29 @@ export const ClassDetailPage: React.FC = () => {
         </DialogContent>
       </Dialog>
 
+      {/* Student Profile & Teacher Observations Drawer */}
+      <StudentDetailDrawer
+        student={selectedStudentForDrawer}
+        isOpen={!!selectedStudentForDrawer}
+        onClose={() => setSelectedStudentForDrawer(null)}
+        tenantId={tenantId}
+        className={cls.name}
+        sectionName={currentSection?.name}
+        parentInfo={selectedStudentForDrawer ? parentByStudentId.get(selectedStudentForDrawer.id) : null}
+        canAddRemark={isClassTeacherForThisClass || canManage}
+        currentUserId={user?.id}
+        isAdmin={canManage}
+      />
+
+      {/* Printable Roster Register Modal */}
+      <PrintableRosterModal
+        isOpen={isPrintRosterOpen}
+        onClose={() => setIsPrintRosterOpen(false)}
+        className={cls.name}
+        section={currentSection}
+        students={sectionStudents}
+        parentMap={parentByStudentId}
+      />
 
     </div>
   );

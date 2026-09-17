@@ -25,6 +25,8 @@ export interface AcademicStudent {
   first_name: string;
   middle_name?: string | null;
   last_name: string;
+  gender?: string | null;
+  date_of_birth?: string | null;
   status: 'ACTIVE' | 'TRANSFERRED' | 'GRADUATED' | 'SUSPENDED';
   created_at?: string;
   updated_at?: string;
@@ -343,3 +345,51 @@ export interface GraduatedStudentListResponse {
   total_graduates: number;
   items: GraduatedStudentDTO[];
 }
+
+// ==========================================
+// Teacher Classroom Activities: Remarks & Notices
+// ==========================================
+export type StudentRemarkCategory = 'ACADEMIC' | 'BEHAVIORAL' | 'MEDICAL' | 'GENERAL';
+
+export interface StudentRemarkDTO {
+  id: string;
+  tenant_id: string;
+  student_id: string;
+  author_id: string;
+  author_name?: string | null;
+  author_role?: string | null;
+  category: StudentRemarkCategory | string;
+  note: string;
+  created_at: string;
+}
+
+export interface StudentRemarkCreateDTO {
+  category: StudentRemarkCategory | string;
+  note: string;
+}
+
+export type SectionNoticeType = 'HOMEWORK' | 'ANNOUNCEMENT' | 'REMINDER' | 'EVENT';
+
+export interface SectionNoticeDTO {
+  id: string;
+  tenant_id: string;
+  class_id: string;
+  class_name?: string | null;
+  section_id?: string | null;
+  section_name?: string | null;
+  author_id: string;
+  author_name?: string | null;
+  title: string;
+  content: string;
+  notice_type: SectionNoticeType | string;
+  due_date?: string | null;
+  created_at: string;
+}
+
+export interface SectionNoticeCreateDTO {
+  title: string;
+  content: string;
+  notice_type: SectionNoticeType | string;
+  due_date?: string | null;
+}
+

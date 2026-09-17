@@ -10,6 +10,8 @@ import type {
   ClassWithDetails,
   AcademicStudent,
   AssignTeacherDTO,
+  StudentRemarkCreateDTO,
+  SectionNoticeCreateDTO,
 } from './types';
 
 export const CLASSES_QUERY_KEY = 'academic_classes';
@@ -19,6 +21,8 @@ export const SUBJECTS_QUERY_KEY = 'academic_subjects';
 export const SECTION_ELIGIBILITY_KEY = 'section_eligibility';
 export const ASSIGNMENTS_QUERY_KEY = 'academic_assignments';
 export const MY_TEACHER_ASSIGNMENTS_QUERY_KEY = 'my_teacher_assignments';
+export const STUDENT_REMARKS_QUERY_KEY = 'student_remarks';
+export const SECTION_NOTICES_QUERY_KEY = 'section_notices';
 
 export const useClasses = (tenantId: string | null, academicYearId?: string | null) => {
   return useQuery({
@@ -709,3 +713,151 @@ export const useGraduatedStudents = (
     staleTime: 1000 * 60 * 2, // 2 minutes
   });
 };
+
+// ==========================================
+// Student Remarks Hooks
+// ==========================================
+export const useStudentRemarks = (
+  tenantId: string | null,
+  studentId: string | null
+) => {
+  return useQuery({
+    queryKey: [STUDENT_REMARKS_QUERY_KEY, tenantId, studentId],
+    queryFn: () => academicApi.getStudentRemarks(tenantId!, studentId!),
+    enabled: !!tenantId && !!studentId,
+    staleTime: 1000 * 30,
+  });
+};
+
+export const useCreateStudentRemark = () => {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: ({
+      tenantId,
+      studentId,
+      data,
+    }: {
+      tenantId: string;
+      studentId: string;
+      data: StudentRemarkCreateDTO;
+    }) => academicApi.createStudentRemark(tenantId, studentId, data),
+    onSuccess: (_, variables) => {
+      queryClient.invalidateQueries({
+        queryKey: [STUDENT_REMARKS_QUERY_KEY, variables.tenantId, variables.studentId],
+      });
+      toast.success('Observation Added', {
+        description: 'Student observation remark recorded successfully.',
+      });
+    },
+    onError: (error: any) => {
+      toast.error('Failed to Add Remark', {
+        description: error.message || 'Could not record remark.',
+      });
+    },
+  });
+};
+
+export const useDeleteStudentRemark = () => {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: ({
+      tenantId,
+      studentId,
+      remarkId,
+    }: {
+      tenantId: string;
+      studentId: string;
+      remarkId: string;
+    }) => academicApi.deleteStudentRemark(tenantId, studentId, remarkId),
+    onSuccess: (_, variables) => {
+      queryClient.invalidateQueries({
+        queryKey: [STUDENT_REMARKS_QUERY_KEY, variables.tenantId, variables.studentId],
+      });
+      toast.success('Observation Deleted', {
+        description: 'Observation remark removed.',
+      });
+    },
+    onError: (error: any) => {
+      toast.error('Failed to Delete Remark', {
+        description: error.message || 'Could not delete remark.',
+      });
+    },
+  });
+};
+
+// ==========================================
+// Section Notices Hooks
+// ==========================================
+export const useSectionNotices = (
+  tenantId: string | null,
+  classId: string | null,
+  sectionId: string | null
+) => {
+  return useQuery({
+    queryKey: [SECTION_NOTICES_QUERY_KEY, tenantId, classId, sectionId],
+    queryFn: () => academicApi.getSectionNotices(tenantId!, classId!, sectionId!),
+    enabled: !!tenantId && !!classId && !!sectionId,
+    staleTime: 1000 * 30,
+  });
+};
+
+export const useCreateSectionNotice = () => {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: ({
+      tenantId,
+      classId,
+      sectionId,
+      data,
+    }: {
+      tenantId: string;
+      classId: string;
+      sectionId: string;
+      data: SectionNoticeCreateDTO;
+    }) => academicApi.createSectionNotice(tenantId, classId, sectionId, data),
+    onSuccess: (_, variables) => {
+      queryClient.invalidateQueries({
+        queryKey: [SECTION_NOTICES_QUERY_KEY, variables.tenantId, variables.classId],
+      });
+      toast.success('Notice Posted', {
+        description: 'Notice broadcasted to section successfully.',
+      });
+    },
+    onError: (error: any) => {
+      toast.error('Failed to Post Notice', {
+        description: error.message || 'Could not post notice.',
+      });
+    },
+  });
+};
+
+export const useDeleteSectionNotice = () => {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: ({
+      tenantId,
+      classId,
+      sectionId,
+      noticeId,
+    }: {
+      tenantId: string;
+      classId: string;
+      sectionId: string;
+      noticeId: string;
+    }) => academicApi.deleteSectionNotice(tenantId, classId, sectionId, noticeId),
+    onSuccess: (_, variables) => {
+      queryClient.invalidateQueries({
+        queryKey: [SECTION_NOTICES_QUERY_KEY, variables.tenantId, variables.classId],
+      });
+      toast.success('Notice Deleted', {
+        description: 'Section notice removed.',
+      });
+    },
+    onError: (error: any) => {
+      toast.error('Failed to Delete Notice', {
+        description: error.message || 'Could not delete notice.',
+      });
+    },
+  });
+};
+
