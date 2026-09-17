@@ -81,6 +81,12 @@ export interface TenantDashboardMetrics {
   total_teachers: number;
   total_classes: number;
   total_sections: number;
+  academic_year_id?: string | null;
+  academic_year_name?: string | null;
+  academic_year_status?: string | null;
+  is_current_year?: boolean | null;
+  academic_year_start_date?: string | null;
+  academic_year_end_date?: string | null;
 }
 
 export const dashboardApi = {
@@ -99,8 +105,10 @@ export const dashboardApi = {
     return data as unknown as TenantRankingsResponseDTO;
   },
   
-  getTenantMetrics: async (): Promise<TenantDashboardMetrics> => {
-    const data = await apiClient.get('/dashboard/tenant');
+  getTenantMetrics: async (academicYearId?: string): Promise<TenantDashboardMetrics> => {
+    const data = await apiClient.get('/dashboard/tenant', {
+      params: academicYearId ? { academic_year_id: academicYearId } : undefined,
+    });
     return data as unknown as TenantDashboardMetrics;
   },
 };

@@ -10,10 +10,10 @@ export const useSuperAdminDashboard = (enabled: boolean = true) => {
   });
 };
 
-export const useTenantDashboard = (tenantId: string | null) => {
+export const useTenantDashboard = (tenantId: string | null, academicYearId?: string | null) => {
   return useQuery({
-    queryKey: ['dashboard', 'tenant', tenantId],
-    queryFn: dashboardApi.getTenantMetrics,
+    queryKey: ['dashboard', 'tenant', tenantId, academicYearId],
+    queryFn: () => dashboardApi.getTenantMetrics(academicYearId || undefined),
     enabled: !!tenantId,
     staleTime: 60 * 1000,
   });

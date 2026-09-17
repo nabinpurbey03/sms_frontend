@@ -45,7 +45,11 @@ import type {
   AtRiskStudentItem,
 } from '@/features/examination/types';
 
-export const SchoolResultsDashboardHub: React.FC = () => {
+interface SchoolResultsDashboardHubProps {
+  academicYearId?: string | null;
+}
+
+export const SchoolResultsDashboardHub: React.FC<SchoolResultsDashboardHubProps> = ({ academicYearId }) => {
   const navigate = useNavigate();
   const { activeTenantId, activeTenantName } = useAuth();
 
@@ -65,6 +69,7 @@ export const SchoolResultsDashboardHub: React.FC = () => {
     refetch,
   } = useExamResultsAnalytics(activeTenantId, {
     class_id: selectedClassId || undefined,
+    academic_year_id: academicYearId || undefined,
   });
 
   const classSummaries = analytics?.class_summaries;

@@ -80,7 +80,7 @@ export const examinationApi = {
 
   getResultsAnalytics: async (
     tenantId: string,
-    params?: { class_id?: string }
+    params?: { class_id?: string; academic_year_id?: string }
   ): Promise<SchoolResultsAnalyticsResponse> => {
     return apiClient.get(`/academic/tenants/${tenantId}/exams/analytics`, { params });
   },

@@ -6,6 +6,7 @@ export interface AcademicYear {
   end_date: string;
   is_current: boolean;
   is_closed: boolean;
+  status?: string;
   created_at?: string;
   updated_at?: string;
 }

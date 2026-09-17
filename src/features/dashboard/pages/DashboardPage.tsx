@@ -1,9 +1,10 @@
-import React, { useMemo } from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
 import { Link } from '@tanstack/react-router';
 import {
   Users,
   BookOpen,
   CalendarCheck,
+  Calendar,
   Building2,
   ShieldCheck,
   ArrowRight,
@@ -14,6 +15,7 @@ import {
   Award,
   Plus,
   ChevronDown,
+  TrendingUp,
 } from 'lucide-react';
 
 import { useAuth } from '@/auth/useAuth';
@@ -21,12 +23,21 @@ import { usePermission } from '@/auth/usePermission';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { StatCard } from '@/components/ui/stat-card';
 import { Button } from '@/components/ui/button';
+import { Badge } from '@/components/ui/badge';
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from '@/components/ui/select';
 import { AttendanceDashboardHub } from '../components/AttendanceDashboardHub';
 import { SchoolResultsDashboardHub } from '../components/SchoolResultsDashboardHub';
 import { ParentReportCardsDashboardHub } from '@/features/examination/components/ParentReportCardsDashboardHub';
 
 import { useAttendanceSummary, useDailyAttendanceStatus } from '@/features/attendance/hooks';
 import { useAllClassesWithDetails, useMyTeacherAssignments } from '@/features/academic/hooks';
+import { useAcademicYears } from '@/features/academic-year/hooks';
 import { useParentChildren } from '@/features/members/hooks';
 import { useMyChildrenReportCards } from '@/features/examination/hooks';
 import { useSuperAdminDashboard, useTenantDashboard } from '../hooks';
@@ -41,6 +52,30 @@ export const DashboardPage: React.FC = () => {
 
   const todayStr = useMemo(() => new Date().toISOString().split('T')[0], []);
 
+  // Academic years selection for school session scoping
+  const { data: academicYears = [] } = useAcademicYears(activeTenantId);
+  const [selectedAcademicYearId, setSelectedAcademicYearId] = useState<string>('');
+
+  useEffect(() => {
+    if (academicYears.length > 0) {
+      const exists = academicYears.find((y) => y.id === selectedAcademicYearId);
+      if (!exists) {
+        const currentYear = academicYears.find((y) => y.is_current);
+        setSelectedAcademicYearId(currentYear ? currentYear.id : academicYears[0].id);
+      }
+    } else {
+      setSelectedAcademicYearId('');
+    }
+  }, [academicYears, selectedAcademicYearId]);
+
+  const activeAcademicYear = useMemo(() => {
+    return (
+      academicYears.find((y) => y.id === selectedAcademicYearId) ||
+      academicYears.find((y) => y.is_current) ||
+      null
+    );
+  }, [academicYears, selectedAcademicYearId]);
+
   // Queries for live metrics
   const { data: attendanceSummary } = useAttendanceSummary(
     !isParent ? activeTenantId : null,
@@ -53,7 +88,10 @@ export const DashboardPage: React.FC = () => {
     undefined,
     { enabled: !!activeTenantId && !isParent }
   );
-  const { data: classes = [] } = useAllClassesWithDetails(!isParent ? activeTenantId : null);
+  const { data: classes = [] } = useAllClassesWithDetails(
+    !isParent ? activeTenantId : null,
+    selectedAcademicYearId || null
+  );
   const { data: teacherAssignments = [] } = useMyTeacherAssignments(
     activeTenantId,
     { enabled: !!activeTenantId && isTeacher }
@@ -68,7 +106,10 @@ export const DashboardPage: React.FC = () => {
   );
 
   const { data: superAdminMetrics } = useSuperAdminDashboard(isSuperAdmin && !activeTenantId);
-  const { data: tenantMetrics } = useTenantDashboard(activeTenantId);
+  const { data: tenantMetrics } = useTenantDashboard(
+    activeTenantId,
+    selectedAcademicYearId || null
+  );
 
   // Computed total students
   const totalEnrolledStudents = useMemo(() => {
@@ -113,6 +154,86 @@ export const DashboardPage: React.FC = () => {
         </div>
       ) : (
         <>
+          {/* Academic Session Context & Switcher Bar (Admin, Office-Admin, Teachers) */}
+          {!isParent && (
+            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 p-4 rounded-xl border border-border/70 bg-card/60 backdrop-blur-sm shadow-xs">
+              <div className="flex flex-wrap items-center gap-3">
+                <div className="p-2.5 rounded-lg bg-primary/10 text-primary flex items-center justify-center shrink-0">
+                  <Calendar className="h-5 w-5" />
+                </div>
+                <div>
+                  <div className="flex items-center gap-2 flex-wrap">
+                    <span className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">
+                      Academic Session
+                    </span>
+                    {activeAcademicYear?.is_current ? (
+                      <Badge variant="outline" className="bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border-emerald-500/20 text-[10px] font-medium px-1.5 py-0">
+                        Current Session
+                      </Badge>
+                    ) : activeAcademicYear?.is_closed ? (
+                      <Badge variant="outline" className="bg-muted text-muted-foreground text-[10px] font-medium px-1.5 py-0">
+                        Closed / Archived
+                      </Badge>
+                    ) : activeAcademicYear?.status ? (
+                      <Badge variant="outline" className="bg-blue-500/10 text-blue-600 dark:text-blue-400 border-blue-500/20 text-[10px] font-medium px-1.5 py-0">
+                        {activeAcademicYear.status}
+                      </Badge>
+                    ) : null}
+                  </div>
+                  <h3 className="text-base font-bold text-foreground">
+                    {activeAcademicYear?.name || (tenantMetrics?.academic_year_name ?? 'Active Session')}
+                    {(activeAcademicYear?.start_date && activeAcademicYear?.end_date) ? (
+                      <span className="text-xs font-normal text-muted-foreground ml-2">
+                        ({activeAcademicYear.start_date} ~ {activeAcademicYear.end_date})
+                      </span>
+                    ) : (tenantMetrics?.academic_year_start_date && tenantMetrics?.academic_year_end_date) ? (
+                      <span className="text-xs font-normal text-muted-foreground ml-2">
+                        ({tenantMetrics.academic_year_start_date} ~ {tenantMetrics.academic_year_end_date})
+                      </span>
+                    ) : null}
+                  </h3>
+                </div>
+              </div>
+
+              <div className="flex items-center gap-2.5 self-end sm:self-auto shrink-0 flex-wrap">
+                {academicYears.length > 1 && (
+                  <div className="w-[180px] sm:w-[210px]">
+                    <Select
+                      value={selectedAcademicYearId}
+                      onValueChange={setSelectedAcademicYearId}
+                    >
+                      <SelectTrigger className="h-9 text-xs bg-background">
+                        <SelectValue placeholder="Select Session" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        {academicYears.map((ay) => (
+                          <SelectItem key={ay.id} value={ay.id} className="text-xs">
+                            <div className="flex items-center justify-between gap-2 w-full">
+                              <span>{ay.name}</span>
+                              {ay.is_current && (
+                                <span className="text-[10px] text-emerald-600 font-medium">(Current)</span>
+                              )}
+                            </div>
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                  </div>
+                )}
+
+                {(can('MANAGE_TENANT_SETTINGS') || can('MANAGE_EXAMS') || isSuperAdmin) && (
+                  <Button variant="outline" size="sm" asChild className="h-9 text-xs gap-1.5 font-medium border-border/80 hover:bg-primary/5 hover:text-primary">
+                    <Link to="/academic/analytics">
+                      <TrendingUp className="h-3.5 w-3.5 text-primary" />
+                      <span className="hidden md:inline">Academic</span> Analytics
+                      <ArrowRight className="h-3.5 w-3.5 opacity-60 ml-0.5" />
+                    </Link>
+                  </Button>
+                )}
+              </div>
+            </div>
+          )}
+
           {/* KPI Stats Grid (1 col phone, 2 cols tablet, 4 cols desktop) */}
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 sm:gap-6">
             <StatCard
@@ -174,7 +295,7 @@ export const DashboardPage: React.FC = () => {
 
           {/* School Examination Results & Academic Performance Hub (Admin & Office Admin only) */}
           {(can('MANAGE_EXAMS') || isSuperAdmin) && (
-            <SchoolResultsDashboardHub />
+            <SchoolResultsDashboardHub academicYearId={selectedAcademicYearId || null} />
           )}
 
           {/* Parent Official Academic Report Cards Hub */}

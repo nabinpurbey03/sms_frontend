@@ -49,11 +49,11 @@ export const useTeacherExamAssignments = (
 
 export const useExamResultsAnalytics = (
   tenantId: string | null,
-  params?: { class_id?: string },
+  params?: { class_id?: string; academic_year_id?: string },
   options?: { enabled?: boolean }
 ) => {
   return useQuery({
-    queryKey: [EXAM_ANALYTICS_QUERY_KEY, tenantId, params?.class_id],
+    queryKey: [EXAM_ANALYTICS_QUERY_KEY, tenantId, params?.class_id, params?.academic_year_id],
     queryFn: () => examinationApi.getResultsAnalytics(tenantId!, params),
     enabled: !!tenantId && (options?.enabled ?? true),
     staleTime: 1000 * 30,
