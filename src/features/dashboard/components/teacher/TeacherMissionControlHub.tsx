@@ -1,9 +1,13 @@
-import React, { useMemo } from 'react';
+import React, { useMemo, useState } from 'react';
+import { useQueryClient } from '@tanstack/react-query';
 import { useAuth } from '@/auth/useAuth';
-import type { TeacherAssignmentResponse } from '@/features/academic/types';
+import type { TeacherAssignmentResponse, AcademicStudent } from '@/features/academic/types';
 import type { AcademicYearResponse } from '@/features/academic-year/types';
 import { TeacherHeroBanner } from './TeacherHeroBanner';
 import { TeacherDailyActionAlert } from './TeacherDailyActionAlert';
+import { TeacherClassroomSectionCard } from './TeacherClassroomSectionCard';
+import { ParentStudentLinkDialog } from '@/features/members/components/ParentStudentLinkDialog';
+import { PARENT_MAPPINGS_QUERY_KEY, STUDENT_PARENTS_QUERY_KEY } from '@/features/members/hooks';
 import { StatCard } from '@/components/ui/stat-card';
 import { GraduationCap, CalendarCheck, BookOpen, Award } from 'lucide-react';
 import { useTeacherExamAssignments } from '@/features/examination/hooks';
@@ -28,6 +32,8 @@ export const TeacherMissionControlHub: React.FC<TeacherMissionControlHubProps> =
   activeAcademicYear,
 }) => {
   const { user } = useAuth();
+  const queryClient = useQueryClient();
+  const [linkParentStudent, setLinkParentStudent] = useState<AcademicStudent | null>(null);
   const todayStr = useMemo(() => new Date().toISOString().split('T')[0], []);
 
   // Identify Class Teacher assignments (is_class_teacher === true)
@@ -197,6 +203,44 @@ export const TeacherMissionControlHub: React.FC<TeacherMissionControlHubProps> =
           description="Exam subjects awaiting scores"
         />
       </div>
+
+      {/* 4. Classroom Section Hub (Class Teacher Duty) */}
+      {primaryClassTeacherDuty && (
+        <TeacherClassroomSectionCard
+          tenantId={tenantId}
+          duty={primaryClassTeacherDuty}
+          onLinkParentClick={(student) => setLinkParentStudent(student)}
+        />
+      )}
+
+      {/* Associate Parent Dialog */}
+      <ParentStudentLinkDialog
+        isOpen={!!linkParentStudent}
+        onClose={() => setLinkParentStudent(null)}
+        tenantId={tenantId}
+        student={
+          linkParentStudent
+            ? {
+                id: linkParentStudent.id,
+                name: [
+                  linkParentStudent.first_name,
+                  linkParentStudent.middle_name,
+                  linkParentStudent.last_name,
+                ]
+                  .filter(Boolean)
+                  .join(' '),
+                className: primaryClassTeacherDuty?.class_name ?? undefined,
+                sectionName: primaryClassTeacherDuty?.section_name ?? undefined,
+              }
+            : null
+        }
+        onSuccess={() => {
+          queryClient.invalidateQueries({ queryKey: ['academic_classes'] });
+          queryClient.invalidateQueries({ queryKey: [PARENT_MAPPINGS_QUERY_KEY] });
+          queryClient.invalidateQueries({ queryKey: [STUDENT_PARENTS_QUERY_KEY] });
+          queryClient.invalidateQueries({ queryKey: ['attendance'] });
+        }}
+      />
     </div>
   );
 };
