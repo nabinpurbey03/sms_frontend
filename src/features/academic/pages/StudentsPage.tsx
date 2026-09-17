@@ -1,4 +1,4 @@
-import React, { useState, useMemo } from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
 import { useAuth } from '@/auth/useAuth';
 import { usePermission } from '@/auth/usePermission';
 import {
@@ -35,6 +35,10 @@ import {
   Ban,
   ArrowRightLeft,
   HeartHandshake,
+  ChevronLeft,
+  ChevronRight,
+  ChevronsLeft,
+  ChevronsRight,
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -89,6 +93,10 @@ export const StudentsPage: React.FC = () => {
   const [classFilter, setClassFilter] = useState('ALL');
   const [sectionFilter, setSectionFilter] = useState('ALL');
   const [statusFilter, setStatusFilter] = useState('ALL');
+
+  // Pagination State
+  const [currentPage, setCurrentPage] = useState<number>(1);
+  const [pageSize, setPageSize] = useState<number>(25);
 
   // Modal States
   const [isEnrollOpen, setIsEnrollOpen] = useState(false);
@@ -174,6 +182,21 @@ export const StudentsPage: React.FC = () => {
       return true;
     });
   }, [allStudents, searchQuery, classFilter, sectionFilter, statusFilter]);
+
+  // Auto-reset pagination when filters or search change
+  useEffect(() => {
+    setCurrentPage(1);
+  }, [searchQuery, classFilter, sectionFilter, statusFilter, pageSize]);
+
+  // Derived pagination values
+  const totalRecords = filteredStudents.length;
+  const totalPages = Math.max(1, Math.ceil(totalRecords / pageSize));
+  const safePage = Math.min(currentPage, totalPages);
+
+  const paginatedStudents = useMemo(() => {
+    const start = (safePage - 1) * pageSize;
+    return filteredStudents.slice(start, start + pageSize);
+  }, [filteredStudents, safePage, pageSize]);
 
   // KPI Metrics
   const metrics = useMemo(() => {
@@ -571,7 +594,7 @@ export const StudentsPage: React.FC = () => {
                 </tr>
               </thead>
               <tbody className="divide-y divide-border/60">
-                {filteredStudents.map((st) => {
+                {paginatedStudents.map((st) => {
                   const fullName = [st.first_name, st.middle_name, st.last_name]
                     .filter(Boolean)
                     .join(' ');
@@ -730,6 +753,125 @@ export const StudentsPage: React.FC = () => {
                 })}
               </tbody>
             </table>
+          </div>
+        )}
+
+        {/* Pagination Footer */}
+        {!isLoading && filteredStudents.length > 0 && (
+          <div className="flex flex-col sm:flex-row items-center justify-between gap-4 px-4 py-3 border-t border-border/60 bg-muted/15 text-xs text-muted-foreground">
+            {/* Record Count & Page Size */}
+            <div className="flex flex-wrap items-center gap-3">
+              <span>
+                Showing <strong className="text-foreground">{Math.min(totalRecords, (safePage - 1) * pageSize + 1)}</strong> to{' '}
+                <strong className="text-foreground">{Math.min(safePage * pageSize, totalRecords)}</strong> of{' '}
+                <strong className="text-foreground">{totalRecords}</strong> students
+                {totalRecords < allStudents.length && (
+                  <span className="opacity-70 ml-1">
+                    (filtered from {allStudents.length} total)
+                  </span>
+                )}
+              </span>
+
+              <div className="flex items-center gap-1.5 ml-2 border-l border-border/60 pl-3">
+                <span className="text-[11px]">Rows per page:</span>
+                <select
+                  value={pageSize}
+                  onChange={(e) => {
+                    setPageSize(Number(e.target.value));
+                    setCurrentPage(1);
+                  }}
+                  className="h-7 rounded border border-input bg-background px-1.5 text-xs text-foreground focus:outline-none focus:ring-1 focus:ring-primary"
+                >
+                  <option value={10}>10</option>
+                  <option value={25}>25</option>
+                  <option value={50}>50</option>
+                  <option value={100}>100</option>
+                </select>
+              </div>
+            </div>
+
+            {/* Page Navigation Controls */}
+            {totalPages > 1 && (
+              <div className="flex items-center gap-1 select-none">
+                <Button
+                  variant="ghost"
+                  size="icon"
+                  onClick={() => setCurrentPage(1)}
+                  disabled={safePage === 1}
+                  title="First Page"
+                  className="h-8 w-8 text-muted-foreground hover:text-foreground disabled:opacity-40"
+                >
+                  <ChevronsLeft className="h-4 w-4" />
+                </Button>
+                <Button
+                  variant="ghost"
+                  size="icon"
+                  onClick={() => setCurrentPage((p) => Math.max(1, p - 1))}
+                  disabled={safePage === 1}
+                  title="Previous Page"
+                  className="h-8 w-8 text-muted-foreground hover:text-foreground disabled:opacity-40"
+                >
+                  <ChevronLeft className="h-4 w-4" />
+                </Button>
+
+                <div className="flex items-center gap-1 px-1">
+                  {Array.from({ length: totalPages }).map((_, i) => {
+                    const p = i + 1;
+                    if (
+                      p === 1 ||
+                      p === totalPages ||
+                      Math.abs(p - safePage) <= 1
+                    ) {
+                      return (
+                        <button
+                          key={p}
+                          type="button"
+                          onClick={() => setCurrentPage(p)}
+                          className={`min-w-[28px] h-7 px-2 flex items-center justify-center rounded-md text-xs transition-colors font-medium ${
+                            safePage === p
+                              ? 'bg-primary text-primary-foreground font-bold shadow-xs'
+                              : 'hover:bg-muted text-muted-foreground hover:text-foreground'
+                          }`}
+                        >
+                          {p}
+                        </button>
+                      );
+                    } else if (
+                      (p === 2 && safePage > 3) ||
+                      (p === totalPages - 1 && safePage < totalPages - 2)
+                    ) {
+                      return (
+                        <span key={`ellipsis-${p}`} className="px-1 text-muted-foreground/50">
+                          ...
+                        </span>
+                      );
+                    }
+                    return null;
+                  })}
+                </div>
+
+                <Button
+                  variant="ghost"
+                  size="icon"
+                  onClick={() => setCurrentPage((p) => Math.min(totalPages, p + 1))}
+                  disabled={safePage === totalPages}
+                  title="Next Page"
+                  className="h-8 w-8 text-muted-foreground hover:text-foreground disabled:opacity-40"
+                >
+                  <ChevronRight className="h-4 w-4" />
+                </Button>
+                <Button
+                  variant="ghost"
+                  size="icon"
+                  onClick={() => setCurrentPage(totalPages)}
+                  disabled={safePage === totalPages}
+                  title="Last Page"
+                  className="h-8 w-8 text-muted-foreground hover:text-foreground disabled:opacity-40"
+                >
+                  <ChevronsRight className="h-4 w-4" />
+                </Button>
+              </div>
+            )}
           </div>
         )}
       </div>
