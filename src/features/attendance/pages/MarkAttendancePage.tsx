@@ -30,8 +30,11 @@ import {
   RotateCcw,
   Edit3,
   CheckCircle2,
+  Lock,
+  Clock,
 } from 'lucide-react';
 import type { AcademicClass, AcademicSection } from '@/features/academic/types';
+import { toast } from 'sonner';
 
 export const MarkAttendancePage: React.FC = () => {
   const { activeTenantId } = useAuth();
@@ -58,9 +61,15 @@ export const MarkAttendancePage: React.FC = () => {
   const queryClassId = searchParams.get('classId') || '';
   const querySectionId = searchParams.get('sectionId') || '';
 
-  // Date state & ABAC rule (disallow future dates)
-  const todayStr = new Date().toISOString().split('T')[0];
+  // Date state: allow recording and updating for the last 7 days only
+  const todayStr = useMemo(() => new Date().toISOString().split('T')[0], []);
+  const minDateStr = useMemo(() => {
+    const d = new Date();
+    d.setDate(d.getDate() - 7);
+    return d.toISOString().split('T')[0];
+  }, []);
   const [recordDate, setRecordDate] = useState<string>(todayStr);
+  const isDateOutOfRange = recordDate < minDateStr || recordDate > todayStr;
 
   // Search and attendance mark state
   const [presentStudentIds, setPresentStudentIds] = useState<Set<string>>(new Set());
@@ -228,8 +237,11 @@ export const MarkAttendancePage: React.FC = () => {
   const handleSubmit = async () => {
     if (!activeTenantId || !selectedClassId || !selectedSectionId) return;
 
-    // Reject future dates (ABAC rule)
-    if (!recordDate || recordDate > todayStr) {
+    // Reject dates out of allowed 7-day range
+    if (!recordDate || isDateOutOfRange) {
+      toast.error('Date outside editable window', {
+        description: 'Attendance can only be recorded or updated for the last 7 days.',
+      });
       return;
     }
 
@@ -317,8 +329,9 @@ export const MarkAttendancePage: React.FC = () => {
                 type="date"
                 value={recordDate}
                 onChange={(e) => setRecordDate(e.target.value)}
+                min={minDateStr}
                 max={todayStr}
-                className="h-10"
+                className={`h-10 ${isDateOutOfRange ? 'border-amber-500/50 dark:border-amber-500/50' : ''}`}
               />
               {recordDate === todayStr ? (
                 <Badge
@@ -339,7 +352,15 @@ export const MarkAttendancePage: React.FC = () => {
                   <span>Reset to Today</span>
                 </Button>
               )}
-              {isAlreadyMarked && (
+              {recordDate < minDateStr ? (
+                <Badge
+                  variant="outline"
+                  className="text-xs bg-amber-500/10 text-amber-700 dark:text-amber-400 border-amber-500/30 gap-1 h-10 px-2.5 shrink-0 flex items-center"
+                >
+                  <Lock className="w-3.5 h-3.5 text-amber-600 dark:text-amber-400" />
+                  Locked (&gt;7 days)
+                </Badge>
+              ) : isAlreadyMarked ? (
                 <Badge
                   variant="outline"
                   className="text-xs bg-emerald-500/10 text-emerald-700 dark:text-emerald-400 border-emerald-500/30 gap-1 h-10 px-2.5 shrink-0 flex items-center"
@@ -347,8 +368,12 @@ export const MarkAttendancePage: React.FC = () => {
                   <CheckCircle2 className="w-3.5 h-3.5 text-emerald-600 dark:text-emerald-400" />
                   Recorded for this date
                 </Badge>
-              )}
+              ) : null}
             </div>
+            <p className="text-[11px] text-muted-foreground flex items-center gap-1">
+              <Clock className="w-3 h-3" />
+              Editable window: last 7 days only ({minDateStr} to {todayStr})
+            </p>
           </div>
 
           {/* Class Selector */}
@@ -554,15 +579,29 @@ export const MarkAttendancePage: React.FC = () => {
             <div className="text-xs text-muted-foreground">
               {recordDate && (
                 <span>
-                  {isAlreadyMarked ? 'Updating attendance for ' : 'Marking attendance for '}
-                  <span className="font-semibold text-foreground">
-                    {new Date(recordDate + 'T00:00:00').toLocaleDateString('en-US', {
-                      weekday: 'long',
-                      year: 'numeric',
-                      month: 'long',
-                      day: 'numeric',
-                    })}
-                  </span>
+                  {recordDate < minDateStr ? (
+                    <span className="text-amber-600 dark:text-amber-400 font-medium flex items-center gap-1.5">
+                      <Lock className="w-3.5 h-3.5" />
+                      Attendance locked: records older than 7 days cannot be modified.
+                    </span>
+                  ) : recordDate > todayStr ? (
+                    <span className="text-destructive font-medium flex items-center gap-1.5">
+                      <AlertCircle className="w-3.5 h-3.5" />
+                      Cannot record attendance for a future date.
+                    </span>
+                  ) : (
+                    <span>
+                      {isAlreadyMarked ? 'Updating attendance for ' : 'Marking attendance for '}
+                      <span className="font-semibold text-foreground">
+                        {new Date(recordDate + 'T00:00:00').toLocaleDateString('en-US', {
+                          weekday: 'long',
+                          year: 'numeric',
+                          month: 'long',
+                          day: 'numeric',
+                        })}
+                      </span>
+                    </span>
+                  )}
                 </span>
               )}
             </div>
@@ -574,22 +613,32 @@ export const MarkAttendancePage: React.FC = () => {
                 !selectedSectionId ||
                 students.length === 0 ||
                 (isTeacherOnly && !isClassTeacherForSelected) ||
-                recordDate > todayStr
+                isDateOutOfRange
               }
               className={`gap-2 ${
-                isAlreadyMarked
+                isDateOutOfRange
+                  ? 'opacity-60 cursor-not-allowed'
+                  : isAlreadyMarked
                   ? 'bg-emerald-600 hover:bg-emerald-700 text-white'
                   : ''
               }`}
             >
               {markAttendanceMutation.isPending ? (
                 <Loader2 className="w-4 h-4 animate-spin" />
+              ) : isDateOutOfRange ? (
+                <Lock className="w-4 h-4" />
               ) : isAlreadyMarked ? (
                 <Edit3 className="w-4 h-4" />
               ) : (
                 <CalendarCheck className="w-4 h-4" />
               )}
-              {isAlreadyMarked ? 'Update Attendance' : 'Submit Attendance'}
+              {recordDate < minDateStr
+                ? 'Attendance Locked'
+                : recordDate > todayStr
+                ? 'Future Date Locked'
+                : isAlreadyMarked
+                ? 'Update Attendance'
+                : 'Submit Attendance'}
             </Button>
           </div>
         </Card>
