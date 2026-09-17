@@ -125,13 +125,29 @@ export const ClassDetailPage: React.FC = () => {
     return map;
   }, [classParentMappings]);
 
-  const sections = cls?.sections || [];
-  const currentSection =
-    sections.find((s) => s.id === selectedSectionId) || sections[0] || null;
+  const allSections = cls?.sections || [];
 
-  const isTeacherAssignedToThisClass = useMemo(() => {
+  // Filter sections for teachers to only those where they are designated Class Teacher
+  const visibleSections = useMemo(() => {
+    if (!isTeacherOnly) return allSections;
+    const teacherAssignments = myAssignments.filter(
+      (a) => a.class_id === classId && a.is_class_teacher
+    );
+    if (teacherAssignments.some((a) => !a.section_id)) {
+      return allSections;
+    }
+    const assignedSectionIds = new Set(
+      teacherAssignments.map((a) => a.section_id).filter(Boolean)
+    );
+    return allSections.filter((s) => assignedSectionIds.has(s.id));
+  }, [allSections, isTeacherOnly, myAssignments, classId]);
+
+  const currentSection =
+    visibleSections.find((s) => s.id === selectedSectionId) || visibleSections[0] || null;
+
+  const hasClassTeacherAccess = useMemo(() => {
     if (!isTeacherOnly) return true;
-    return myAssignments.some((a) => a.class_id === classId);
+    return myAssignments.some((a) => a.class_id === classId && a.is_class_teacher);
   }, [isTeacherOnly, myAssignments, classId]);
 
   const isClassTeacherForThisClass = useMemo(() => {
@@ -140,6 +156,12 @@ export const ClassDetailPage: React.FC = () => {
       (a) => a.class_id === classId && a.is_class_teacher && (!a.section_id || a.section_id === currentSection?.id)
     );
   }, [isTeacherOnly, myAssignments, classId, currentSection]);
+
+  const visibleStudentsCount = useMemo(() => {
+    if (!isTeacherOnly) return cls?.students.length ?? 0;
+    const visibleSecIds = new Set(visibleSections.map((s) => s.id));
+    return cls?.students.filter((s) => s.section_id && visibleSecIds.has(s.section_id)).length ?? 0;
+  }, [cls?.students, isTeacherOnly, visibleSections]);
 
   const todayStr = useMemo(() => new Date().toISOString().split('T')[0], []);
   const { data: dailyStatus } = useDailyAttendanceStatus(tenantId, todayStr, classId, {
@@ -197,8 +219,8 @@ export const ClassDetailPage: React.FC = () => {
     );
   }
 
-  // 5. Unauthorized guard
-  if (isTeacherOnly && !isTeacherAssignedToThisClass) {
+  // 5. Unauthorized guard (only Class Teachers have roster access)
+  if (isTeacherOnly && !hasClassTeacherAccess) {
     return (
       <div className="flex flex-col items-center justify-center min-h-[50vh] text-center p-6 space-y-4">
         <div className="w-14 h-14 rounded-2xl bg-amber-500/10 border border-amber-500/20 flex items-center justify-center text-amber-600 dark:text-amber-400">
@@ -207,7 +229,7 @@ export const ClassDetailPage: React.FC = () => {
         <div className="space-y-1 max-w-md">
           <h2 className="text-xl font-bold text-foreground">Restricted Class Access</h2>
           <p className="text-xs sm:text-sm text-muted-foreground">
-            You are not assigned as a Class Teacher or Subject Teacher for <strong>{cls?.name || 'this class'}</strong>.
+            You are not assigned as a Class Teacher for <strong>{cls?.name || 'this class'}</strong>. Class details and student rosters are reserved for designated Class Teachers.
           </p>
         </div>
         <Button onClick={handleBack} variant="outline" className="gap-2 text-xs">
@@ -331,11 +353,11 @@ export const ClassDetailPage: React.FC = () => {
       <div className="flex flex-wrap gap-2">
         <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-semibold bg-primary/10 text-primary border border-primary/20">
           <Users className="w-3.5 h-3.5" />
-          {cls.students.length} Total Students
+          {visibleStudentsCount} Total Students
         </span>
         <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-semibold bg-indigo-500/10 text-indigo-700 dark:text-indigo-400 border border-indigo-500/20">
           <Layers className="w-3.5 h-3.5" />
-          {sections.length} {sections.length === 1 ? 'Section' : 'Sections'}
+          {visibleSections.length} {visibleSections.length === 1 ? 'Section' : 'Sections'}
         </span>
         <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-semibold bg-muted text-muted-foreground border border-border">
           {cls.subjects.length} Subjects
@@ -412,7 +434,7 @@ export const ClassDetailPage: React.FC = () => {
             <div className="flex flex-wrap items-center justify-between gap-3">
               <div className="flex flex-wrap items-center gap-2">
                 <span className="text-xs font-medium text-muted-foreground mr-1">Section:</span>
-                {sections.map((sec) => {
+                {visibleSections.map((sec) => {
                   const isSelected = currentSection?.id === sec.id;
                   return (
                     <button
@@ -441,7 +463,7 @@ export const ClassDetailPage: React.FC = () => {
                     <UserPlus className="w-3.5 h-3.5" />
                     Enroll Student
                   </Button>
-                  {currentSection && sections.length > 1 && (
+                  {currentSection && allSections.length > 1 && (
                     <Button
                       variant="ghost"
                       size="sm"
@@ -676,7 +698,7 @@ export const ClassDetailPage: React.FC = () => {
                 Current Class Status
               </h5>
               <div className="space-y-2">
-                {sections.map((sec, idx) => {
+                {allSections.map((sec, idx) => {
                   const count = sec.student_count ?? 0;
                   const isMet = count >= 20;
                   return (
@@ -741,7 +763,7 @@ export const ClassDetailPage: React.FC = () => {
         isOpen={isEnrollStudentOpen}
         onClose={() => setIsEnrollStudentOpen(false)}
         classNameTitle={cls.name}
-        sections={sections}
+        sections={visibleSections}
         defaultSectionId={currentSection?.id}
         onSubmit={async (sectionId, data) => {
           await handleAddStudent(sectionId, data);
