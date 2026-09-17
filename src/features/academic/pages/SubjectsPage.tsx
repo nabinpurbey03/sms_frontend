@@ -1,4 +1,4 @@
-import React, { useState, useMemo } from 'react';
+import React, { useState, useMemo, useEffect } from 'react';
 import { useAuth } from '@/auth/useAuth';
 import { usePermission } from '@/auth/usePermission';
 import {
@@ -7,12 +7,15 @@ import {
   useUpdateSubject,
   useDeleteSubject,
   useBulkCreateSubjects,
+  useMyTeacherAssignments,
+  useAssignments,
 } from '../hooks';
 import type { AcademicSubject, SubjectCreateDTO } from '../types';
 import { SubjectCreateGlobalDialog } from '../components/SubjectCreateGlobalDialog';
 import { SubjectEditDialog } from '../components/SubjectEditDialog';
 import { SubjectDeleteDialog } from '../components/SubjectDeleteDialog';
 import { BulkSubjectUploadDialog } from '../components/BulkSubjectUploadDialog';
+import { SubjectHomeworkDialog } from '../components/SubjectHomeworkDialog';
 
 import {
   BookOpen,
@@ -30,6 +33,11 @@ import {
   Trash2,
   Tag,
   Clock,
+  Award,
+  Bell,
+  ArrowUpRight,
+  ExternalLink,
+  Sparkles,
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -42,7 +50,7 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
-import { Link } from '@tanstack/react-router';
+import { Link, useNavigate } from '@tanstack/react-router';
 import { toast } from 'sonner';
 
 type EnrichedSubject = AcademicSubject & {
@@ -50,19 +58,23 @@ type EnrichedSubject = AcademicSubject & {
 };
 
 export const SubjectsPage: React.FC = () => {
-  const { activeTenantId, activeTenantName } = useAuth();
+  const navigate = useNavigate();
+  const { activeTenantId, activeTenantName, activeRole } = useAuth();
   const { can, isSuperAdmin } = usePermission();
   const canManage = can('MANAGE_CLASSES_SUBJECTS') || isSuperAdmin;
+  const isTeacherOnly = activeRole === 'TEACHER' && !canManage;
 
   // Search & Filter State
   const [searchQuery, setSearchQuery] = useState('');
   const [classFilter, setClassFilter] = useState('ALL');
+  const [subjectViewTab, setSubjectViewTab] = useState<'my' | 'all'>('my');
 
   // Modal States
   const [isCreateOpen, setIsCreateOpen] = useState(false);
   const [isBulkOpen, setIsBulkOpen] = useState(false);
   const [editingSubject, setEditingSubject] = useState<EnrichedSubject | null>(null);
   const [subjectToDelete, setSubjectToDelete] = useState<EnrichedSubject | null>(null);
+  const [homeworkSubject, setHomeworkSubject] = useState<EnrichedSubject | null>(null);
 
   // Queries & Mutations
   const {
@@ -72,10 +84,26 @@ export const SubjectsPage: React.FC = () => {
     refetch,
   } = useAllClassesWithDetails(activeTenantId);
 
+  const { data: myAssignments = [], isLoading: isMyAssignmentsLoading } = useMyTeacherAssignments(
+    activeTenantId,
+    { enabled: !!activeTenantId }
+  );
+
+  const { data: allAssignments = [] } = useAssignments(activeTenantId);
+
   const createSubjectMutation = useCreateSubject();
   const updateSubjectMutation = useUpdateSubject();
   const deleteSubjectMutation = useDeleteSubject();
   const bulkCreateMutation = useBulkCreateSubjects();
+
+  // Switch default tab depending on role
+  useEffect(() => {
+    if (isTeacherOnly) {
+      setSubjectViewTab('my');
+    } else {
+      setSubjectViewTab('all');
+    }
+  }, [isTeacherOnly]);
 
   // Flatten subjects across all classes
   const allSubjects = useMemo(() => {
@@ -91,6 +119,34 @@ export const SubjectsPage: React.FC = () => {
     return list;
   }, [classesWithDetails]);
 
+  // Build a lookup: subject_id -> assignments
+  const assignmentsBySubjectId = useMemo(() => {
+    const map = new Map<string, typeof allAssignments>();
+    for (const a of allAssignments) {
+      if (a.subject_id) {
+        const list = map.get(a.subject_id) || [];
+        list.push(a);
+        map.set(a.subject_id, list);
+      }
+    }
+    return map;
+  }, [allAssignments]);
+
+  // Set of subject IDs assigned to the current teacher
+  const myAssignedSubjectIds = useMemo(() => {
+    return new Set(
+      myAssignments.filter((a) => a.subject_id).map((a) => a.subject_id as string)
+    );
+  }, [myAssignments]);
+
+  // All teaching subjects assigned to me
+  const myTeachingSubjects = useMemo(() => {
+    return allSubjects.filter((sub) => myAssignedSubjectIds.has(sub.id));
+  }, [allSubjects, myAssignedSubjectIds]);
+
+  // Base list depending on active tab
+  const baseSubjectsList = subjectViewTab === 'my' ? myTeachingSubjects : allSubjects;
+
   // Distinct classes for filter dropdown
   const availableClasses = useMemo(() => {
     return classesWithDetails.map((c) => ({ id: c.id, name: c.name }));
@@ -98,7 +154,7 @@ export const SubjectsPage: React.FC = () => {
 
   // Filtered Subjects
   const filteredSubjects = useMemo(() => {
-    return allSubjects.filter((sub) => {
+    return baseSubjectsList.filter((sub) => {
       // Search
       if (searchQuery.trim()) {
         const q = searchQuery.toLowerCase();
@@ -115,18 +171,27 @@ export const SubjectsPage: React.FC = () => {
 
       return true;
     });
-  }, [allSubjects, searchQuery, classFilter]);
+  }, [baseSubjectsList, searchQuery, classFilter]);
 
   // KPI Metrics
   const metrics = useMemo(() => {
     const totalSubjects = allSubjects.length;
+    const mySubjectsCount = myTeachingSubjects.length;
     const codedSubjects = allSubjects.filter((s) => Boolean(s.code)).length;
     const classesCount = classesWithDetails.length;
+    const myClassesCount = new Set(myTeachingSubjects.map((s) => s.class_id)).size;
     const avgPerClass =
       classesCount > 0 ? (totalSubjects / classesCount).toFixed(1) : '0';
 
-    return { totalSubjects, codedSubjects, classesCount, avgPerClass };
-  }, [allSubjects, classesWithDetails]);
+    return {
+      totalSubjects,
+      mySubjectsCount,
+      codedSubjects,
+      classesCount,
+      myClassesCount,
+      avgPerClass,
+    };
+  }, [allSubjects, myTeachingSubjects, classesWithDetails]);
 
   // Export Filtered Subjects to CSV
   const handleExportCSV = () => {
@@ -235,43 +300,143 @@ export const SubjectsPage: React.FC = () => {
     <div className="space-y-6 pb-12">
       {/* KPI Stats Cards */}
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4">
-        <div className="p-4 rounded-2xl bg-card border shadow-2xs space-y-1">
-          <div className="flex items-center justify-between text-muted-foreground">
-            <span className="text-xs font-semibold">Total Subjects</span>
-            <BookOpen className="w-4 h-4 text-primary" />
-          </div>
-          <p className="text-2xl font-bold text-foreground">{metrics.totalSubjects}</p>
-          <p className="text-[11px] text-muted-foreground">Across curriculum</p>
+        {isTeacherOnly ? (
+          <>
+            <div className="p-4 rounded-2xl bg-card border shadow-2xs space-y-1">
+              <div className="flex items-center justify-between text-muted-foreground">
+                <span className="text-xs font-semibold">My Teaching Subjects</span>
+                <Award className="w-4 h-4 text-primary" />
+              </div>
+              <p className="text-2xl font-bold text-foreground">{metrics.mySubjectsCount}</p>
+              <p className="text-[11px] text-muted-foreground">Assigned courses</p>
+            </div>
+
+            <div className="p-4 rounded-2xl bg-card border shadow-2xs space-y-1">
+              <div className="flex items-center justify-between text-muted-foreground">
+                <span className="text-xs font-semibold">Classes Taught</span>
+                <GraduationCap className="w-4 h-4 text-emerald-600 dark:text-emerald-400" />
+              </div>
+              <p className="text-2xl font-bold text-emerald-600 dark:text-emerald-400">
+                {metrics.myClassesCount}
+              </p>
+              <p className="text-[11px] text-muted-foreground">Active cohorts</p>
+            </div>
+
+            <div className="p-4 rounded-2xl bg-card border shadow-2xs space-y-1">
+              <div className="flex items-center justify-between text-muted-foreground">
+                <span className="text-xs font-semibold">Total Curriculum</span>
+                <BookOpen className="w-4 h-4 text-primary" />
+              </div>
+              <p className="text-2xl font-bold text-foreground">{metrics.totalSubjects}</p>
+              <p className="text-[11px] text-muted-foreground">Across all grades</p>
+            </div>
+
+            <div className="p-4 rounded-2xl bg-card border shadow-2xs space-y-1">
+              <div className="flex items-center justify-between text-muted-foreground">
+                <span className="text-xs font-semibold">Standardized Codes</span>
+                <Tag className="w-4 h-4 text-primary" />
+              </div>
+              <p className="text-2xl font-bold text-foreground">{metrics.codedSubjects}</p>
+              <p className="text-[11px] text-muted-foreground">Report card codes</p>
+            </div>
+          </>
+        ) : (
+          <>
+            <div className="p-4 rounded-2xl bg-card border shadow-2xs space-y-1">
+              <div className="flex items-center justify-between text-muted-foreground">
+                <span className="text-xs font-semibold">Total Subjects</span>
+                <BookOpen className="w-4 h-4 text-primary" />
+              </div>
+              <p className="text-2xl font-bold text-foreground">{metrics.totalSubjects}</p>
+              <p className="text-[11px] text-muted-foreground">Across curriculum</p>
+            </div>
+
+            <div className="p-4 rounded-2xl bg-card border shadow-2xs space-y-1">
+              <div className="flex items-center justify-between text-muted-foreground">
+                <span className="text-xs font-semibold">Active Classes</span>
+                <GraduationCap className="w-4 h-4 text-emerald-600 dark:text-emerald-400" />
+              </div>
+              <p className="text-2xl font-bold text-emerald-600 dark:text-emerald-400">
+                {metrics.classesCount}
+              </p>
+              <p className="text-[11px] text-muted-foreground">Grades with subjects</p>
+            </div>
+
+            <div className="p-4 rounded-2xl bg-card border shadow-2xs space-y-1">
+              <div className="flex items-center justify-between text-muted-foreground">
+                <span className="text-xs font-semibold">Standardized Codes</span>
+                <Tag className="w-4 h-4 text-primary" />
+              </div>
+              <p className="text-2xl font-bold text-foreground">{metrics.codedSubjects}</p>
+              <p className="text-[11px] text-muted-foreground">Report card codes</p>
+            </div>
+
+            <div className="p-4 rounded-2xl bg-card border shadow-2xs space-y-1">
+              <div className="flex items-center justify-between text-muted-foreground">
+                <span className="text-xs font-semibold">Avg Per Grade</span>
+                <Layers className="w-4 h-4 text-primary" />
+              </div>
+              <p className="text-2xl font-bold text-foreground">{metrics.avgPerClass}</p>
+              <p className="text-[11px] text-muted-foreground">Courses per class</p>
+            </div>
+          </>
+        )}
+      </div>
+
+      {/* View Switcher: My Teaching Subjects vs All Curriculum Subjects */}
+      <div className="flex flex-wrap items-center justify-between gap-3 p-1.5 rounded-xl bg-muted/40 border border-border/50">
+        <div className="flex items-center gap-1.5">
+          <Button
+            type="button"
+            variant={subjectViewTab === 'my' ? 'default' : 'ghost'}
+            size="sm"
+            onClick={() => setSubjectViewTab('my')}
+            className={`h-8 text-xs font-semibold gap-2 ${
+              subjectViewTab === 'my' ? 'shadow-xs' : 'text-muted-foreground hover:text-foreground'
+            }`}
+          >
+            <Award className="w-3.5 h-3.5" />
+            <span>My Teaching Subjects</span>
+            <span
+              className={`px-1.5 py-0.2 rounded-full text-[10px] font-bold ${
+                subjectViewTab === 'my'
+                  ? 'bg-primary-foreground/20 text-primary-foreground'
+                  : 'bg-muted text-muted-foreground'
+              }`}
+            >
+              {myTeachingSubjects.length}
+            </span>
+          </Button>
+
+          <Button
+            type="button"
+            variant={subjectViewTab === 'all' ? 'default' : 'ghost'}
+            size="sm"
+            onClick={() => setSubjectViewTab('all')}
+            className={`h-8 text-xs font-semibold gap-2 ${
+              subjectViewTab === 'all' ? 'shadow-xs' : 'text-muted-foreground hover:text-foreground'
+            }`}
+          >
+            <BookOpen className="w-3.5 h-3.5" />
+            <span>All Curriculum Subjects</span>
+            <span
+              className={`px-1.5 py-0.2 rounded-full text-[10px] font-bold ${
+                subjectViewTab === 'all'
+                  ? 'bg-primary-foreground/20 text-primary-foreground'
+                  : 'bg-muted text-muted-foreground'
+              }`}
+            >
+              {allSubjects.length}
+            </span>
+          </Button>
         </div>
 
-        <div className="p-4 rounded-2xl bg-card border shadow-2xs space-y-1">
-          <div className="flex items-center justify-between text-muted-foreground">
-            <span className="text-xs font-semibold">Active Classes</span>
-            <GraduationCap className="w-4 h-4 text-emerald-600 dark:text-emerald-400" />
+        {isTeacherOnly && (
+          <div className="text-[11px] text-muted-foreground px-2 flex items-center gap-1.5">
+            <span className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse" />
+            Teacher Teaching Mode Active
           </div>
-          <p className="text-2xl font-bold text-emerald-600 dark:text-emerald-400">
-            {metrics.classesCount}
-          </p>
-          <p className="text-[11px] text-muted-foreground">Grades with subjects</p>
-        </div>
-
-        <div className="p-4 rounded-2xl bg-card border shadow-2xs space-y-1">
-          <div className="flex items-center justify-between text-muted-foreground">
-            <span className="text-xs font-semibold">Standardized Codes</span>
-            <Tag className="w-4 h-4 text-primary" />
-          </div>
-          <p className="text-2xl font-bold text-foreground">{metrics.codedSubjects}</p>
-          <p className="text-[11px] text-muted-foreground">Report card codes</p>
-        </div>
-
-        <div className="p-4 rounded-2xl bg-card border shadow-2xs space-y-1">
-          <div className="flex items-center justify-between text-muted-foreground">
-            <span className="text-xs font-semibold">Avg Per Grade</span>
-            <Layers className="w-4 h-4 text-primary" />
-          </div>
-          <p className="text-2xl font-bold text-foreground">{metrics.avgPerClass}</p>
-          <p className="text-[11px] text-muted-foreground">Courses per class</p>
-        </div>
+        )}
       </div>
 
       {/* Filter and Search Bar */}
@@ -398,15 +563,37 @@ export const SubjectsPage: React.FC = () => {
         ) : filteredSubjects.length === 0 ? (
           <div className="p-12 text-center space-y-3">
             <div className="w-12 h-12 rounded-full bg-muted flex items-center justify-center mx-auto text-muted-foreground">
-              <BookOpen className="w-6 h-6" />
+              {subjectViewTab === 'my' ? (
+                <Award className="w-6 h-6 text-primary" />
+              ) : (
+                <BookOpen className="w-6 h-6" />
+              )}
             </div>
-            <h3 className="text-base font-semibold text-foreground">No Subjects Found</h3>
-            <p className="text-sm text-muted-foreground max-w-sm mx-auto">
-              {searchQuery || classFilter !== 'ALL'
+            <h3 className="text-base font-semibold text-foreground">
+              {subjectViewTab === 'my' && myTeachingSubjects.length === 0
+                ? 'No Assigned Teaching Subjects'
+                : 'No Subjects Found'}
+            </h3>
+            <p className="text-sm text-muted-foreground max-w-md mx-auto">
+              {subjectViewTab === 'my' && myTeachingSubjects.length === 0
+                ? 'You are not currently assigned to teach any curriculum subjects in this school. Contact your school administrator or academic coordinator to assign your classes and subjects.'
+                : searchQuery || classFilter !== 'ALL'
                 ? 'No subjects match your current filter criteria. Try resetting filters.'
                 : 'No curriculum subjects registered yet. Add subjects to academic classes to build out your curriculum.'}
             </p>
-            {canManage && !searchQuery && classFilter === 'ALL' && (
+            {subjectViewTab === 'my' && myTeachingSubjects.length === 0 ? (
+              <div className="pt-2 flex justify-center">
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={() => setSubjectViewTab('all')}
+                  className="gap-1.5 text-xs"
+                >
+                  <BookOpen className="w-3.5 h-3.5" />
+                  Browse All Curriculum Subjects
+                </Button>
+              </div>
+            ) : canManage && !searchQuery && classFilter === 'ALL' ? (
               <div className="pt-2 flex justify-center gap-2">
                 <Button onClick={() => setIsCreateOpen(true)} className="gap-1.5 text-xs">
                   <Plus className="w-3.5 h-3.5" />
@@ -417,7 +604,7 @@ export const SubjectsPage: React.FC = () => {
                   Bulk Upload CSV
                 </Button>
               </div>
-            )}
+            ) : null}
           </div>
         ) : (
           <div className="overflow-x-auto">
@@ -426,95 +613,179 @@ export const SubjectsPage: React.FC = () => {
                 <tr className="border-b bg-muted/30 text-muted-foreground font-semibold">
                   <th className="py-3 px-4">Subject Name</th>
                   <th className="py-3 px-4">Academic Class</th>
+                  <th className="py-3 px-4">Assigned Instructor</th>
                   <th className="py-3 px-4">Subject Code</th>
-                  <th className="py-3 px-4">Created Date</th>
-                  {canManage && <th className="py-3 px-4 text-right">Actions</th>}
+                  <th className="py-3 px-4 text-right">Teaching Activities & Actions</th>
                 </tr>
               </thead>
               <tbody className="divide-y divide-border/60">
-                {filteredSubjects.map((sub) => (
-                  <tr key={sub.id} className="hover:bg-muted/20 transition-colors">
-                    {/* Subject Name */}
-                    <td className="py-3 px-4">
-                      <div className="flex items-center gap-2.5">
-                        <div className="p-2 rounded-xl bg-primary/10 text-primary shrink-0">
-                          <BookOpen className="w-4 h-4" />
+                {filteredSubjects.map((sub) => {
+                  const isAssignedToMe = myAssignedSubjectIds.has(sub.id);
+                  const assignments = assignmentsBySubjectId.get(sub.id) || [];
+                  const teacherNames = Array.from(
+                    new Set(assignments.filter((a) => a.teacher_name).map((a) => a.teacher_name!))
+                  );
+                  const assignedSections = Array.from(
+                    new Set(assignments.filter((a) => a.section_name).map((a) => a.section_name!))
+                  );
+
+                  return (
+                    <tr
+                      key={sub.id}
+                      className={`hover:bg-muted/20 transition-colors ${
+                        isAssignedToMe ? 'bg-primary/[0.02]' : ''
+                      }`}
+                    >
+                      {/* Subject Name */}
+                      <td className="py-3 px-4">
+                        <div className="flex items-center gap-2.5">
+                          <div
+                            className={`p-2 rounded-xl shrink-0 ${
+                              isAssignedToMe
+                                ? 'bg-primary text-primary-foreground'
+                                : 'bg-primary/10 text-primary'
+                            }`}
+                          >
+                            <BookOpen className="w-4 h-4" />
+                          </div>
+                          <div className="min-w-0">
+                            <div className="flex items-center gap-1.5 flex-wrap">
+                              <p className="font-bold text-foreground truncate text-xs">
+                                {sub.name}
+                              </p>
+                              {isAssignedToMe && (
+                                <span className="inline-flex items-center gap-1 text-[9px] font-bold text-primary bg-primary/10 border border-primary/20 px-1.5 py-0.2 rounded-full">
+                                  <Award className="w-2.5 h-2.5" />
+                                  Taught by You
+                                </span>
+                              )}
+                            </div>
+                            <span className="text-[10px] text-muted-foreground font-mono">
+                              ID: {sub.id}
+                            </span>
+                          </div>
                         </div>
-                        <div className="min-w-0">
-                          <p className="font-bold text-foreground truncate text-xs">
-                            {sub.name}
-                          </p>
-                          <span className="text-[10px] text-muted-foreground font-mono">
-                            ID: {sub.id}
-                          </span>
-                        </div>
-                      </div>
-                    </td>
-
-                    {/* Academic Class */}
-                    <td className="py-3 px-4">
-                      <Badge variant="outline" className="bg-muted/50 font-semibold text-foreground text-xs py-0.5">
-                        {sub.className}
-                      </Badge>
-                    </td>
-
-                    {/* Subject Code */}
-                    <td className="py-3 px-4">
-                      {sub.code ? (
-                        <span className="font-mono text-[11px] font-bold px-2 py-0.5 rounded-md bg-primary/10 text-primary border border-primary/20">
-                          {sub.code}
-                        </span>
-                      ) : (
-                        <span className="text-[11px] text-muted-foreground/60 italic font-mono">
-                          None
-                        </span>
-                      )}
-                    </td>
-
-                    {/* Created Date */}
-                    <td className="py-3 px-4 text-muted-foreground">
-                      <span className="flex items-center gap-1 text-[11px]">
-                        <Clock className="w-3 h-3 opacity-60" />
-                        {sub.created_at ? new Date(sub.created_at).toLocaleDateString() : 'Active Term'}
-                      </span>
-                    </td>
-
-                    {/* Actions */}
-                    {canManage && (
-                      <td className="py-3 px-4 text-right">
-                        <DropdownMenu>
-                          <DropdownMenuTrigger asChild>
-                            <Button
-                              variant="ghost"
-                              size="icon"
-                              className="h-7 w-7 text-muted-foreground hover:text-foreground cursor-pointer"
-                            >
-                              <MoreHorizontal className="w-4 h-4" />
-                            </Button>
-                          </DropdownMenuTrigger>
-                          <DropdownMenuContent align="end" className="w-44">
-                            <DropdownMenuLabel className="text-xs">Subject Actions</DropdownMenuLabel>
-                            <DropdownMenuItem
-                              onClick={() => setEditingSubject(sub)}
-                              className="text-xs cursor-pointer gap-2"
-                            >
-                              <Edit2 className="w-3.5 h-3.5" />
-                              Edit Subject
-                            </DropdownMenuItem>
-                            <DropdownMenuSeparator />
-                            <DropdownMenuItem
-                              onClick={() => setSubjectToDelete(sub)}
-                              className="text-xs text-destructive focus:text-destructive focus:bg-destructive/10 cursor-pointer gap-2"
-                            >
-                              <Trash2 className="w-3.5 h-3.5" />
-                              Delete Subject
-                            </DropdownMenuItem>
-                          </DropdownMenuContent>
-                        </DropdownMenu>
                       </td>
-                    )}
-                  </tr>
-                ))}
+
+                      {/* Academic Class */}
+                      <td className="py-3 px-4">
+                        <Badge variant="outline" className="bg-muted/50 font-semibold text-foreground text-xs py-0.5">
+                          {sub.className}
+                        </Badge>
+                      </td>
+
+                      {/* Assigned Instructor */}
+                      <td className="py-3 px-4">
+                        <div className="space-y-0.5">
+                          {teacherNames.length > 0 ? (
+                            <div className="flex items-center gap-1.5 flex-wrap">
+                              <span className="text-xs font-medium text-foreground">
+                                {teacherNames.join(', ')}
+                              </span>
+                            </div>
+                          ) : (
+                            <span className="text-[11px] text-muted-foreground/60 italic">
+                              Unassigned
+                            </span>
+                          )}
+                          {assignedSections.length > 0 && (
+                            <div className="text-[10px] text-muted-foreground">
+                              Sections: {assignedSections.map((s) => `Sec ${s}`).join(', ')}
+                            </div>
+                          )}
+                        </div>
+                      </td>
+
+                      {/* Subject Code */}
+                      <td className="py-3 px-4">
+                        {sub.code ? (
+                          <span className="font-mono text-[11px] font-bold px-2 py-0.5 rounded-md bg-primary/10 text-primary border border-primary/20">
+                            {sub.code}
+                          </span>
+                        ) : (
+                          <span className="text-[11px] text-muted-foreground/60 italic font-mono">
+                            None
+                          </span>
+                        )}
+                      </td>
+
+                      {/* Teaching Activities & Actions */}
+                      <td className="py-3 px-4 text-right">
+                        <div className="flex items-center justify-end gap-1.5 flex-wrap">
+                          {/* Post Homework */}
+                          <Button
+                            variant="outline"
+                            size="sm"
+                            onClick={() => setHomeworkSubject(sub)}
+                            className="h-7 text-[11px] px-2.5 gap-1 bg-card hover:bg-muted cursor-pointer shadow-2xs font-medium"
+                            title="Broadcast homework or announcement for this subject"
+                          >
+                            <Bell className="w-3 h-3 text-primary" />
+                            <span>Homework</span>
+                          </Button>
+
+                          {/* Grade Exams */}
+                          <Button
+                            variant="outline"
+                            size="sm"
+                            onClick={() => navigate({ to: '/examination/scores' })}
+                            className="h-7 text-[11px] px-2.5 gap-1 bg-card hover:bg-muted cursor-pointer shadow-2xs font-medium"
+                            title="Enter exam scores or view grading"
+                          >
+                            <GraduationCap className="w-3 h-3 text-indigo-500" />
+                            <span>Grading</span>
+                          </Button>
+
+                          {/* Class Workspace */}
+                          <Button
+                            variant="ghost"
+                            size="icon"
+                            asChild
+                            className="h-7 w-7 text-muted-foreground hover:text-foreground cursor-pointer"
+                            title="Open Class Details"
+                          >
+                            <Link to="/academic/classes/$classId" params={{ classId: sub.class_id }}>
+                              <ArrowUpRight className="w-3.5 h-3.5" />
+                            </Link>
+                          </Button>
+
+                          {/* Admin Actions */}
+                          {canManage && (
+                            <DropdownMenu>
+                              <DropdownMenuTrigger asChild>
+                                <Button
+                                  variant="ghost"
+                                  size="icon"
+                                  className="h-7 w-7 text-muted-foreground hover:text-foreground cursor-pointer"
+                                >
+                                  <MoreHorizontal className="w-4 h-4" />
+                                </Button>
+                              </DropdownMenuTrigger>
+                              <DropdownMenuContent align="end" className="w-44">
+                                <DropdownMenuLabel className="text-xs">Subject Actions</DropdownMenuLabel>
+                                <DropdownMenuItem
+                                  onClick={() => setEditingSubject(sub)}
+                                  className="text-xs cursor-pointer gap-2"
+                                >
+                                  <Edit2 className="w-3.5 h-3.5" />
+                                  Edit Subject
+                                </DropdownMenuItem>
+                                <DropdownMenuSeparator />
+                                <DropdownMenuItem
+                                  onClick={() => setSubjectToDelete(sub)}
+                                  className="text-xs text-destructive focus:text-destructive focus:bg-destructive/10 cursor-pointer gap-2"
+                                >
+                                  <Trash2 className="w-3.5 h-3.5" />
+                                  Delete Subject
+                                </DropdownMenuItem>
+                              </DropdownMenuContent>
+                            </DropdownMenu>
+                          )}
+                        </div>
+                      </td>
+                    </tr>
+                  );
+                })}
               </tbody>
             </table>
           </div>
@@ -555,6 +826,15 @@ export const SubjectsPage: React.FC = () => {
         classes={classesWithDetails}
         onSubmit={handleBulkCreate}
         isLoading={bulkCreateMutation.isPending}
+      />
+
+      {/* Dialog: Post Homework / Subject Announcement */}
+      <SubjectHomeworkDialog
+        isOpen={!!homeworkSubject}
+        onClose={() => setHomeworkSubject(null)}
+        tenantId={activeTenantId}
+        subject={homeworkSubject}
+        classes={classesWithDetails}
       />
     </div>
   );

@@ -46,6 +46,10 @@ import {
   Bell,
   FileSpreadsheet,
   Eye,
+  ShieldCheck,
+  Award,
+  GraduationCap,
+  ExternalLink,
 } from 'lucide-react';
 import { useQueryClient } from '@tanstack/react-query';
 import { useNavigate, useParams } from '@tanstack/react-router';
@@ -125,7 +129,7 @@ export const ClassDetailPage: React.FC = () => {
   const addStudentMutation = useAddStudent();
 
   // Fetch assignments and parent mappings for this class
-  const { data: classAssignments = [] } = useAssignments(canManage ? tenantId : null, { class_id: classId });
+  const { data: classAssignments = [] } = useAssignments(tenantId, { class_id: classId });
   const { data: classParentMappings = [] } = useParentMappings(tenantId, { class_id: classId });
 
   // Build a lookup of student_id -> parent mapping
@@ -137,18 +141,19 @@ export const ClassDetailPage: React.FC = () => {
 
   const allSections = cls?.sections || [];
 
-  // Filter sections for teachers to only those where they are designated Class Teacher
+  // Filter sections for teachers to sections they teach or are assigned as class teacher
   const visibleSections = useMemo(() => {
     if (!isTeacherOnly) return allSections;
-    const teacherAssignments = myAssignments.filter(
-      (a) => a.class_id === classId && a.is_class_teacher
-    );
+    const teacherAssignments = myAssignments.filter((a) => a.class_id === classId);
     if (teacherAssignments.some((a) => !a.section_id)) {
       return allSections;
     }
     const assignedSectionIds = new Set(
       teacherAssignments.map((a) => a.section_id).filter(Boolean)
     );
+    if (assignedSectionIds.size === 0) {
+      return allSections;
+    }
     return allSections.filter((s) => assignedSectionIds.has(s.id));
   }, [allSections, isTeacherOnly, myAssignments, classId]);
 
@@ -159,6 +164,38 @@ export const ClassDetailPage: React.FC = () => {
     if (!isTeacherOnly) return true;
     return myAssignments.some((a) => a.class_id === classId && a.is_class_teacher);
   }, [isTeacherOnly, myAssignments, classId]);
+
+  const hasSubjectTeacherAccess = useMemo(() => {
+    if (!isTeacherOnly) return true;
+    return myAssignments.some((a) => a.class_id === classId && !a.is_class_teacher);
+  }, [isTeacherOnly, myAssignments, classId]);
+
+  const hasClassAccess = hasClassTeacherAccess || hasSubjectTeacherAccess;
+
+  const myAssignedSubjectIdsInThisClass = useMemo(() => {
+    return new Set(
+      myAssignments
+        .filter((a) => a.class_id === classId && a.subject_id)
+        .map((a) => a.subject_id as string)
+    );
+  }, [myAssignments, classId]);
+
+  const myAssignedSubjectNamesInThisClass = useMemo(() => {
+    return Array.from(
+      new Set(
+        myAssignments
+          .filter((a) => a.class_id === classId && a.subject_name)
+          .map((a) => a.subject_name as string)
+      )
+    );
+  }, [myAssignments, classId]);
+
+  // If teacher only teaches subjects in this class (not class teacher), default to subjects tab
+  React.useEffect(() => {
+    if (isTeacherOnly && !hasClassTeacherAccess && hasSubjectTeacherAccess) {
+      setActiveTab('subjects');
+    }
+  }, [isTeacherOnly, hasClassTeacherAccess, hasSubjectTeacherAccess]);
 
   const isClassTeacherForThisClass = useMemo(() => {
     if (!isTeacherOnly) return false;
@@ -229,8 +266,8 @@ export const ClassDetailPage: React.FC = () => {
     );
   }
 
-  // 5. Unauthorized guard (only Class Teachers have roster access)
-  if (isTeacherOnly && !hasClassTeacherAccess) {
+  // 5. Unauthorized guard (accessible by Class Teachers or Subject Teachers)
+  if (isTeacherOnly && !hasClassAccess) {
     return (
       <div className="flex flex-col items-center justify-center min-h-[50vh] text-center p-6 space-y-4">
         <div className="w-14 h-14 rounded-2xl bg-amber-500/10 border border-amber-500/20 flex items-center justify-center text-amber-600 dark:text-amber-400">
@@ -239,7 +276,7 @@ export const ClassDetailPage: React.FC = () => {
         <div className="space-y-1 max-w-md">
           <h2 className="text-xl font-bold text-foreground">Restricted Class Access</h2>
           <p className="text-xs sm:text-sm text-muted-foreground">
-            You are not assigned as a Class Teacher for <strong>{cls?.name || 'this class'}</strong>. Class details and student rosters are reserved for designated Class Teachers.
+            You are not assigned as a Class Teacher or Subject Teacher for <strong>{cls?.name || 'this class'}</strong>. Class workspaces and curriculum are reserved for designated teaching faculty.
           </p>
         </div>
         <Button onClick={handleBack} variant="outline" className="gap-2 text-xs">
@@ -354,13 +391,29 @@ export const ClassDetailPage: React.FC = () => {
             <ArrowLeft className="w-4 h-4" />
             Back to Classes
           </Button>
-          <div className="flex items-center gap-2">
+          <div className="flex items-center gap-2 flex-wrap">
             <span className="p-1.5 rounded-md bg-primary/10 text-primary">
               <BookOpen className="w-4 h-4" />
             </span>
             <h1 className="text-2xl font-extrabold tracking-tight text-foreground">
               {cls.name}
             </h1>
+            {isTeacherOnly && (
+              <div className="flex items-center gap-1.5 flex-wrap ml-1">
+                {hasClassTeacherAccess && (
+                  <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-xs font-semibold bg-purple-500/10 text-purple-700 dark:text-purple-300 border border-purple-500/20">
+                    <ShieldCheck className="w-3.5 h-3.5" />
+                    Class Teacher
+                  </span>
+                )}
+                {hasSubjectTeacherAccess && (
+                  <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-xs font-semibold bg-emerald-500/10 text-emerald-700 dark:text-emerald-300 border border-emerald-500/20">
+                    <BookOpen className="w-3.5 h-3.5" />
+                    Subject Teacher: {myAssignedSubjectNamesInThisClass.join(', ')}
+                  </span>
+                )}
+              </div>
+            )}
           </div>
         </div>
 
@@ -765,33 +818,91 @@ export const ClassDetailPage: React.FC = () => {
                 </p>
               </div>
             ) : (
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5">
-                {cls.subjects.map((sub) => (
-                  <div
-                    key={sub.id}
-                    className="flex items-center justify-between p-3 rounded-xl border border-border/60 bg-card shadow-xs"
-                  >
-                    <div className="space-y-0.5">
-                      <p className="text-xs font-bold text-foreground">{sub.name}</p>
-                      {sub.code && (
-                        <span className="font-mono text-[10px] text-muted-foreground bg-muted px-1.5 py-0.5 rounded">
-                          {sub.code}
-                        </span>
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                {cls.subjects.map((sub) => {
+                  const isAssignedToMe = myAssignedSubjectIdsInThisClass.has(sub.id);
+                  const subjectTeachers = classAssignments
+                    .filter((a) => a.subject_id === sub.id && a.teacher_name)
+                    .map((a) => a.teacher_name!);
+                  const uniqueTeachers = Array.from(new Set(subjectTeachers));
+
+                  return (
+                    <div
+                      key={sub.id}
+                      className={`p-3.5 rounded-xl border transition-all ${
+                        isAssignedToMe
+                          ? 'border-primary/40 bg-primary/5 ring-1 ring-primary/20 shadow-xs'
+                          : 'border-border/60 bg-card shadow-xs'
+                      }`}
+                    >
+                      <div className="flex items-start justify-between gap-2">
+                        <div className="space-y-1 min-w-0">
+                          <div className="flex items-center gap-2 flex-wrap">
+                            <p className="text-xs font-bold text-foreground">{sub.name}</p>
+                            {isAssignedToMe && (
+                              <span className="inline-flex items-center gap-1 text-[10px] font-semibold text-primary bg-primary/10 border border-primary/20 px-2 py-0.5 rounded-full">
+                                <Award className="w-3 h-3 text-primary" />
+                                Assigned to You
+                              </span>
+                            )}
+                            {sub.code && (
+                              <span className="font-mono text-[10px] text-muted-foreground bg-muted px-1.5 py-0.5 rounded">
+                                {sub.code}
+                              </span>
+                            )}
+                          </div>
+
+                          <div className="text-[11px] text-muted-foreground flex items-center gap-1.5 pt-0.5">
+                            <span className="text-muted-foreground/70">Instructor:</span>
+                            {uniqueTeachers.length > 0 ? (
+                              <span className="font-medium text-foreground">
+                                {uniqueTeachers.join(', ')}
+                              </span>
+                            ) : (
+                              <span className="italic text-muted-foreground/60">No teacher assigned</span>
+                            )}
+                          </div>
+                        </div>
+
+                        {canManage && (
+                          <Button
+                            variant="ghost"
+                            size="icon"
+                            onClick={() => setSubjectToDelete(sub)}
+                            className="h-7 w-7 text-muted-foreground hover:text-destructive cursor-pointer shrink-0"
+                            title="Delete subject"
+                          >
+                            <Trash2 className="w-3.5 h-3.5" />
+                          </Button>
+                        )}
+                      </div>
+
+                      {/* Quick Teaching Activities */}
+                      {(isAssignedToMe || !isTeacherOnly) && (
+                        <div className="mt-3 pt-2.5 border-t border-border/40 flex items-center gap-2 flex-wrap">
+                          <Button
+                            variant="outline"
+                            size="sm"
+                            onClick={() => setActiveTab('notices')}
+                            className="h-7 text-[11px] px-2.5 gap-1.5 bg-background/50 hover:bg-background cursor-pointer"
+                          >
+                            <Bell className="w-3 h-3 text-primary" />
+                            Post Homework
+                          </Button>
+                          <Button
+                            variant="outline"
+                            size="sm"
+                            onClick={() => navigate({ to: '/examination/scores' })}
+                            className="h-7 text-[11px] px-2.5 gap-1.5 bg-background/50 hover:bg-background cursor-pointer"
+                          >
+                            <GraduationCap className="w-3 h-3 text-indigo-500" />
+                            Grade Exams
+                          </Button>
+                        </div>
                       )}
                     </div>
-                    {canManage && (
-                      <Button
-                        variant="ghost"
-                        size="icon"
-                        onClick={() => setSubjectToDelete(sub)}
-                        className="h-7 w-7 text-muted-foreground hover:text-destructive cursor-pointer"
-                        title="Delete subject"
-                      >
-                        <Trash2 className="w-3.5 h-3.5" />
-                      </Button>
-                    )}
-                  </div>
-                ))}
+                  );
+                })}
               </div>
             )}
           </div>
