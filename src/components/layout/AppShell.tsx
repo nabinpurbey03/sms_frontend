@@ -38,7 +38,6 @@ import { Input } from '@/components/ui/input';
 import { Badge } from '@/components/ui/badge';
 import { Avatar, AvatarFallback } from '@/components/ui/avatar';
 import { SchoolHeaderBadge } from './SchoolHeaderBadge';
-import { AcademicYearSelector } from '@/features/academic-year/components/AcademicYearSelector';
 import {
   Tooltip,
   TooltipContent,
@@ -186,14 +185,6 @@ export const AppShell: React.FC = () => {
       description: 'View system audit trails.',
       show: isSuperAdmin,
       category: 'Administration',
-    },
-    {
-      label: 'Academic Years',
-      href: '/academic-years',
-      icon: CalendarDays,
-      description: 'Manage academic calendar sessions and platform rollovers.',
-      show: isSuperAdmin || can('MANAGE_TENANT_SETTINGS'),
-      category: isSuperAdmin ? 'Administration' : 'Academics',
     },
     {
       label: 'School Members',
@@ -583,9 +574,6 @@ export const AppShell: React.FC = () => {
                     {activeTenantName || 'Global Platform'}
                   </p>
                 </div>
-                <div className="pt-2">
-                  <AcademicYearSelector />
-                </div>
               </div>
 
               {/* Theme Mode Quick Buttons on Mobile */}
@@ -655,7 +643,7 @@ export const AppShell: React.FC = () => {
             )}
           </div>
 
-          {/* Middle: School Name Badge & Academic Year */}
+          {/* Middle: School Name Badge */}
           <div className="hidden md:flex flex-1 items-center justify-center px-6 gap-3">
             <div className="flex items-center justify-center shrink-0">
               <div className="px-5 py-1.5 rounded-full bg-primary shadow-sm border border-primary/20">
@@ -664,7 +652,6 @@ export const AppShell: React.FC = () => {
                 </span>
               </div>
             </div>
-            <AcademicYearSelector />
           </div>
 
           {/* Right: Search, Controls & Profile */}
