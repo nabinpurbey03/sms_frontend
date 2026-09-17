@@ -239,6 +239,12 @@ const scoreEntryRoute = createRoute({
   component: ScoreEntryPage,
 });
 
+const scoreEntryQueryRoute = createRoute({
+  getParentRoute: () => protectedLayoutRoute,
+  path: '/examination/scores',
+  component: ScoreEntryPage,
+});
+
 const platformUsersRoute = createRoute({
   getParentRoute: () => protectedLayoutRoute,
   path: '/platform-users',
@@ -284,6 +290,7 @@ const routeTree = rootRoute.addChildren([
     createExamRoute,
     examReviewRoute,
     scoreEntryRoute,
+    scoreEntryQueryRoute,
     auditLogsRoute,
   ]),
 ]);

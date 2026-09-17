@@ -1,6 +1,6 @@
 export type ExamStatus = 'DRAFT' | 'IN_PROGRESS' | 'PENDING_APPROVAL' | 'APPROVED' | 'CANCELLED';
 
-export type ExamSubjectStatus = 'PENDING' | 'SUBMITTED';
+export type ExamSubjectStatus = 'PENDING' | 'SUBMITTED' | 'APPROVED' | 'DRAFT';
 
 export interface ExamResponse {
   id: string;

@@ -6,6 +6,7 @@ import type { AcademicYearResponse } from '@/features/academic-year/types';
 import { TeacherHeroBanner } from './TeacherHeroBanner';
 import { TeacherDailyActionAlert } from './TeacherDailyActionAlert';
 import { TeacherClassroomSectionCard } from './TeacherClassroomSectionCard';
+import { TeacherExamGradingQueue } from './TeacherExamGradingQueue';
 import { ParentStudentLinkDialog } from '@/features/members/components/ParentStudentLinkDialog';
 import { PARENT_MAPPINGS_QUERY_KEY, STUDENT_PARENTS_QUERY_KEY } from '@/features/members/hooks';
 import { StatCard } from '@/components/ui/stat-card';
@@ -212,6 +213,9 @@ export const TeacherMissionControlHub: React.FC<TeacherMissionControlHubProps> =
           onLinkParentClick={(student) => setLinkParentStudent(student)}
         />
       )}
+
+      {/* 5. Examinations & Grading Queue */}
+      <TeacherExamGradingQueue tenantId={tenantId} />
 
       {/* Associate Parent Dialog */}
       <ParentStudentLinkDialog

@@ -48,14 +48,20 @@ export const ScoreEntryPage: React.FC = () => {
     usePermission();
   const isPrivileged = isAdmin || isOfficeAdmin || isSuperAdmin;
 
-  // Route params retrieval with pathname fallback
+  // Route params retrieval with pathname fallback and search params support
   const params = useParams({ strict: false }) as Record<
     string,
     string | undefined
   >;
 
+  const searchParams =
+    typeof window !== 'undefined'
+      ? new URLSearchParams(window.location.search)
+      : null;
+
   const examId =
     params?.examId ||
+    searchParams?.get('examId') ||
     (typeof window !== 'undefined'
       ? window.location.pathname.match(
           /\/examination\/exams\/([^/]+)\/grade/
@@ -64,6 +70,8 @@ export const ScoreEntryPage: React.FC = () => {
 
   const examSubjectId =
     params?.examSubjectId ||
+    searchParams?.get('subjectId') ||
+    searchParams?.get('examSubjectId') ||
     (typeof window !== 'undefined'
       ? window.location.pathname.match(/\/grade\/([^/?#]+)/)?.[1]
       : undefined);
