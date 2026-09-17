@@ -319,3 +319,25 @@ export interface PlatformNetworkBenchmarkResponse {
   platform_total_students: number;
   schools_ranked: SchoolBenchmarkCardDTO[];
 }
+
+export interface GraduatedStudentDTO {
+  student_id: string;
+  first_name: string;
+  middle_name?: string | null;
+  last_name: string;
+  final_class_id: string;
+  final_class_name: string;
+  final_section_id?: string | null;
+  final_section_name?: string | null;
+  graduation_academic_year_id?: string | null;
+  graduation_academic_year_name?: string | null;
+  exit_date?: string | null;
+  status: string;
+  parent_name?: string | null;
+  parent_phone?: string | null;
+}
+
+export interface GraduatedStudentListResponse {
+  total_graduates: number;
+  items: GraduatedStudentDTO[];
+}

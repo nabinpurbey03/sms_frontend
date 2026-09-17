@@ -690,3 +690,22 @@ export const usePlatformBenchmark = (options?: { enabled?: boolean }) => {
     staleTime: 1000 * 60 * 5,
   });
 };
+
+export const useGraduatedStudents = (
+  tenantId: string | null,
+  params?: {
+    academic_year_id?: string;
+    class_id?: string;
+    search?: string;
+    skip?: number;
+    limit?: number;
+  },
+  options?: { enabled?: boolean }
+) => {
+  return useQuery({
+    queryKey: ['graduated_students', tenantId, params],
+    queryFn: () => academicApi.getGraduatedStudents(tenantId!, params),
+    enabled: !!tenantId && (options?.enabled ?? true),
+    staleTime: 1000 * 60 * 2, // 2 minutes
+  });
+};

@@ -15,6 +15,8 @@ import { StudentDeleteDialog } from '../components/StudentDeleteDialog';
 import { ParentStudentLinkDialog } from '@/features/members/components/ParentStudentLinkDialog';
 import { useSelectedAcademicYear } from '@/features/academic-year/hooks/useSelectedAcademicYear';
 import { StudentEnrollmentHistoryDialog } from '../components/StudentEnrollmentHistoryDialog';
+import { GraduatedStudentsTable } from '../components/GraduatedStudentsTable';
+import { Tabs, TabsList, TabsTrigger, TabsContent } from '@/components/ui/tabs';
 import {
   Users,
   GraduationCap,
@@ -58,6 +60,29 @@ export const StudentsPage: React.FC = () => {
   const { activeTenantId, activeTenantName } = useAuth();
   const { can, isSuperAdmin } = usePermission();
   const canManage = can('MANAGE_SECTIONS_STUDENTS') || isSuperAdmin;
+
+  // Tab State
+  const [activeTab, setActiveTab] = useState<'active' | 'graduated'>(() => {
+    if (typeof window !== 'undefined') {
+      const params = new URLSearchParams(window.location.search);
+      if (params.get('tab') === 'graduated') return 'graduated';
+    }
+    return 'active';
+  });
+
+  const handleTabChange = (val: string) => {
+    const nextTab = val as 'active' | 'graduated';
+    setActiveTab(nextTab);
+    if (typeof window !== 'undefined') {
+      const url = new URL(window.location.href);
+      if (nextTab === 'graduated') {
+        url.searchParams.set('tab', 'graduated');
+      } else {
+        url.searchParams.delete('tab');
+      }
+      window.history.replaceState({}, '', url.toString());
+    }
+  };
 
   // Search & Filter State
   const [searchQuery, setSearchQuery] = useState('');
@@ -292,7 +317,31 @@ export const StudentsPage: React.FC = () => {
 
   return (
     <div className="space-y-6 pb-12">
-      {/* KPI Stats Cards */}
+      <Tabs value={activeTab} onValueChange={handleTabChange} className="w-full space-y-6">
+        <TabsList className="grid w-full max-w-md grid-cols-2 p-1 bg-muted/60 rounded-xl">
+          <TabsTrigger
+            value="active"
+            className="flex items-center gap-2 text-xs font-semibold rounded-lg data-[state=active]:bg-background data-[state=active]:shadow-xs"
+          >
+            <Users className="h-3.5 w-3.5" />
+            <span>Enrolled Students</span>
+            {allStudents.length > 0 && (
+              <Badge variant="secondary" className="ml-1 text-[10px] px-1.5 py-0 h-4">
+                {allStudents.length}
+              </Badge>
+            )}
+          </TabsTrigger>
+          <TabsTrigger
+            value="graduated"
+            className="flex items-center gap-2 text-xs font-semibold rounded-lg data-[state=active]:bg-background data-[state=active]:shadow-xs"
+          >
+            <GraduationCap className="h-3.5 w-3.5 text-primary" />
+            <span>Graduated / Alumni</span>
+          </TabsTrigger>
+        </TabsList>
+
+        <TabsContent value="active" className="space-y-6 mt-0">
+          {/* KPI Stats Cards */}
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4">
         <div className="p-4 rounded-2xl bg-card border shadow-2xs space-y-1">
           <div className="flex items-center justify-between text-muted-foreground">
@@ -684,6 +733,12 @@ export const StudentsPage: React.FC = () => {
           </div>
         )}
       </div>
+    </TabsContent>
+
+    <TabsContent value="graduated" className="space-y-6 mt-0">
+      <GraduatedStudentsTable tenantId={activeTenantId} />
+    </TabsContent>
+  </Tabs>
 
       {/* Dialog: Single Student Enrollment */}
       <StudentEnrollGlobalDialog

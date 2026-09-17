@@ -20,6 +20,8 @@ import type {
   AcademicGrowthResponse,
   CapacityUtilizationResponse,
   PlatformNetworkBenchmarkResponse,
+  GraduatedStudentDTO,
+  GraduatedStudentListResponse,
 } from './types';
 
 export const academicApi = {
@@ -355,6 +357,26 @@ export const academicApi = {
 
   getPlatformBenchmark: async (): Promise<PlatformNetworkBenchmarkResponse> => {
     const res = await apiClient.get('/academic/platform/analytics/benchmark') as any;
+    return res.data || res;
+  },
+
+  // ==========================================
+  // Graduated Students (Alumni)
+  // ==========================================
+  getGraduatedStudents: async (
+    tenantId: string,
+    params?: {
+      academic_year_id?: string;
+      class_id?: string;
+      search?: string;
+      skip?: number;
+      limit?: number;
+    }
+  ): Promise<GraduatedStudentListResponse> => {
+    const res = await apiClient.get(
+      `/academic/tenants/${tenantId}/graduated-students`,
+      { params }
+    ) as any;
     return res.data || res;
   },
 };
