@@ -11,6 +11,8 @@ export interface AcademicYear {
   updated_at?: string;
 }
 
+export type AcademicYearResponse = AcademicYear;
+
 export interface AcademicYearCreateDTO {
   name: string;
   start_date: string;

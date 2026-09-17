@@ -99,6 +99,8 @@ export interface TeacherAssignment {
   created_at?: string;
 }
 
+export type TeacherAssignmentResponse = TeacherAssignment;
+
 export interface AssignTeacherDTO {
   teacher_id?: string;
   teacher_phone?: string;

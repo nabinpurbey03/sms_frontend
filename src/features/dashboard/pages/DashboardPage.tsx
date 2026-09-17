@@ -46,10 +46,13 @@ import { useSuperAdminDashboard, useTenantDashboard } from '../hooks';
 import { SuperAdminGrid } from '../components/SuperAdminGrid';
 import { PlatformTrendsSection } from '../components/PlatformTrendsSection';
 import { PlatformRankingsSection } from '../components/PlatformRankingsSection';
+import { TeacherMissionControlHub } from '../components/teacher/TeacherMissionControlHub';
 
 export const DashboardPage: React.FC = () => {
   const { user, activeRole, activeTenantId } = useAuth();
   const { can, isSuperAdmin, isTeacher, isParent } = usePermission();
+
+  const isTeacherOnly = activeRole === 'TEACHER' && !can('MANAGE_TENANT_SETTINGS') && !isSuperAdmin;
 
   const todayStr = useMemo(() => new Date().toISOString().split('T')[0], []);
 
@@ -153,6 +156,15 @@ export const DashboardPage: React.FC = () => {
             <PlatformRankingsSection />
           </div>
         </div>
+      ) : isTeacherOnly ? (
+        <TeacherMissionControlHub
+          tenantId={activeTenantId || ''}
+          teacherAssignments={teacherAssignments}
+          academicYears={academicYears}
+          selectedAcademicYearId={selectedAcademicYearId}
+          onSelectAcademicYearId={setSelectedAcademicYearId}
+          activeAcademicYear={activeAcademicYear}
+        />
       ) : (
         <>
           {/* Academic Session Context & Switcher Bar (Admin, Office-Admin, Teachers) */}
@@ -318,7 +330,8 @@ export const DashboardPage: React.FC = () => {
 
 
       {/* Quick Action Hub (1 col mobile, 2 cols tablet, 3 cols desktop) */}
-      <div className="space-y-3 sm:space-y-4">
+      {!isTeacherOnly && (
+        <div className="space-y-3 sm:space-y-4">
         <h2 className="text-base sm:text-lg font-bold tracking-tight text-foreground flex items-center gap-2">
           <Sparkles className="h-4 w-4 text-primary shrink-0" />
           <span>Quick Actions & Workflows</span>
@@ -607,6 +620,7 @@ export const DashboardPage: React.FC = () => {
           )}
         </div>
       </div>
+    )}
 
 
       {/* Session Context — collapsed by default */}
