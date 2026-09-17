@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useMemo } from 'react';
 import {
   BookOpen,
   Layers,
@@ -65,6 +65,22 @@ export const ClassCard: React.FC<ClassCardProps> = ({
 }) => {
   const sections = cls.sections || [];
 
+  const displayedSections = useMemo(() => {
+    if (!teacherScope?.isClassTeacher || teacherScope.classTeacherSections.length === 0) {
+      return sections;
+    }
+    const ctSecIds = new Set(teacherScope.classTeacherSections.map((s) => s.id));
+    return sections.filter((s) => ctSecIds.has(s.id));
+  }, [sections, teacherScope]);
+
+  const displayedStudentsCount = useMemo(() => {
+    if (!teacherScope?.isClassTeacher || teacherScope.classTeacherSections.length === 0) {
+      return cls.students.length;
+    }
+    const ctSecIds = new Set(teacherScope.classTeacherSections.map((s) => s.id));
+    return cls.students.filter((st) => st.section_id && ctSecIds.has(st.section_id)).length;
+  }, [cls.students, teacherScope]);
+
   return (
     <div
       role="button"
@@ -99,12 +115,12 @@ export const ClassCard: React.FC<ClassCardProps> = ({
             <p className="text-xs text-muted-foreground mt-1 flex items-center gap-2 flex-wrap">
               <span className="flex items-center gap-1">
                 <Users className="w-3.5 h-3.5" />
-                {cls.students.length} students
+                {displayedStudentsCount} students
               </span>
               <span>·</span>
               <span className="flex items-center gap-1">
                 <Layers className="w-3.5 h-3.5" />
-                {sections.length} {sections.length === 1 ? 'section' : 'sections'}
+                {displayedSections.length} {displayedSections.length === 1 ? 'section' : 'sections'}
               </span>
               <span>·</span>
               <span>{cls.subjects.length} subjects</span>
@@ -202,10 +218,10 @@ export const ClassCard: React.FC<ClassCardProps> = ({
             Sections Roster
           </p>
           <div className="flex flex-wrap gap-2">
-            {sections.length === 0 ? (
+            {displayedSections.length === 0 ? (
               <span className="text-xs text-muted-foreground italic">No sections created</span>
             ) : (
-              sections.map((sec) => (
+              displayedSections.map((sec) => (
                 <div
                   key={sec.id}
                   className="flex items-center gap-1.5 px-2.5 py-1 rounded-lg border border-border/60 bg-muted/30 text-xs font-medium"

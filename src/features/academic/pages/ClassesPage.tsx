@@ -246,11 +246,14 @@ export const ClassesPage: React.FC = () => {
     return map;
   }, [sortedClasses]);
 
-  // Filter classes for teacher while preserving chronological sequence
+  // Filter classes for teacher to only those where they are designated Class Teacher
   const scopedClasses = useMemo(() => {
     if (!isTeacherOnly || !assignedClassIds) return sortedClasses;
-    return sortedClasses.filter((c) => assignedClassIds.has(c.id));
-  }, [sortedClasses, isTeacherOnly, assignedClassIds]);
+    return sortedClasses.filter((c) => {
+      const scope = teacherScopeByClassId.get(c.id);
+      return !!scope?.isClassTeacher;
+    });
+  }, [sortedClasses, isTeacherOnly, assignedClassIds, teacherScopeByClassId]);
 
   // Compute Stats
   const stats: AcademicStats = useMemo(() => {
@@ -259,8 +262,20 @@ export const ClassesPage: React.FC = () => {
     let totalStudents = 0;
 
     for (const c of scopedClasses) {
-      totalSections += c.sections.length;
-      totalStudents += c.students.length;
+      if (isTeacherOnly) {
+        const scope = teacherScopeByClassId.get(c.id);
+        const secIds = new Set(scope?.classTeacherSections.map((s) => s.id) || []);
+        if (secIds.size === 0 && scope?.isClassTeacher) {
+          totalSections += c.sections.length;
+          totalStudents += c.students.length;
+        } else {
+          totalSections += secIds.size;
+          totalStudents += c.students.filter((st) => st.section_id && secIds.has(st.section_id)).length;
+        }
+      } else {
+        totalSections += c.sections.length;
+        totalStudents += c.students.length;
+      }
     }
 
     const avgStudentsPerSection =
@@ -272,18 +287,23 @@ export const ClassesPage: React.FC = () => {
       totalStudents,
       avgStudentsPerSection,
     };
-  }, [scopedClasses]);
+  }, [scopedClasses, isTeacherOnly, teacherScopeByClassId]);
 
   // Filtered Classes
   const filteredClasses = useMemo(() => {
     if (!searchQuery.trim()) return scopedClasses;
     const q = searchQuery.toLowerCase();
-    return scopedClasses.filter(
-      (c) =>
+    return scopedClasses.filter((c) => {
+      const scope = isTeacherOnly ? teacherScopeByClassId.get(c.id) : null;
+      const relevantSections = isTeacherOnly && scope?.classTeacherSections.length
+        ? c.sections.filter((s) => scope.classTeacherSections.some((ct) => ct.id === s.id))
+        : c.sections;
+      return (
         c.name.toLowerCase().includes(q) ||
-        c.sections.some((s) => s.name.toLowerCase().includes(q))
-    );
-  }, [scopedClasses, searchQuery]);
+        relevantSections.some((s) => s.name.toLowerCase().includes(q))
+      );
+    });
+  }, [scopedClasses, searchQuery, isTeacherOnly, teacherScopeByClassId]);
 
   // Sync detailed modal class with latest query data
   const activeDetailClass = useMemo(() => {
