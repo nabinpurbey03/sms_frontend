@@ -182,7 +182,7 @@ export const TeacherAssignmentsPage: React.FC = () => {
                 typeFilter === 'ALL' ? 'bg-card text-foreground font-bold shadow-xs' : 'text-muted-foreground'
               }`}
             >
-              All
+              All ({assignments.length})
             </button>
             <button
               type="button"
@@ -191,7 +191,7 @@ export const TeacherAssignmentsPage: React.FC = () => {
                 typeFilter === 'CLASS_TEACHER' ? 'bg-card text-foreground font-bold shadow-xs' : 'text-muted-foreground'
               }`}
             >
-              Class Teachers
+              Class Teachers ({classTeacherCount})
             </button>
             <button
               type="button"
@@ -200,7 +200,7 @@ export const TeacherAssignmentsPage: React.FC = () => {
                 typeFilter === 'SUBJECT' ? 'bg-card text-foreground font-bold shadow-xs' : 'text-muted-foreground'
               }`}
             >
-              Subject Teachers
+              Subject Teachers ({subjectTeacherCount})
             </button>
           </div>
 

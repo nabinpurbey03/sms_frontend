@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import {
   Dialog,
   DialogContent,
@@ -33,10 +33,39 @@ export const StudentEnrollGlobalDialog: React.FC<StudentEnrollGlobalDialogProps>
   onSubmit,
   isLoading,
 }) => {
-  const [selectedClassId, setSelectedClassId] = useState<string>(classes[0]?.id || '');
-  const selectedClass = classes.find((c) => c.id === selectedClassId) || classes[0];
-  const sections = selectedClass?.sections || [];
-  const [selectedSectionId, setSelectedSectionId] = useState<string>(sections[0]?.id || '');
+  const [selectedClassId, setSelectedClassId] = useState<string>('');
+  const [selectedSectionId, setSelectedSectionId] = useState<string>('');
+
+  const effectiveClass =
+    (selectedClassId && classes.find((c) => c.id === selectedClassId)) ||
+    classes[0] ||
+    null;
+  const effectiveClassId = effectiveClass?.id || '';
+
+  const sections = effectiveClass?.sections || [];
+  const effectiveSection =
+    (selectedSectionId && sections.find((s) => s.id === selectedSectionId)) ||
+    sections[0] ||
+    null;
+  const effectiveSectionId = effectiveSection?.id || '';
+
+  useEffect(() => {
+    if (classes.length > 0) {
+      if (!selectedClassId || !classes.some((c) => c.id === selectedClassId)) {
+        setSelectedClassId(classes[0].id);
+      }
+    }
+  }, [classes, selectedClassId, isOpen]);
+
+  useEffect(() => {
+    if (sections.length > 0) {
+      if (!selectedSectionId || !sections.some((s) => s.id === selectedSectionId)) {
+        setSelectedSectionId(sections[0].id);
+      }
+    } else {
+      setSelectedSectionId('');
+    }
+  }, [sections, selectedSectionId, isOpen]);
 
   const [firstName, setFirstName] = useState('');
   const [middleName, setMiddleName] = useState('');
@@ -58,13 +87,13 @@ export const StudentEnrollGlobalDialog: React.FC<StudentEnrollGlobalDialogProps>
       toast.error('First name and last name are required');
       return;
     }
-    if (!selectedClassId || !selectedSectionId) {
+    if (!effectiveClassId || !effectiveSectionId) {
       toast.error('Please choose a class and section for enrollment.');
       return;
     }
 
     try {
-      await onSubmit(selectedClassId, selectedSectionId, {
+      await onSubmit(effectiveClassId, effectiveSectionId, {
         first_name: firstName.trim(),
         middle_name: middleName.trim() || undefined,
         last_name: lastName.trim(),
@@ -102,7 +131,7 @@ export const StudentEnrollGlobalDialog: React.FC<StudentEnrollGlobalDialogProps>
                   Class <span className="text-destructive">*</span>
                 </Label>
                 <select
-                  value={selectedClassId}
+                  value={effectiveClassId}
                   onChange={(e) => handleClassChange(e.target.value)}
                   disabled={isLoading}
                   className="w-full h-9 rounded-lg border border-input bg-background px-3 text-xs focus:outline-none focus:ring-1 focus:ring-primary"
@@ -120,7 +149,7 @@ export const StudentEnrollGlobalDialog: React.FC<StudentEnrollGlobalDialogProps>
                   Section <span className="text-destructive">*</span>
                 </Label>
                 <select
-                  value={selectedSectionId}
+                  value={effectiveSectionId}
                   onChange={(e) => setSelectedSectionId(e.target.value)}
                   disabled={isLoading || sections.length === 0}
                   className="w-full h-9 rounded-lg border border-input bg-background px-3 text-xs focus:outline-none focus:ring-1 focus:ring-primary"

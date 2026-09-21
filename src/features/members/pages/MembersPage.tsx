@@ -239,6 +239,7 @@ export const MembersPage: React.FC = () => {
         isLoading={createMemberMutation.isPending}
         canCreateAdminRoles={canGrantRoles}
         tenantId={activeTenantId}
+        currentUserRole={activeRole}
       />
 
       {/* Dialog: Manage Roles */}

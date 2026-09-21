@@ -32,6 +32,7 @@ import {
   CheckCircle2,
   Lock,
   Clock,
+  ShieldCheck,
 } from 'lucide-react';
 import type { AcademicClass, AcademicSection } from '@/features/academic/types';
 import { toast } from 'sonner';
@@ -73,6 +74,8 @@ export const MarkAttendancePage: React.FC = () => {
 
   // Search and attendance mark state
   const [presentStudentIds, setPresentStudentIds] = useState<Set<string>>(new Set());
+  const [savedPresentStudentIds, setSavedPresentStudentIds] = useState<Set<string>>(new Set());
+  const [isEditing, setIsEditing] = useState<boolean>(false);
   const [searchQuery, setSearchQuery] = useState('');
 
   const markAttendanceMutation = useMarkAttendance();
@@ -183,6 +186,10 @@ export const MarkAttendancePage: React.FC = () => {
     if (!sectionReport || !isAlreadyMarked) {
       // oxlint-disable-next-line react/set-state-in-effect
       setPresentStudentIds(new Set());
+      // oxlint-disable-next-line react/set-state-in-effect
+      setSavedPresentStudentIds(new Set());
+      // oxlint-disable-next-line react/set-state-in-effect
+      setIsEditing(false);
       return;
     }
     const presentIds = new Set<string>();
@@ -193,7 +200,32 @@ export const MarkAttendancePage: React.FC = () => {
     }
     // oxlint-disable-next-line react/set-state-in-effect
     setPresentStudentIds(presentIds);
+    // oxlint-disable-next-line react/set-state-in-effect
+    setSavedPresentStudentIds(new Set(presentIds));
+    // oxlint-disable-next-line react/set-state-in-effect
+    setIsEditing(false);
   }, [sectionReport, isAlreadyMarked, recordDate, selectedSectionId]);
+
+  // Whether user can interactively change attendance in the roster
+  const canEdit = !isDateOutOfRange && (!isAlreadyMarked || isEditing);
+
+  // Check if current edits differ from saved state
+  const hasUnsavedChanges = useMemo(() => {
+    if (!isAlreadyMarked) {
+      return presentStudentIds.size > 0;
+    }
+    if (presentStudentIds.size !== savedPresentStudentIds.size) return true;
+    for (const id of presentStudentIds) {
+      if (!savedPresentStudentIds.has(id)) return true;
+    }
+    return false;
+  }, [isAlreadyMarked, presentStudentIds, savedPresentStudentIds]);
+
+  // Quick stats
+  const totalCount = students.length;
+  const presentCount = presentStudentIds.size;
+  const absentCount = Math.max(0, totalCount - presentCount);
+  const attendancePercentage = totalCount > 0 ? Math.round((presentCount / totalCount) * 100) : 0;
 
   // Filter students by search
   const filteredStudents = useMemo(() => {
@@ -225,6 +257,7 @@ export const MarkAttendancePage: React.FC = () => {
   };
 
   const toggleStudent = (studentId: string) => {
+    if (!canEdit) return;
     const newSet = new Set(presentStudentIds);
     if (newSet.has(studentId)) {
       newSet.delete(studentId);
@@ -232,6 +265,15 @@ export const MarkAttendancePage: React.FC = () => {
       newSet.add(studentId);
     }
     setPresentStudentIds(newSet);
+  };
+
+  const handleStartEdit = () => {
+    setIsEditing(true);
+  };
+
+  const handleCancelEdit = () => {
+    setPresentStudentIds(new Set(savedPresentStudentIds));
+    setIsEditing(false);
   };
 
   const handleSubmit = async () => {
@@ -252,6 +294,9 @@ export const MarkAttendancePage: React.FC = () => {
       recordDate,
       presentStudentIds: Array.from(presentStudentIds),
     });
+
+    setSavedPresentStudentIds(new Set(presentStudentIds));
+    setIsEditing(false);
   };
 
   const isLoading = assignmentsLoading || classesLoading;
@@ -445,48 +490,145 @@ export const MarkAttendancePage: React.FC = () => {
       {/* Attendance Table */}
       {selectedSectionId && (
         <Card className="overflow-hidden bg-card shadow-xs border-border/70">
-          {/* Table Header Actions */}
-          <div className="p-4 flex flex-col sm:flex-row sm:items-center justify-between gap-3 border-b">
-            <div className="flex items-center gap-3">
-              <span className="text-sm font-semibold text-foreground">
-                {students.length} Active Students
+          {/* Status & Overview Banner */}
+          <div className="p-4 border-b bg-muted/20 flex flex-col md:flex-row md:items-center justify-between gap-4">
+            <div className="flex flex-wrap items-center gap-2.5">
+              {/* Main Status Badge */}
+              {isDateOutOfRange ? (
+                <Badge
+                  variant="outline"
+                  className="bg-amber-500/10 text-amber-700 dark:text-amber-400 border-amber-500/30 gap-1.5 py-1 px-3 text-xs font-medium"
+                >
+                  <Lock className="w-3.5 h-3.5 text-amber-600 dark:text-amber-400" />
+                  {recordDate < minDateStr ? 'Locked (>7 days)' : 'Future Date Locked'}
+                </Badge>
+              ) : isAlreadyMarked ? (
+                isEditing ? (
+                  <Badge
+                    variant="outline"
+                    className="bg-amber-500/15 text-amber-800 dark:text-amber-300 border-amber-500/40 gap-1.5 py-1 px-3 text-xs font-semibold animate-pulse"
+                  >
+                    <Edit3 className="w-3.5 h-3.5" />
+                    Editing Recorded Attendance
+                  </Badge>
+                ) : (
+                  <Badge
+                    variant="outline"
+                    className="bg-emerald-500/15 text-emerald-800 dark:text-emerald-300 border-emerald-500/40 gap-1.5 py-1 px-3 text-xs font-semibold"
+                  >
+                    <CheckCircle2 className="w-3.5 h-3.5 text-emerald-600 dark:text-emerald-400" />
+                    Attendance Recorded
+                  </Badge>
+                )
+              ) : (
+                <Badge
+                  variant="secondary"
+                  className="bg-muted text-muted-foreground border-border gap-1.5 py-1 px-3 text-xs font-medium"
+                >
+                  <Clock className="w-3.5 h-3.5" />
+                  Not Yet Recorded
+                </Badge>
+              )}
+
+              {/* Mode Indicator */}
+              {isAlreadyMarked && !isEditing && !isDateOutOfRange && (
+                <Badge
+                  variant="secondary"
+                  className="text-[11px] gap-1 text-muted-foreground bg-background/80 border"
+                >
+                  <ShieldCheck className="w-3 h-3 text-emerald-600 dark:text-emerald-400" />
+                  Protected View
+                </Badge>
+              )}
+
+              <span className="text-xs text-muted-foreground">
+                {selectedClass?.name} • Section {selectedClass?.sections.find((s) => s.id === selectedSectionId)?.name}
               </span>
-              <Badge variant={presentStudentIds.size === students.length ? 'success' : 'secondary'} className="text-xs">
-                {presentStudentIds.size} Present
-              </Badge>
-              <Badge variant={presentStudentIds.size === 0 ? 'destructive' : 'secondary'} className="text-xs">
-                {students.length - presentStudentIds.size} Absent
-              </Badge>
             </div>
 
+            {/* Quick Metrics */}
+            <div className="flex items-center gap-3">
+              <div className="flex items-center gap-1.5">
+                <span className="text-xs text-muted-foreground">Total:</span>
+                <span className="text-xs font-bold text-foreground">{totalCount}</span>
+              </div>
+              <div className="h-3 w-px bg-border" />
+              <div className="flex items-center gap-1.5">
+                <span className="text-xs text-emerald-600 dark:text-emerald-400 font-medium">Present:</span>
+                <span className="text-xs font-bold text-emerald-700 dark:text-emerald-300">
+                  {presentCount} ({attendancePercentage}%)
+                </span>
+              </div>
+              <div className="h-3 w-px bg-border" />
+              <div className="flex items-center gap-1.5">
+                <span className="text-xs text-destructive font-medium">Absent:</span>
+                <span className="text-xs font-bold text-destructive">{absentCount}</span>
+              </div>
+            </div>
+          </div>
+
+          {/* Table Header Controls */}
+          <div className="p-3.5 px-4 flex flex-col sm:flex-row sm:items-center justify-between gap-3 border-b bg-card">
             <div className="flex items-center gap-2">
               <div className="relative">
-                <Search className="w-4 h-4 absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground" />
+                <Search className="w-3.5 h-3.5 absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground" />
                 <Input
                   placeholder="Search students..."
                   value={searchQuery}
                   onChange={(e) => setSearchQuery(e.target.value)}
-                  className="pl-9 h-9 w-48 text-xs"
+                  className="pl-8 h-8 w-48 sm:w-56 text-xs"
                 />
               </div>
-              <Button
-                variant="outline"
-                size="sm"
-                onClick={handleMarkAllPresent}
-                className="h-9 gap-1.5 text-xs"
-              >
-                <Check className="w-3.5 h-3.5" />
-                All Present
-              </Button>
-              <Button
-                variant="outline"
-                size="sm"
-                onClick={handleMarkAllAbsent}
-                className="h-9 gap-1.5 text-xs"
-              >
-                <X className="w-3.5 h-3.5" />
-                All Absent
-              </Button>
+              {searchQuery && (
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  onClick={() => setSearchQuery('')}
+                  className="h-8 px-2 text-xs text-muted-foreground"
+                >
+                  Clear
+                </Button>
+              )}
+            </div>
+
+            {/* Batch Controls or Quick Edit */}
+            <div className="flex items-center gap-2">
+              {canEdit ? (
+                <>
+                  <Button
+                    type="button"
+                    variant="outline"
+                    size="sm"
+                    onClick={handleMarkAllPresent}
+                    className="h-8 gap-1.5 text-xs font-medium text-emerald-700 dark:text-emerald-400 hover:bg-emerald-500/10 border-emerald-500/30"
+                  >
+                    <Check className="w-3.5 h-3.5" />
+                    All Present
+                  </Button>
+                  <Button
+                    type="button"
+                    variant="outline"
+                    size="sm"
+                    onClick={handleMarkAllAbsent}
+                    className="h-8 gap-1.5 text-xs font-medium text-destructive hover:bg-destructive/10 border-destructive/30"
+                  >
+                    <X className="w-3.5 h-3.5" />
+                    All Absent
+                  </Button>
+                </>
+              ) : isAlreadyMarked && !isDateOutOfRange ? (
+                <Button
+                  type="button"
+                  variant="outline"
+                  size="sm"
+                  onClick={handleStartEdit}
+                  disabled={isTeacherOnly && !isClassTeacherForSelected}
+                  className="h-8 gap-1.5 text-xs cursor-pointer hover:bg-accent border-primary/30 text-primary font-medium"
+                >
+                  <Edit3 className="w-3.5 h-3.5" />
+                  Edit Attendance
+                </Button>
+              ) : null}
             </div>
           </div>
 
@@ -503,7 +645,9 @@ export const MarkAttendancePage: React.FC = () => {
                     <TableHead className="w-12">#</TableHead>
                     <TableHead>Student Name</TableHead>
                     <TableHead className="w-32 text-center">Status</TableHead>
-                    <TableHead className="w-24 text-center">Action</TableHead>
+                    <TableHead className="w-28 text-center">
+                      {canEdit ? 'Toggle' : 'Protection'}
+                    </TableHead>
                   </TableRow>
                 </TableHeader>
                 <TableBody>
@@ -514,13 +658,21 @@ export const MarkAttendancePage: React.FC = () => {
                     const isPresent = presentStudentIds.has(student.id);
 
                     return (
-                      <TableRow key={student.id} className="hover:bg-muted/30">
+                      <TableRow
+                        key={student.id}
+                        className={`transition-colors ${
+                          canEdit
+                            ? 'hover:bg-muted/40 cursor-pointer'
+                            : 'hover:bg-muted/20'
+                        }`}
+                        onClick={canEdit ? () => toggleStudent(student.id) : undefined}
+                      >
                         <TableCell className="text-muted-foreground text-xs font-mono">
                           {index + 1}
                         </TableCell>
                         <TableCell>
                           <div className="flex items-center gap-2.5">
-                            <div className="w-8 h-8 rounded-full bg-primary/10 text-primary flex items-center justify-center font-bold text-xs">
+                            <div className="w-8 h-8 rounded-full bg-primary/10 text-primary flex items-center justify-center font-bold text-xs shrink-0">
                               {student.first_name[0].toUpperCase()}
                             </div>
                             <span className="text-sm font-medium text-foreground">
@@ -531,7 +683,11 @@ export const MarkAttendancePage: React.FC = () => {
                         <TableCell className="text-center">
                           <Badge
                             variant={isPresent ? 'success' : 'destructive'}
-                            className="text-xs gap-1"
+                            className={`text-xs gap-1 py-0.5 px-2.5 ${
+                              isPresent
+                                ? 'bg-emerald-500/15 text-emerald-700 dark:text-emerald-300 border-emerald-500/30'
+                                : 'bg-rose-500/15 text-rose-700 dark:text-rose-300 border-rose-500/30'
+                            }`}
                           >
                             {isPresent ? (
                               <>
@@ -547,24 +703,39 @@ export const MarkAttendancePage: React.FC = () => {
                           </Badge>
                         </TableCell>
                         <TableCell className="text-center">
-                          <Button
-                            variant={isPresent ? 'default' : 'outline'}
-                            size="sm"
-                            onClick={() => toggleStudent(student.id)}
-                            className="h-8 w-20 gap-1 text-xs"
-                          >
-                            {isPresent ? (
-                              <>
-                                <Check className="w-3 h-3" />
-                                Marked
-                              </>
-                            ) : (
-                              <>
-                                <X className="w-3 h-3" />
-                                Absent
-                              </>
-                            )}
-                          </Button>
+                          {canEdit ? (
+                            <Button
+                              type="button"
+                              variant={isPresent ? 'default' : 'outline'}
+                              size="sm"
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                toggleStudent(student.id);
+                              }}
+                              className={`h-8 w-22 gap-1 text-xs cursor-pointer ${
+                                isPresent
+                                  ? 'bg-emerald-600 hover:bg-emerald-700 text-white'
+                                  : 'hover:bg-destructive/10 text-muted-foreground hover:text-destructive'
+                              }`}
+                            >
+                              {isPresent ? (
+                                <>
+                                  <Check className="w-3 h-3" />
+                                  Present
+                                </>
+                              ) : (
+                                <>
+                                  <X className="w-3 h-3" />
+                                  Absent
+                                </>
+                              )}
+                            </Button>
+                          ) : (
+                            <div className="flex items-center justify-center text-xs text-muted-foreground gap-1 select-none">
+                              <Lock className="w-3 h-3 text-muted-foreground/40" />
+                              <span className="text-[11px]">Saved</span>
+                            </div>
+                          )}
                         </TableCell>
                       </TableRow>
                     );
@@ -574,8 +745,8 @@ export const MarkAttendancePage: React.FC = () => {
             </div>
           )}
 
-          {/* Submit Footer */}
-          <div className="p-4 border-t bg-muted/30 flex items-center justify-between">
+          {/* Submit / Action Footer */}
+          <div className="p-4 border-t bg-muted/20 flex flex-col sm:flex-row sm:items-center justify-between gap-3">
             <div className="text-xs text-muted-foreground">
               {recordDate && (
                 <span>
@@ -589,9 +760,35 @@ export const MarkAttendancePage: React.FC = () => {
                       <AlertCircle className="w-3.5 h-3.5" />
                       Cannot record attendance for a future date.
                     </span>
+                  ) : isAlreadyMarked ? (
+                    isEditing ? (
+                      <span className="text-amber-600 dark:text-amber-400 font-medium flex items-center gap-1.5">
+                        <Edit3 className="w-3.5 h-3.5" />
+                        Editing attendance for{' '}
+                        {new Date(recordDate + 'T00:00:00').toLocaleDateString('en-US', {
+                          weekday: 'long',
+                          year: 'numeric',
+                          month: 'long',
+                          day: 'numeric',
+                        })}
+                        {hasUnsavedChanges ? ' (unsaved changes)' : ' (no changes yet)'}
+                      </span>
+                    ) : (
+                      <span className="text-emerald-700 dark:text-emerald-400 font-medium flex items-center gap-1.5">
+                        <CheckCircle2 className="w-3.5 h-3.5" />
+                        Attendance recorded for{' '}
+                        {new Date(recordDate + 'T00:00:00').toLocaleDateString('en-US', {
+                          weekday: 'long',
+                          year: 'numeric',
+                          month: 'long',
+                          day: 'numeric',
+                        })}
+                        . Protected view.
+                      </span>
+                    )
                   ) : (
                     <span>
-                      {isAlreadyMarked ? 'Updating attendance for ' : 'Marking attendance for '}
+                      Marking attendance for{' '}
                       <span className="font-semibold text-foreground">
                         {new Date(recordDate + 'T00:00:00').toLocaleDateString('en-US', {
                           weekday: 'long',
@@ -605,41 +802,83 @@ export const MarkAttendancePage: React.FC = () => {
                 </span>
               )}
             </div>
-            <Button
-              onClick={handleSubmit}
-              disabled={
-                markAttendanceMutation.isPending ||
-                isReportLoading ||
-                !selectedSectionId ||
-                students.length === 0 ||
-                (isTeacherOnly && !isClassTeacherForSelected) ||
-                isDateOutOfRange
-              }
-              className={`gap-2 ${
-                isDateOutOfRange
-                  ? 'opacity-60 cursor-not-allowed'
-                  : isAlreadyMarked
-                  ? 'bg-emerald-600 hover:bg-emerald-700 text-white'
-                  : ''
-              }`}
-            >
-              {markAttendanceMutation.isPending ? (
-                <Loader2 className="w-4 h-4 animate-spin" />
-              ) : isDateOutOfRange ? (
-                <Lock className="w-4 h-4" />
+
+            {/* Action Buttons */}
+            <div className="flex items-center gap-2.5 self-end sm:self-auto">
+              {isDateOutOfRange ? (
+                <Button disabled className="gap-2 opacity-60 cursor-not-allowed">
+                  <Lock className="w-4 h-4" />
+                  {recordDate < minDateStr ? 'Attendance Locked' : 'Future Date Locked'}
+                </Button>
               ) : isAlreadyMarked ? (
-                <Edit3 className="w-4 h-4" />
+                isEditing ? (
+                  <>
+                    <Button
+                      type="button"
+                      variant="outline"
+                      onClick={handleCancelEdit}
+                      disabled={markAttendanceMutation.isPending}
+                      className="gap-1.5 cursor-pointer"
+                    >
+                      <RotateCcw className="w-4 h-4" />
+                      Cancel
+                    </Button>
+                    <Button
+                      type="button"
+                      onClick={handleSubmit}
+                      disabled={
+                        markAttendanceMutation.isPending ||
+                        !hasUnsavedChanges ||
+                        (isTeacherOnly && !isClassTeacherForSelected)
+                      }
+                      className="gap-2 bg-emerald-600 hover:bg-emerald-700 text-white font-medium cursor-pointer"
+                    >
+                      {markAttendanceMutation.isPending ? (
+                        <Loader2 className="w-4 h-4 animate-spin" />
+                      ) : (
+                        <CheckCircle2 className="w-4 h-4" />
+                      )}
+                      Update Attendance
+                    </Button>
+                  </>
+                ) : (
+                  <Button
+                    type="button"
+                    variant="outline"
+                    onClick={handleStartEdit}
+                    disabled={
+                      isReportLoading ||
+                      students.length === 0 ||
+                      (isTeacherOnly && !isClassTeacherForSelected)
+                    }
+                    className="gap-2 font-medium cursor-pointer hover:bg-accent border-primary/30 text-primary"
+                  >
+                    <Edit3 className="w-4 h-4" />
+                    Edit Attendance
+                  </Button>
+                )
               ) : (
-                <CalendarCheck className="w-4 h-4" />
+                <Button
+                  type="button"
+                  onClick={handleSubmit}
+                  disabled={
+                    markAttendanceMutation.isPending ||
+                    isReportLoading ||
+                    !selectedSectionId ||
+                    students.length === 0 ||
+                    (isTeacherOnly && !isClassTeacherForSelected)
+                  }
+                  className="gap-2 font-medium cursor-pointer"
+                >
+                  {markAttendanceMutation.isPending ? (
+                    <Loader2 className="w-4 h-4 animate-spin" />
+                  ) : (
+                    <CalendarCheck className="w-4 h-4" />
+                  )}
+                  Submit Attendance
+                </Button>
               )}
-              {recordDate < minDateStr
-                ? 'Attendance Locked'
-                : recordDate > todayStr
-                ? 'Future Date Locked'
-                : isAlreadyMarked
-                ? 'Update Attendance'
-                : 'Submit Attendance'}
-            </Button>
+            </div>
           </div>
         </Card>
       )}

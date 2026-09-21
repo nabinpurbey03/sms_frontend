@@ -1,4 +1,4 @@
-import React, { useState, useRef } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import {
   Dialog,
   DialogContent,
@@ -36,8 +36,21 @@ export const BulkSubjectUploadDialog: React.FC<BulkSubjectUploadDialogProps> = (
   onSubmit,
   isLoading,
 }) => {
-  const [selectedClassId, setSelectedClassId] = useState<string>(classes[0]?.id || '');
-  const selectedClass = classes.find((c) => c.id === selectedClassId) || classes[0];
+  const [selectedClassId, setSelectedClassId] = useState<string>('');
+  const effectiveClass =
+    (selectedClassId && classes.find((c) => c.id === selectedClassId)) ||
+    classes[0] ||
+    null;
+  const effectiveClassId = effectiveClass?.id || '';
+
+  // Synchronize internal state whenever classes change or dialog opens
+  useEffect(() => {
+    if (classes.length > 0) {
+      if (!selectedClassId || !classes.some((c) => c.id === selectedClassId)) {
+        setSelectedClassId(classes[0].id);
+      }
+    }
+  }, [classes, selectedClassId, isOpen]);
 
   const [selectedFile, setSelectedFile] = useState<File | null>(null);
   const [parsedSubjects, setParsedSubjects] = useState<SubjectCreateDTO[]>([]);
@@ -87,13 +100,25 @@ export const BulkSubjectUploadDialog: React.FC<BulkSubjectUploadDialogProps> = (
         return;
       }
 
-      // Check header
-      const header = lines[0].toLowerCase().split(',').map((h) => h.trim());
-      const nameIdx = header.indexOf('name');
-      const codeIdx = header.indexOf('code');
+      // Check header with robust normalization (strips BOM, quotes, spaces)
+      const normalizeHeader = (h: string) =>
+        h
+          .replace(/^\ufeff/, '')
+          .replace(/^["']|["']$/g, '')
+          .trim()
+          .toLowerCase()
+          .replace(/[\s-]+/g, '_');
+
+      const rawHeaders = lines[0].split(',').map(normalizeHeader);
+      const nameIdx = rawHeaders.findIndex((h) =>
+        ['name', 'subject_name', 'subject', 'course', 'title'].includes(h)
+      );
+      const codeIdx = rawHeaders.findIndex((h) =>
+        ['code', 'subject_code', 'course_code', 'sub_code'].includes(h)
+      );
 
       if (nameIdx === -1) {
-        setParseErrors(['Invalid CSV header format. Expected at least a "name" column.']);
+        setParseErrors(['Invalid CSV header format. Expected a "name" column (e.g. name, code).']);
         setParsedSubjects([]);
         return;
       }
@@ -102,7 +127,9 @@ export const BulkSubjectUploadDialog: React.FC<BulkSubjectUploadDialogProps> = (
       const errors: string[] = [];
 
       for (let i = 1; i < lines.length; i++) {
-        const cols = lines[i].split(',').map((c) => c.trim().replace(/^["']|["']$/g, ''));
+        const line = lines[i].trim();
+        if (!line) continue;
+        const cols = line.split(',').map((c) => c.trim().replace(/^["']|["']$/g, ''));
         const name = cols[nameIdx];
         const code = codeIdx !== -1 ? cols[codeIdx] : undefined;
 
@@ -137,7 +164,7 @@ export const BulkSubjectUploadDialog: React.FC<BulkSubjectUploadDialogProps> = (
   };
 
   const handleUploadSubmit = async () => {
-    if (!selectedClassId) {
+    if (!effectiveClassId) {
       toast.error('Please choose a class to register these subjects.');
       return;
     }
@@ -146,7 +173,7 @@ export const BulkSubjectUploadDialog: React.FC<BulkSubjectUploadDialogProps> = (
       return;
     }
 
-    await onSubmit(selectedClassId, parsedSubjects);
+    await onSubmit(effectiveClassId, parsedSubjects);
     handleReset();
     onClose();
   };
@@ -177,7 +204,7 @@ export const BulkSubjectUploadDialog: React.FC<BulkSubjectUploadDialogProps> = (
               Target Academic Class <span className="text-destructive">*</span>
             </Label>
             <select
-              value={selectedClassId}
+              value={effectiveClassId}
               onChange={(e) => setSelectedClassId(e.target.value)}
               disabled={isLoading}
               className="w-full h-9 rounded-lg border border-input bg-background px-3 text-xs focus:outline-none focus:ring-1 focus:ring-primary"
@@ -272,7 +299,7 @@ export const BulkSubjectUploadDialog: React.FC<BulkSubjectUploadDialogProps> = (
                     <CheckCircle2 className="w-4 h-4 shrink-0" />
                     <span>
                       Ready to add <strong>{parsedSubjects.length}</strong> subject(s) to{' '}
-                      <strong>{selectedClass?.name}</strong>.
+                      <strong>{effectiveClass?.name}</strong>.
                     </span>
                   </div>
                 )}
@@ -334,7 +361,7 @@ export const BulkSubjectUploadDialog: React.FC<BulkSubjectUploadDialogProps> = (
           <Button
             type="button"
             onClick={handleUploadSubmit}
-            disabled={isLoading || parsedSubjects.length === 0 || !selectedClassId}
+            disabled={isLoading || parsedSubjects.length === 0 || !effectiveClassId}
             className="text-xs gap-1.5"
           >
             <BookOpen className="w-3.5 h-3.5" />

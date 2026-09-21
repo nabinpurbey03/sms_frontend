@@ -261,9 +261,11 @@ export const TeacherClassroomSectionCard: React.FC<TeacherClassroomSectionCardPr
                                     {parent.parent_phone && ` • ${parent.parent_phone}`}
                                   </p>
                                 ) : (
-                                  <p className="text-xs text-amber-600 dark:text-amber-400 font-medium">
-                                    No linked parent account
-                                  </p>
+                                  <div className="flex items-center gap-1.5">
+                                    <span className="inline-flex items-center px-2 py-0.5 rounded-md text-[11px] font-medium bg-amber-500/10 text-amber-700 dark:text-amber-400 border border-amber-500/20">
+                                      No Parent Linked
+                                    </span>
+                                  </div>
                                 )}
                               </div>
                             </div>
@@ -300,12 +302,11 @@ export const TeacherClassroomSectionCard: React.FC<TeacherClassroomSectionCardPr
                               ) : (
                                 <Button
                                   size="sm"
-                                  variant="outline"
-                                  className="h-8 px-2.5 text-xs font-medium gap-1.5 text-primary hover:bg-primary/10 border-primary/30 cursor-pointer"
+                                  className="h-8 px-3 text-xs font-semibold gap-1.5 shadow-2xs bg-primary hover:bg-primary/90 text-primary-foreground cursor-pointer transition-all active:scale-[0.98]"
                                   onClick={() => onLinkParentClick(student)}
                                 >
                                   <UserPlus className="w-3.5 h-3.5" />
-                                  <span>+ Link Parent</span>
+                                  <span>Link Parent</span>
                                 </Button>
                               )}
                             </div>
@@ -441,12 +442,11 @@ export const TeacherClassroomSectionCard: React.FC<TeacherClassroomSectionCardPr
 
                           <Button
                             size="sm"
-                            variant="outline"
-                            className="h-7 px-2.5 text-xs font-medium gap-1 text-primary hover:bg-primary/10 border-primary/30 cursor-pointer shrink-0"
+                            className="h-7 px-2.5 text-xs font-semibold gap-1.5 shadow-2xs bg-primary hover:bg-primary/90 text-primary-foreground cursor-pointer shrink-0 transition-all active:scale-[0.98]"
                             onClick={() => onLinkParentClick(student)}
                           >
                             <UserPlus className="w-3 h-3" />
-                            + Link Parent
+                            <span>Link Parent</span>
                           </Button>
                         </div>
                       );

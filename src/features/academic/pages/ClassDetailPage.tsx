@@ -50,6 +50,8 @@ import {
   Award,
   GraduationCap,
   ExternalLink,
+  Pencil,
+  ArrowRightLeft,
 } from 'lucide-react';
 import { useQueryClient } from '@tanstack/react-query';
 import { useNavigate, useParams } from '@tanstack/react-router';
@@ -70,6 +72,8 @@ import { TeacherAssignmentBoard } from '../components/TeacherAssignmentBoard';
 import { StudentAddDialog } from '../components/StudentAddDialog';
 import { SectionAddDialog } from '../components/SectionAddDialog';
 import { StudentDetailDrawer } from '../components/StudentDetailDrawer';
+import { EditStudentDialog } from '../components/EditStudentDialog';
+import { ChangeStudentSectionDialog } from '../components/ChangeStudentSectionDialog';
 import { SectionNoticeboardTab } from '../components/SectionNoticeboardTab';
 import { PrintableRosterModal } from '../components/PrintableRosterModal';
 import { ParentStudentLinkDialog } from '@/features/members/components/ParentStudentLinkDialog';
@@ -121,6 +125,8 @@ export const ClassDetailPage: React.FC = () => {
   const [subjectToDelete, setSubjectToDelete] = useState<AcademicSubject | null>(null);
   const [sectionToDelete, setSectionToDelete] = useState<AcademicSection | null>(null);
   const [linkParentStudent, setLinkParentStudent] = useState<AcademicStudent | null>(null);
+  const [editingStudent, setEditingStudent] = useState<AcademicStudent | null>(null);
+  const [changingSectionStudent, setChangingSectionStudent] = useState<AcademicStudent | null>(null);
 
   const createSubjectMutation = useCreateSubject();
   const deleteSubjectMutation = useDeleteSubject();
@@ -718,7 +724,7 @@ export const ClassDetailPage: React.FC = () => {
                                   <span className="sr-only">Open actions</span>
                                 </Button>
                               </DropdownMenuTrigger>
-                              <DropdownMenuContent align="end" className="w-48 text-xs">
+                              <DropdownMenuContent align="end" className="w-52 text-xs">
                                 <DropdownMenuItem
                                   onClick={() => setSelectedStudentForDrawer(st)}
                                   className="gap-2 cursor-pointer font-medium"
@@ -726,6 +732,30 @@ export const ClassDetailPage: React.FC = () => {
                                   <Eye className="w-3.5 h-3.5 text-primary" />
                                   Profile & Observations
                                 </DropdownMenuItem>
+                                {canManage && (
+                                  <>
+                                    <DropdownMenuItem
+                                      onClick={() => setEditingStudent(st)}
+                                      className="gap-2 cursor-pointer"
+                                    >
+                                      <Pencil className="w-3.5 h-3.5 text-muted-foreground" />
+                                      Edit Student Name
+                                    </DropdownMenuItem>
+                                    <DropdownMenuItem
+                                      onClick={() => setChangingSectionStudent(st)}
+                                      className="gap-2 cursor-pointer"
+                                      disabled={(cls.sections || []).length <= 1}
+                                      title={
+                                        (cls.sections || []).length <= 1
+                                          ? 'Only one section available in this class'
+                                          : undefined
+                                      }
+                                    >
+                                      <ArrowRightLeft className="w-3.5 h-3.5 text-muted-foreground" />
+                                      Change Section
+                                    </DropdownMenuItem>
+                                  </>
+                                )}
                                 <DropdownMenuItem
                                   onClick={() => setLinkParentStudent(st)}
                                   className="gap-2 cursor-pointer"
@@ -1023,6 +1053,26 @@ export const ClassDetailPage: React.FC = () => {
           queryClient.invalidateQueries({ queryKey: [STUDENT_PARENTS_QUERY_KEY] });
           queryClient.invalidateQueries({ queryKey: [PARENT_MAPPINGS_QUERY_KEY] });
         }}
+      />
+
+      {/* Edit Student Name Dialog */}
+      <EditStudentDialog
+        isOpen={!!editingStudent}
+        onClose={() => setEditingStudent(null)}
+        student={editingStudent}
+        classId={cls.id}
+        sectionId={editingStudent?.section_id || currentSection?.id || ''}
+        tenantId={tenantId}
+      />
+
+      {/* Change Student Section Dialog */}
+      <ChangeStudentSectionDialog
+        isOpen={!!changingSectionStudent}
+        onClose={() => setChangingSectionStudent(null)}
+        student={changingSectionStudent}
+        cls={cls}
+        currentSectionId={changingSectionStudent?.section_id || currentSection?.id || ''}
+        tenantId={tenantId}
       />
 
       {/* Add Section Dialog */}

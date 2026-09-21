@@ -1,5 +1,6 @@
 import React, { useState, useMemo } from 'react';
 import { useAuth } from '@/auth/useAuth';
+import { usePermission } from '@/auth/usePermission';
 import { useTeacherStudentsAndParents } from '../hooks';
 import { TenantRequiredState } from '@/components/common/TenantRequiredState';
 import { Card, CardHeader, CardTitle, CardDescription, CardContent } from '@/components/ui/card';
@@ -33,6 +34,8 @@ import type { TeacherStudentParentItem } from '../types';
 
 export const TeacherParentDirectoryPage: React.FC = () => {
   const { activeTenantId } = useAuth();
+  const { can, isSuperAdmin, activeRole } = usePermission();
+  const canManage = isSuperAdmin || can('LINK_PARENTS') || activeRole === 'ADMIN' || activeRole === 'OFFICE_ADMIN';
   const queryClient = useQueryClient();
 
   // Filters
@@ -92,6 +95,21 @@ export const TeacherParentDirectoryPage: React.FC = () => {
 
   return (
     <div className="space-y-6 pb-16">
+      {/* Page Header */}
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+        <div>
+          <h1 className="text-xl font-bold tracking-tight text-foreground flex items-center gap-2">
+            <Users className="w-5 h-5 text-primary" />
+            {canManage ? 'Parent-Student Links & Directory' : 'Student & Parent Directory'}
+          </h1>
+          <p className="text-xs text-muted-foreground mt-0.5">
+            {canManage
+              ? 'Connect parents to their children, manage contact records, and verify guardian coverage across all school classes.'
+              : 'Contact information for your students and link guardians for your assigned classes.'}
+          </p>
+        </div>
+      </div>
+
       {/* KPI Metrics Ribbon */}
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-3.5">
         <Card className="p-4 bg-card border-border/70 shadow-2xs">
@@ -102,7 +120,9 @@ export const TeacherParentDirectoryPage: React.FC = () => {
           <div className="text-2xl font-bold text-foreground mt-1">
             {isLoading ? '...' : data?.total_students ?? 0}
           </div>
-          <p className="text-[11px] text-muted-foreground mt-0.5">Students in taught classes</p>
+          <p className="text-[11px] text-muted-foreground mt-0.5">
+            {canManage ? 'Active students across school' : 'Students in your class teacher sections'}
+          </p>
         </Card>
 
         <Card className="p-4 bg-card border-border/70 shadow-2xs">
@@ -143,19 +163,21 @@ export const TeacherParentDirectoryPage: React.FC = () => {
 
         <Card className="p-4 bg-card border-border/70 shadow-2xs">
           <div className="flex items-center justify-between text-xs text-muted-foreground">
-            <span>Classes Taught</span>
+            <span>{canManage ? 'School Classes' : 'Class Teacher In'}</span>
             <BookOpen className="w-4 h-4 text-primary" />
           </div>
           <div className="text-2xl font-bold text-foreground mt-1">
             {isLoading ? '...' : data?.assigned_classes.length ?? 0}
           </div>
-          <p className="text-[11px] text-muted-foreground mt-0.5">Active assigned class sections</p>
+          <p className="text-[11px] text-muted-foreground mt-0.5">
+            {canManage ? 'Total classes & sections' : 'Assigned Class Teacher sections'}
+          </p>
         </Card>
       </div>
 
-      {/* Filter and Search Bar */}
-      <Card className="p-4 bg-card border-border/70 shadow-2xs space-y-3">
-        <div className="flex flex-col md:flex-row md:items-center justify-between gap-3">
+      {/* Search & Filter Bar */}
+      <Card className="p-3.5 bg-card border-border/70 shadow-2xs">
+        <div className="flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-3">
           {/* Search Input */}
           <div className="relative flex-1 max-w-md">
             <Search className="w-4 h-4 absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground" />
@@ -174,12 +196,10 @@ export const TeacherParentDirectoryPage: React.FC = () => {
               onChange={(e) => setSelectedClassKey(e.target.value)}
               className="h-9 px-3 rounded-lg text-xs font-medium bg-background border border-input text-foreground focus:ring-1 focus:ring-primary outline-none"
             >
-              <option value="ALL">All Assigned Classes</option>
+              <option value="ALL">{canManage ? 'All Classes & Sections' : 'All My Class Sections'}</option>
               {data?.assigned_classes.map((cls) => {
                 const key = `${cls.class_id}|${cls.section_id || 'null'}`;
-                const label = `${cls.class_name}${cls.section_name ? ` · Section ${cls.section_name}` : ''}${
-                  cls.is_class_teacher ? ' (Class Teacher)' : ''
-                }`;
+                const label = `${cls.class_name}${cls.section_name ? ` · Section ${cls.section_name}` : ''}`;
                 return (
                   <option key={key} value={key}>
                     {label}
@@ -251,6 +271,18 @@ export const TeacherParentDirectoryPage: React.FC = () => {
           <Button onClick={() => refetch()} variant="outline" size="sm">
             Try Again
           </Button>
+        </Card>
+      ) : data?.assigned_classes.length === 0 ? (
+        <Card className="p-12 text-center space-y-3 border-dashed">
+          <GraduationCap className="w-10 h-10 text-muted-foreground mx-auto opacity-50" />
+          <h3 className="text-base font-bold text-foreground">
+            {canManage ? 'No Classes or Sections Configured' : 'No Class Teacher Assignments'}
+          </h3>
+          <p className="text-xs text-muted-foreground max-w-md mx-auto">
+            {canManage
+              ? 'There are no active classes or sections created in the school yet. Go to Classes & Sections under Academics to add classes.'
+              : 'You are not currently designated as a Class Teacher for any section. The Student & Parent Directory is available for designated Class Teachers to view student contact records and link guardians for their assigned class.'}
+          </p>
         </Card>
       ) : filteredStudents.length === 0 ? (
         <Card className="p-12 text-center space-y-3 border-dashed">
@@ -449,11 +481,27 @@ export const TeacherParentDirectoryPage: React.FC = () => {
                                 </a>
                               </Button>
                             )}
+                            <Button
+                              size="sm"
+                              variant="outline"
+                              onClick={() =>
+                                setLinkingStudent({
+                                  id: item.student_id,
+                                  name: item.student_name,
+                                  className: item.class_name,
+                                  sectionName: item.section_name || undefined,
+                                })
+                              }
+                              className="h-7 px-2 text-[11px] font-medium gap-1 text-muted-foreground hover:text-foreground cursor-pointer"
+                              title="Manage or change linked parent"
+                            >
+                              <UserCheck className="w-3 h-3 text-emerald-600" />
+                              <span>Manage</span>
+                            </Button>
                           </div>
                         ) : (
                           <Button
                             size="sm"
-                            variant="outline"
                             onClick={() =>
                               setLinkingStudent({
                                 id: item.student_id,
@@ -462,10 +510,10 @@ export const TeacherParentDirectoryPage: React.FC = () => {
                                 sectionName: item.section_name || undefined,
                               })
                             }
-                            className="h-7 px-2.5 text-[11px] font-semibold gap-1 text-primary border-primary/30 hover:bg-primary/10 cursor-pointer"
+                            className="h-7 px-2.5 text-[11px] font-semibold gap-1.5 bg-primary hover:bg-primary/90 text-primary-foreground cursor-pointer shadow-2xs transition-all active:scale-[0.98]"
                           >
                             <UserPlus className="w-3 h-3" />
-                            Link Parent
+                            <span>Link Parent</span>
                           </Button>
                         )}
                       </td>

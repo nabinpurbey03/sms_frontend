@@ -122,13 +122,20 @@ export const academicApi = {
     tenantId: string,
     classId: string,
     sectionId: string,
-    students: StudentCreateDTO[],
+    file: File,
     academicYearId?: string | null
-  ): Promise<{ count: number; students: AcademicStudent[] }> => {
+  ): Promise<{ total_added: number }> => {
+    const formData = new FormData();
+    formData.append('file', file);
     return apiClient.post(
       `/academic/tenants/${tenantId}/classes/${classId}/students/bulk`,
-      { students },
-      { params: { section_id: sectionId, academic_year_id: academicYearId || undefined } }
+      formData,
+      {
+        params: { section_id: sectionId, academic_year_id: academicYearId || undefined },
+        headers: {
+          'Content-Type': 'multipart/form-data',
+        },
+      }
     );
   },
 
@@ -152,6 +159,24 @@ export const academicApi = {
     return apiClient.patch(
       `/academic/tenants/${tenantId}/classes/${classId}/students/${studentId}`,
       { status }
+    );
+  },
+
+  updateStudent: async (
+    tenantId: string,
+    classId: string,
+    sectionId: string,
+    studentId: string,
+    data: {
+      first_name?: string;
+      middle_name?: string | null;
+      last_name?: string;
+      target_section_id?: string;
+    }
+  ): Promise<AcademicStudent> => {
+    return apiClient.patch(
+      `/academic/tenants/${tenantId}/classes/${classId}/sections/${sectionId}/students/${studentId}`,
+      data
     );
   },
 
@@ -250,9 +275,22 @@ export const academicApi = {
 
   getAssignments: async (
     tenantId: string,
-    params?: { teacher_id?: string; class_id?: string; academic_year_id?: string | null }
+    params?: {
+      teacher_id?: string;
+      class_id?: string;
+      section_id?: string;
+      academic_year_id?: string | null;
+      is_class_teacher?: boolean;
+      page?: number;
+      page_size?: number;
+    }
   ): Promise<TeacherAssignment[]> => {
-    const res = await apiClient.get(`/academic/tenants/${tenantId}/assignments`, { params }) as any;
+    const res = (await apiClient.get(`/academic/tenants/${tenantId}/assignments`, {
+      params: {
+        page_size: 500,
+        ...params,
+      },
+    })) as any;
     return res.meta ? res.data : res;
   },
 

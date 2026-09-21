@@ -275,13 +275,13 @@ export const StudentsPage: React.FC = () => {
   };
 
   // Bulk Student Upload Submission
-  const handleBulkEnroll = async (classId: string, sectionId: string, students: StudentCreateDTO[]) => {
+  const handleBulkEnroll = async (classId: string, sectionId: string, file: File) => {
     if (!activeTenantId) return;
     await bulkAddMutation.mutateAsync({
       tenantId: activeTenantId,
       classId,
       sectionId,
-      students,
+      file,
       academicYearId: selectedYearId,
     });
   };

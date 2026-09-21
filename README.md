@@ -52,6 +52,15 @@ A production-grade, domain-aligned **React 19 Single Page Application (SPA)** fo
 
 ## ✨ Recent Updates
 
+- **Mark Attendance UX Enhancement (State-Driven Workflow)**:
+  - **Saved & Protected Mode (View Mode)**: Automatically enters a read-only protected view once attendance is recorded (or upon loading existing records) to prevent accidental clicks while scrolling on touch/desktop devices.
+  - **Visual Status & Metrics Banner**: Displays live completion metrics (present count, absent count, attendance percentage) alongside prominent status badges (`Attendance Recorded`, `Editing Recorded Attendance`, `Not Yet Recorded`, `Locked (>7 days)`).
+  - **Explicit Edit Workflow**: A dedicated "Edit Attendance" button unlocks the table roster, exposing "Update Attendance" (with unsaved changes detection) and "Cancel" (which rolls back any uncommitted changes).
+  - **7-Day Modification Window**: Strict locking and visual indicators for attendance records outside the 7-day window.
+- **Parent-Student Linking & Directory Governance (`/academic/parent-links`)**:
+  - **School Leadership Access**: School Administrators (`ADMIN`), Office Admins (`OFFICE_ADMIN`), and Super Admins can now manage parent-student linkages across all school classes and sections without requiring teacher assignments.
+  - **Class Roster Visibility**: Directory dropdown automatically loads all school classes for administrators and assigned class sections for teachers.
+  - **Guardian Management Actions**: Added "Manage" button in the directory table allowing administrators and teachers to view, replace, or unlink existing guardian links directly via `ParentStudentLinkDialog`.
 - **Audit Logs Governance Slice (`src/features/audit-log/`)**:
   - Full 5-file feature slice adhering strictly to project conventions (`pages/`, `components/`, `hooks.ts`, `api.ts`, `schema.ts`).
   - High-performance audit trail table using `ResponsiveDataTable` with debounced action filtering, date-from/date-to pickers, and responsive slide-out detail drawer (`AuditLogDetailDrawer`).
@@ -59,13 +68,6 @@ A production-grade, domain-aligned **React 19 Single Page Application (SPA)** fo
 - **Tenant Management Lifecycle**:
   - Added suspend/reactivate toggles with confirmation dialogs across Table and Grid views.
   - Interactive 3-step School Onboarding Wizard (`TenantOnboardDialog`) provisioning new schools, primary admins, and instant invitation link generators.
-- **Platform Users & Memberships**:
-  - Slide-out Memberships Drawer displaying user tenant affiliations, active roles, and school assignments.
-  - "View As" support session activation with explicit confirmation modals.
-- **"View As" Support Sessions (Client-Side Defense in Depth)**:
-  - Global Zustand session store (`viewAsStore`) managing short-lived 15-minute support tokens.
-  - Top-level sticky warning banner (`ViewAsBanner`) displaying real-time countdown timer and one-click session termination.
-  - Client-side write prevention: `apiClient` interceptor rejects all mutating HTTP requests (`POST`, `PUT`, `PATCH`, `DELETE` excluding `/logout`), while `usePermission` locks UI action buttons for non-read capabilities.
 
 ---
 

@@ -1,4 +1,4 @@
-import React, { useState, useRef } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import {
   Dialog,
   DialogContent,
@@ -28,7 +28,7 @@ interface BulkStudentUploadDialogProps {
   onSubmit: (
     classId: string,
     sectionId: string,
-    students: StudentCreateDTO[]
+    file: File
   ) => Promise<any>;
   isLoading: boolean;
 }
@@ -40,15 +40,56 @@ export const BulkStudentUploadDialog: React.FC<BulkStudentUploadDialogProps> = (
   onSubmit,
   isLoading,
 }) => {
-  const [selectedClassId, setSelectedClassId] = useState<string>(classes[0]?.id || '');
-  const selectedClass = classes.find((c) => c.id === selectedClassId) || classes[0];
-  const sections = selectedClass?.sections || [];
-  const [selectedSectionId, setSelectedSectionId] = useState<string>(sections[0]?.id || '');
+  const [selectedClassId, setSelectedClassId] = useState<string>('');
+  const [selectedSectionId, setSelectedSectionId] = useState<string>('');
+
+  // Fallback to active/first valid class and section to prevent desync when classes load asynchronously
+  const effectiveClass =
+    (selectedClassId && classes.find((c) => c.id === selectedClassId)) ||
+    classes[0] ||
+    null;
+  const effectiveClassId = effectiveClass?.id || '';
+
+  const sections = effectiveClass?.sections || [];
+  const effectiveSection =
+    (selectedSectionId && sections.find((s) => s.id === selectedSectionId)) ||
+    sections[0] ||
+    null;
+  const effectiveSectionId = effectiveSection?.id || '';
+
+  // Synchronize internal state whenever classes change or dialog opens
+  useEffect(() => {
+    if (classes.length > 0) {
+      if (!selectedClassId || !classes.some((c) => c.id === selectedClassId)) {
+        setSelectedClassId(classes[0].id);
+      }
+    }
+  }, [classes, selectedClassId, isOpen]);
+
+  useEffect(() => {
+    if (sections.length > 0) {
+      if (!selectedSectionId || !sections.some((s) => s.id === selectedSectionId)) {
+        setSelectedSectionId(sections[0].id);
+      }
+    } else {
+      setSelectedSectionId('');
+    }
+  }, [sections, selectedSectionId, isOpen]);
 
   const [selectedFile, setSelectedFile] = useState<File | null>(null);
   const [parsedStudents, setParsedStudents] = useState<StudentCreateDTO[]>([]);
   const [parseErrors, setParseErrors] = useState<string[]>([]);
   const fileInputRef = useRef<HTMLInputElement>(null);
+
+  const isExcel =
+    !!selectedFile &&
+    (selectedFile.name.toLowerCase().endsWith('.xlsx') ||
+      selectedFile.name.toLowerCase().endsWith('.xls'));
+  const canSubmit =
+    !isLoading &&
+    !!selectedFile &&
+    !!effectiveSectionId &&
+    (isExcel || parsedStudents.length > 0);
 
   // Keep section synced when class changes
   const handleClassChange = (classId: string) => {
@@ -79,7 +120,7 @@ export const BulkStudentUploadDialog: React.FC<BulkStudentUploadDialogProps> = (
     });
   };
 
-  // Parse CSV file client-side
+  // Parse CSV file client-side (or prepare Excel file for upload)
   const processFile = (file: File) => {
     if (file.size > 5 * 1024 * 1024) {
       toast.error('File exceeds 5MB size limit.');
@@ -87,6 +128,16 @@ export const BulkStudentUploadDialog: React.FC<BulkStudentUploadDialogProps> = (
     }
 
     setSelectedFile(file);
+    setParseErrors([]);
+    setParsedStudents([]);
+
+    const filename = file.name.toLowerCase();
+    const isExcel = filename.endsWith('.xlsx') || filename.endsWith('.xls');
+    if (isExcel) {
+      // Excel files are parsed and validated on the backend via openpyxl
+      return;
+    }
+
     const reader = new FileReader();
 
     reader.onload = (e) => {
@@ -104,11 +155,25 @@ export const BulkStudentUploadDialog: React.FC<BulkStudentUploadDialogProps> = (
         return;
       }
 
-      // Check header
-      const header = lines[0].toLowerCase().split(',').map((h) => h.trim());
-      const fnIdx = header.indexOf('first_name');
-      const lnIdx = header.indexOf('last_name');
-      const mnIdx = header.indexOf('middle_name');
+      // Check header with robust normalization (strips BOM, quotes, spaces)
+      const normalizeHeader = (h: string) =>
+        h
+          .replace(/^\ufeff/, '')
+          .replace(/^["']|["']$/g, '')
+          .trim()
+          .toLowerCase()
+          .replace(/[\s-]+/g, '_');
+
+      const rawHeaders = lines[0].split(',').map(normalizeHeader);
+      const fnIdx = rawHeaders.findIndex((h) =>
+        ['first_name', 'firstname', 'first', 'fname'].includes(h)
+      );
+      const lnIdx = rawHeaders.findIndex((h) =>
+        ['last_name', 'lastname', 'last', 'lname', 'surname'].includes(h)
+      );
+      const mnIdx = rawHeaders.findIndex((h) =>
+        ['middle_name', 'middlename', 'middle', 'mname'].includes(h)
+      );
 
       if (fnIdx === -1 || lnIdx === -1) {
         setParseErrors([
@@ -122,10 +187,12 @@ export const BulkStudentUploadDialog: React.FC<BulkStudentUploadDialogProps> = (
       const errors: string[] = [];
 
       for (let i = 1; i < lines.length; i++) {
-        const cols = lines[i].split(',').map((c) => c.trim().replace(/^["']|["']$/g, ''));
-        const firstName = cols[fnIdx];
-        const lastName = cols[lnIdx];
-        const middleName = mnIdx !== -1 ? cols[mnIdx] : '';
+        const line = lines[i].trim();
+        if (!line) continue;
+        const cols = line.split(',').map((c) => c.trim().replace(/^["']|["']$/g, ''));
+        const firstName = cols[fnIdx] || '';
+        const lastName = cols[lnIdx] || '';
+        const middleName = mnIdx !== -1 ? cols[mnIdx] || '' : '';
 
         if (!firstName || !lastName) {
           errors.push(`Row ${i + 1}: Missing first_name or last_name`);
@@ -159,16 +226,23 @@ export const BulkStudentUploadDialog: React.FC<BulkStudentUploadDialogProps> = (
   };
 
   const handleUploadSubmit = async () => {
-    if (!selectedClassId || !selectedSectionId) {
+    if (!effectiveClassId || !effectiveSectionId) {
       toast.error('Please choose a class and section for enrollment.');
       return;
     }
-    if (parsedStudents.length === 0) {
-      toast.error('No valid students found in the uploaded file.');
+    if (!selectedFile) {
+      toast.error('Please choose a CSV or Excel file to upload.');
       return;
     }
 
-    await onSubmit(selectedClassId, selectedSectionId, parsedStudents);
+    const filename = selectedFile.name.toLowerCase();
+    const isCsv = filename.endsWith('.csv');
+    if (isCsv && parsedStudents.length === 0 && parseErrors.length > 0) {
+      toast.error('Please resolve the CSV validation issues before uploading.');
+      return;
+    }
+
+    await onSubmit(effectiveClassId, effectiveSectionId, selectedFile);
     handleReset();
     onClose();
   };
@@ -200,7 +274,7 @@ export const BulkStudentUploadDialog: React.FC<BulkStudentUploadDialogProps> = (
                 Target Class <span className="text-destructive">*</span>
               </Label>
               <select
-                value={selectedClassId}
+                value={effectiveClassId}
                 onChange={(e) => handleClassChange(e.target.value)}
                 disabled={isLoading}
                 className="w-full h-9 rounded-lg border border-input bg-background px-3 text-xs focus:outline-none focus:ring-1 focus:ring-primary"
@@ -218,7 +292,7 @@ export const BulkStudentUploadDialog: React.FC<BulkStudentUploadDialogProps> = (
                 Target Section <span className="text-destructive">*</span>
               </Label>
               <select
-                value={selectedSectionId}
+                value={effectiveSectionId}
                 onChange={(e) => setSelectedSectionId(e.target.value)}
                 disabled={isLoading || sections.length === 0}
                 className="w-full h-9 rounded-lg border border-input bg-background px-3 text-xs focus:outline-none focus:ring-1 focus:ring-primary"
@@ -296,7 +370,7 @@ export const BulkStudentUploadDialog: React.FC<BulkStudentUploadDialogProps> = (
                         {selectedFile.name}
                       </p>
                       <p className="text-[11px] text-muted-foreground">
-                        {(selectedFile.size / 1024).toFixed(1)} KB • {parsedStudents.length} valid student(s)
+                        {(selectedFile.size / 1024).toFixed(1)} KB • {isExcel ? 'Excel Workbook' : `${parsedStudents.length} valid student(s)`}
                       </p>
                     </div>
                   </div>
@@ -313,15 +387,24 @@ export const BulkStudentUploadDialog: React.FC<BulkStudentUploadDialogProps> = (
                 </div>
 
                 {/* Validation Status */}
-                {parsedStudents.length > 0 && (
+                {isExcel ? (
+                  <div className="p-3 rounded-xl bg-primary/10 border border-primary/20 text-xs text-primary flex items-center gap-2">
+                    <CheckCircle2 className="w-4 h-4 shrink-0" />
+                    <span>
+                      Excel workbook ready to enroll into{' '}
+                      <strong>{effectiveClass?.name} - Section {effectiveSection?.name}</strong>.
+                      The server will parse and validate records on import.
+                    </span>
+                  </div>
+                ) : parsedStudents.length > 0 ? (
                   <div className="p-3 rounded-xl bg-emerald-500/10 border border-emerald-500/20 text-xs text-emerald-700 dark:text-emerald-400 flex items-center gap-2">
                     <CheckCircle2 className="w-4 h-4 shrink-0" />
                     <span>
                       Ready to enroll <strong>{parsedStudents.length}</strong> student(s) into{' '}
-                      <strong>{selectedClass?.name} - Section {sections.find((s) => s.id === selectedSectionId)?.name}</strong>.
+                      <strong>{effectiveClass?.name} - Section {effectiveSection?.name}</strong>.
                     </span>
                   </div>
-                )}
+                ) : null}
 
                 {parseErrors.length > 0 && (
                   <div className="p-3 rounded-xl bg-destructive/10 border border-destructive/20 text-xs text-destructive space-y-1">
@@ -381,11 +464,15 @@ export const BulkStudentUploadDialog: React.FC<BulkStudentUploadDialogProps> = (
           <Button
             type="button"
             onClick={handleUploadSubmit}
-            disabled={isLoading || parsedStudents.length === 0 || !selectedSectionId}
+            disabled={!canSubmit}
             className="text-xs gap-1.5"
           >
             <Users className="w-3.5 h-3.5" />
-            {isLoading ? 'Enrolling Students...' : `Enroll ${parsedStudents.length} Student(s)`}
+            {isLoading
+              ? 'Enrolling Students...'
+              : isExcel
+              ? 'Import Students from Excel'
+              : `Enroll ${parsedStudents.length} Student(s)`}
           </Button>
         </DialogFooter>
       </DialogContent>

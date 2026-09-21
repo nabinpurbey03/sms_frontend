@@ -94,7 +94,7 @@ export const useCreateMember = () => {
       if (checkIsForbidden(error)) {
         toast.error('Permission Denied: School Admin Required', {
           description:
-            'Only School Administrators (Principal) have permission to onboard Admin or Office Admin accounts. Office Admins can only onboard Teachers and Parents.',
+            'Only School Administrators (Principal) have permission to onboard Office Admin accounts. Office Admins can only onboard Teachers.',
           duration: 6000,
         });
       } else {

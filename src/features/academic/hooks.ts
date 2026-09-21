@@ -309,26 +309,32 @@ export const useBulkAddStudents = () => {
       tenantId,
       classId,
       sectionId,
-      students,
+      file,
       academicYearId,
     }: {
       tenantId: string;
       classId: string;
       sectionId: string;
-      students: StudentCreateDTO[];
+      file: File;
       academicYearId?: string | null;
-    }) => academicApi.bulkAddStudents(tenantId, classId, sectionId, students, academicYearId),
-    onSuccess: (res) => {
+    }) => academicApi.bulkAddStudents(tenantId, classId, sectionId, file, academicYearId),
+    onSuccess: (res: any) => {
       queryClient.invalidateQueries({ queryKey: [CLASSES_QUERY_KEY] });
       queryClient.invalidateQueries({ queryKey: [STUDENTS_QUERY_KEY] });
       queryClient.invalidateQueries({ queryKey: [SECTION_ELIGIBILITY_KEY] });
+      const count = res?.total_added ?? res?.count ?? 0;
       toast.success('Bulk Import Successful', {
-        description: `Successfully enrolled ${res.count} student(s).`,
+        description: `Successfully enrolled ${count} student(s).`,
       });
     },
     onError: (error: any) => {
+      const serverErrors = error.response?.data?.error?.details?.errors;
+      const desc =
+        Array.isArray(serverErrors) && serverErrors.length > 0
+          ? serverErrors.slice(0, 3).join('; ')
+          : error.response?.data?.message || error.message || 'Bulk import failed.';
       toast.error('Failed to Import Students', {
-        description: error.message || 'Bulk import failed.',
+        description: desc,
       });
     },
   });
@@ -388,6 +394,45 @@ export const useUpdateStudentStatus = () => {
     onError: (error: any) => {
       toast.error('Failed to Update Status', {
         description: error.message || 'Could not update student status.',
+      });
+    },
+  });
+};
+
+export const useUpdateStudent = () => {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: ({
+      tenantId,
+      classId,
+      sectionId,
+      studentId,
+      data,
+    }: {
+      tenantId: string;
+      classId: string;
+      sectionId: string;
+      studentId: string;
+      data: {
+        first_name?: string;
+        middle_name?: string | null;
+        last_name?: string;
+        target_section_id?: string;
+      };
+    }) => academicApi.updateStudent(tenantId, classId, sectionId, studentId, data),
+    onSuccess: (updated) => {
+      queryClient.invalidateQueries({ queryKey: [CLASSES_QUERY_KEY] });
+      queryClient.invalidateQueries({ queryKey: [STUDENTS_QUERY_KEY] });
+      queryClient.invalidateQueries({ queryKey: [SECTION_ELIGIBILITY_KEY] });
+      queryClient.invalidateQueries({ queryKey: ['academic_class_with_details'] });
+      toast.success('Student Updated', {
+        description: `${updated.first_name} ${updated.last_name} updated successfully.`,
+      });
+    },
+    onError: (error: any) => {
+      toast.error('Failed to Update Student', {
+        description: error.message || 'Could not update student.',
       });
     },
   });
@@ -522,7 +567,15 @@ export const useMyTeacherAssignments = (
 
 export const useAssignments = (
   tenantId: string | null,
-  params?: { teacher_id?: string; class_id?: string; academic_year_id?: string | null }
+  params?: {
+    teacher_id?: string;
+    class_id?: string;
+    section_id?: string;
+    academic_year_id?: string | null;
+    is_class_teacher?: boolean;
+    page?: number;
+    page_size?: number;
+  }
 ) => {
   return useQuery({
     queryKey: [ASSIGNMENTS_QUERY_KEY, tenantId, params],

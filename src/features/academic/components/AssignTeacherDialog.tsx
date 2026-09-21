@@ -99,7 +99,7 @@ export const AssignTeacherDialog: React.FC<AssignTeacherDialogProps> = ({
     const payload = {
       teacher_id: teacherSource === 'roster' ? selectedTeacherId : undefined,
       teacher_phone: teacherSource === 'phone' ? teacherPhone.trim() : undefined,
-      section_id: selectedSectionId || undefined,
+      section_id: mode === 'class_teacher' ? (selectedSectionId || undefined) : undefined,
     };
 
     try {
@@ -191,25 +191,32 @@ export const AssignTeacherDialog: React.FC<AssignTeacherDialogProps> = ({
             </select>
           </div>
 
-          {/* Section Select (Optional) */}
-          <div className="space-y-1.5">
-            <div className="flex items-center justify-between">
-              <Label className="text-xs font-semibold">Section (Optional)</Label>
-              <span className="text-[10px] text-muted-foreground">Applies to all if unselected</span>
+          {/* Section Select */}
+          {mode === 'class_teacher' ? (
+            <div className="space-y-1.5">
+              <div className="flex items-center justify-between">
+                <Label className="text-xs font-semibold">Section (Optional)</Label>
+                <span className="text-[10px] text-muted-foreground">Applies to all if unselected</span>
+              </div>
+              <select
+                value={selectedSectionId}
+                onChange={(e) => setSelectedSectionId(e.target.value)}
+                className="w-full h-10 px-3 rounded-lg border border-input bg-background text-sm focus:outline-none focus:ring-2 focus:ring-primary"
+              >
+                <option value="">All Sections / Entire Class</option>
+                {sections.map((s) => (
+                  <option key={s.id} value={s.id}>
+                    Section {s.name}
+                  </option>
+                ))}
+              </select>
             </div>
-            <select
-              value={selectedSectionId}
-              onChange={(e) => setSelectedSectionId(e.target.value)}
-              className="w-full h-10 px-3 rounded-lg border border-input bg-background text-sm focus:outline-none focus:ring-2 focus:ring-primary"
-            >
-              <option value="">All Sections / Entire Class</option>
-              {sections.map((s) => (
-                <option key={s.id} value={s.id}>
-                  Section {s.name}
-                </option>
-              ))}
-            </select>
-          </div>
+          ) : (
+            <div className="p-2.5 rounded-lg bg-muted/40 border border-border/60 text-xs text-muted-foreground flex items-center justify-between">
+              <span>Section Scope:</span>
+              <span className="font-semibold text-foreground">All Sections (Class-Wide)</span>
+            </div>
+          )}
 
           {/* Subject Select (Only in Subject Teacher mode) */}
           {mode === 'subject' && (

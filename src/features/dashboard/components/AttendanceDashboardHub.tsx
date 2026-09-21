@@ -12,6 +12,7 @@ import {
   Edit3,
   Check,
   X,
+  Search,
 } from 'lucide-react';
 
 import { useAuth } from '@/auth/useAuth';
@@ -181,6 +182,8 @@ export const AttendanceDashboardHub: React.FC = () => {
   const todayStr = useMemo(() => getTodayStr(), []);
   const [timeframe, setTimeframe] = useState<TimeframeOption>('today');
   const [selectedDate, setSelectedDate] = useState<string>(todayStr);
+  const [sectionStatusFilter, setSectionStatusFilter] = useState<'all' | 'pending' | 'recorded'>('all');
+  const [sectionSearchQuery, setSectionSearchQuery] = useState('');
 
   const { startDate, endDate, isTodayMode } = useMemo(() => {
     if (timeframe === '7d') {
@@ -277,6 +280,32 @@ export const AttendanceDashboardHub: React.FC = () => {
 
     return result;
   }, [schoolClasses, dailyStatus]);
+
+  const pendingSectionsCount = useMemo(() => {
+    return sectionsStatusList.filter((s) => !s.isMarked).length;
+  }, [sectionsStatusList]);
+
+  const recordedSectionsCount = useMemo(() => {
+    return sectionsStatusList.filter((s) => s.isMarked).length;
+  }, [sectionsStatusList]);
+
+  const filteredSectionsList = useMemo(() => {
+    return sectionsStatusList.filter((sec) => {
+      const matchesFilter =
+        sectionStatusFilter === 'all'
+          ? true
+          : sectionStatusFilter === 'pending'
+          ? !sec.isMarked
+          : sec.isMarked;
+      const q = sectionSearchQuery.trim().toLowerCase();
+      const matchesSearch =
+        !q ||
+        sec.className.toLowerCase().includes(q) ||
+        sec.sectionName.toLowerCase().includes(q) ||
+        `${sec.className} ${sec.sectionName}`.toLowerCase().includes(q);
+      return matchesFilter && matchesSearch;
+    });
+  }, [sectionsStatusList, sectionStatusFilter, sectionSearchQuery]);
 
   // Handle manual refresh
   const handleRefresh = () => {
@@ -432,67 +461,149 @@ export const AttendanceDashboardHub: React.FC = () => {
       {/* ==================================================== */}
       {isAdminOrOfficeAdmin && (
         <div className="space-y-4 sm:space-y-6">
-          {/* Key Metric Stats Cards */}
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 sm:gap-6">
-            <StatCard
-              title="Presence Rate"
-              value={`${presenceRate != null ? presenceRate.toFixed(1) : '—'}%`}
-              icon={CalendarCheck}
-              description={isRange ? `${selectedPeriod} average` : 'Today'}
-              trend={
-                presenceRate != null
-                  ? {
-                      value: presenceRate >= 80 ? 2.3 : -1.8,
-                      label: 'vs previous period',
-                    }
-                  : undefined
-              }
-            />
-            <StatCard
-              title="Total Students"
-              value={totalEnrolled}
-              icon={Users}
-              description="Enrolled students"
-            />
-            <StatCard
-              title="Present"
-              value={totalPresent}
-              icon={CheckCircle2}
-              description={`${presenceRate != null ? presenceRate.toFixed(1) : '—'}% of enrolled`}
-            />
-            <StatCard
-              title="Absent"
-              value={totalAbsent}
-              icon={AlertTriangle}
-              description={`${totalAbsent > 0 ? ((totalAbsent / Math.max(totalEnrolled, 1)) * 100).toFixed(1) : '0'}% of enrolled`}
-            />
-          </div>
+          {/* In Range mode: Key Metric Stats Cards across 4 columns */}
+          {isRange && (
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 sm:gap-6">
+              <StatCard
+                title="Presence Rate"
+                value={`${presenceRate != null ? presenceRate.toFixed(1) : '—'}%`}
+                icon={CalendarCheck}
+                description={`${selectedPeriod} average`}
+                trend={
+                  presenceRate != null
+                    ? {
+                        value: presenceRate >= 80 ? 2.3 : -1.8,
+                        label: 'vs previous period',
+                      }
+                    : undefined
+                }
+              />
+              <StatCard
+                title="Total Students"
+                value={totalEnrolled}
+                icon={Users}
+                description="Enrolled students"
+              />
+              <StatCard
+                title="Present"
+                value={totalPresent}
+                icon={CheckCircle2}
+                description={`${presenceRate != null ? presenceRate.toFixed(1) : '—'}% of enrolled`}
+              />
+              <StatCard
+                title="Absent"
+                value={totalAbsent}
+                icon={AlertTriangle}
+                description={`${totalAbsent > 0 ? ((totalAbsent / Math.max(totalEnrolled, 1)) * 100).toFixed(1) : '0'}% of enrolled`}
+              />
+            </div>
+          )}
 
-          {/* Today mode: Donut + Section Checklist side by side */}
+          {/* Today mode: 50% Donut on left, 50% (2x2 StatCards) on right, followed by 100% Section Status */}
           {!isRange && (
-            <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 sm:gap-6 mt-4">
-              <ChartCard
-                title="Attendance Breakdown"
-                description="Present vs Absent vs Unmarked"
-                isEmpty={totalEnrolled === 0}
-              >
-                <DonutChart
-                  data={[
-                    { name: 'Present', value: totalPresent, color: '#10b981' },
-                    { name: 'Absent', value: totalAbsent, color: '#f43f5e' },
-                    {
-                      name: 'Unmarked',
-                      value: Math.max(0, totalEnrolled - totalPresent - totalAbsent),
-                      color: '#94a3b8',
-                    },
-                  ]}
-                  centerValue={`${presenceRate != null ? presenceRate.toFixed(0) : '—'}%`}
-                  centerLabel="Attendance"
-                />
-              </ChartCard>
+            <div className="space-y-4 sm:space-y-6">
+              {/* Top Row: 50% Left (Attendance Breakdown) + 50% Right (2 Horizontal Divisions) */}
+              <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 sm:gap-6 items-stretch">
+                {/* Left 50%: Attendance Breakdown Donut Chart */}
+                <Card className="border-border/60 rounded-xl overflow-hidden shadow-2xs flex flex-col justify-between">
+                  <CardHeader className="p-5 pb-2">
+                    <div className="flex items-center justify-between">
+                      <CardTitle className="text-sm font-semibold">Attendance Breakdown</CardTitle>
+                      <Badge variant="outline" className="font-mono text-[10px] px-2 py-0.5">
+                        {selectedDate === todayStr ? 'Today' : selectedDate}
+                      </Badge>
+                    </div>
+                    <CardDescription className="text-xs">
+                      Student distribution across present, absent, and unmarked
+                    </CardDescription>
+                  </CardHeader>
 
-              {/* Section Submission Progress & Checklist Card */}
-              <Card className="border-border/60 rounded-xl overflow-hidden">
+                  <CardContent className="p-5 pt-0 flex-1 flex flex-col justify-between space-y-4">
+                    <div className="flex-1 min-h-[210px] flex items-center justify-center py-1">
+                      <DonutChart
+                        data={[
+                          { name: 'Present', value: totalPresent, color: '#10b981' },
+                          { name: 'Absent', value: totalAbsent, color: '#f43f5e' },
+                          {
+                            name: 'Unmarked',
+                            value: Math.max(0, totalEnrolled - totalPresent - totalAbsent),
+                            color: '#94a3b8',
+                          },
+                        ]}
+                        centerValue={`${presenceRate != null ? presenceRate.toFixed(0) : '—'}%`}
+                        centerLabel="Attendance"
+                      />
+                    </div>
+
+                    {/* Compact Legend & Totals Footer */}
+                    <div className="flex items-center justify-around border-t border-border/60 pt-3 text-xs">
+                      <div className="flex items-center gap-1.5">
+                        <span className="h-2.5 w-2.5 rounded-full bg-emerald-500 shrink-0" />
+                        <span className="text-muted-foreground">Present:</span>
+                        <span className="font-bold text-foreground font-mono">{totalPresent}</span>
+                      </div>
+                      <div className="flex items-center gap-1.5">
+                        <span className="h-2.5 w-2.5 rounded-full bg-rose-500 shrink-0" />
+                        <span className="text-muted-foreground">Absent:</span>
+                        <span className="font-bold text-foreground font-mono">{totalAbsent}</span>
+                      </div>
+                      <div className="flex items-center gap-1.5">
+                        <span className="h-2.5 w-2.5 rounded-full bg-slate-400 shrink-0" />
+                        <span className="text-muted-foreground">Unmarked:</span>
+                        <span className="font-bold text-foreground font-mono">
+                          {Math.max(0, totalEnrolled - totalPresent - totalAbsent)}
+                        </span>
+                      </div>
+                    </div>
+                  </CardContent>
+                </Card>
+
+                {/* Right 50%: Two Horizontal Divisions of Stat Cards */}
+                <div className="flex flex-col gap-4 sm:gap-6 justify-between">
+                  {/* Upper Division: Presence Rate & Total Students */}
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 flex-1">
+                    <StatCard
+                      title="Presence Rate"
+                      value={`${presenceRate != null ? presenceRate.toFixed(1) : '—'}%`}
+                      icon={CalendarCheck}
+                      description="Today's attendance rate"
+                      trend={
+                        presenceRate != null
+                          ? {
+                              value: presenceRate >= 80 ? 2.3 : -1.8,
+                              label: 'vs yesterday',
+                            }
+                          : undefined
+                      }
+                    />
+                    <StatCard
+                      title="Total Students"
+                      value={totalEnrolled}
+                      icon={Users}
+                      description="Enrolled in school"
+                    />
+                  </div>
+
+                  {/* Lower Division: Present & Absent */}
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 flex-1">
+                    <StatCard
+                      title="Present"
+                      value={totalPresent}
+                      icon={CheckCircle2}
+                      description={`${presenceRate != null ? presenceRate.toFixed(1) : '—'}% of enrolled`}
+                    />
+                    <StatCard
+                      title="Absent"
+                      value={totalAbsent}
+                      icon={AlertTriangle}
+                      description={`${totalAbsent > 0 ? ((totalAbsent / Math.max(totalEnrolled, 1)) * 100).toFixed(1) : '0'}% of enrolled`}
+                    />
+                  </div>
+                </div>
+              </div>
+
+              {/* Bottom (100% Full Width): Daily Section Submission Status */}
+              <Card className="border-border/60 rounded-xl overflow-hidden shadow-2xs">
                 <CardHeader className="p-5 pb-3">
                   <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
                     <div>
@@ -500,14 +611,22 @@ export const AttendanceDashboardHub: React.FC = () => {
                         <Clock className="h-4 w-4 text-primary" />
                         <span>Daily Section Submission Status</span>
                       </CardTitle>
-                      <CardDescription className="text-xs mt-1">
-                        Submission progress for {selectedDate === todayStr ? 'Today' : selectedDate}
+                      <CardDescription className="text-xs mt-0.5">
+                        Submission progress and roll call status for {selectedDate === todayStr ? 'Today' : selectedDate}
                       </CardDescription>
                     </div>
+
                     <div className="flex items-center gap-2 text-xs">
-                      <span className="text-muted-foreground">Progress:</span>
-                      <Badge variant="outline" className="font-semibold text-xs px-2 py-0.5">
-                        {metrics.markedSectionsCount} / {metrics.totalSectionsCount} Sections Marked
+                      <span className="text-muted-foreground font-medium">Progress:</span>
+                      <Badge
+                        variant="outline"
+                        className={`font-semibold text-xs px-2.5 py-0.5 ${
+                          pendingSectionsCount === 0 && metrics.totalSectionsCount > 0
+                            ? 'bg-emerald-500/15 text-emerald-700 dark:text-emerald-300 border-emerald-500/30'
+                            : 'bg-primary/10 text-primary border-primary/20'
+                        }`}
+                      >
+                        {metrics.markedSectionsCount} / {metrics.totalSectionsCount} Sections Recorded
                       </Badge>
                     </div>
                   </div>
@@ -525,53 +644,147 @@ export const AttendanceDashboardHub: React.FC = () => {
                       }}
                     />
                   </div>
+
+                  {/* Filter Tabs and Search Toolbar */}
+                  <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2.5 pt-3 border-t border-border/50 mt-3">
+                    <div className="flex items-center gap-1.5 flex-wrap">
+                      <button
+                        type="button"
+                        onClick={() => setSectionStatusFilter('all')}
+                        className={`px-2.5 py-1 rounded-lg text-xs font-semibold transition-all ${
+                          sectionStatusFilter === 'all'
+                            ? 'bg-primary text-primary-foreground shadow-2xs'
+                            : 'bg-muted/70 text-muted-foreground hover:text-foreground'
+                        }`}
+                      >
+                        All ({sectionsStatusList.length})
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => setSectionStatusFilter('pending')}
+                        className={`px-2.5 py-1 rounded-lg text-xs font-semibold transition-all flex items-center gap-1 ${
+                          sectionStatusFilter === 'pending'
+                            ? 'bg-amber-500 text-white shadow-2xs'
+                            : 'bg-muted/70 text-muted-foreground hover:text-amber-600 dark:hover:text-amber-400'
+                        }`}
+                      >
+                        <span>Pending</span>
+                        <span
+                          className={`text-[10px] px-1.5 py-0.2 rounded-full font-mono ${
+                            sectionStatusFilter === 'pending'
+                              ? 'bg-amber-600 text-white'
+                              : 'bg-amber-500/20 text-amber-700 dark:text-amber-300'
+                          }`}
+                        >
+                          {pendingSectionsCount}
+                        </span>
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => setSectionStatusFilter('recorded')}
+                        className={`px-2.5 py-1 rounded-lg text-xs font-semibold transition-all flex items-center gap-1 ${
+                          sectionStatusFilter === 'recorded'
+                            ? 'bg-emerald-600 text-white shadow-2xs'
+                            : 'bg-muted/70 text-muted-foreground hover:text-emerald-600 dark:hover:text-emerald-400'
+                        }`}
+                      >
+                        <span>Recorded</span>
+                        <span
+                          className={`text-[10px] px-1.5 py-0.2 rounded-full font-mono ${
+                            sectionStatusFilter === 'recorded'
+                              ? 'bg-emerald-700 text-white'
+                              : 'bg-emerald-500/20 text-emerald-700 dark:text-emerald-300'
+                          }`}
+                        >
+                          {recordedSectionsCount}
+                        </span>
+                      </button>
+                    </div>
+
+                    <div className="relative w-full sm:w-60">
+                      <Search className="absolute left-2.5 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-muted-foreground" />
+                      <Input
+                        value={sectionSearchQuery}
+                        onChange={(e) => setSectionSearchQuery(e.target.value)}
+                        placeholder="Search class or section..."
+                        className="h-8 pl-8 pr-7 text-xs bg-background"
+                      />
+                      {sectionSearchQuery && (
+                        <button
+                          type="button"
+                          onClick={() => setSectionSearchQuery('')}
+                          className="absolute right-2 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground"
+                        >
+                          <X className="h-3 w-3" />
+                        </button>
+                      )}
+                    </div>
+                  </div>
                 </CardHeader>
 
-                <CardContent className="p-5 pt-0">
+                <CardContent className="p-5 pt-1">
                   {isDailyStatusLoading ? (
-                    <div className="py-6 text-center text-xs text-muted-foreground animate-pulse">
+                    <div className="py-12 text-center text-xs text-muted-foreground animate-pulse">
                       Loading section attendance status...
                     </div>
                   ) : sectionsStatusList.length === 0 ? (
-                    <p className="text-xs text-muted-foreground py-4 text-center">
+                    <p className="text-xs text-muted-foreground py-8 text-center">
                       No classes or sections configured yet.
                     </p>
+                  ) : filteredSectionsList.length === 0 ? (
+                    <div className="py-10 text-center space-y-2">
+                      <p className="text-xs text-muted-foreground">
+                        No sections match the current filter criteria.
+                      </p>
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        onClick={() => {
+                          setSectionStatusFilter('all');
+                          setSectionSearchQuery('');
+                        }}
+                        className="text-xs h-7"
+                      >
+                        Reset Filters
+                      </Button>
+                    </div>
                   ) : (
-                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 pt-3">
-                      {sectionsStatusList.map((sec) => (
+                    /* Responsive 100% full-width grid: 1 col on mobile, 2 on sm, 3 on md, 4 on lg/xl */
+                    <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-3 pt-1">
+                      {filteredSectionsList.map((sec) => (
                         <div
                           key={sec.sectionId}
-                          className={`p-4 rounded-xl border flex items-center justify-between transition-colors ${
+                          className={`p-3.5 rounded-xl border flex items-center justify-between transition-colors ${
                             sec.isMarked
                               ? 'bg-emerald-500/5 border-emerald-500/20 hover:bg-emerald-500/10'
                               : 'bg-amber-500/5 border-amber-500/20 hover:bg-amber-500/10'
                           }`}
                         >
-                          <div className="space-y-1 min-w-0">
-                            <p className="text-sm font-semibold text-foreground truncate">
+                          <div className="space-y-1 min-w-0 pr-2">
+                            <p className="text-xs font-bold text-foreground truncate">
                               {sec.className} - {sec.sectionName}
                             </p>
-                            <p className="text-xs text-muted-foreground">
+                            <p className="text-[11px] text-muted-foreground truncate">
                               {sec.isMarked
-                                ? `${sec.presentCount} present / ${sec.totalStudents} enrolled`
+                                ? `${sec.presentCount} present • ${sec.absentCount} absent`
                                 : `${sec.totalStudents} enrolled • Pending`}
                             </p>
                           </div>
 
-                          <div className="flex items-center gap-2 shrink-0">
+                          <div className="flex items-center gap-1.5 shrink-0">
                             {sec.isMarked ? (
                               <Badge
                                 variant="outline"
-                                className="text-xs px-2.5 py-1 font-medium bg-emerald-500/10 text-emerald-700 dark:text-emerald-400 border-emerald-500/30 gap-1.5"
+                                className="text-[10px] px-2 py-0.5 font-medium bg-emerald-500/10 text-emerald-700 dark:text-emerald-400 border-emerald-500/30 gap-1"
                               >
-                                <Check className="h-3.5 w-3.5" />
+                                <Check className="h-3 w-3" />
                                 Recorded
                               </Badge>
                             ) : (
                               <Button
                                 variant="outline"
                                 size="sm"
-                                className="h-8 text-xs px-3 font-semibold text-primary border-primary/30 hover:bg-primary/10"
+                                className="h-7 text-[11px] px-2.5 font-semibold text-primary border-primary/30 hover:bg-primary/10"
                                 asChild
                               >
                                 <Link

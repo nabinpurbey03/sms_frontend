@@ -271,7 +271,7 @@ const ClassTeacherDropCard: React.FC<ClassTeacherDropCardProps> = ({
                 <GraduationCap className="w-4 h-4 text-muted-foreground/70" />
               </div>
               <p className="text-xs font-semibold text-foreground">
-                No class teacher assigned
+                No class teacher assigned {sectionName ? `to Section ${sectionName}` : ''}
               </p>
               <p className="text-[11px] text-muted-foreground mt-0.5">
                 Drag a teacher here or click Add Teacher to assign.
@@ -338,6 +338,13 @@ const SubjectCard: React.FC<SubjectCardProps> = ({
             )}
           </div>
         </div>
+        <Badge
+          variant="outline"
+          className="text-[9px] px-1.5 py-0 text-muted-foreground font-normal shrink-0 border-dashed"
+          title="Applies to all sections of this class"
+        >
+          All Sections
+        </Badge>
       </div>
 
       {/* Assignment Content */}
@@ -511,22 +518,15 @@ export const TeacherAssignmentBoard: React.FC<TeacherAssignmentBoardProps> = ({
     return assignments.find((a) => a.is_class_teacher && !a.section_id);
   }, [assignments, activeSectionId]);
 
-  // Subject Assignment lookup for active section (section-specific or class-wide)
+  // Subject Assignment lookup for active class (class-wide across all sections)
   const getSubjectAssignment = useCallback(
     (subjectId: string) => {
-      const sectionSpecific = assignments.find(
-        (a) =>
-          !a.is_class_teacher &&
-          a.subject_id === subjectId &&
-          activeSectionId &&
-          a.section_id === activeSectionId
-      );
-      if (sectionSpecific) return sectionSpecific;
+      // Find any assignment for this subject in this class
       return assignments.find(
-        (a) => !a.is_class_teacher && a.subject_id === subjectId && !a.section_id
+        (a) => !a.is_class_teacher && a.subject_id === subjectId
       );
     },
-    [assignments, activeSectionId]
+    [assignments]
   );
 
   // 5. Assignment execution handlers
@@ -549,7 +549,7 @@ export const TeacherAssignmentBoard: React.FC<TeacherAssignmentBoardProps> = ({
       subjectId,
       data: {
         teacher_id: teacher.user_id,
-        section_id: activeSectionId || undefined,
+        section_id: undefined, // Class-wide: applies to all sections
       },
     });
     dismissTip();
@@ -631,7 +631,7 @@ export const TeacherAssignmentBoard: React.FC<TeacherAssignmentBoardProps> = ({
       if (!subject) return;
 
       const existing = getSubjectAssignment(subject.id);
-      const targetName = `${subject.name}${currentSection ? ` (Section ${currentSection.name})` : ''}`;
+      const targetName = `${subject.name} (All Sections)`;
 
       if (!existing) {
         // Immediately assign if slot is empty
@@ -689,7 +689,7 @@ export const TeacherAssignmentBoard: React.FC<TeacherAssignmentBoardProps> = ({
     } else if (directAssignTarget.type === 'subject' && directAssignTarget.subject) {
       const subject = directAssignTarget.subject;
       const existing = getSubjectAssignment(subject.id);
-      const targetName = `${subject.name}${currentSection ? ` (Section ${currentSection.name})` : ''}`;
+      const targetName = `${subject.name} (All Sections)`;
 
       if (!existing) {
         assignSubjectTeacherDirect(teacher, subject.id);
@@ -901,11 +901,9 @@ export const TeacherAssignmentBoard: React.FC<TeacherAssignmentBoardProps> = ({
                 Curriculum Subjects ({cls.subjects?.length || 0})
               </h3>
             </div>
-            {currentSection && (
-              <span className="text-[11px] text-muted-foreground font-medium">
-                Assignments for Section {currentSection.name}
-              </span>
-            )}
+            <span className="text-[11px] text-muted-foreground font-medium">
+              Shared across all sections
+            </span>
           </div>
 
           {(!cls.subjects || cls.subjects.length === 0) ? (
@@ -936,7 +934,7 @@ export const TeacherAssignmentBoard: React.FC<TeacherAssignmentBoardProps> = ({
                       setUnassignModal({
                         assignmentId: assignment.id,
                         teacherName: assignment.teacher_name || 'Subject Teacher',
-                        targetName: `${subject.name}${currentSection ? ` (Section ${currentSection.name})` : ''}`,
+                        targetName: `${subject.name} (All Sections)`,
                       });
                     }}
                   />
