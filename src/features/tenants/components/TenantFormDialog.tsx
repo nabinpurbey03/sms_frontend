@@ -35,6 +35,7 @@ interface TenantFormDialogProps {
   tenantToEdit?: Tenant | null;
   onSubmit: (data: TenantFormData) => Promise<void>;
   isSubmitting?: boolean;
+  onOpenLogo?: (tenant: any) => void;
 }
 
 export const TenantFormDialog: React.FC<TenantFormDialogProps> = ({
@@ -43,6 +44,7 @@ export const TenantFormDialog: React.FC<TenantFormDialogProps> = ({
   tenantToEdit,
   onSubmit,
   isSubmitting = false,
+  onOpenLogo,
 }) => {
   const isEditing = !!tenantToEdit;
   const [activeTab, setActiveTab] = useState<'general' | 'address'>('general');
@@ -201,6 +203,8 @@ export const TenantFormDialog: React.FC<TenantFormDialogProps> = ({
               isEditing={isEditing}
               watchIsActive={watchIsActive}
               setValue={setValue}
+              logoUrl={tenantToEdit?.logo_url}
+              onOpenLogo={onOpenLogo && tenantToEdit ? () => onOpenLogo(tenantToEdit) : undefined}
             />
           </div>
 

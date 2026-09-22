@@ -219,6 +219,16 @@ export const useTeacherAssignments = (tenantId: string | null, teacherId: string
   });
 };
 
+export const ALL_MY_CHILDREN_QUERY_KEY = 'all_my_children';
+
+export const useAllMyChildren = (enabled: boolean = true) => {
+  return useQuery({
+    queryKey: [ALL_MY_CHILDREN_QUERY_KEY],
+    queryFn: () => membersApi.getAllMyChildren(),
+    enabled,
+  });
+};
+
 export const useParentChildren = (tenantId: string | null, parentId: string | null) => {
   return useQuery({
     queryKey: [PARENT_CHILDREN_QUERY_KEY, tenantId, parentId],

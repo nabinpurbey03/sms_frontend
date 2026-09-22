@@ -9,12 +9,13 @@ import {
   DialogTitle,
 } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
+import { getMediaUrl } from '@/lib/utils';
 import type { Tenant } from '../types';
 
 interface TenantLogoDialogProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
-  tenant: Tenant | null;
+  tenant: (Partial<Tenant> & { id: string; name?: string; logo_url?: string | null }) | null;
   onUpload: (file: File) => Promise<void>;
   isUploading?: boolean;
 }
@@ -71,10 +72,16 @@ export const TenantLogoDialog: React.FC<TenantLogoDialogProps> = ({
 
   const handleSave = async () => {
     if (!selectedFile) return;
-    await onUpload(selectedFile);
-    handleReset();
-    onOpenChange(false);
+    try {
+      await onUpload(selectedFile);
+      handleReset();
+      onOpenChange(false);
+    } catch (err: any) {
+      setErrorMsg(err.message || 'Failed to upload logo.');
+    }
   };
+
+  const currentLogoSrc = previewUrl || getMediaUrl(tenant?.logo_url) || '';
 
   return (
     <Dialog
@@ -112,11 +119,11 @@ export const TenantLogoDialog: React.FC<TenantLogoDialogProps> = ({
           />
 
           {/* Current / Preview Logo Box */}
-          {previewUrl || tenant?.logo_url ? (
+          {currentLogoSrc ? (
             <div className="relative rounded-2xl border-2 border-dashed border-primary/40 bg-card p-6 flex flex-col items-center justify-center space-y-3">
               <div className="relative h-28 w-28 rounded-2xl border bg-muted/20 p-2 shadow-xs overflow-hidden flex items-center justify-center">
                 <img
-                  src={previewUrl || tenant?.logo_url || ''}
+                  src={currentLogoSrc}
                   alt="School Logo"
                   className="h-full w-full object-contain"
                 />

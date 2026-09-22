@@ -96,8 +96,11 @@ export const useUploadTenantLogo = () => {
   return useMutation({
     mutationFn: ({ tenantId, file }: { tenantId: string; file: File }) =>
       tenantsApi.uploadLogo(tenantId, file),
-    onSuccess: (updated) => {
+    onSuccess: (updated, variables) => {
       queryClient.invalidateQueries({ queryKey: [TENANTS_QUERY_KEY] });
+      queryClient.invalidateQueries({ queryKey: [TENANT_DIRECTORY_QUERY_KEY] });
+      queryClient.invalidateQueries({ queryKey: [TENANT_ANALYTICS_QUERY_KEY, variables.tenantId] });
+      queryClient.invalidateQueries({ queryKey: [TENANTS_QUERY_KEY, variables.tenantId] });
       toast.success('Logo Uploaded', {
         description: `Brand logo for ${updated.name} updated successfully.`,
       });

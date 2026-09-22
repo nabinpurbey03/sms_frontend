@@ -1,9 +1,11 @@
 import React from 'react';
 import { UseFormRegister, FieldErrors, UseFormSetValue } from 'react-hook-form';
-import { MapPin, Mail, Phone, Sparkles } from 'lucide-react';
+import { MapPin, Mail, Phone, Sparkles, Image } from 'lucide-react';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Checkbox } from '@/components/ui/checkbox';
+import { Button } from '@/components/ui/button';
+import { TenantLogoAvatar } from './TenantLogoAvatar';
 import type { TenantFormData } from '../types';
 
 interface TenantFormFieldsProps {
@@ -14,6 +16,8 @@ interface TenantFormFieldsProps {
   isEditing: boolean;
   watchIsActive: boolean;
   setValue: UseFormSetValue<TenantFormData>;
+  logoUrl?: string | null;
+  onOpenLogo?: () => void;
 }
 
 export const TenantFormFields: React.FC<TenantFormFieldsProps> = ({
@@ -24,11 +28,47 @@ export const TenantFormFields: React.FC<TenantFormFieldsProps> = ({
   isEditing,
   watchIsActive,
   setValue,
+  logoUrl,
+  onOpenLogo,
 }) => {
   return (
     <>
       {activeTab === 'general' ? (
         <div className="space-y-4 animate-in fade-in-50 duration-150">
+          {/* School Brand Logo Section (when editing) */}
+          {isEditing && (
+            <div className="flex items-center justify-between p-3.5 rounded-xl border bg-muted/20 gap-3">
+              <div className="flex items-center gap-3 min-w-0">
+                <TenantLogoAvatar
+                  logoUrl={logoUrl}
+                  className="h-12 w-12 min-h-[48px] min-w-[48px]"
+                  iconClassName="h-6 w-6"
+                  onClick={onOpenLogo}
+                  editable={Boolean(onOpenLogo)}
+                />
+                <div className="space-y-0.5 min-w-0">
+                  <p className="text-xs font-bold text-foreground">School Brand Logo</p>
+                  <p className="text-[11px] text-muted-foreground truncate">
+                    {logoUrl ? 'Custom brand logo configured' : 'No custom logo uploaded yet'}
+                  </p>
+                </div>
+              </div>
+
+              {onOpenLogo && (
+                <Button
+                  type="button"
+                  variant="outline"
+                  size="sm"
+                  onClick={onOpenLogo}
+                  className="h-8 text-xs font-semibold shrink-0"
+                >
+                  <Image className="h-3.5 w-3.5 mr-1.5 text-primary" />
+                  {logoUrl ? 'Change Logo' : 'Upload Logo'}
+                </Button>
+              )}
+            </div>
+          )}
+
           {/* School Name */}
           <div className="space-y-1.5">
             <Label htmlFor="name" className="text-xs font-semibold">

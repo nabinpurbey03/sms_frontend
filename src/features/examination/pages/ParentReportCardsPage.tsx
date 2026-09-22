@@ -7,7 +7,10 @@ import {
   CalendarCheck,
   Filter,
   Baby,
+  School,
+  ArrowRight,
 } from 'lucide-react';
+import { toast } from 'sonner';
 
 import { useAuth } from '@/auth/useAuth';
 import { usePermission } from '@/auth/usePermission';
@@ -17,10 +20,11 @@ import { Card, CardContent, CardHeader } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { cn } from '@/lib/utils';
+import { useAllMyChildren } from '@/features/members/hooks';
 import { useMyChildrenReportCards } from '../hooks';
 
 export const ParentReportCardsPage: React.FC = () => {
-  const { activeTenantId } = useAuth();
+  const { activeTenantId, activeTenantName, switchTenant } = useAuth();
   const { isParent } = usePermission();
 
   // Read URL search param studentId if present
@@ -32,13 +36,14 @@ export const ParentReportCardsPage: React.FC = () => {
     []
   );
 
-  const {
-    data: reportCardsData,
-    isLoading,
-    isError,
-    error,
-    refetch,
-  } = useMyChildrenReportCards(activeTenantId);
+  const { data: reportCardsData, isLoading, isError, error, refetch } =
+    useMyChildrenReportCards(activeTenantId);
+
+  const { data: allMyChildren = [] } = useAllMyChildren(isParent);
+
+  const otherSchoolChildren = useMemo(() => {
+    return allMyChildren.filter((c) => c.tenant_id && c.tenant_id !== activeTenantId);
+  }, [allMyChildren, activeTenantId]);
 
   const children = useMemo(() => reportCardsData?.children ?? [], [reportCardsData?.children]);
 
@@ -122,15 +127,48 @@ export const ParentReportCardsPage: React.FC = () => {
 
       {/* Empty State: No Children Linked */}
       {!isLoading && !isError && children.length === 0 && (
-        <EmptyState
-          icon={Baby}
-          title="No Children Linked Yet"
-          description="No students have been linked to your parent account in this school. Please contact your school administration to link your enrolled children."
-        />
+        <div className="flex flex-col items-center justify-center p-10 rounded-xl border border-dashed border-border bg-muted/20 text-center gap-3">
+          <Baby className="w-10 h-10 text-muted-foreground opacity-40" />
+          <p className="text-sm font-semibold text-foreground">
+            No Published Report Cards in {activeTenantName || 'Current School'}
+          </p>
+          {otherSchoolChildren.length > 0 ? (
+            <div className="space-y-3 max-w-sm">
+              <p className="text-xs text-muted-foreground leading-relaxed">
+                You have linked children enrolled in other schools. Click below to switch school portal and view their report cards:
+              </p>
+              <div className="flex flex-wrap justify-center gap-2 pt-1">
+                {otherSchoolChildren.map((oc) => (
+                  <Button
+                    key={oc.student_id}
+                    variant="outline"
+                    size="sm"
+                    onClick={() => {
+                      switchTenant(oc.tenant_id!);
+                      setSelectedStudentId(oc.student_id);
+                      toast.success(`Switched to ${oc.tenant_name || 'School'}`, {
+                        description: `Viewing report cards for ${oc.first_name} ${oc.last_name}`,
+                      });
+                    }}
+                    className="gap-1.5 text-xs border-primary/30 text-primary hover:bg-primary/10 cursor-pointer shadow-2xs"
+                  >
+                    <School className="w-3.5 h-3.5" />
+                    <span>{oc.first_name} ({oc.tenant_name})</span>
+                    <ArrowRight className="w-3 h-3" />
+                  </Button>
+                ))}
+              </div>
+            </div>
+          ) : (
+            <p className="text-xs text-muted-foreground max-w-sm">
+              No students have been linked to your parent account in this school. Please contact your school administrator to link your enrolled children.
+            </p>
+          )}
+        </div>
       )}
 
-      {/* Children Switcher Pills (if multiple children) - wraps naturally, zero horizontal scroll */}
-      {!isLoading && !isError && children.length > 1 && (
+      {/* Children Switcher Pills (current school + other schools) */}
+      {!isLoading && !isError && (children.length > 1 || otherSchoolChildren.length > 0) && (
         <div className="flex flex-wrap items-center gap-2 p-3 bg-muted/40 rounded-xl border border-border/50">
           <span className="text-xs font-semibold text-muted-foreground flex items-center gap-1 shrink-0 mr-1">
             <Baby className="w-3.5 h-3.5 text-primary" />
@@ -183,6 +221,30 @@ export const ParentReportCardsPage: React.FC = () => {
               </button>
             );
           })}
+
+          {/* Cross-school children pill links */}
+          {otherSchoolChildren.map((oc) => (
+            <button
+              key={oc.student_id}
+              type="button"
+              onClick={() => {
+                switchTenant(oc.tenant_id!);
+                setSelectedStudentId(oc.student_id);
+                toast.success(`Switched to ${oc.tenant_name || 'School'}`, {
+                  description: `Viewing report cards for ${oc.first_name} ${oc.last_name}`,
+                });
+              }}
+              className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium border border-dashed border-primary/40 bg-primary/5 hover:bg-primary/10 text-muted-foreground hover:text-foreground transition-all cursor-pointer shadow-2xs"
+              title={`Switch school to view ${oc.first_name}'s report cards`}
+            >
+              <School className="w-3 h-3 text-primary" />
+              <span>{oc.first_name} {oc.last_name}</span>
+              <span className="text-[10px] text-muted-foreground font-normal">
+                ({oc.tenant_name})
+              </span>
+              <ArrowRight className="w-2.5 h-2.5 text-primary ml-0.5" />
+            </button>
+          ))}
         </div>
       )}
 

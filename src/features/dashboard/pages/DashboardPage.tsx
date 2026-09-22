@@ -39,7 +39,7 @@ import { ParentReportCardsDashboardHub } from '@/features/examination/components
 import { useAttendanceSummary, useDailyAttendanceStatus } from '@/features/attendance/hooks';
 import { useAllClassesWithDetails, useMyTeacherAssignments } from '@/features/academic/hooks';
 import { useAcademicYears } from '@/features/academic-year/hooks';
-import { useParentChildren } from '@/features/members/hooks';
+import { useAllMyChildren, useParentChildren } from '@/features/members/hooks';
 import { useMyChildrenReportCards } from '@/features/examination/hooks';
 import { useSuperAdminDashboard, useTenantDashboard } from '../hooks';
 
@@ -100,10 +100,15 @@ export const DashboardPage: React.FC = () => {
     activeTenantId,
     { enabled: !!activeTenantId && isTeacher }
   );
-  const { data: parentChildren = [] } = useParentChildren(
+  const { data: allParentChildren = [] } = useAllMyChildren(isParent);
+  const { data: tenantParentChildren = [] } = useParentChildren(
     activeTenantId,
     isParent ? (user?.id ?? null) : null
   );
+  const parentChildren = useMemo(() => {
+    if (allParentChildren && allParentChildren.length > 0) return allParentChildren;
+    return tenantParentChildren;
+  }, [allParentChildren, tenantParentChildren]);
   const { data: parentReportCards } = useMyChildrenReportCards(
     activeTenantId,
     { enabled: !!activeTenantId && isParent }

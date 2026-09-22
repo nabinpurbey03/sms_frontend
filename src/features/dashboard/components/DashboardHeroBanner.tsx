@@ -4,13 +4,15 @@ import { useAuth } from '@/auth/useAuth';
 import { usePermission } from '@/auth/usePermission';
 import { useTenant } from '@/features/tenants/hooks';
 import { Badge } from '@/components/ui/badge';
+import { getMediaUrl } from '@/lib/utils';
 
 export const DashboardHeroBanner: React.FC = () => {
   const { user, activeRole, activeTenantName, activeTenantId } = useAuth();
   const { isSuperAdmin } = usePermission();
   const { data: tenant } = useTenant(activeTenantId);
   const [failedLogoUrl, setFailedLogoUrl] = useState<string | null>(null);
-  const hasValidLogo = !!tenant?.logo_url && failedLogoUrl !== tenant.logo_url;
+  const resolvedLogoUrl = getMediaUrl(tenant?.logo_url);
+  const hasValidLogo = !!resolvedLogoUrl && failedLogoUrl !== resolvedLogoUrl;
 
   const formattedDate = new Intl.DateTimeFormat('en-US', {
     weekday: 'short',
@@ -56,13 +58,13 @@ export const DashboardHeroBanner: React.FC = () => {
 
       {/* Right Side: Tenant Logo or Fallback Brand Logo */}
       <div className="absolute right-6 sm:right-10 top-1/2 -translate-y-1/2 hidden md:flex items-center justify-center pointer-events-none z-10">
-        {hasValidLogo && tenant?.logo_url ? (
+        {hasValidLogo && resolvedLogoUrl ? (
           <div className="h-20 w-20 sm:h-24 sm:w-24 rounded-2xl bg-card border border-border/50 p-2 shadow-sm flex items-center justify-center overflow-hidden">
             <img
-              src={tenant.logo_url}
+              src={resolvedLogoUrl}
               alt={activeTenantName || 'School Logo'}
               className="h-full w-full object-contain filter drop-shadow-sm"
-              onError={() => setFailedLogoUrl(tenant.logo_url || null)}
+              onError={() => setFailedLogoUrl(resolvedLogoUrl)}
             />
           </div>
         ) : (

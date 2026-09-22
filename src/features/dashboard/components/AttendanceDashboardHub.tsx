@@ -35,7 +35,7 @@ import {
   useStudentAttendanceReport,
 } from '@/features/attendance/hooks';
 import { useAllClassesWithDetails, useMyTeacherAssignments } from '@/features/academic/hooks';
-import { useParentChildren } from '@/features/members/hooks';
+import { useAllMyChildren, useParentChildren } from '@/features/members/hooks';
 import type { TeacherAssignment } from '@/features/academic/types';
 import type { ParentChildDTO } from '@/features/members/types';
 import type {
@@ -101,6 +101,7 @@ const ParentChildAttendanceCard: React.FC<ChildCardProps> = ({
             <CardDescription className="text-xs">
               {child.class_name ? `${child.class_name}` : 'Enrolled'}
               {child.section_name ? ` • Section ${child.section_name}` : ''}
+              {child.tenant_name ? ` • ${child.tenant_name}` : ''}
               {child.relationship_type ? ` • ${child.relationship_type}` : ''}
             </CardDescription>
           </div>
@@ -235,11 +236,19 @@ export const AttendanceDashboardHub: React.FC = () => {
     isLoading: isAssignmentsLoading,
   } = useMyTeacherAssignments(activeTenantId, { enabled: !!activeTenantId && isTeacherOnly });
 
-  // Queries for Parent
+  // Queries for Parent: fetch all children across schools if parent, fallback to tenant
+  const { data: allParentChildren = [], isLoading: isAllChildrenLoading } = useAllMyChildren(isParent);
   const {
-    data: parentChildren = [],
-    isLoading: isChildrenLoading,
+    data: tenantParentChildren = [],
+    isLoading: isTenantChildrenLoading,
   } = useParentChildren(activeTenantId, isParent ? (user?.id ?? null) : null);
+
+  const parentChildren: ParentChildDTO[] = useMemo(() => {
+    if (allParentChildren && allParentChildren.length > 0) return allParentChildren;
+    return tenantParentChildren;
+  }, [allParentChildren, tenantParentChildren]);
+
+  const isChildrenLoading = isAllChildrenLoading && isTenantChildrenLoading;
 
   // Map section details for Admin checklist
   const sectionsStatusList = useMemo(() => {
@@ -1049,7 +1058,7 @@ export const AttendanceDashboardHub: React.FC = () => {
               {parentChildren.map((child: ParentChildDTO) => (
                 <ParentChildAttendanceCard
                   key={child.student_id}
-                  tenantId={activeTenantId!}
+                  tenantId={child.tenant_id || activeTenantId!}
                   child={child}
                   startDate={startDate}
                   endDate={endDate}

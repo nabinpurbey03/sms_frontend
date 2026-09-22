@@ -1,6 +1,6 @@
 import React from 'react';
 import type { OfficialReportCardDTO } from '../types';
-import { cn } from '@/lib/utils';
+import { cn, getMediaUrl } from '@/lib/utils';
 import {
   GraduationCap,
   Award,
@@ -140,6 +140,7 @@ export const OfficialReportCardDocument: React.FC<OfficialReportCardDocumentProp
   className,
 }) => {
   const { school, student, exam, subjects, summary, signatories } = reportCard;
+  const [logoError, setLogoError] = React.useState(false);
   const isPassed =
     summary.is_passed ||
     (summary.final_result_text
@@ -168,10 +169,11 @@ export const OfficialReportCardDocument: React.FC<OfficialReportCardDocumentProp
         {/* ========================================================= */}
         <header className="flex flex-col items-center text-center space-y-2 mb-4">
           {/* Crest / Logo */}
-          {school.logo_url ? (
+          {school.logo_url && !logoError ? (
             <img
-              src={school.logo_url}
+              src={getMediaUrl(school.logo_url)}
               alt={school.name}
+              onError={() => setLogoError(true)}
               className="h-16 w-16 sm:h-20 sm:w-20 object-contain rounded-2xl border border-border shadow-xs"
             />
           ) : (

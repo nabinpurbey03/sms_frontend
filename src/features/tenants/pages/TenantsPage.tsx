@@ -379,6 +379,7 @@ export const TenantsPage: React.FC = () => {
         tenantToEdit={tenantToEdit}
         onSubmit={handleFormSubmit}
         isSubmitting={createMutation.isPending || updateMutation.isPending}
+        onOpenLogo={handleOpenLogo}
       />
 
       <TenantLogoDialog

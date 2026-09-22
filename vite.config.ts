@@ -12,7 +12,13 @@ export default defineConfig({
   server: {
     watch: {
       ignored: ['**/scratch/**', '**/.git/**']
-    }
+    },
+    proxy: {
+      '/uploads': {
+        target: 'http://localhost:8000',
+        changeOrigin: true,
+      },
+    },
   },
   resolve: {
     alias: {

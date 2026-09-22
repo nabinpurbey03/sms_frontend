@@ -92,6 +92,8 @@ export interface ParentChildDTO {
   section_name?: string | null;
   relationship_type: string;
   status: string;
+  tenant_id?: string;
+  tenant_name?: string;
 }
 
 /**

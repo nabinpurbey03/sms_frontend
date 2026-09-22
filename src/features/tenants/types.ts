@@ -197,6 +197,7 @@ export interface TenantDeepDiveAnalyticsDTO {
   tenant_id: string;
   name: string;
   domain_name: string;
+  logo_url?: string | null;
   is_active: boolean;
   created_at: string;
   enrollment: TenantEnrollmentBreakdownDTO;

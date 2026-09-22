@@ -23,6 +23,7 @@ import {
   TrendingUp,
   AlertTriangle,
   Fingerprint,
+  Image as ImageIcon,
 } from 'lucide-react';
 import { Link, useParams } from '@tanstack/react-router';
 import { Button } from '@/components/ui/button';
@@ -47,9 +48,11 @@ import { cn } from '@/lib/utils';
 import { toast } from 'sonner';
 import { useAuth } from '@/auth/useAuth';
 import { useTenantStore } from '@/stores/tenantStore';
-import { useTenantAnalytics, useTenantAdmins } from '../hooks';
+import { useTenantAnalytics, useTenantAdmins, useUploadTenantLogo } from '../hooks';
 import { TenantAdminsDialog } from '../components/TenantAdminsDialog';
 import { TenantAdminAssignDialog } from '../components/TenantAdminAssignDialog';
+import { TenantLogoDialog } from '../components/TenantLogoDialog';
+import { TenantLogoAvatar } from '../components/TenantLogoAvatar';
 import type { TenantAdminResponseDTO } from '../types';
 
 export const TenantAnalyticsPage: React.FC = () => {
@@ -59,6 +62,18 @@ export const TenantAnalyticsPage: React.FC = () => {
 
   const [adminsDialogOpen, setAdminsDialogOpen] = useState(false);
   const [assignDialogOpen, setAssignDialogOpen] = useState(false);
+  const [logoDialogOpen, setLogoDialogOpen] = useState(false);
+
+  const uploadLogoMutation = useUploadTenantLogo();
+
+  const handleLogoUpload = async (file: File) => {
+    if (!tenantId) return;
+    await uploadLogoMutation.mutateAsync({
+      tenantId,
+      file,
+    });
+    refetch();
+  };
 
   const {
     data: analytics,
@@ -284,9 +299,14 @@ export const TenantAnalyticsPage: React.FC = () => {
           <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-5">
             {/* School Profile Information */}
             <div className="flex items-start sm:items-center gap-4">
-              <div className="h-16 w-16 rounded-2xl bg-primary/10 text-primary flex items-center justify-center shrink-0 border border-primary/20 shadow-inner">
-                <Building2 className="h-8 w-8" />
-              </div>
+              <TenantLogoAvatar
+                logoUrl={analytics.logo_url}
+                name={analytics.name}
+                className="h-16 w-16 min-h-[64px] min-w-[64px] rounded-2xl border-primary/20 shadow-inner"
+                iconClassName="h-8 w-8"
+                onClick={() => setLogoDialogOpen(true)}
+                editable={true}
+              />
 
               <div className="space-y-1.5 min-w-0">
                 <div className="flex flex-wrap items-center gap-2.5">
@@ -320,6 +340,16 @@ export const TenantAnalyticsPage: React.FC = () => {
 
             {/* Header Action Buttons */}
             <div className="flex flex-wrap items-center gap-2 pt-2 lg:pt-0 border-t lg:border-t-0 border-border/60">
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={() => setLogoDialogOpen(true)}
+                className="gap-1.5 rounded-xl text-xs font-semibold h-9"
+              >
+                <ImageIcon className="h-3.5 w-3.5 text-primary" />
+                <span>Upload Brand Logo</span>
+              </Button>
+
               <Button
                 onClick={handleSwitchContext}
                 className="gap-2 shadow-sm font-semibold rounded-xl text-xs h-9"
@@ -1134,6 +1164,18 @@ export const TenantAnalyticsPage: React.FC = () => {
           refetch();
           refetchAdmins();
         }}
+      />
+
+      <TenantLogoDialog
+        open={logoDialogOpen}
+        onOpenChange={setLogoDialogOpen}
+        tenant={{
+          id: tenantId,
+          name: analytics.name,
+          logo_url: analytics.logo_url,
+        }}
+        onUpload={handleLogoUpload}
+        isUploading={uploadLogoMutation.isPending}
       />
     </div>
   );

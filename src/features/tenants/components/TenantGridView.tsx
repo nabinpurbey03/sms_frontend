@@ -26,6 +26,7 @@ import {
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
 import { cn } from '@/lib/utils';
+import { TenantLogoAvatar } from './TenantLogoAvatar';
 import type { Tenant, TenantDirectoryItemDTO } from '../types';
 
 interface TenantGridViewProps {
@@ -84,17 +85,14 @@ export const TenantGridView: React.FC<TenantGridViewProps> = ({
               <div className="flex items-start justify-between gap-3">
                 {/* Logo & School Name */}
                 <div className="flex items-start gap-3 min-w-0">
-                  <div className="flex h-12 w-12 min-h-[48px] min-w-[48px] items-center justify-center rounded-2xl bg-card border border-border/80 shadow-xs overflow-hidden p-1 shrink-0">
-                    {tenant.logo_url ? (
-                      <img
-                        src={tenant.logo_url}
-                        alt={tenant.name}
-                        className="h-full w-full object-contain"
-                      />
-                    ) : (
-                      <Building2 className="h-6 w-6 text-primary" />
-                    )}
-                  </div>
+                  <TenantLogoAvatar
+                    logoUrl={tenant.logo_url}
+                    name={tenant.name}
+                    className="h-12 w-12 min-h-[48px] min-w-[48px]"
+                    iconClassName="h-6 w-6"
+                    onClick={() => onUploadLogo(tenant)}
+                    editable={true}
+                  />
 
                   <div className="space-y-1 min-w-0">
                     <div className="flex items-center gap-1.5 flex-wrap">

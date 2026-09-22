@@ -28,6 +28,7 @@ import {
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
 import { cn } from '@/lib/utils';
+import { TenantLogoAvatar } from './TenantLogoAvatar';
 import type { Tenant, TenantDirectoryItemDTO } from '../types';
 
 interface TenantTableViewProps {
@@ -60,17 +61,12 @@ export const TenantTableView: React.FC<TenantTableViewProps> = ({
 
         return (
           <div className="flex items-center gap-3 py-1">
-            <div className="flex h-10 w-10 min-h-[40px] min-w-[40px] items-center justify-center rounded-xl bg-card border border-border/80 shadow-xs overflow-hidden p-1 shrink-0">
-              {tenant.logo_url ? (
-                <img
-                  src={tenant.logo_url}
-                  alt={tenant.name}
-                  className="h-full w-full object-contain"
-                />
-              ) : (
-                <Building2 className="h-5 w-5 text-primary" />
-              )}
-            </div>
+            <TenantLogoAvatar
+              logoUrl={tenant.logo_url}
+              name={tenant.name}
+              onClick={() => onUploadLogo(tenant)}
+              editable={true}
+            />
 
             <div className="space-y-0.5 min-w-0">
               <div className="flex items-center gap-2">

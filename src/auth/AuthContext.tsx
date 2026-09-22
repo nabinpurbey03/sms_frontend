@@ -10,6 +10,7 @@ import {
   getLastRefreshTime,
 } from '@/api/client';
 import { useTenantStore } from '@/stores/tenantStore';
+import { useAcademicYearStore } from '@/stores/academicYearStore';
 import type { Role } from '@/config/permissions';
 import type { LoginFormData } from '@/features/auth/schema';
 import { AuthContext } from './useAuth';
@@ -231,6 +232,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({
     if (!user) return;
     const membership = user.memberships.find((m) => m.tenant_id === tenantId);
     if (membership) {
+      useAcademicYearStore.getState().clear();
       setActiveTenant(membership.tenant_id, membership.tenant_name);
       setActivePersona(pickPrimaryRole(membership.roles));
     }

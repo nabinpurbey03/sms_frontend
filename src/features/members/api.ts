@@ -133,6 +133,10 @@ export const membersApi = {
     );
   },
 
+  getAllMyChildren: async (): Promise<ParentChildDTO[]> => {
+    return apiClient.get('/academic/parents/me/children');
+  },
+
   linkParentToStudent: async (
     tenantId: string,
     payload: ParentStudentLinkPayload

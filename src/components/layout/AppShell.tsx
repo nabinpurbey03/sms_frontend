@@ -27,6 +27,8 @@ import {
   Shield,
   CalendarDays,
   TrendingUp,
+  School,
+  Check,
 } from 'lucide-react';
 
 import { useAuth } from '@/auth/useAuth';
@@ -643,15 +645,15 @@ export const AppShell: React.FC = () => {
             )}
           </div>
 
-          {/* Middle: School Name Badge */}
-          <div className="hidden md:flex flex-1 items-center justify-center px-6 gap-3">
-            <div className="flex items-center justify-center shrink-0">
-              <div className="px-5 py-1.5 rounded-full bg-primary shadow-sm border border-primary/20">
-                <span className="font-bold text-sm tracking-wide whitespace-nowrap text-primary-foreground">
-                  {activeTenantName || 'Global Platform'}
-                </span>
-              </div>
-            </div>
+          {/* Middle: School Header Badge & Switcher */}
+          <div className="hidden md:flex flex-1 items-center justify-center px-4 min-w-0">
+            <SchoolHeaderBadge
+              tenantId={activeTenantId}
+              tenantName={activeTenantName}
+              isSuperAdmin={isSuperAdmin}
+              memberships={user?.memberships}
+              onSwitchTenant={switchTenant}
+            />
           </div>
 
           {/* Right: Search, Controls & Profile */}
@@ -725,6 +727,44 @@ export const AppShell: React.FC = () => {
                   </div>
                 </div>
               </DropdownMenuLabel>
+
+              {/* School Switcher (Multi-school users: Parents, Teachers, Admins) */}
+              {user?.memberships && user.memberships.length > 1 && (
+                <>
+                  <DropdownMenuSeparator />
+                  <div className="px-2 py-1.5 space-y-1.5">
+                    <div className="text-xs font-semibold text-muted-foreground flex items-center justify-between">
+                      <span className="flex items-center gap-1.5">
+                        <School className="h-3.5 w-3.5 text-primary" />
+                        <span>Switch School Portal</span>
+                      </span>
+                      <span className="text-[10px] text-primary font-bold">
+                        {user.memberships.length} Schools
+                      </span>
+                    </div>
+                    <div className="space-y-1 pt-0.5">
+                      {user.memberships.map((m) => {
+                        const isCurrent = m.tenant_id === activeTenantId;
+                        return (
+                          <button
+                            key={m.tenant_id}
+                            type="button"
+                            onClick={() => switchTenant(m.tenant_id)}
+                            className={`w-full flex items-center justify-between px-2.5 py-1.5 rounded-lg text-xs font-medium border transition-colors ${
+                              isCurrent
+                                ? 'border-primary bg-primary/10 font-bold text-primary shadow-2xs'
+                                : 'border-border/60 hover:bg-accent text-muted-foreground hover:text-foreground'
+                            }`}
+                          >
+                            <span className="truncate text-left">{m.tenant_name}</span>
+                            {isCurrent && <Check className="h-3.5 w-3.5 text-primary shrink-0 ml-1.5" />}
+                          </button>
+                        );
+                      })}
+                    </div>
+                  </div>
+                </>
+              )}
 
               {/* Persona Switcher (Multi-role users) */}
               {currentMembership && currentMembership.roles.length > 1 && (
