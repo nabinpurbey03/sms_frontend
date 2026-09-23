@@ -3,7 +3,10 @@ import { z } from 'zod';
 const envSchema = z.object({
   VITE_API_BASE_URL: z
     .string()
-    .url('VITE_API_BASE_URL must be a valid URL')
+    .refine(
+      (val) => val === '' || z.string().url().safeParse(val).success,
+      { message: 'VITE_API_BASE_URL must be a valid URL or empty string for same-origin proxy' }
+    )
     .default('http://localhost:8000'),
   VITE_API_VERSION: z
     .string()

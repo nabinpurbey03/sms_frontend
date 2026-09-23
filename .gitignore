@@ -22,6 +22,7 @@ build
 .env
 .env.*
 !.env.example
+!.env.docker.example
 
 # Editor directories and files
 .vscode/*

@@ -1,0 +1,53 @@
+# ==============================================================================
+# PBAC Frontend — Production Docker Compose
+# ==============================================================================
+# Usage:
+#   docker compose up -d --build
+#
+# Prerequisite:
+#   Ensure the backend database & app network exists, or run docker compose
+#   from the backend first (or run `docker network create pbac-net`).
+# ==============================================================================
+
+services:
+  frontend:
+    build:
+      context: .
+      dockerfile: Dockerfile
+      args:
+        # Leaving VITE_API_BASE_URL empty uses same-origin relative URLs,
+        # allowing Nginx to reverse proxy /api/v1 directly to the backend with zero CORS!
+        VITE_API_BASE_URL: ${VITE_API_BASE_URL:-}
+        VITE_API_VERSION: ${VITE_API_VERSION:-/api/v1}
+        VITE_TENANT_HEADER_NAME: ${VITE_TENANT_HEADER_NAME:-X-Tenant-ID}
+        VITE_APP_NAME: ${VITE_APP_NAME:-Schools Up Pro}
+    container_name: pbac-frontend
+    restart: unless-stopped
+    ports:
+      - "${FRONTEND_PORT:-3000}:8080"
+    networks:
+      - pbac-net
+    healthcheck:
+      test: ["CMD-SHELL", "wget -qO- http://127.0.0.1:8080/healthz || exit 1"]
+      interval: 15s
+      timeout: 3s
+      retries: 3
+      start_period: 5s
+    deploy:
+      resources:
+        limits:
+          memory: 256M
+          cpus: "0.50"
+        reservations:
+          memory: 64M
+          cpus: "0.10"
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "10m"
+        max-file: "3"
+
+networks:
+  pbac-net:
+    name: pbac-net
+    external: true
