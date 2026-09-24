@@ -384,7 +384,7 @@ export const RegisterPage: React.FC = () => {
               </div>
               <div>
                 <h1 className="text-lg font-bold text-white tracking-tight">Schools Up Pro</h1>
-                <p className="text-[11px] text-white/60 font-medium">PBAC Portal</p>
+                <p className="text-[11px] text-white/60 font-medium">SSUP Portal</p>
               </div>
             </div>
 

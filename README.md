@@ -10,7 +10,7 @@
 [![Zod](https://img.shields.io/badge/Zod-3.24%2B-3E67B1?logo=zod&logoColor=white)](https://zod.dev)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](LICENSE)
 
-A production-grade, domain-aligned **React 19 Single Page Application (SPA)** for the **PBAC** Multi-Tenant School Management Platform. Designed with a **hybrid authorization UX engine (Strict RBAC + ReBAC + ABAC)**, multi-role active persona support, dynamic tenant isolation, mobile-first responsive architecture with stacked data cards, centralized Axios interceptors for automatic JWT refresh rotation, and a comprehensive **Super Admin Governance & Audit Trail** suite.
+A production-grade, domain-aligned **React 19 Single Page Application (SPA)** for the **SSUP** (Schools Up Pro) Multi-Tenant School Management Platform. Designed with a **hybrid authorization UX engine (Strict RBAC + ReBAC + ABAC)**, multi-role active persona support, dynamic tenant isolation, mobile-first responsive architecture with stacked data cards, centralized Axios interceptors for automatic JWT refresh rotation, and a comprehensive **Super Admin Governance & Audit Trail** suite.
 
 ---
 
@@ -149,7 +149,7 @@ src/features/<domain>/
 
 ### Hybrid Authorization System (RBAC + ReBAC + ABAC)
 
-PBAC coordinates 3 tiers of authorization driving both UI visibility and server enforcement:
+SSUP coordinates 3 tiers of authorization driving both UI visibility and server enforcement:
 
 ```
 ┌──────────────────────────────────────────────────────────┐
@@ -316,7 +316,7 @@ frontend/
 
 - **Node.js**: `v20.11.0` or higher
 - **Package Manager**: `npm` (v10+), `pnpm` (v9+), or `bun`
-- **Backend**: FastAPI backend running at `http://localhost:8000` (see [BACKEND_ARCHITECTURE.md](file:///E:/PBAC/frontend/BACKEND_ARCHITECTURE.md))
+- **Backend**: FastAPI backend running at `http://localhost:8000` (see [BACKEND_ARCHITECTURE.md](file:///E:/SSUP/frontend/BACKEND_ARCHITECTURE.md))
 
 ### Installation
 
@@ -379,7 +379,7 @@ npm run lint
 
 ## 🛡️ Permission Matrix & Route Guards
 
-Defined in [`src/config/permissions.ts`](file:///E:/PBAC/frontend/src/config/permissions.ts) as the single source of truth:
+Defined in [`src/config/permissions.ts`](file:///E:/SSUP/frontend/src/config/permissions.ts) as the single source of truth:
 
 | Feature / Resource | `SUPER_ADMIN` | `ADMIN` (Principal) | `OFFICE_ADMIN` (Vice Principal) | `TEACHER` (Faculty) | `PARENT` (Guardian) |
 |---|:---:|:---:|:---:|:---:|:---:|
@@ -417,7 +417,7 @@ Defined in [`src/config/permissions.ts`](file:///E:/PBAC/frontend/src/config/per
 
 ### Automatic Stacked Data Tables
 
-Using [`ResponsiveDataTable`](file:///E:/PBAC/frontend/src/components/common/ResponsiveDataTable.tsx):
+Using [`ResponsiveDataTable`](file:///E:/SSUP/frontend/src/components/common/ResponsiveDataTable.tsx):
 - **On `< 768px` (`< md`)**: Automatically renders each record as an individual stacked card with identifiers, names, status tags, and action buttons. Supports interactive row clicking with accessible chevron prompts.
 - **On `≥ 768px` (`md+`)**: Automatically switches to the full desktop data table with sticky headers.
 
@@ -430,7 +430,7 @@ Using [`ResponsiveDataTable`](file:///E:/PBAC/frontend/src/components/common/Res
 
 ## 🔌 API Client & Network Pipeline
 
-Located in [`src/api/client.ts`](file:///E:/PBAC/frontend/src/api/client.ts):
+Located in [`src/api/client.ts`](file:///E:/SSUP/frontend/src/api/client.ts):
 
 ### Response Envelope Unwrapping
 
@@ -473,7 +473,7 @@ When the backend returns an error envelope:
   }
 }
 ```
-The client throws a strongly-typed [`ApiError`](file:///E:/PBAC/frontend/src/api/errors.ts) containing `code`, `details`, `requestId`, and `statusCode`.
+The client throws a strongly-typed [`ApiError`](file:///E:/SSUP/frontend/src/api/errors.ts) containing `code`, `details`, `requestId`, and `statusCode`.
 
 ---
 
@@ -485,7 +485,7 @@ Client validation rules match the backend Pydantic sanitization layer:
 |---|---|---|
 | **Email** | Valid email format required | Trimmed & lowercased |
 | **Password** | Min 8 chars (registration), requires uppercase, lowercase, digit, and special char | Whitespace preserved |
-| **Phone** | 10-digit Nepali mobile: `^(98\|97)\d{8}$` | Trimmed & spaces removed |
+| **Phone** | 10-digit Nepali mobile: `^(98|97)\d{8}$` | Trimmed & spaces removed |
 | **Domain Name** | Alphanumeric & hyphens: `^[a-z0-9-]+$` | Lowercased & trimmed |
 | **Names** | Required 1-50 chars | Leading/trailing whitespace stripped |
 | **Subject Codes** | Max 50 chars | Trimmed & converted to uppercase |
@@ -497,7 +497,7 @@ Client validation rules match the backend Pydantic sanitization layer:
 
 ## ⚙️ Environment Configuration Reference
 
-All frontend configuration is managed through environment variables loaded and validated at startup via [`src/config/env.ts`](file:///E:/PBAC/frontend/src/config/env.ts).
+All frontend configuration is managed through environment variables loaded and validated at startup via [`src/config/env.ts`](file:///E:/SSUP/frontend/src/config/env.ts).
 
 | Variable | Type | Default | Description |
 |---|---|---|---|

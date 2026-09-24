@@ -944,7 +944,7 @@ export const ClassDetailPage: React.FC = () => {
             <div className="p-4 rounded-xl border border-border/70 bg-card space-y-2">
               <h4 className="text-xs font-bold text-foreground uppercase tracking-wider flex items-center gap-1.5">
                 <Sparkles className="w-4 h-4 text-primary" />
-                PBAC Academic Section Expansion Architecture
+                SSUP Academic Section Expansion Architecture
               </h4>
               <p className="text-xs text-muted-foreground leading-relaxed">
                 To maintain optimal student-teacher ratios and prevent empty section fragmentation,
