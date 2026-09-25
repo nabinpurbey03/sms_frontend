@@ -1,5 +1,5 @@
-import React, { useState, useRef } from 'react';
-import { Image, UploadCloud, X, CheckCircle2, Loader2 } from 'lucide-react';
+import React, { useState, useRef, useEffect } from 'react';
+import { Image, UploadCloud, X, CheckCircle2, Loader2, AlertTriangle } from 'lucide-react';
 import {
   Dialog,
   DialogContent,
@@ -33,7 +33,13 @@ export const TenantLogoDialog: React.FC<TenantLogoDialogProps> = ({
   const [selectedFile, setSelectedFile] = useState<File | null>(null);
   const [previewUrl, setPreviewUrl] = useState<string | null>(null);
   const [errorMsg, setErrorMsg] = useState<string | null>(null);
+  const [existingImgError, setExistingImgError] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
+
+  useEffect(() => {
+    setExistingImgError(false);
+    setErrorMsg(null);
+  }, [open, tenant?.logo_url]);
 
   const handleFileChange = (file: File | undefined) => {
     setErrorMsg(null);
@@ -65,6 +71,7 @@ export const TenantLogoDialog: React.FC<TenantLogoDialogProps> = ({
     setSelectedFile(null);
     setPreviewUrl(null);
     setErrorMsg(null);
+    setExistingImgError(false);
     if (fileInputRef.current) {
       fileInputRef.current.value = '';
     }
@@ -81,7 +88,7 @@ export const TenantLogoDialog: React.FC<TenantLogoDialogProps> = ({
     }
   };
 
-  const currentLogoSrc = previewUrl || getMediaUrl(tenant?.logo_url) || '';
+  const currentLogoSrc = previewUrl || (!existingImgError && getMediaUrl(tenant?.logo_url)) || '';
 
   return (
     <Dialog
@@ -126,6 +133,11 @@ export const TenantLogoDialog: React.FC<TenantLogoDialogProps> = ({
                   src={currentLogoSrc}
                   alt="School Logo"
                   className="h-full w-full object-contain"
+                  onError={() => {
+                    if (!previewUrl) {
+                      setExistingImgError(true);
+                    }
+                  }}
                 />
               </div>
 
@@ -165,22 +177,31 @@ export const TenantLogoDialog: React.FC<TenantLogoDialogProps> = ({
               </div>
             </div>
           ) : (
-            <div
-              onDragOver={(e) => e.preventDefault()}
-              onDrop={handleDrop}
-              onClick={() => fileInputRef.current?.click()}
-              className="rounded-2xl border-2 border-dashed border-border/80 hover:border-primary/60 bg-muted/20 hover:bg-muted/40 p-8 flex flex-col items-center justify-center text-center cursor-pointer transition-colors space-y-3"
-            >
-              <div className="flex h-12 w-12 items-center justify-center rounded-2xl bg-primary/10 text-primary shadow-xs">
-                <UploadCloud className="h-6 w-6" />
-              </div>
-              <div className="space-y-1">
-                <p className="text-xs font-bold text-foreground">
-                  Click to browse or drag and drop logo here
-                </p>
-                <p className="text-[11px] text-muted-foreground">
-                  PNG, JPG, SVG or WebP (Max 5MB)
-                </p>
+            <div className="space-y-3">
+              {existingImgError && !previewUrl && (
+                <div className="p-3 rounded-xl bg-amber-500/10 border border-amber-500/20 text-xs text-amber-600 dark:text-amber-400 font-medium flex items-center gap-2">
+                  <AlertTriangle className="h-4 w-4 shrink-0" />
+                  <span>Previous logo file was not found on storage. Please upload a new logo.</span>
+                </div>
+              )}
+
+              <div
+                onDragOver={(e) => e.preventDefault()}
+                onDrop={handleDrop}
+                onClick={() => fileInputRef.current?.click()}
+                className="rounded-2xl border-2 border-dashed border-border/80 hover:border-primary/60 bg-muted/20 hover:bg-muted/40 p-8 flex flex-col items-center justify-center text-center cursor-pointer transition-colors space-y-3"
+              >
+                <div className="flex h-12 w-12 items-center justify-center rounded-2xl bg-primary/10 text-primary shadow-xs">
+                  <UploadCloud className="h-6 w-6" />
+                </div>
+                <div className="space-y-1">
+                  <p className="text-xs font-bold text-foreground">
+                    Click to browse or drag and drop logo here
+                  </p>
+                  <p className="text-[11px] text-muted-foreground">
+                    PNG, JPG, SVG or WebP (Max 5MB)
+                  </p>
+                </div>
               </div>
             </div>
           )}

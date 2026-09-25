@@ -24,6 +24,7 @@ import {
   AlertTriangle,
   Fingerprint,
   Image as ImageIcon,
+  Eye,
 } from 'lucide-react';
 import { Link, useParams } from '@tanstack/react-router';
 import { Button } from '@/components/ui/button';
@@ -53,6 +54,7 @@ import { TenantAdminsDialog } from '../components/TenantAdminsDialog';
 import { TenantAdminAssignDialog } from '../components/TenantAdminAssignDialog';
 import { TenantLogoDialog } from '../components/TenantLogoDialog';
 import { TenantLogoAvatar } from '../components/TenantLogoAvatar';
+import { TenantLogoViewerDialog } from '../components/TenantLogoViewerDialog';
 import type { TenantAdminResponseDTO } from '../types';
 
 export const TenantAnalyticsPage: React.FC = () => {
@@ -63,6 +65,7 @@ export const TenantAnalyticsPage: React.FC = () => {
   const [adminsDialogOpen, setAdminsDialogOpen] = useState(false);
   const [assignDialogOpen, setAssignDialogOpen] = useState(false);
   const [logoDialogOpen, setLogoDialogOpen] = useState(false);
+  const [viewerDialogOpen, setViewerDialogOpen] = useState(false);
 
   const uploadLogoMutation = useUploadTenantLogo();
 
@@ -304,8 +307,14 @@ export const TenantAnalyticsPage: React.FC = () => {
                 name={analytics.name}
                 className="h-16 w-16 min-h-[64px] min-w-[64px] rounded-2xl border-primary/20 shadow-inner"
                 iconClassName="h-8 w-8"
-                onClick={() => setLogoDialogOpen(true)}
-                editable={true}
+                onClick={() => {
+                  if (analytics.logo_url) {
+                    setViewerDialogOpen(true);
+                  } else {
+                    setLogoDialogOpen(true);
+                  }
+                }}
+                mode={analytics.logo_url ? 'view' : 'edit'}
               />
 
               <div className="space-y-1.5 min-w-0">
@@ -340,15 +349,39 @@ export const TenantAnalyticsPage: React.FC = () => {
 
             {/* Header Action Buttons */}
             <div className="flex flex-wrap items-center gap-2 pt-2 lg:pt-0 border-t lg:border-t-0 border-border/60">
-              <Button
-                variant="outline"
-                size="sm"
-                onClick={() => setLogoDialogOpen(true)}
-                className="gap-1.5 rounded-xl text-xs font-semibold h-9"
-              >
-                <ImageIcon className="h-3.5 w-3.5 text-primary" />
-                <span>Upload Brand Logo</span>
-              </Button>
+              {analytics.logo_url ? (
+                <>
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={() => setViewerDialogOpen(true)}
+                    className="gap-1.5 rounded-xl text-xs font-semibold h-9"
+                  >
+                    <Eye className="h-3.5 w-3.5 text-primary" />
+                    <span>View Brand Logo</span>
+                  </Button>
+
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={() => setLogoDialogOpen(true)}
+                    className="gap-1.5 rounded-xl text-xs font-semibold h-9 text-muted-foreground hover:text-foreground"
+                  >
+                    <ImageIcon className="h-3.5 w-3.5" />
+                    <span>Change Logo</span>
+                  </Button>
+                </>
+              ) : (
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={() => setLogoDialogOpen(true)}
+                  className="gap-1.5 rounded-xl text-xs font-semibold h-9 border-primary/30 hover:border-primary"
+                >
+                  <ImageIcon className="h-3.5 w-3.5 text-primary" />
+                  <span>Upload Brand Logo</span>
+                </Button>
+              )}
 
               <Button
                 onClick={handleSwitchContext}
@@ -1164,6 +1197,18 @@ export const TenantAnalyticsPage: React.FC = () => {
           refetch();
           refetchAdmins();
         }}
+      />
+
+      <TenantLogoViewerDialog
+        open={viewerDialogOpen}
+        onOpenChange={setViewerDialogOpen}
+        tenant={{
+          id: tenantId,
+          name: analytics.name,
+          domain_name: analytics.domain_name,
+          logo_url: analytics.logo_url,
+        }}
+        onOpenUpload={() => setLogoDialogOpen(true)}
       />
 
       <TenantLogoDialog

@@ -22,5 +22,16 @@ export function getMediaUrl(path?: string | null): string | undefined {
     return path;
   }
   const cleanPath = path.startsWith('/') ? path : `/${path}`;
+
+  // In Vite dev mode, Vite reverse-proxies '/uploads' to backend (zero CORS/PNA issues)
+  if (ENV.IS_DEV && cleanPath.startsWith('/uploads')) {
+    return cleanPath;
+  }
+
+  // If API_BASE_URL is empty (production Docker reverse-proxy via Nginx)
+  if (!ENV.API_BASE_URL) {
+    return cleanPath;
+  }
+
   return `${ENV.API_BASE_URL}${cleanPath}`;
 }
