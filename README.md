@@ -52,6 +52,16 @@ A production-grade, domain-aligned **React 19 Single Page Application (SPA)** fo
 
 ## ✨ Recent Updates
 
+- **School Settings Hub (`/school-settings`) & Sidebar Administration**:
+  - Centralized administrative hub under "Administration" in the sidebar with 4 tabbed workflows: **Academic Sessions** (`?tab=sessions`), **Weekly Academic Days** (`?tab=days`), **Academic Calendar** (`?tab=calendar`), and **School Profile** (`?tab=profile`).
+  - Relocated session management from dashboard headers, and redirected `/academic-years` to `/school-settings?tab=sessions` to preserve all legacy bookmarks.
+- **Weekly Academic Days Configuration**:
+  - Interactive 7-day card selector with one-click presets (*Sunday–Friday*, *Monday–Friday*, *Monday–Saturday*) and RBAC save protection (`ADMIN` only).
+- **Academic Calendar & Holiday Management**:
+  - Unified calendar view with event category filtering (`HOLIDAY`, `EXAM`, `VACATION`, `EVENT`, `OTHER`), academic session scoping, search, and official school holiday toggles (`is_holiday`).
+- **Attendance Alignment with Academic Days & Calendar**:
+  - **Mark Attendance Guardrails**: Date picker displays non-academic day / holiday badges, with disabled submission actions and warning banners for off-days.
+  - **Academic Year Reporting**: Integrated session filter and "Full Academic Year" date preset on attendance reports, displaying `expected_school_days` in KPI summaries and tagging non-academic days on weekly trend charts.
 - **Mark Attendance UX Enhancement (State-Driven Workflow)**:
   - **Saved & Protected Mode (View Mode)**: Automatically enters a read-only protected view once attendance is recorded (or upon loading existing records) to prevent accidental clicks while scrolling on touch/desktop devices.
   - **Visual Status & Metrics Banner**: Displays live completion metrics (present count, absent count, attendance percentage) alongside prominent status badges (`Attendance Recorded`, `Editing Recorded Attendance`, `Not Yet Recorded`, `Locked (>7 days)`).
@@ -84,6 +94,7 @@ A production-grade, domain-aligned **React 19 Single Page Application (SPA)** fo
 | **Authentication & Session** | Email/Password login with Zod validation, password show/hide toggle, "Remember Me" local storage, in-memory access token storage, and background refresh rotation via `/api/v1/auth/refresh`. |
 | **Mobile-First UX** | 100% responsive across phone (`375px`), tablet (`768px`), laptop (`1024px`), and desktop (`1440px`); touch targets ≥ 44x44px; hamburger drawer navigation below `lg`. |
 | **Stacked Data Tables** | Automatic dual-mode rendering: wide data tables on desktop (`md+`) gracefully collapse into rich, stacked cards on mobile (`< md`). |
+| **School Settings** | Centralized hub for academic sessions & rollovers, tenant-configurable weekly academic days (Sun-Fri, Mon-Fri, etc.), academic calendar events & official holidays, and school branding profile. |
 | **Academic Management** | Class catalog with auto-provisioned Section A; 20-student eligibility check before sequential section expansion; single & bulk student enrollment (CSV/XLSX template download); subjects management. |
 | **Attendance Tracking** | Daily section attendance checklist with batch toggle actions (Mark All Present/Absent); Class Teacher verification; date range section reports; linked child reports for parents; multi-level dashboard summary. |
 | **Modern Component System** | Accessible **shadcn/ui** design tokens built on Tailwind CSS v4, Radix UI primitives, Lucide icons, and Sonner toast notifications. |
@@ -300,6 +311,7 @@ frontend/
     │   ├── platform-users/           # Platform user directory & memberships
     │   ├── academic/                 # Classes, sections, subjects & teacher assignments
     │   ├── academic-year/            # Academic year management & selector
+    │   ├── school-settings/          # School settings hub (sessions, days, calendar, profile)
     │   ├── attendance/               # Daily attendance & reporting
     │   ├── examination/              # Exams, grading & report cards
     │   └── members/                  # School member directory & parent-student links
@@ -389,6 +401,8 @@ Defined in [`src/config/permissions.ts`](file:///E:/SSUP/frontend/src/config/per
 | **Start "View As" Session** | ✅ | ❌ | ❌ | ❌ | ❌ |
 | **Manage Platform Users** | ✅ | ❌ | ❌ | ❌ | ❌ |
 | **Manage School Settings / Logo** | ✅ | ✅ | 👁️ (View Only) | ❌ | ❌ |
+| **Manage Weekly Academic Days** | ✅ | ✅ | 👁️ (View Only) | ❌ | ❌ |
+| **Manage Academic Calendar & Holidays** | ✅ | ✅ | 👁️ (View Only) | ❌ | ❌ |
 | **Create Office Admin** | ✅ | ✅ | ❌ | ❌ | ❌ |
 | **Create Teacher / Parent User** | ✅ | ✅ | ✅ | ❌ | ❌ |
 | **Assign / Revoke Member Roles** | ✅ | ✅ | ❌ | ❌ | ❌ |
