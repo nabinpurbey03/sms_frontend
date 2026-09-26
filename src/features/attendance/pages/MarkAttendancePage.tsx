@@ -20,6 +20,13 @@ import {
   TableRow,
 } from '@/components/ui/table';
 import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from '@/components/ui/select';
+import {
   CalendarCheck,
   Check,
   X,
@@ -424,10 +431,9 @@ export const MarkAttendancePage: React.FC = () => {
           {/* Class Selector */}
           <div className="space-y-1.5">
             <label className="text-xs font-semibold text-muted-foreground">Class</label>
-            <select
+            <Select
               value={selectedClassId}
-              onChange={(e) => {
-                const newClassId = e.target.value;
+              onValueChange={(newClassId) => {
                 if (!newClassId) {
                   setUserSelected({ classId: '', sectionId: '' });
                 } else {
@@ -439,42 +445,48 @@ export const MarkAttendancePage: React.FC = () => {
                 }
                 setPresentStudentIds(new Set());
               }}
-              className="w-full h-10 px-3 rounded-lg border border-input bg-background text-sm focus:outline-none focus:ring-2 focus:ring-primary"
               disabled={isLoading}
             >
-              <option value="">Select a class...</option>
-              {availableClasses.map((cls) => (
-                <option key={cls.id} value={cls.id}>
-                  {cls.name}
-                </option>
-              ))}
-            </select>
+              <SelectTrigger className="w-full h-10">
+                <SelectValue placeholder="Select a class..." />
+              </SelectTrigger>
+              <SelectContent>
+                {availableClasses.map((cls) => (
+                  <SelectItem key={cls.id} value={cls.id}>
+                    {cls.name}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
           </div>
 
           {/* Section Selector */}
           <div className="space-y-1.5">
             <label className="text-xs font-semibold text-muted-foreground">Section</label>
-            <select
+            <Select
               value={selectedSectionId}
-              onChange={(e) => {
+              onValueChange={(newSectionId) => {
                 setUserSelected({
                   classId: selectedClassId,
-                  sectionId: e.target.value,
+                  sectionId: newSectionId,
                 });
                 setPresentStudentIds(new Set());
               }}
-              className="w-full h-10 px-3 rounded-lg border border-input bg-background text-sm focus:outline-none focus:ring-2 focus:ring-primary"
               disabled={!selectedClassId || isLoading}
             >
-              <option value="">Select a section...</option>
-              {accessibleSections
-                .filter(({ class: cls }) => cls.id === selectedClassId)
-                .map(({ section }) => (
-                  <option key={section.id} value={section.id}>
-                    Section {section.name} ({section.student_count ?? 0} students)
-                  </option>
-                ))}
-            </select>
+              <SelectTrigger className="w-full h-10">
+                <SelectValue placeholder="Select a section..." />
+              </SelectTrigger>
+              <SelectContent>
+                {accessibleSections
+                  .filter(({ class: cls }) => cls.id === selectedClassId)
+                  .map(({ section }) => (
+                    <SelectItem key={section.id} value={section.id}>
+                      Section {section.name} ({section.student_count ?? 0} students)
+                    </SelectItem>
+                  ))}
+              </SelectContent>
+            </Select>
           </div>
         </div>
 
