@@ -14,6 +14,7 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Checkbox } from '@/components/ui/checkbox';
 import { Loader2 } from 'lucide-react';
+import { NepaliDatePicker } from './NepaliDatePicker';
 import {
   calendarEventFormSchema,
   type CalendarEventFormData,
@@ -28,6 +29,7 @@ interface CalendarEventDialogProps {
   tenantId: string;
   academicYearId: string;
   eventToEdit?: AcademicCalendarEvent | null;
+  initialDate?: string;
 }
 
 export const CalendarEventDialog: React.FC<CalendarEventDialogProps> = ({
@@ -36,6 +38,7 @@ export const CalendarEventDialog: React.FC<CalendarEventDialogProps> = ({
   tenantId,
   academicYearId,
   eventToEdit,
+  initialDate,
 }) => {
   const isEditing = !!eventToEdit;
   const createMutation = useCreateCalendarEvent();
@@ -55,8 +58,8 @@ export const CalendarEventDialog: React.FC<CalendarEventDialogProps> = ({
       academic_year_id: academicYearId,
       title: '',
       event_type: 'HOLIDAY',
-      start_date: '',
-      end_date: '',
+      start_date: initialDate || '',
+      end_date: initialDate || '',
       is_holiday: true,
       description: '',
     },
@@ -81,21 +84,21 @@ export const CalendarEventDialog: React.FC<CalendarEventDialogProps> = ({
           academic_year_id: academicYearId,
           title: '',
           event_type: 'HOLIDAY',
-          start_date: '',
-          end_date: '',
+          start_date: initialDate || '',
+          end_date: initialDate || '',
           is_holiday: true,
           description: '',
         });
       }
     }
-  }, [open, eventToEdit, academicYearId, reset]);
+  }, [open, eventToEdit, academicYearId, initialDate, reset]);
 
-  // When event type changes to HOLIDAY or VACATION, auto-toggle is_holiday
+  // Category-aware "School Closed" default: ON for Holiday and Vacation, OFF for Exam, Event, and Other
   const handleTypeChange = (type: (typeof CALENDAR_EVENT_TYPES)[number]) => {
     setValue('event_type', type);
     if (type === 'HOLIDAY' || type === 'VACATION') {
       setValue('is_holiday', true);
-    } else if (type === 'EXAM' || type === 'EVENT') {
+    } else {
       setValue('is_holiday', false);
     }
   };
@@ -193,22 +196,42 @@ export const CalendarEventDialog: React.FC<CalendarEventDialogProps> = ({
               )}
             </div>
 
-            {/* Dates: Start and End */}
+            {/* Dates: Start and End using Nepali (BS) Date Picker */}
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-              <div className="space-y-1.5">
-                <Label htmlFor="start_date">Start Date *</Label>
-                <Input id="start_date" type="date" {...register('start_date')} />
-                {errors.start_date && (
-                  <p className="text-xs text-destructive">{errors.start_date.message}</p>
+              <Controller
+                name="start_date"
+                control={control}
+                render={({ field }) => (
+                  <NepaliDatePicker
+                    id="start_date"
+                    label="Start Date *"
+                    value={field.value}
+                    onChange={(newStart) => {
+                      field.onChange(newStart);
+                      const currentEnd = watch('end_date');
+                      if (!currentEnd || currentEnd < newStart) {
+                        setValue('end_date', newStart, { shouldValidate: true });
+                      }
+                    }}
+                    error={errors.start_date?.message}
+                  />
                 )}
-              </div>
-              <div className="space-y-1.5">
-                <Label htmlFor="end_date">End Date *</Label>
-                <Input id="end_date" type="date" {...register('end_date')} />
-                {errors.end_date && (
-                  <p className="text-xs text-destructive">{errors.end_date.message}</p>
+              />
+
+              <Controller
+                name="end_date"
+                control={control}
+                render={({ field }) => (
+                  <NepaliDatePicker
+                    id="end_date"
+                    label="End Date *"
+                    value={field.value}
+                    onChange={field.onChange}
+                    minDate={watch('start_date')}
+                    error={errors.end_date?.message}
+                  />
                 )}
-              </div>
+              />
             </div>
 
             {/* Holiday Toggle */}
