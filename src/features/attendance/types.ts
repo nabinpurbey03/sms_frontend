@@ -134,12 +134,16 @@ export interface DayOfWeekAttendanceSummary {
   present_count: number;
   absent_count: number;
   attendance_percentage: number;
+  is_academic_day?: boolean;
 }
 
 export interface SchoolAttendanceReportResponse {
   from_date: string;
   to_date: string;
   total_school_days: number;
+  expected_school_days?: number | null;
+  academic_year_id?: string | null;
+  academic_year_name?: string | null;
   total_students: number;
   total_present: number;
   total_absent: number;
@@ -182,6 +186,9 @@ export interface ClassAttendanceReportResponse {
   from_date: string;
   to_date: string;
   total_school_days: number;
+  expected_school_days?: number | null;
+  academic_year_id?: string | null;
+  academic_year_name?: string | null;
   total_students: number;
   total_present: number;
   total_absent: number;

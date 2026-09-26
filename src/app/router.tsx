@@ -39,6 +39,7 @@ import { ErrorState } from '@/components/common/ErrorState';
 import { Button } from '@/components/ui/button';
 import { Toaster } from '@/components/ui/sonner';
 import { AcademicYearsPage } from '@/features/academic-year/pages/AcademicYearsPage';
+import { SchoolSettingsPage } from '@/features/school-settings/pages/SchoolSettingsPage';
 import { PlatformUsersPage } from '@/features/platform-users/pages/PlatformUsersPage';
 import { AuditLogsPage } from '@/features/audit-log/pages/AuditLogsPage';
 
@@ -212,7 +213,13 @@ const tenantOnboardRoute = createRoute({
 const academicYearsRoute = createRoute({
   getParentRoute: () => protectedLayoutRoute,
   path: '/academic-years',
-  component: AcademicYearsPage,
+  component: () => <Navigate to="/school-settings" search={{ tab: 'sessions' }} replace />,
+});
+
+const schoolSettingsRoute = createRoute({
+  getParentRoute: () => protectedLayoutRoute,
+  path: '/school-settings',
+  component: SchoolSettingsPage,
 });
 
 const examsRoute = createRoute({
@@ -286,6 +293,7 @@ const routeTree = rootRoute.addChildren([
     tenantOnboardRoute,
     platformUsersRoute,
     academicYearsRoute,
+    schoolSettingsRoute,
     examsRoute,
     createExamRoute,
     examReviewRoute,

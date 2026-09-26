@@ -53,14 +53,18 @@ export const useAttendanceSummary = (
 // Query: Get school-wide attendance report across date range
 export const useSchoolAttendanceReport = (
   tenantId: string | null,
-  startDate: string,
-  endDate: string,
+  startDate?: string,
+  endDate?: string,
+  academicYearIdOrOptions?: string | { enabled?: boolean },
   options?: { enabled?: boolean }
 ) => {
+  const academicYearId = typeof academicYearIdOrOptions === 'string' ? academicYearIdOrOptions : undefined;
+  const effectiveOptions = typeof academicYearIdOrOptions === 'object' ? academicYearIdOrOptions : options;
+
   return useQuery({
-    queryKey: ['attendance', 'school-report', tenantId, startDate, endDate],
-    queryFn: () => attendanceApi.getSchoolAttendanceReport(tenantId!, startDate, endDate),
-    enabled: !!tenantId && !!startDate && !!endDate && (options?.enabled ?? true),
+    queryKey: ['attendance', 'school-report', tenantId, startDate, endDate, academicYearId],
+    queryFn: () => attendanceApi.getSchoolAttendanceReport(tenantId!, startDate, endDate, academicYearId),
+    enabled: !!tenantId && (!!(startDate && endDate) || !!academicYearId) && (effectiveOptions?.enabled ?? true),
     staleTime: 1000 * 60 * 2,
   });
 };
@@ -69,15 +73,19 @@ export const useSchoolAttendanceReport = (
 export const useClassAttendanceReport = (
   tenantId: string | null,
   classId: string | null,
-  startDate: string,
-  endDate: string,
+  startDate?: string,
+  endDate?: string,
   sectionId?: string,
+  academicYearIdOrOptions?: string | { enabled?: boolean },
   options?: { enabled?: boolean }
 ) => {
+  const academicYearId = typeof academicYearIdOrOptions === 'string' ? academicYearIdOrOptions : undefined;
+  const effectiveOptions = typeof academicYearIdOrOptions === 'object' ? academicYearIdOrOptions : options;
+
   return useQuery({
-    queryKey: ['attendance', 'class-report', tenantId, classId, startDate, endDate, sectionId],
-    queryFn: () => attendanceApi.getClassAttendanceReport(tenantId!, classId!, startDate, endDate, sectionId),
-    enabled: !!tenantId && !!classId && !!startDate && !!endDate && (options?.enabled ?? true),
+    queryKey: ['attendance', 'class-report', tenantId, classId, startDate, endDate, sectionId, academicYearId],
+    queryFn: () => attendanceApi.getClassAttendanceReport(tenantId!, classId!, startDate, endDate, sectionId, academicYearId),
+    enabled: !!tenantId && !!classId && (!!(startDate && endDate) || !!academicYearId) && (effectiveOptions?.enabled ?? true),
     staleTime: 1000 * 60 * 2,
   });
 };

@@ -7,6 +7,7 @@ import {
   useAbsentStudents,
 } from '../hooks';
 import { useAllClassesWithDetails } from '@/features/academic/hooks';
+import { useAcademicYears } from '@/features/academic-year/hooks';
 import { exportSchoolAttendanceCsv } from '../utils/exportAttendanceCsv';
 import { Button } from '@/components/ui/button';
 import { Card, CardHeader, CardTitle, CardContent } from '@/components/ui/card';
@@ -77,11 +78,13 @@ const getPresetDates = (preset: 'today' | '7d' | '30d' | 'mtd') => {
 };
 
 const WEEKDAYS = [
+  { index: 6, name: 'Sunday', short: 'Sun' },
   { index: 0, name: 'Monday', short: 'Mon' },
   { index: 1, name: 'Tuesday', short: 'Tue' },
   { index: 2, name: 'Wednesday', short: 'Wed' },
   { index: 3, name: 'Thursday', short: 'Thu' },
   { index: 4, name: 'Friday', short: 'Fri' },
+  { index: 5, name: 'Saturday', short: 'Sat' },
 ];
 
 export const AttendanceReportsPage: React.FC = () => {
@@ -96,7 +99,28 @@ export const AttendanceReportsPage: React.FC = () => {
   const todayStr = useMemo(() => formatDateStr(new Date()), []);
   const initialRange = useMemo(() => getPresetDates('30d'), []);
 
-  const [activePreset, setActivePreset] = useState<'today' | '7d' | '30d' | 'mtd' | 'custom'>('30d');
+  // Academic years for session scoping
+  const { data: academicYears = [] } = useAcademicYears(hasAccess ? activeTenantId : null);
+  const [selectedAcademicYearId, setSelectedAcademicYearId] = useState<string>('');
+
+  React.useEffect(() => {
+    if (academicYears.length > 0 && !selectedAcademicYearId) {
+      const currentYear = academicYears.find((y) => y.is_current) || academicYears[0];
+      if (currentYear) {
+        setSelectedAcademicYearId(currentYear.id);
+      }
+    }
+  }, [academicYears, selectedAcademicYearId]);
+
+  const activeYear = useMemo(() => {
+    return (
+      academicYears.find((y) => y.id === selectedAcademicYearId) ||
+      academicYears.find((y) => y.is_current) ||
+      null
+    );
+  }, [academicYears, selectedAcademicYearId]);
+
+  const [activePreset, setActivePreset] = useState<'today' | '7d' | '30d' | 'mtd' | 'academic_year' | 'custom'>('30d');
   const [fromDate, setFromDate] = useState<string>(initialRange.from);
   const [toDate, setToDate] = useState<string>(initialRange.to);
 
@@ -146,9 +170,15 @@ export const AttendanceReportsPage: React.FC = () => {
     isLoading: isSchoolLoading,
     isRefetching: isSchoolRefetching,
     refetch: refetchSchoolReport,
-  } = useSchoolAttendanceReport(activeTenantId, fromDate, toDate, {
-    enabled: !!activeTenantId && hasAccess && !!fromDate && !!toDate,
-  });
+  } = useSchoolAttendanceReport(
+    activeTenantId,
+    fromDate,
+    toDate,
+    selectedAcademicYearId || undefined,
+    {
+      enabled: !!activeTenantId && hasAccess && !!fromDate && !!toDate,
+    }
+  );
 
   // Class Roster Matrix Query (Tab 3)
   const {
@@ -162,6 +192,7 @@ export const AttendanceReportsPage: React.FC = () => {
     fromDate,
     toDate,
     selectedSectionId || undefined,
+    selectedAcademicYearId || undefined,
     {
       enabled: !!activeTenantId && hasAccess && !!effectiveClassId && activeTab === 'roster',
     }
@@ -191,8 +222,15 @@ export const AttendanceReportsPage: React.FC = () => {
   }, [absentData]);
 
   // Handlers for timeframe presets
-  const handleSelectPreset = (preset: 'today' | '7d' | '30d' | 'mtd') => {
+  const handleSelectPreset = (preset: 'today' | '7d' | '30d' | 'mtd' | 'academic_year') => {
     setActivePreset(preset);
+    if (preset === 'academic_year') {
+      if (activeYear) {
+        setFromDate(activeYear.start_date);
+        setToDate(activeYear.end_date < todayStr ? activeYear.end_date : todayStr);
+      }
+      return;
+    }
     const { from, to } = getPresetDates(preset);
     setFromDate(from);
     setToDate(to);
@@ -374,10 +412,50 @@ export const AttendanceReportsPage: React.FC = () => {
             >
               Month to Date
             </Button>
+            <Button
+              type="button"
+              variant={activePreset === 'academic_year' ? 'default' : 'outline'}
+              size="sm"
+              onClick={() => handleSelectPreset('academic_year')}
+              className="h-8 px-3 text-xs font-medium"
+              disabled={!activeYear}
+              title={activeYear ? `Load full session for ${activeYear.name}` : 'No active session'}
+            >
+              Full Academic Year
+            </Button>
           </div>
 
-          {/* Date Range Inputs & Actions */}
+          {/* Date Range Inputs, Session Switcher & Actions */}
           <div className="flex items-center gap-3 flex-wrap justify-between xl:justify-end">
+            {academicYears.length > 0 && (
+              <div className="flex items-center gap-1.5">
+                <label htmlFor="academic-session-select" className="text-xs text-muted-foreground font-medium whitespace-nowrap">
+                  Session:
+                </label>
+                <select
+                  id="academic-session-select"
+                  value={selectedAcademicYearId}
+                  onChange={(e) => {
+                    const newId = e.target.value;
+                    setSelectedAcademicYearId(newId);
+                    if (activePreset === 'academic_year') {
+                      const yr = academicYears.find((y) => y.id === newId);
+                      if (yr) {
+                        setFromDate(yr.start_date);
+                        setToDate(yr.end_date < todayStr ? yr.end_date : todayStr);
+                      }
+                    }
+                  }}
+                  className="h-8 rounded-md border border-input bg-background px-2 py-1 text-xs shadow-sm focus:outline-none focus:ring-1 focus:ring-primary font-medium"
+                >
+                  {academicYears.map((ay) => (
+                    <option key={ay.id} value={ay.id}>
+                      {ay.name} {ay.is_current ? '(Current)' : ''}
+                    </option>
+                  ))}
+                </select>
+              </div>
+            )}
             <div className="flex items-center gap-2 flex-wrap sm:flex-nowrap">
               <div className="flex items-center gap-1.5">
                 <label htmlFor="fromDate" className="text-xs text-muted-foreground font-medium">
@@ -524,11 +602,11 @@ export const AttendanceReportsPage: React.FC = () => {
             </CardContent>
           </Card>
 
-          {/* KPI 3: School Days Logged */}
+          {/* KPI 3: Operational School Days */}
           <Card className="border-border/60 hover:shadow-sm transition-shadow rounded-xl">
             <CardHeader className="flex flex-row items-center justify-between pb-2 p-5 space-y-0">
               <CardTitle className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">
-                School Days Logged
+                Operational School Days
               </CardTitle>
               <div className="p-2 bg-purple-500/10 text-purple-600 dark:text-purple-400 rounded-xl">
                 <CalendarDays className="h-4 w-4" />
@@ -537,9 +615,16 @@ export const AttendanceReportsPage: React.FC = () => {
             <CardContent className="p-5 pt-0">
               <div className="text-2xl font-bold text-foreground">
                 {schoolReport.total_school_days}
+                {schoolReport.expected_school_days !== undefined && schoolReport.expected_school_days !== null && (
+                  <span className="text-sm font-normal text-muted-foreground ml-1.5">
+                    / {schoolReport.expected_school_days} scheduled
+                  </span>
+                )}
               </div>
               <p className="text-xs text-muted-foreground mt-1 truncate">
-                Distinct recorded days in range
+                {schoolReport.academic_year_name
+                  ? `${schoolReport.academic_year_name} Academic Session`
+                  : 'Distinct recorded days in range'}
               </p>
             </CardContent>
           </Card>
@@ -712,23 +797,29 @@ export const AttendanceReportsPage: React.FC = () => {
                   </p>
                 </div>
 
-                <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-3">
+                <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-7 gap-3">
                   {WEEKDAYS.map((w) => {
                     const stat = schoolReport.day_of_week_stats?.find(
                       (d) => d.day_index === w.index || d.day_name.toLowerCase() === w.name.toLowerCase()
                     );
                     const pct = stat ? stat.attendance_percentage : 0;
                     const hasData = stat && stat.total_records > 0;
+                    const isOff = stat?.is_academic_day === false;
 
                     return (
                       <div
                         key={w.index}
-                        className="rounded-lg border border-border/60 p-3 bg-muted/20 space-y-2"
+                        className={cn(
+                          "rounded-lg border p-3 space-y-2",
+                          isOff
+                            ? "border-border/40 bg-muted/10 opacity-75"
+                            : "border-border/60 bg-muted/20"
+                        )}
                       >
                         <div className="flex items-center justify-between">
                           <span className="text-xs font-bold text-foreground">{w.name}</span>
                           <span className="text-xs font-mono font-semibold text-muted-foreground">
-                            {hasData ? `${pct}%` : 'N/A'}
+                            {hasData ? `${pct}%` : isOff ? 'Off Day' : 'N/A'}
                           </span>
                         </div>
 
@@ -750,7 +841,7 @@ export const AttendanceReportsPage: React.FC = () => {
                         </div>
 
                         <div className="text-[11px] text-muted-foreground flex items-center justify-between pt-0.5">
-                          <span>{hasData ? `${stat.present_count} present` : '0 records'}</span>
+                          <span>{hasData ? `${stat.present_count} present` : isOff ? 'School Off' : '0 records'}</span>
                           <span>{hasData ? `${stat.absent_count} absent` : '-'}</span>
                         </div>
                       </div>

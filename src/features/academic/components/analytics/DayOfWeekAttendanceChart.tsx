@@ -76,6 +76,12 @@ const CustomDayTooltip: React.FC<CustomTooltipProps> = ({ active, payload, label
             Lowest attendance weekday
           </div>
         )}
+        {item.is_academic_day === false && (
+          <div className="pt-1 text-[11px] text-muted-foreground font-medium flex items-center gap-1">
+            <Info className="w-3 h-3 shrink-0" />
+            Non-academic / off day
+          </div>
+        )}
       </div>
     </div>
   );

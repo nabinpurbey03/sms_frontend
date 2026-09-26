@@ -7,6 +7,7 @@ import {
   useAllClassesWithDetails,
 } from '@/features/academic/hooks';
 import { useMarkAttendance, useSectionAttendanceReport } from '../hooks';
+import { useSchoolSettings, useCalendarEvents } from '@/features/school-settings/hooks';
 import { AttendanceConfirmDialog } from '../components/AttendanceConfirmDialog';
 import { Button } from '@/components/ui/button';
 import { Card } from '@/components/ui/card';
@@ -79,6 +80,34 @@ export const MarkAttendancePage: React.FC = () => {
   }, []);
   const [recordDate, setRecordDate] = useState<string>(todayStr);
   const isDateOutOfRange = recordDate < minDateStr || recordDate > todayStr;
+
+  // Fetch tenant school settings (academic days) & calendar events
+  const { data: schoolSettings } = useSchoolSettings(activeTenantId);
+  const { data: calendarEvents = [] } = useCalendarEvents(activeTenantId);
+
+  // Weekday name and holiday detection for recordDate
+  const selectedDayInfo = useMemo(() => {
+    if (!recordDate) return { dayName: '', isAcademicDay: true, holidayEvent: null, isBlocked: false };
+    const [y, m, d] = recordDate.split('-').map(Number);
+    const dateObj = new Date(y, m - 1, d);
+    const dayNames = ['sunday', 'monday', 'tuesday', 'wednesday', 'thursday', 'friday', 'saturday'];
+    const dayKey = dayNames[dateObj.getDay()];
+
+    const isAcademicDay = schoolSettings?.academic_days
+      ? schoolSettings.academic_days.includes(dayKey as any)
+      : dayKey !== 'saturday'; // default Saturday off
+
+    const holidayEvent = calendarEvents.find(
+      (ev) => ev.is_holiday && recordDate >= ev.start_date && recordDate <= ev.end_date
+    );
+
+    return {
+      dayName: dayKey.charAt(0).toUpperCase() + dayKey.slice(1),
+      isAcademicDay,
+      holidayEvent,
+      isBlocked: !isAcademicDay || !!holidayEvent,
+    };
+  }, [recordDate, schoolSettings, calendarEvents]);
 
   // Search and attendance mark state
   const [presentStudentIds, setPresentStudentIds] = useState<Set<string>>(new Set());
@@ -216,7 +245,7 @@ export const MarkAttendancePage: React.FC = () => {
   }, [sectionReport, isAlreadyMarked, recordDate, selectedSectionId]);
 
   // Whether user can interactively change attendance in the roster
-  const canEdit = !isDateOutOfRange && (!isAlreadyMarked || isEditing);
+  const canEdit = !isDateOutOfRange && !selectedDayInfo.isBlocked && (!isAlreadyMarked || isEditing);
 
   // Check if current edits differ from saved state
   const hasUnsavedChanges = useMemo(() => {
@@ -297,6 +326,15 @@ export const MarkAttendancePage: React.FC = () => {
 
   const handleSubmit = async () => {
     if (!activeTenantId || !selectedClassId || !selectedSectionId) return;
+
+    if (selectedDayInfo.isBlocked) {
+      toast.error('Attendance Disabled for this Date', {
+        description: !selectedDayInfo.isAcademicDay
+          ? `${selectedDayInfo.dayName} is configured as a non-academic day for this school.`
+          : `"${selectedDayInfo.holidayEvent?.title}" is scheduled as an official school holiday.`,
+      });
+      return;
+    }
 
     // Reject dates out of allowed 7-day range
     if (!recordDate || isDateOutOfRange) {
@@ -421,7 +459,23 @@ export const MarkAttendancePage: React.FC = () => {
                   <span>Reset to Today</span>
                 </Button>
               )}
-              {recordDate < minDateStr ? (
+              {!selectedDayInfo.isAcademicDay ? (
+                <Badge
+                  variant="destructive"
+                  className="text-xs gap-1 h-10 px-2.5 shrink-0 flex items-center font-medium"
+                >
+                  <AlertCircle className="w-3.5 h-3.5" />
+                  {selectedDayInfo.dayName} Off (Non-Academic Day)
+                </Badge>
+              ) : selectedDayInfo.holidayEvent ? (
+                <Badge
+                  variant="destructive"
+                  className="text-xs gap-1 h-10 px-2.5 shrink-0 flex items-center font-medium"
+                >
+                  <AlertCircle className="w-3.5 h-3.5" />
+                  Holiday: {selectedDayInfo.holidayEvent.title}
+                </Badge>
+              ) : recordDate < minDateStr ? (
                 <Badge
                   variant="outline"
                   className="text-xs bg-amber-500/10 text-amber-700 dark:text-amber-400 border-amber-500/30 gap-1 h-10 px-2.5 shrink-0 flex items-center"
@@ -507,11 +561,20 @@ export const MarkAttendancePage: React.FC = () => {
           </div>
         </div>
 
-        {/* Access Notice for Teachers */}
-        {isTeacherOnly && selectedClassId && !isClassTeacherForSelected && (
-          <div className="mt-4 p-3 rounded-lg bg-amber-500/10 border border-amber-500/20 text-amber-700 dark:text-amber-400 text-xs flex items-center gap-2">
-            <AlertCircle className="w-4 h-4 shrink-0" />
-            <span>You are not the Class Teacher for this section. Only the assigned Class Teacher can mark attendance.</span>
+        {/* Non-Academic Day / Holiday Warning Banner */}
+        {selectedDayInfo.isBlocked && (
+          <div className="mt-4 p-4 rounded-xl bg-destructive/10 border border-destructive/30 text-destructive text-xs flex items-start gap-3">
+            <AlertCircle className="w-5 h-5 shrink-0 mt-0.5" />
+            <div>
+              <h4 className="font-semibold text-sm text-foreground">
+                Attendance Marking Disabled for this Date
+              </h4>
+              <p className="mt-0.5 text-muted-foreground">
+                {!selectedDayInfo.isAcademicDay
+                  ? `${selectedDayInfo.dayName} is configured as a non-academic day (school closed) in School Settings. Attendance cannot be recorded.`
+                  : `"${selectedDayInfo.holidayEvent?.title}" is scheduled as an official school holiday in the Academic Calendar. Attendance cannot be recorded.`}
+              </p>
+            </div>
           </div>
         )}
       </Card>

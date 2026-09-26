@@ -29,6 +29,7 @@ import {
   TrendingUp,
   School,
   Check,
+  Settings,
 } from 'lucide-react';
 
 import { useAuth } from '@/auth/useAuth';
@@ -194,6 +195,14 @@ export const AppShell: React.FC = () => {
       icon: Users,
       description: 'Manage students, teachers, and administrators.',
       show: can('CREATE_TEACHER_PARENT'),
+      category: 'Administration',
+    },
+    {
+      label: 'School Settings',
+      href: '/school-settings',
+      icon: Settings,
+      description: 'Configure academic sessions, weekly days, calendar, and school settings.',
+      show: can('MANAGE_TENANT_SETTINGS') || isSuperAdmin,
       category: 'Administration',
     },
     {

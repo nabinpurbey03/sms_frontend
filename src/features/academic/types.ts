@@ -229,6 +229,7 @@ export interface DayOfWeekAttendancePoint {
   present_count: number;
   total_count: number;
   attendance_rate: number;
+  is_academic_day?: boolean;
 }
 
 export interface AttendanceIntelligenceResponse {
@@ -236,6 +237,7 @@ export interface AttendanceIntelligenceResponse {
   academic_year_name: string;
   overall_attendance_rate: number;
   total_attendance_records: number;
+  expected_school_days?: number | null;
   chronic_absenteeism_count: number;
   total_evaluated_students: number;
   at_risk_students: AtRiskStudentDTO[];

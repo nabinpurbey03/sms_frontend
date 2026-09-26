@@ -50,27 +50,38 @@ export const attendanceApi = {
   getClassAttendanceReport: async (
     tenantId: string,
     classId: string,
-    startDate: string,
-    endDate: string,
-    sectionId?: string
+    startDate?: string,
+    endDate?: string,
+    sectionId?: string,
+    academicYearId?: string
   ): Promise<ClassAttendanceReportResponse> => {
     return apiClient.get(
       `/attendance/tenants/${tenantId}/classes/${classId}/report`,
       {
-        params: { from_date: startDate, to_date: endDate, section_id: sectionId },
+        params: {
+          from_date: startDate,
+          to_date: endDate,
+          section_id: sectionId,
+          academic_year_id: academicYearId,
+        },
       }
     );
   },
 
   getSchoolAttendanceReport: async (
     tenantId: string,
-    startDate: string,
-    endDate: string
+    startDate?: string,
+    endDate?: string,
+    academicYearId?: string
   ): Promise<SchoolAttendanceReportResponse> => {
     return apiClient.get(
       `/attendance/tenants/${tenantId}/school/report`,
       {
-        params: { from_date: startDate, to_date: endDate },
+        params: {
+          from_date: startDate,
+          to_date: endDate,
+          academic_year_id: academicYearId,
+        },
       }
     );
   },

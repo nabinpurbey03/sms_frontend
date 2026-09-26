@@ -242,15 +242,6 @@ export const DashboardPage: React.FC = () => {
                   </div>
                 )}
 
-                {(can('MANAGE_TENANT_SETTINGS') || isSuperAdmin) && (
-                  <Button variant="ghost" size="sm" asChild className="h-9 text-xs gap-1.5 font-medium border border-border/60 hover:bg-accent">
-                    <Link to="/academic-years" title="Configure and manage school sessions">
-                      <Settings className="h-3.5 w-3.5 text-muted-foreground" />
-                      <span className="hidden lg:inline">Manage Sessions</span>
-                    </Link>
-                  </Button>
-                )}
-
                 {(can('MANAGE_TENANT_SETTINGS') || can('MANAGE_EXAMS') || isSuperAdmin) && (
                   <Button variant="outline" size="sm" asChild className="h-9 text-xs gap-1.5 font-medium border-border/80 hover:bg-primary/5 hover:text-primary">
                     <Link to="/academic/analytics">
