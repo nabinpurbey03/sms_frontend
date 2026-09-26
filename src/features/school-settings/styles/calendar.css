@@ -119,3 +119,17 @@
   background: transparent !important;
   padding: 2px 4px !important;
 }
+
+/* Highlight Saturday column (7th column) as weekly off */
+.rbc-month-view .rbc-header:nth-child(7) {
+  color: var(--color-rose-600, #e11d48) !important;
+  background-color: rgba(225, 29, 72, 0.05) !important;
+}
+
+.rbc-month-view .rbc-day-bg:nth-child(7) {
+  background-color: rgba(225, 29, 72, 0.02) !important;
+}
+
+.dark .rbc-month-view .rbc-day-bg:nth-child(7) {
+  background-color: rgba(225, 29, 72, 0.04) !important;
+}

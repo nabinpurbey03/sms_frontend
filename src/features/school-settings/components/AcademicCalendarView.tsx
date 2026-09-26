@@ -140,7 +140,7 @@ export const AcademicCalendarView: React.FC<AcademicCalendarViewProps> = ({
         return 'bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border-emerald-200 dark:border-emerald-900';
       case 'OTHER':
       default:
-        return 'bg-slate-500/10 text-slate-600 dark:text-slate-400 border-slate-200 dark:border-slate-800';
+        return 'bg-blue-500/10 text-blue-600 dark:text-blue-400 border-blue-200 dark:border-blue-900';
     }
   };
 

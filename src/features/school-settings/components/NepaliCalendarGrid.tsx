@@ -1,4 +1,4 @@
-import React, { useState, useMemo } from 'react';
+import React, { useState, useMemo, useEffect } from 'react';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import {
@@ -17,7 +17,7 @@ import {
   isAdDateWithinSession,
   formatDualDateRange,
 } from '../utils/nepaliDate';
-import { getCategoryBlockClass } from './AcademicCalendarGrid';
+import { getCategoryBlockClass, getCategoryDotColor } from './AcademicCalendarGrid';
 import type { AcademicCalendarEvent } from '../types';
 
 export interface NepaliCalendarGridProps {
@@ -29,6 +29,8 @@ export interface NepaliCalendarGridProps {
   minDate?: string; // Academic year start_date (YYYY-MM-DD)
   maxDate?: string; // Academic year end_date (YYYY-MM-DD)
   academicYearName?: string;
+  viewAdDate?: Date;
+  onViewAdDateChange?: (d: Date) => void;
 }
 
 export const NepaliCalendarGrid: React.FC<NepaliCalendarGridProps> = ({
@@ -40,20 +42,43 @@ export const NepaliCalendarGrid: React.FC<NepaliCalendarGridProps> = ({
   minDate,
   maxDate,
   academicYearName,
+  viewAdDate,
+  onViewAdDateChange,
 }) => {
   // Determine initial BS Year and Month
   const initialBs = useMemo(() => {
-    const d = initialDate || new Date();
+    const d = viewAdDate ?? initialDate ?? new Date();
     const info = getNepaliDateFromAd(d);
     return {
       year: info?.year ?? 2082,
       month: info?.month ?? 5,
     };
-  }, [initialDate]);
+  }, [viewAdDate, initialDate]);
 
   const [viewYear, setViewYear] = useState<number>(initialBs.year);
   const [viewMonth, setViewMonth] = useState<number>(initialBs.month);
   const [viewMode, setViewMode] = useState<'month' | 'agenda'>('month');
+
+  // Sync BS view position when viewAdDate changes (e.g. from Gregorian grid navigation)
+  useEffect(() => {
+    if (viewAdDate) {
+      const info = getNepaliDateFromAd(viewAdDate);
+      if (info) {
+        setViewYear(info.year);
+        setViewMonth(info.month);
+      }
+    }
+  }, [viewAdDate]);
+
+  const syncAdDate = (year: number, monthIndex: number) => {
+    if (!onViewAdDateChange) return;
+    const pad = (n: number) => String(n).padStart(2, '0');
+    const adStr = bsToAd(`${year}-${pad(monthIndex + 1)}-01`);
+    if (adStr) {
+      const [y, m, d] = adStr.split('-').map(Number);
+      onViewAdDateChange(new Date(y, m - 1, d));
+    }
+  };
 
   // Days in viewed BS month and starting day of week
   const daysInMonth = useMemo(() => {
@@ -84,22 +109,20 @@ export const NepaliCalendarGrid: React.FC<NepaliCalendarGridProps> = ({
   // Navigation handlers
   const handlePrevMonth = () => {
     if (!canPrev) return;
-    if (viewMonth === 0) {
-      setViewYear((y) => y - 1);
-      setViewMonth(11);
-    } else {
-      setViewMonth((m) => m - 1);
-    }
+    const newMonth = viewMonth === 0 ? 11 : viewMonth - 1;
+    const newYear = viewMonth === 0 ? viewYear - 1 : viewYear;
+    setViewYear(newYear);
+    setViewMonth(newMonth);
+    syncAdDate(newYear, newMonth);
   };
 
   const handleNextMonth = () => {
     if (!canNext) return;
-    if (viewMonth === 11) {
-      setViewYear((y) => y + 1);
-      setViewMonth(0);
-    } else {
-      setViewMonth((m) => m + 1);
-    }
+    const newMonth = viewMonth === 11 ? 0 : viewMonth + 1;
+    const newYear = viewMonth === 11 ? viewYear + 1 : viewYear;
+    setViewYear(newYear);
+    setViewMonth(newMonth);
+    syncAdDate(newYear, newMonth);
   };
 
   const handleToday = () => {
@@ -112,12 +135,14 @@ export const NepaliCalendarGrid: React.FC<NepaliCalendarGridProps> = ({
       if (todayInfo) {
         setViewYear(todayInfo.year);
         setViewMonth(todayInfo.month);
+        syncAdDate(todayInfo.year, todayInfo.month);
       }
     } else if (minDate) {
       const minInfo = getNepaliDateFromAd(minDate);
       if (minInfo) {
         setViewYear(minInfo.year);
         setViewMonth(minInfo.month);
+        syncAdDate(minInfo.year, minInfo.month);
       }
     }
   };
@@ -221,7 +246,11 @@ export const NepaliCalendarGrid: React.FC<NepaliCalendarGridProps> = ({
           <div className="flex items-center gap-2">
             <select
               value={viewMonth}
-              onChange={(e) => setViewMonth(Number(e.target.value))}
+              onChange={(e) => {
+                const m = Number(e.target.value);
+                setViewMonth(m);
+                syncAdDate(viewYear, m);
+              }}
               className="rounded-md border border-input bg-background px-2.5 py-1 text-sm sm:text-base font-bold text-foreground shadow-2xs cursor-pointer focus:outline-none focus:ring-1 focus:ring-primary"
             >
               {NEPALI_MONTHS.map((m) => {
@@ -236,7 +265,11 @@ export const NepaliCalendarGrid: React.FC<NepaliCalendarGridProps> = ({
 
             <select
               value={viewYear}
-              onChange={(e) => setViewYear(Number(e.target.value))}
+              onChange={(e) => {
+                const y = Number(e.target.value);
+                setViewYear(y);
+                syncAdDate(y, viewMonth);
+              }}
               className="rounded-md border border-input bg-background px-2.5 py-1 text-sm sm:text-base font-bold text-foreground shadow-2xs cursor-pointer focus:outline-none focus:ring-1 focus:ring-primary"
             >
               {availableYears.map((y) => (
@@ -285,6 +318,39 @@ export const NepaliCalendarGrid: React.FC<NepaliCalendarGridProps> = ({
             Agenda ({monthEvents.length})
           </button>
         </div>
+      </div>
+
+      {/* Legend & Help Banner — matches Gregorian grid */}
+      <div className="flex flex-wrap items-center justify-between gap-3 px-1">
+        <div className="flex flex-wrap items-center gap-3 text-xs">
+          <span className="text-muted-foreground font-medium">Categories:</span>
+          <div className="flex items-center gap-1.5">
+            <span className="w-2.5 h-2.5 rounded-full bg-rose-600" />
+            <span className="text-foreground font-medium">Holiday / Closed</span>
+          </div>
+          <div className="flex items-center gap-1.5">
+            <span className="w-2.5 h-2.5 rounded-full bg-purple-600" />
+            <span className="text-foreground font-medium">Examinations</span>
+          </div>
+          <div className="flex items-center gap-1.5">
+            <span className="w-2.5 h-2.5 rounded-full bg-amber-600" />
+            <span className="text-foreground font-medium">Vacations</span>
+          </div>
+          <div className="flex items-center gap-1.5">
+            <span className="w-2.5 h-2.5 rounded-full bg-emerald-600" />
+            <span className="text-foreground font-medium">Events</span>
+          </div>
+          <div className="flex items-center gap-1.5">
+            <span className="w-2.5 h-2.5 rounded-full bg-blue-600" />
+            <span className="text-foreground font-medium">Other</span>
+          </div>
+        </div>
+
+        {canManage && (
+          <span className="text-xs text-muted-foreground italic">
+            Tip: Click any calendar date within the session to schedule an event.
+          </span>
+        )}
       </div>
 
       {/* Main Grid View */}
@@ -450,9 +516,10 @@ export const NepaliCalendarGrid: React.FC<NepaliCalendarGridProps> = ({
                   >
                     <div className="flex items-center gap-2.5 min-w-0">
                       <div
-                        className={`w-3 h-3 rounded-full shrink-0 ${
-                          ev.is_holiday ? 'bg-rose-600' : 'bg-primary'
-                        }`}
+                        className={`w-3 h-3 rounded-full shrink-0 ${getCategoryDotColor(
+                          ev.event_type,
+                          ev.is_holiday
+                        )}`}
                       />
                       <div className="min-w-0">
                         <span className="text-sm font-semibold text-foreground block truncate">

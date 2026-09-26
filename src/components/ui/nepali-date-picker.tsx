@@ -78,6 +78,23 @@ export const NepaliDatePicker: React.FC<NepaliDatePickerProps> = ({
     return todayBs ? Number(todayBs.split('-')[1]) - 1 : 5;
   });
 
+  // Viewed AD year and month
+  const [viewAdYear, setViewAdYear] = useState<number>(() => {
+    if (value) {
+      const [y] = value.split('-').map(Number);
+      return y || new Date().getFullYear();
+    }
+    return new Date().getFullYear();
+  });
+
+  const [viewAdMonth, setViewAdMonth] = useState<number>(() => {
+    if (value) {
+      const [, m] = value.split('-').map(Number);
+      return m ? m - 1 : new Date().getMonth();
+    }
+    return new Date().getMonth();
+  });
+
   useEffect(() => {
     if (value) {
       const bsStr = adToBs(value);
@@ -85,6 +102,11 @@ export const NepaliDatePicker: React.FC<NepaliDatePickerProps> = ({
         const [y, m] = bsStr.split('-').map(Number);
         setViewBsYear(y);
         setViewBsMonth(m - 1);
+      }
+      const [ay, am] = value.split('-').map(Number);
+      if (ay && am) {
+        setViewAdYear(ay);
+        setViewAdMonth(am - 1);
       }
     }
   }, [value, open]);
@@ -122,15 +144,13 @@ export const NepaliDatePicker: React.FC<NepaliDatePickerProps> = ({
 
   const handleSelectBsDay = (day: number) => {
     const pad = (n: number) => String(n).padStart(2, '0');
-    const bsDateStr = `${viewBsYear}-${pad(viewMonthPad(viewBsMonth))}-${pad(day)}`;
+    const bsDateStr = `${viewBsYear}-${pad(viewBsMonth + 1)}-${pad(day)}`;
     const adDateStr = bsToAd(bsDateStr);
     if (adDateStr) {
       onChange(adDateStr);
       setOpen(false);
     }
   };
-
-  const viewMonthPad = (m: number) => m + 1;
 
   const handleSelectToday = () => {
     const today = new Date();
@@ -296,15 +316,68 @@ export const NepaliDatePicker: React.FC<NepaliDatePickerProps> = ({
                 </Button>
               </div>
             ) : (
-              <div className="space-y-1.5">
-                <input
-                  type="date"
-                  value={value || ''}
-                  min={minDate}
-                  max={maxDate}
-                  onChange={(e) => onChange(e.target.value)}
-                  className="w-full rounded-md border border-input bg-background px-3 py-1.5 text-sm shadow-xs focus:ring-1 focus:ring-primary cursor-pointer"
-                />
+              <div className="flex items-center justify-between gap-1">
+                <Button
+                  type="button"
+                  variant="outline"
+                  size="sm"
+                  onClick={() => {
+                    if (viewAdMonth === 0) {
+                      setViewAdYear((y) => y - 1);
+                      setViewAdMonth(11);
+                    } else {
+                      setViewAdMonth((m) => m - 1);
+                    }
+                  }}
+                  className="h-8 w-8 p-0 cursor-pointer"
+                  title="Previous Month"
+                >
+                  <ChevronLeft className="w-4 h-4" />
+                </Button>
+
+                <div className="flex items-center gap-1.5 flex-1 justify-center">
+                  <select
+                    value={viewAdMonth}
+                    onChange={(e) => setViewAdMonth(Number(e.target.value))}
+                    className="rounded-md border border-input bg-background px-2 py-1 text-xs font-semibold shadow-xs cursor-pointer"
+                  >
+                    {Array.from({ length: 12 }, (_, i) => (
+                      <option key={i} value={i}>
+                        {new Date(2000, i).toLocaleDateString('en-US', { month: 'long' })}
+                      </option>
+                    ))}
+                  </select>
+
+                  <select
+                    value={viewAdYear}
+                    onChange={(e) => setViewAdYear(Number(e.target.value))}
+                    className="rounded-md border border-input bg-background px-2 py-1 text-xs font-semibold shadow-xs cursor-pointer"
+                  >
+                    {Array.from({ length: 21 }, (_, i) => 2015 + i).map((y) => (
+                      <option key={y} value={y}>
+                        {y}
+                      </option>
+                    ))}
+                  </select>
+                </div>
+
+                <Button
+                  type="button"
+                  variant="outline"
+                  size="sm"
+                  onClick={() => {
+                    if (viewAdMonth === 11) {
+                      setViewAdYear((y) => y + 1);
+                      setViewAdMonth(0);
+                    } else {
+                      setViewAdMonth((m) => m + 1);
+                    }
+                  }}
+                  className="h-8 w-8 p-0 cursor-pointer"
+                  title="Next Month"
+                >
+                  <ChevronRight className="w-4 h-4" />
+                </Button>
               </div>
             )}
           </div>
@@ -333,7 +406,7 @@ export const NepaliDatePicker: React.FC<NepaliDatePickerProps> = ({
                 {Array.from({ length: daysInMonth }).map((_, i) => {
                   const dayNum = i + 1;
                   const pad = (n: number) => String(n).padStart(2, '0');
-                  const currentBsStr = `${viewBsYear}-${pad(viewMonthPad(viewBsMonth))}-${pad(dayNum)}`;
+                  const currentBsStr = `${viewBsYear}-${pad(viewBsMonth + 1)}-${pad(dayNum)}`;
                   const currentAdStr = bsToAd(currentBsStr);
 
                   const isSelected =
@@ -371,6 +444,75 @@ export const NepaliDatePicker: React.FC<NepaliDatePickerProps> = ({
                     </button>
                   );
                 })}
+              </div>
+            </div>
+          )}
+
+          {/* Month Calendar Grid (AD) */}
+          {calendarMode === 'AD' && (
+            <div className="pt-2">
+              <div className="grid grid-cols-7 gap-1 text-center mb-1">
+                {['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'].map((d, i) => (
+                  <span
+                    key={d}
+                    className={`text-[11px] font-semibold py-1 ${
+                      i === 6 ? 'text-destructive font-bold' : 'text-muted-foreground'
+                    }`}
+                  >
+                    {d}
+                  </span>
+                ))}
+              </div>
+
+              <div className="grid grid-cols-7 gap-1">
+                {(() => {
+                  const firstDay = new Date(viewAdYear, viewAdMonth, 1).getDay();
+                  const daysInAdMonth = new Date(viewAdYear, viewAdMonth + 1, 0).getDate();
+                  const pad = (n: number) => String(n).padStart(2, '0');
+                  const cells = [];
+
+                  for (let i = 0; i < firstDay; i++) {
+                    cells.push(<div key={`empty-ad-${i}`} className="h-9 w-full" />);
+                  }
+
+                  for (let d = 1; d <= daysInAdMonth; d++) {
+                    const adStr = `${viewAdYear}-${pad(viewAdMonth + 1)}-${pad(d)}`;
+                    const isSelected = value === adStr;
+                    const isToday = adStr === todayAdStr;
+                    const isSaturday = (firstDay + d - 1) % 7 === 6;
+                    const isBeforeMin = minDate ? adStr < minDate : false;
+                    const isAfterMax = maxDate ? adStr > maxDate : false;
+                    const isDisabled = isBeforeMin || isAfterMax;
+
+                    cells.push(
+                      <button
+                        key={d}
+                        type="button"
+                        disabled={isDisabled}
+                        onClick={() => {
+                          onChange(adStr);
+                          setOpen(false);
+                        }}
+                        className={`h-9 w-full rounded-md flex flex-col items-center justify-center text-xs transition-colors cursor-pointer relative ${
+                          isSelected
+                            ? 'bg-primary text-primary-foreground font-bold shadow-xs'
+                            : isToday
+                            ? 'border border-primary text-primary font-semibold hover:bg-muted'
+                            : isSaturday
+                            ? 'text-destructive hover:bg-destructive/10'
+                            : 'text-foreground hover:bg-muted'
+                        } ${isDisabled ? 'opacity-25 cursor-not-allowed hover:bg-transparent pointer-events-none' : ''}`}
+                      >
+                        <span>{d}</span>
+                        {isSelected && (
+                          <span className="absolute bottom-0.5 w-1 h-1 bg-primary-foreground rounded-full" />
+                        )}
+                      </button>
+                    );
+                  }
+
+                  return cells;
+                })()}
               </div>
             </div>
           )}

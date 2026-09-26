@@ -49,6 +49,24 @@ export const getCategoryBlockClass = (type: CalendarEventType, isHoliday: boolea
 };
 
 /**
+ * Returns a Tailwind bg class for the category indicator dot
+ */
+export const getCategoryDotColor = (type: CalendarEventType, isHoliday: boolean): string => {
+  if (isHoliday || type === 'HOLIDAY') return 'bg-rose-600';
+  switch (type) {
+    case 'EXAM':
+      return 'bg-purple-600';
+    case 'VACATION':
+      return 'bg-amber-600';
+    case 'EVENT':
+      return 'bg-emerald-600';
+    case 'OTHER':
+    default:
+      return 'bg-blue-600';
+  }
+};
+
+/**
  * Custom Date Header component displaying date in user's preferred calendar system (BS or AD)
  */
 const CustomDateHeader: React.FC<{
@@ -121,25 +139,24 @@ const CustomEventComponent: React.FC<{ event: CalendarItem }> = ({ event }) => {
   );
 };
 
-const GregorianCalendarGridInner: React.FC<AcademicCalendarGridProps> = ({
+interface GregorianCalendarGridInnerProps extends AcademicCalendarGridProps {
+  viewAdDate: Date;
+  onViewAdDateChange: (d: Date) => void;
+}
+
+const GregorianCalendarGridInner: React.FC<GregorianCalendarGridInnerProps> = ({
   events,
   canManage,
   onSelectDate,
   onSelectEvent,
-  initialDate,
   minDate,
   maxDate,
   academicYearName,
+  viewAdDate,
+  onViewAdDateChange,
 }) => {
   const { calendarSystem } = useCalendarPreferenceStore();
-  const [currentDate, setCurrentDate] = useState<Date>(initialDate || new Date());
   const [currentView, setCurrentView] = useState<View>('month');
-
-  useEffect(() => {
-    if (initialDate) {
-      setCurrentDate(initialDate);
-    }
-  }, [initialDate]);
 
   // Map events to react-big-calendar items
   const calendarItems = useMemo<CalendarItem[]>(() => {
@@ -193,7 +210,7 @@ const GregorianCalendarGridInner: React.FC<AcademicCalendarGridProps> = ({
       const [minY, minM] = minDate.split('-').map(Number);
       const minMonthDate = new Date(minY, minM - 1, 1);
       if (newDate < minMonthDate) {
-        setCurrentDate(minMonthDate);
+        onViewAdDateChange(minMonthDate);
         return;
       }
     }
@@ -201,11 +218,11 @@ const GregorianCalendarGridInner: React.FC<AcademicCalendarGridProps> = ({
       const [maxY, maxM] = maxDate.split('-').map(Number);
       const maxMonthDate = new Date(maxY, maxM - 1, 1);
       if (newDate > maxMonthDate) {
-        setCurrentDate(maxMonthDate);
+        onViewAdDateChange(maxMonthDate);
         return;
       }
     }
-    setCurrentDate(newDate);
+    onViewAdDateChange(newDate);
   };
 
   // Custom Bounded Toolbar
@@ -405,7 +422,7 @@ const GregorianCalendarGridInner: React.FC<AcademicCalendarGridProps> = ({
           views={['month', 'agenda']}
           view={currentView}
           onView={(view) => setCurrentView(view)}
-          date={currentDate}
+          date={viewAdDate}
           onNavigate={handleNavigate}
           selectable={canManage}
           onSelectSlot={handleSelectSlot}
@@ -435,9 +452,31 @@ const GregorianCalendarGridInner: React.FC<AcademicCalendarGridProps> = ({
 export const AcademicCalendarGrid: React.FC<AcademicCalendarGridProps> = (props) => {
   const { calendarSystem } = useCalendarPreferenceStore();
 
+  // Lift the viewed Gregorian date so switching BS↔AD preserves position
+  const [viewAdDate, setViewAdDate] = useState<Date>(props.initialDate || new Date());
+
+  // Sync to initialDate when academic session changes
+  useEffect(() => {
+    if (props.initialDate) {
+      setViewAdDate(props.initialDate);
+    }
+  }, [props.initialDate]);
+
   if (calendarSystem === 'BS') {
-    return <NepaliCalendarGrid {...props} />;
+    return (
+      <NepaliCalendarGrid
+        {...props}
+        viewAdDate={viewAdDate}
+        onViewAdDateChange={setViewAdDate}
+      />
+    );
   }
 
-  return <GregorianCalendarGridInner {...props} />;
+  return (
+    <GregorianCalendarGridInner
+      {...props}
+      viewAdDate={viewAdDate}
+      onViewAdDateChange={setViewAdDate}
+    />
+  );
 };
