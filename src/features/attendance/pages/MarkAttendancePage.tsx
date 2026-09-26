@@ -550,7 +550,7 @@ export const MarkAttendancePage: React.FC = () => {
           ) : (
             <>
               {/* Status & Overview Banner */}
-          <div className="p-4 border-b bg-muted/20 flex flex-col md:flex-row md:items-center justify-between gap-4">
+          <div className="p-4 border-b bg-muted/20 flex flex-col md:flex-row md:items-center justify-between gap-4 flex-wrap">
             <div className="flex flex-wrap items-center gap-2.5">
               {/* Main Status Badge */}
               {isDateOutOfRange ? (
@@ -624,6 +624,24 @@ export const MarkAttendancePage: React.FC = () => {
                 <span className="text-xs font-bold text-destructive">{absentCount}</span>
               </div>
             </div>
+
+            {/* Attendance Progress Bar */}
+            {totalCount > 0 && (
+              <div className="w-full mt-1 basis-full">
+                <div className="h-1.5 w-full rounded-full bg-muted/60 overflow-hidden">
+                  <div
+                    className={`h-full rounded-full transition-all duration-500 ease-out ${
+                      attendancePercentage >= 90
+                        ? 'bg-emerald-500'
+                        : attendancePercentage >= 75
+                          ? 'bg-amber-500'
+                          : 'bg-rose-500'
+                    }`}
+                    style={{ width: `${attendancePercentage}%` }}
+                  />
+                </div>
+              </div>
+            )}
           </div>
 
           {/* Table Header Controls */}
