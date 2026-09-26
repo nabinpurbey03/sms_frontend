@@ -2,10 +2,10 @@ import React, { useMemo, useState, useEffect } from 'react';
 import { Calendar, dayjsLocalizer, type View, type ToolbarProps } from 'react-big-calendar';
 import dayjs from 'dayjs';
 import { Button } from '@/components/ui/button';
-import { Badge } from '@/components/ui/badge';
-import { ChevronLeft, ChevronRight, CalendarDays, Sparkles } from 'lucide-react';
+import { ChevronLeft, ChevronRight } from 'lucide-react';
 import { getNepaliDateFromAd } from '../utils/nepaliDate';
 import { useCalendarPreferenceStore } from '@/stores/calendarPreferenceStore';
+import { NepaliCalendarGrid } from './NepaliCalendarGrid';
 import type { AcademicCalendarEvent, CalendarEventType } from '../types';
 import '../styles/calendar.css';
 
@@ -121,7 +121,7 @@ const CustomEventComponent: React.FC<{ event: CalendarItem }> = ({ event }) => {
   );
 };
 
-export const AcademicCalendarGrid: React.FC<AcademicCalendarGridProps> = ({
+const GregorianCalendarGridInner: React.FC<AcademicCalendarGridProps> = ({
   events,
   canManage,
   onSelectDate,
@@ -430,4 +430,14 @@ export const AcademicCalendarGrid: React.FC<AcademicCalendarGridProps> = ({
       </div>
     </div>
   );
+};
+
+export const AcademicCalendarGrid: React.FC<AcademicCalendarGridProps> = (props) => {
+  const { calendarSystem } = useCalendarPreferenceStore();
+
+  if (calendarSystem === 'BS') {
+    return <NepaliCalendarGrid {...props} />;
+  }
+
+  return <GregorianCalendarGridInner {...props} />;
 };
