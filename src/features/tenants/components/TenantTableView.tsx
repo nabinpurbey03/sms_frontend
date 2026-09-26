@@ -1,7 +1,6 @@
 import React from 'react';
 import { Link } from '@tanstack/react-router';
 import {
-  Building2,
   Mail,
   Phone,
   MoreVertical,
@@ -69,12 +68,17 @@ export const TenantTableView: React.FC<TenantTableViewProps> = ({
             />
 
             <div className="space-y-0.5 min-w-0">
-              <div className="flex items-center gap-2">
-                <span className="font-bold text-sm text-foreground hover:underline cursor-pointer">
+              <div className="flex items-center gap-2 min-w-0">
+                <Link
+                  to={'/tenants/$tenantId' as any}
+                  params={{ tenantId: tenant.id } as any}
+                  className="font-bold text-sm text-foreground hover:text-primary hover:underline transition-colors truncate max-w-[220px]"
+                  title={`View ${tenant.name} 360° Analytics`}
+                >
                   {tenant.name}
-                </span>
+                </Link>
                 {isCurrentActive && (
-                  <Badge variant="purple" className="text-[9px] px-1.5 py-0">
+                  <Badge variant="purple" className="text-[9px] px-1.5 py-0 shrink-0">
                     Active Scope
                   </Badge>
                 )}
@@ -227,17 +231,9 @@ export const TenantTableView: React.FC<TenantTableViewProps> = ({
     },
     {
       header: 'Actions',
-      className: 'text-right min-w-[190px]',
+      className: 'text-right min-w-[70px] w-[70px]',
       cell: (tenant) => (
-        <div className="flex items-center justify-end gap-1.5">
-          <Button asChild variant="outline" size="sm" className="h-8 text-xs font-semibold gap-1">
-            <Link to={'/tenants/$tenantId' as any} params={{ tenantId: tenant.id } as any}>
-              <BarChart2 className="h-3.5 w-3.5" />
-              <span className="hidden sm:inline">360° Analytics</span>
-              <span className="sm:hidden">360°</span>
-            </Link>
-          </Button>
-
+        <div className="flex items-center justify-end">
           <DropdownMenu>
             <DropdownMenuTrigger asChild>
               <Button
@@ -252,6 +248,17 @@ export const TenantTableView: React.FC<TenantTableViewProps> = ({
             <DropdownMenuContent align="end" className="w-52">
               <DropdownMenuLabel className="text-xs">School Actions</DropdownMenuLabel>
               <DropdownMenuSeparator />
+
+              <DropdownMenuItem asChild className="cursor-pointer text-xs font-semibold text-primary">
+                <Link
+                  to={'/tenants/$tenantId' as any}
+                  params={{ tenantId: tenant.id } as any}
+                  className="flex items-center w-full"
+                >
+                  <BarChart2 className="h-3.5 w-3.5 mr-2" />
+                  <span>360° Analytics</span>
+                </Link>
+              </DropdownMenuItem>
 
               <DropdownMenuItem
                 onClick={() => onSwitchTenant(tenant)}
