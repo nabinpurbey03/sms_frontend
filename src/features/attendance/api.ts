@@ -7,6 +7,8 @@ import type {
   SchoolAttendanceReportResponse,
   ClassAttendanceReportResponse,
   IndividualStudentAttendanceReport,
+  AbsentStudentsResponse,
+  AbsentStudentsFilterParams,
 } from './types';
 
 export const attendanceApi = {
@@ -106,6 +108,20 @@ export const attendanceApi = {
       `/attendance/tenants/${tenantId}/daily-status`,
       { params: { record_date: recordDate, class_id: classId } }
     );
+  },
+
+  getAbsentStudents: async (
+    tenantId: string,
+    params?: AbsentStudentsFilterParams
+  ): Promise<AbsentStudentsResponse> => {
+    return apiClient.get(`/attendance/tenants/${tenantId}/absent-students`, {
+      params: {
+        record_date: params?.record_date,
+        class_id: params?.class_id,
+        section_id: params?.section_id,
+        search: params?.search,
+      },
+    });
   },
 };
 

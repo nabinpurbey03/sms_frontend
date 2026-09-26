@@ -206,3 +206,33 @@ export interface IndividualStudentAttendanceReport {
   records: Record<string, boolean>;
 }
 
+export interface AbsentStudentItem {
+  student_id: string;
+  first_name: string;
+  middle_name?: string | null;
+  last_name: string;
+  class_id: string;
+  class_name: string;
+  section_id?: string | null;
+  section_name?: string | null;
+  date: string;
+  is_present: boolean;
+  remarks?: string | null;
+  parent_name?: string | null;
+  parent_phone?: string | null;
+  parent_relationship?: string | null;
+}
+
+export interface AbsentStudentsResponse {
+  date: string;
+  total_absent: number;
+  items: AbsentStudentItem[];
+}
+
+export interface AbsentStudentsFilterParams {
+  record_date?: string;
+  class_id?: string;
+  section_id?: string;
+  search?: string;
+}
+

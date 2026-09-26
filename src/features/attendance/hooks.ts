@@ -1,7 +1,7 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { toast } from 'sonner';
 import { attendanceApi } from './api';
-import type { AttendanceFilterDTO } from './types';
+import type { AttendanceFilterDTO, AbsentStudentsFilterParams } from './types';
 
 export const ATTENDANCE_QUERY_KEY = 'attendance';
 export const DAILY_ATTENDANCE_STATUS_KEY = 'daily_attendance_status';
@@ -95,6 +95,20 @@ export const useDailyAttendanceStatus = (
     queryFn: () => attendanceApi.getDailyAttendanceStatus(tenantId!, recordDate, classId),
     enabled: !!tenantId && !!recordDate && (options?.enabled ?? true),
     staleTime: 1000 * 15,
+  });
+};
+
+// Query: Get absent students list with optional filters
+export const useAbsentStudents = (
+  tenantId: string | null,
+  params?: AbsentStudentsFilterParams,
+  options?: { enabled?: boolean }
+) => {
+  return useQuery({
+    queryKey: ['attendance', 'absent-students', tenantId, params],
+    queryFn: () => attendanceApi.getAbsentStudents(tenantId!, params),
+    enabled: !!tenantId && (options?.enabled ?? true),
+    staleTime: 1000 * 30, // 30 seconds
   });
 };
 
