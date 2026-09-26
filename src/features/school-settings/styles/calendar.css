@@ -1,0 +1,122 @@
+@import 'react-big-calendar/lib/css/react-big-calendar.css';
+
+/* Schools Up Pro - Modernized react-big-calendar Theme */
+.rbc-calendar {
+  font-family: inherit;
+  background-color: var(--color-card, #ffffff);
+  color: var(--color-foreground, #09090b);
+  border-radius: 0.75rem;
+  overflow: hidden;
+  border: 1px solid var(--color-border, #e4e4e7);
+}
+
+.rbc-header {
+  padding: 0.75rem 0.5rem;
+  font-size: 0.75rem;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  color: var(--color-muted-foreground, #71717a);
+  background-color: var(--color-muted, #f4f4f5);
+  border-bottom: 1px solid var(--color-border, #e4e4e7) !important;
+}
+
+.rbc-header + .rbc-header {
+  border-left: 1px solid var(--color-border, #e4e4e7) !important;
+}
+
+.rbc-month-view {
+  border: none !important;
+}
+
+.rbc-month-row {
+  border-bottom: 1px solid var(--color-border, #e4e4e7) !important;
+  min-height: 100px;
+}
+
+.rbc-month-row:last-child {
+  border-bottom: none !important;
+}
+
+.rbc-day-bg + .rbc-day-bg {
+  border-left: 1px solid var(--color-border, #e4e4e7) !important;
+}
+
+.rbc-off-range-bg {
+  background-color: rgba(0, 0, 0, 0.02) !important;
+  opacity: 0.6;
+}
+
+.dark .rbc-off-range-bg {
+  background-color: rgba(255, 255, 255, 0.02) !important;
+}
+
+.rbc-today {
+  background-color: var(--color-primary-50, rgba(59, 130, 246, 0.05)) !important;
+}
+
+/* Event Blocks */
+.rbc-event {
+  background: transparent !important;
+  border: none !important;
+  padding: 1px 4px !important;
+  margin: 1px 2px !important;
+  outline: none !important;
+  box-shadow: none !important;
+}
+
+.rbc-event:focus {
+  outline: none !important;
+}
+
+.rbc-event-content {
+  font-size: 0.75rem !important;
+  line-height: 1.25 !important;
+  white-space: nowrap !important;
+  overflow: hidden !important;
+  text-overflow: ellipsis !important;
+}
+
+/* Toolbar */
+.rbc-toolbar {
+  padding: 0.75rem 1rem;
+  margin-bottom: 0 !important;
+  border-bottom: 1px solid var(--color-border, #e4e4e7);
+  background-color: var(--color-card, #ffffff);
+}
+
+.rbc-toolbar button {
+  color: var(--color-foreground, #09090b) !important;
+  border: 1px solid var(--color-border, #e4e4e7) !important;
+  border-radius: 0.5rem !important;
+  padding: 0.35rem 0.75rem !important;
+  font-size: 0.75rem !important;
+  font-weight: 500 !important;
+  background-color: var(--color-background, #ffffff) !important;
+  transition: all 0.15s ease !important;
+  outline: none !important;
+}
+
+.rbc-toolbar button:hover {
+  background-color: var(--color-muted, #f4f4f5) !important;
+}
+
+.rbc-toolbar button.rbc-active {
+  background-color: var(--color-primary, #2563eb) !important;
+  color: var(--color-primary-foreground, #ffffff) !important;
+  border-color: var(--color-primary, #2563eb) !important;
+}
+
+.rbc-toolbar-label {
+  font-size: 1rem !important;
+  font-weight: 700 !important;
+  color: var(--color-foreground, #09090b);
+}
+
+.rbc-show-more {
+  font-size: 0.75rem !important;
+  font-weight: 600 !important;
+  color: var(--color-primary, #2563eb) !important;
+  background: transparent !important;
+  padding: 2px 4px !important;
+}
