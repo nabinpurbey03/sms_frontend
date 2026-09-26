@@ -7,6 +7,7 @@ import {
   useAllClassesWithDetails,
 } from '@/features/academic/hooks';
 import { useMarkAttendance, useSectionAttendanceReport } from '../hooks';
+import { AttendanceConfirmDialog } from '../components/AttendanceConfirmDialog';
 import { Button } from '@/components/ui/button';
 import { Card } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
@@ -84,6 +85,7 @@ export const MarkAttendancePage: React.FC = () => {
   const [savedPresentStudentIds, setSavedPresentStudentIds] = useState<Set<string>>(new Set());
   const [isEditing, setIsEditing] = useState<boolean>(false);
   const [searchQuery, setSearchQuery] = useState('');
+  const [confirmDialogOpen, setConfirmDialogOpen] = useState(false);
 
   const markAttendanceMutation = useMarkAttendance();
 
@@ -304,6 +306,11 @@ export const MarkAttendancePage: React.FC = () => {
 
     setSavedPresentStudentIds(new Set(presentStudentIds));
     setIsEditing(false);
+  };
+
+  const handleConfirmAndSubmit = async () => {
+    setConfirmDialogOpen(false);
+    await handleSubmit();
   };
 
   const isLoading = assignmentsLoading || classesLoading;
@@ -877,7 +884,7 @@ export const MarkAttendancePage: React.FC = () => {
                     </Button>
                     <Button
                       type="button"
-                      onClick={handleSubmit}
+                      onClick={() => setConfirmDialogOpen(true)}
                       disabled={
                         markAttendanceMutation.isPending ||
                         !hasUnsavedChanges ||
@@ -912,7 +919,7 @@ export const MarkAttendancePage: React.FC = () => {
               ) : (
                 <Button
                   type="button"
-                  onClick={handleSubmit}
+                  onClick={() => setConfirmDialogOpen(true)}
                   disabled={
                     markAttendanceMutation.isPending ||
                     isReportLoading ||
@@ -949,6 +956,21 @@ export const MarkAttendancePage: React.FC = () => {
           </div>
         </Card>
       )}
+
+      <AttendanceConfirmDialog
+        open={confirmDialogOpen}
+        onOpenChange={setConfirmDialogOpen}
+        onConfirm={handleConfirmAndSubmit}
+        isPending={markAttendanceMutation.isPending}
+        isAlreadyMarked={isAlreadyMarked}
+        isEditing={isEditing}
+        recordDate={recordDate}
+        classTitle={selectedClass?.name || ''}
+        sectionTitle={`Section ${selectedClass?.sections.find((s) => s.id === selectedSectionId)?.name || ''}`}
+        presentCount={presentCount}
+        absentCount={absentCount}
+        attendancePercentage={attendancePercentage}
+      />
     </div>
   );
 };
