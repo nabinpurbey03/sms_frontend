@@ -45,19 +45,22 @@
   }
 
   /* ==========================================================================
-     DARK MODE BASE TOKENS (Elevated Obsidian Surfaces)
+     DARK MODE BASE TOKENS (Obsidian Slate #151a22 & Midnight #0a0f16)
      ========================================================================== */
   .dark {
-    --background: 224 71% 4%; /* #030712 */
+    /* Midnight Canvas: #0a0f16 */
+    --background: 215 37.5% 6.3%;
     --foreground: 210 40% 98%;
 
-    --card: 222 47% 10.5%; /* #0F172A */
+    /* Elevated Obsidian Card Surface: #151a22 */
+    --card: 217 23.6% 10.8%;
     --card-foreground: 210 40% 98%;
 
-    --popover: 222 47% 12%;
+    /* Floating Popover / Modals: #1b212c */
+    --popover: 217 24% 13.7%;
     --popover-foreground: 210 40% 98%;
 
-    /* Ocean Primary (Dark mode uses Tertiary Cyan for visibility): #00B4D8 */
+    /* Ocean Primary (Vibrant Cyan on dark slate): #00B4D8 */
     --primary: 190.0 100.0% 42.4%; 
     --primary-foreground: 239.3 93.8% 19.0%; /* Dark Navy text */
 
@@ -65,18 +68,20 @@
     --secondary: 200.8 100.0% 35.7%;
     --secondary-foreground: 210 40% 98%;
 
-    /* Dark tinted muted/accent backgrounds */
-    --muted: 190 30% 15%;
-    --muted-foreground: 190 20% 75%;
+    /* Slate Muted Background (Table headers, skeletons): #1a212b */
+    --muted: 216 25% 13.5%;
+    --muted-foreground: 215 18% 62%; /* Soft Slate text #8b9bb0 */
 
-    --accent: 190 30% 15%;
+    /* Slate Interactive Hover Accent: #1f2734 */
+    --accent: 217 25% 16.5%;
     --accent-foreground: 210 40% 98%;
 
     --destructive: 0 72% 51%;
     --destructive-foreground: 210 40% 98%;
 
-    --border: 190 30% 19%;
-    --input: 190 30% 19%;
+    /* Refined Slate Border & Input Strokes: #222b38 */
+    --border: 217 24% 17.5%;
+    --input: 217 24% 17.5%;
     
     /* Ocean Ring: #00B4D8 */
     --ring: 190.0 100.0% 42.4%;
