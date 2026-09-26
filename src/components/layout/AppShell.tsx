@@ -35,6 +35,7 @@ import {
 import { useAuth } from '@/auth/useAuth';
 import { usePermission } from '@/auth/usePermission';
 import { useThemeStore } from '@/stores/themeStore';
+import { useCalendarPreferenceStore } from '@/stores/calendarPreferenceStore';
 import { useViewAsStore } from '@/stores/viewAsStore';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -122,6 +123,7 @@ export const AppShell: React.FC = () => {
   } = useAuth();
   const { can, isSuperAdmin, isTeacher, isParent } = usePermission();
   const { theme, setTheme } = useThemeStore();
+  const { calendarSystem, setCalendarSystem, toggleCalendarSystem } = useCalendarPreferenceStore();
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const [isDesktopSidebarCollapsed, setIsDesktopSidebarCollapsed] = useState(false);
 
@@ -621,6 +623,34 @@ export const AppShell: React.FC = () => {
                 </button>
               </div>
 
+              {/* Calendar Mode Quick Buttons on Mobile */}
+              <div className="grid grid-cols-2 gap-1 pt-1">
+                <button
+                  type="button"
+                  onClick={() => setCalendarSystem('BS')}
+                  className={`flex items-center justify-center gap-1.5 py-1.5 px-2 rounded-lg text-xs font-medium border transition-colors ${
+                    calendarSystem === 'BS'
+                      ? 'bg-primary text-primary-foreground border-primary font-bold shadow-xs'
+                      : 'border-input text-muted-foreground hover:text-foreground'
+                  }`}
+                >
+                  <CalendarDays className="h-3.5 w-3.5" />
+                  <span>Nepali (BS)</span>
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setCalendarSystem('AD')}
+                  className={`flex items-center justify-center gap-1.5 py-1.5 px-2 rounded-lg text-xs font-medium border transition-colors ${
+                    calendarSystem === 'AD'
+                      ? 'bg-primary text-primary-foreground border-primary font-bold shadow-xs'
+                      : 'border-input text-muted-foreground hover:text-foreground'
+                  }`}
+                >
+                  <CalendarDays className="h-3.5 w-3.5" />
+                  <span>Gregorian (AD)</span>
+                </button>
+              </div>
+
               <Button
                 variant="outline"
                 onClick={handleLogout}
@@ -675,15 +705,35 @@ export const AppShell: React.FC = () => {
                 onChange={handleSearch}
               />
             </div>
+            {/* Calendar System Switcher (AD / BS) */}
+            <Tooltip>
+              <TooltipTrigger asChild>
+                <button
+                  type="button"
+                  onClick={toggleCalendarSystem}
+                  className="h-8 px-2.5 rounded-full text-xs font-semibold gap-1.5 border border-input bg-background hover:bg-accent text-foreground cursor-pointer transition-colors shadow-2xs flex items-center shrink-0"
+                  aria-label="Toggle Calendar System (AD / BS)"
+                >
+                  <CalendarDays className="h-3.5 w-3.5 text-primary" />
+                  <span className="font-mono text-[11px] font-bold">
+                    {calendarSystem}
+                  </span>
+                </button>
+              </TooltipTrigger>
+              <TooltipContent side="bottom" className="text-xs font-medium">
+                Active Calendar: {calendarSystem === 'BS' ? 'Nepali Bikram Sambat (BS)' : 'Gregorian (AD)'}. Click to toggle.
+              </TooltipContent>
+            </Tooltip>
+
             {/* Theme Toggle */}
-          <Button 
-            variant="ghost" 
-            size="icon" 
-            onClick={() => setTheme(theme === 'dark' ? 'light' : 'dark')} 
-            className="h-9 w-9 rounded-full text-muted-foreground hover:bg-accent hover:text-foreground"
-          >
-            {theme === 'dark' ? <Sun className="h-5 w-5" /> : <Moon className="h-5 w-5" />}
-          </Button>
+            <Button 
+              variant="ghost" 
+              size="icon" 
+              onClick={() => setTheme(theme === 'dark' ? 'light' : 'dark')} 
+              className="h-9 w-9 rounded-full text-muted-foreground hover:bg-accent hover:text-foreground"
+            >
+              {theme === 'dark' ? <Sun className="h-5 w-5" /> : <Moon className="h-5 w-5" />}
+            </Button>
           
           {/* Notifications */}
           <Button variant="ghost" size="icon" className="h-9 w-9 rounded-full text-muted-foreground hover:bg-accent hover:text-foreground relative">
@@ -867,6 +917,45 @@ export const AppShell: React.FC = () => {
                   >
                     <Monitor className="h-3.5 w-3.5" />
                     <span>Auto</span>
+                  </button>
+                </div>
+              </div>
+
+              {/* Calendar Preference Selector */}
+              <DropdownMenuSeparator />
+              <div className="px-2 py-1.5 space-y-1.5">
+                <div className="text-xs font-semibold text-muted-foreground flex items-center justify-between">
+                  <span className="flex items-center gap-1.5">
+                    <CalendarDays className="h-3.5 w-3.5 text-primary" />
+                    <span>Calendar System</span>
+                  </span>
+                  <Badge variant="outline" className="text-[10px] font-mono font-bold px-1.5 py-0">
+                    {calendarSystem}
+                  </Badge>
+                </div>
+
+                <div className="grid grid-cols-2 gap-1 pt-0.5">
+                  <button
+                    type="button"
+                    onClick={() => setCalendarSystem('BS')}
+                    className={`flex items-center justify-center py-1 px-2 rounded-lg text-xs font-medium border transition-colors touch-manipulation min-h-[32px] ${
+                      calendarSystem === 'BS'
+                        ? 'bg-primary text-primary-foreground border-primary shadow-xs font-semibold'
+                        : 'border-input hover:bg-accent text-muted-foreground hover:text-foreground'
+                    }`}
+                  >
+                    <span>Nepali (BS)</span>
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => setCalendarSystem('AD')}
+                    className={`flex items-center justify-center py-1 px-2 rounded-lg text-xs font-medium border transition-colors touch-manipulation min-h-[32px] ${
+                      calendarSystem === 'AD'
+                        ? 'bg-primary text-primary-foreground border-primary shadow-xs font-semibold'
+                        : 'border-input hover:bg-accent text-muted-foreground hover:text-foreground'
+                    }`}
+                  >
+                    <span>Gregorian (AD)</span>
                   </button>
                 </div>
               </div>
