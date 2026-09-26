@@ -228,3 +228,44 @@ export function formatDualDateRange(
     return `${startAdStr} to ${endAdStr}`;
   }
 }
+
+/**
+ * Returns the Gregorian start and end date strings (YYYY-MM-DD) for a BS month
+ */
+export function getBsMonthDateRangeAd(
+  year: number,
+  monthIndex: number
+): { startAd: string; endAd: string } {
+  const days = getBsDaysInMonth(year, monthIndex);
+  const startAd = bsToAd(`${year}-${pad(monthIndex + 1)}-01`);
+  const endAd = bsToAd(`${year}-${pad(monthIndex + 1)}-${pad(days)}`);
+  return { startAd, endAd };
+}
+
+/**
+ * Checks if a given BS month overlaps with an academic session's [minDate, maxDate]
+ */
+export function isBsMonthWithinBounds(
+  year: number,
+  monthIndex: number,
+  minDate?: string,
+  maxDate?: string
+): boolean {
+  const { startAd, endAd } = getBsMonthDateRangeAd(year, monthIndex);
+  if (minDate && endAd < minDate) return false;
+  if (maxDate && startAd > maxDate) return false;
+  return true;
+}
+
+/**
+ * Checks if a single AD date string falls inside the active academic session
+ */
+export function isAdDateWithinSession(
+  adDateStr: string,
+  minDate?: string,
+  maxDate?: string
+): boolean {
+  if (minDate && adDateStr < minDate) return false;
+  if (maxDate && adDateStr > maxDate) return false;
+  return true;
+}
