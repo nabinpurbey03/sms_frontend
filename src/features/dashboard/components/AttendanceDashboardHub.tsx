@@ -34,6 +34,7 @@ import {
   useSchoolAttendanceReport,
   useStudentAttendanceReport,
 } from '@/features/attendance/hooks';
+import { AbsentStudentsDrawer } from '@/features/attendance/components/AbsentStudentsDrawer';
 import { useAllClassesWithDetails, useMyTeacherAssignments } from '@/features/academic/hooks';
 import { useAllMyChildren, useParentChildren } from '@/features/members/hooks';
 import type { TeacherAssignment } from '@/features/academic/types';
@@ -185,6 +186,7 @@ export const AttendanceDashboardHub: React.FC = () => {
   const [selectedDate, setSelectedDate] = useState<string>(todayStr);
   const [sectionStatusFilter, setSectionStatusFilter] = useState<'all' | 'pending' | 'recorded'>('all');
   const [sectionSearchQuery, setSectionSearchQuery] = useState('');
+  const [absentDrawerOpen, setAbsentDrawerOpen] = useState(false);
 
   const { startDate, endDate, isTodayMode } = useMemo(() => {
     if (timeframe === '7d') {
@@ -503,7 +505,9 @@ export const AttendanceDashboardHub: React.FC = () => {
                 title="Absent"
                 value={totalAbsent}
                 icon={AlertTriangle}
-                description={`${totalAbsent > 0 ? ((totalAbsent / Math.max(totalEnrolled, 1)) * 100).toFixed(1) : '0'}% of enrolled`}
+                description={`${totalAbsent > 0 ? ((totalAbsent / Math.max(totalEnrolled, 1)) * 100).toFixed(1) : '0'}% of enrolled • Click to inspect →`}
+                className="cursor-pointer hover:border-rose-500/50 hover:shadow-sm transition-all"
+                onClick={() => setAbsentDrawerOpen(true)}
               />
             </div>
           )}
@@ -551,11 +555,16 @@ export const AttendanceDashboardHub: React.FC = () => {
                         <span className="text-muted-foreground">Present:</span>
                         <span className="font-bold text-foreground font-mono">{totalPresent}</span>
                       </div>
-                      <div className="flex items-center gap-1.5">
-                        <span className="h-2.5 w-2.5 rounded-full bg-rose-500 shrink-0" />
-                        <span className="text-muted-foreground">Absent:</span>
+                      <button
+                        type="button"
+                        onClick={() => setAbsentDrawerOpen(true)}
+                        className="flex items-center gap-1.5 px-2 py-1 -my-1 rounded-md hover:bg-rose-500/10 transition-colors cursor-pointer group"
+                        title="Click to view absent students roster"
+                      >
+                        <span className="h-2.5 w-2.5 rounded-full bg-rose-500 shrink-0 group-hover:scale-110 transition-transform" />
+                        <span className="text-muted-foreground group-hover:text-foreground">Absent:</span>
                         <span className="font-bold text-foreground font-mono">{totalAbsent}</span>
-                      </div>
+                      </button>
                       <div className="flex items-center gap-1.5">
                         <span className="h-2.5 w-2.5 rounded-full bg-slate-400 shrink-0" />
                         <span className="text-muted-foreground">Unmarked:</span>
@@ -605,7 +614,9 @@ export const AttendanceDashboardHub: React.FC = () => {
                       title="Absent"
                       value={totalAbsent}
                       icon={AlertTriangle}
-                      description={`${totalAbsent > 0 ? ((totalAbsent / Math.max(totalEnrolled, 1)) * 100).toFixed(1) : '0'}% of enrolled`}
+                      description={`${totalAbsent > 0 ? ((totalAbsent / Math.max(totalEnrolled, 1)) * 100).toFixed(1) : '0'}% of enrolled • Click to view roster →`}
+                      className="cursor-pointer hover:border-rose-500/50 hover:shadow-sm transition-all"
+                      onClick={() => setAbsentDrawerOpen(true)}
                     />
                   </div>
                 </div>
@@ -1070,6 +1081,14 @@ export const AttendanceDashboardHub: React.FC = () => {
           )}
         </div>
       )}
+
+      {/* Absent Students Roster Drawer */}
+      <AbsentStudentsDrawer
+        open={absentDrawerOpen}
+        onOpenChange={setAbsentDrawerOpen}
+        tenantId={activeTenantId}
+        initialDate={selectedDate}
+      />
     </div>
   );
 };
