@@ -4,6 +4,7 @@ import { usePermission } from '@/auth/usePermission';
 import {
   useSchoolAttendanceReport,
   useClassAttendanceReport,
+  useAbsentStudents,
 } from '../hooks';
 import { useAllClassesWithDetails } from '@/features/academic/hooks';
 import { exportSchoolAttendanceCsv } from '../utils/exportAttendanceCsv';
@@ -39,6 +40,8 @@ import {
   Loader2,
   TrendingUp,
   Percent,
+  UserX,
+  Phone,
 } from 'lucide-react';
 import { Link } from '@tanstack/react-router';
 
@@ -98,7 +101,7 @@ export const AttendanceReportsPage: React.FC = () => {
   const [toDate, setToDate] = useState<string>(initialRange.to);
 
   // Active navigation tab
-  const [activeTab, setActiveTab] = useState<'overview' | 'at-risk' | 'roster'>('overview');
+  const [activeTab, setActiveTab] = useState<'overview' | 'at-risk' | 'roster' | 'daily-absent'>('overview');
 
   // Search filters
   const [atRiskSearch, setAtRiskSearch] = useState('');
@@ -107,6 +110,12 @@ export const AttendanceReportsPage: React.FC = () => {
   // Class & Section filters for Tab 3 (Student Roster Matrix)
   const [selectedClassId, setSelectedClassId] = useState<string>('');
   const [selectedSectionId, setSelectedSectionId] = useState<string>('');
+
+  // Daily Absentee filters for Tab 4
+  const [absentDate, setAbsentDate] = useState<string>(todayStr);
+  const [absentClassId, setAbsentClassId] = useState<string>('');
+  const [absentSectionId, setAbsentSectionId] = useState<string>('');
+  const [absentSearch, setAbsentSearch] = useState<string>('');
 
   // Academic classes query for filter dropdowns
   const { data: classesWithDetails = [] } = useAllClassesWithDetails(
@@ -125,6 +134,11 @@ export const AttendanceReportsPage: React.FC = () => {
   const selectedClass = useMemo(() => {
     return classesWithDetails.find((c) => c.id === effectiveClassId);
   }, [classesWithDetails, effectiveClassId]);
+
+  // Selected class for Tab 4 section filtering
+  const absentSelectedClass = useMemo(() => {
+    return classesWithDetails.find((c) => c.id === absentClassId);
+  }, [classesWithDetails, absentClassId]);
 
   // Main School Attendance Report Query
   const {
@@ -153,6 +167,29 @@ export const AttendanceReportsPage: React.FC = () => {
     }
   );
 
+  // Tab 4: Absent Students Query
+  const {
+    data: absentData,
+    isLoading: isAbsentLoading,
+    isRefetching: isAbsentRefetching,
+    refetch: refetchAbsent,
+  } = useAbsentStudents(
+    hasAccess ? activeTenantId : null,
+    {
+      record_date: absentDate,
+      class_id: absentClassId || undefined,
+      section_id: absentSectionId || undefined,
+      search: absentSearch || undefined,
+    },
+    { enabled: hasAccess && !!activeTenantId }
+  );
+
+  // Distinct impacted classes count for Tab 4
+  const impactedClassesCount = useMemo(() => {
+    if (!absentData?.items) return 0;
+    return new Set(absentData.items.map((item) => item.class_id)).size;
+  }, [absentData]);
+
   // Handlers for timeframe presets
   const handleSelectPreset = (preset: 'today' | '7d' | '30d' | 'mtd') => {
     setActivePreset(preset);
@@ -177,14 +214,54 @@ export const AttendanceReportsPage: React.FC = () => {
     }
   };
 
+  // CSV export for Tab 4 Daily Absentees
+  const handleExportAbsentCsv = () => {
+    if (!absentData?.items || absentData.items.length === 0) return;
+
+    const headers = ['Student Name', 'Class', 'Section', 'Parent / Guardian', 'Relationship', 'Contact Phone', 'Remarks'];
+    const rows = absentData.items.map((item) => {
+      const studentName = [item.first_name, item.middle_name, item.last_name].filter(Boolean).join(' ');
+      return [
+        studentName,
+        item.class_name || '',
+        item.section_name || 'N/A',
+        item.parent_name || 'N/A',
+        item.parent_relationship || '',
+        item.parent_phone || 'N/A',
+        item.remarks || '',
+      ];
+    });
+
+    const csvContent = [headers, ...rows]
+      .map((row) => row.map((cell) => `"${String(cell).replace(/"/g, '""')}"`).join(','))
+      .join('\r\n');
+
+    const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+    const url = URL.createObjectURL(blob);
+    const link = document.createElement('a');
+    link.setAttribute('href', url);
+    link.setAttribute('download', `absent_students_${absentDate}.csv`);
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+    URL.revokeObjectURL(url);
+  };
+
   const handleRefresh = async () => {
     await refetchSchoolReport();
     if (activeTab === 'roster' && effectiveClassId) {
       await refetchClassReport();
     }
+    if (activeTab === 'daily-absent') {
+      await refetchAbsent();
+    }
   };
 
   const handleExportCsv = () => {
+    if (activeTab === 'daily-absent') {
+      handleExportAbsentCsv();
+      return;
+    }
     if (!schoolReport) return;
     exportSchoolAttendanceCsv(schoolReport, activeTenantName || 'School');
   };
@@ -342,11 +419,18 @@ export const AttendanceReportsPage: React.FC = () => {
                 variant="outline"
                 size="sm"
                 onClick={handleRefresh}
-                disabled={isSchoolLoading || isSchoolRefetching}
+                disabled={
+                  activeTab === 'daily-absent'
+                    ? isAbsentLoading || isAbsentRefetching
+                    : isSchoolLoading || isSchoolRefetching
+                }
                 className="h-8 gap-1.5 text-xs cursor-pointer shadow-2xs"
               >
                 <RotateCw
-                  className={cn('w-3.5 h-3.5', (isSchoolRefetching || isClassRefetching) && 'animate-spin')}
+                  className={cn(
+                    'w-3.5 h-3.5',
+                    (isSchoolRefetching || isClassRefetching || isAbsentRefetching) && 'animate-spin'
+                  )}
                 />
                 <span>Refresh</span>
               </Button>
@@ -354,7 +438,11 @@ export const AttendanceReportsPage: React.FC = () => {
                 type="button"
                 size="sm"
                 onClick={handleExportCsv}
-                disabled={!schoolReport || isSchoolLoading}
+                disabled={
+                  activeTab === 'daily-absent'
+                    ? !absentData?.items || absentData.items.length === 0 || isAbsentLoading
+                    : !schoolReport || isSchoolLoading
+                }
                 className="h-8 gap-1.5 text-xs bg-emerald-600 hover:bg-emerald-700 text-white cursor-pointer shadow-xs"
               >
                 <Download className="w-3.5 h-3.5" />
@@ -542,6 +630,25 @@ export const AttendanceReportsPage: React.FC = () => {
         >
           <CalendarDays className="w-3.5 h-3.5" />
           <span>Student Roster Matrix</span>
+        </button>
+
+        <button
+          type="button"
+          onClick={() => setActiveTab('daily-absent')}
+          className={cn(
+            'px-4 py-2.5 text-xs font-semibold border-b-2 transition-colors cursor-pointer flex items-center gap-2 whitespace-nowrap',
+            activeTab === 'daily-absent'
+              ? 'border-primary text-primary'
+              : 'border-transparent text-muted-foreground hover:text-foreground'
+          )}
+        >
+          <UserX className="w-3.5 h-3.5 text-rose-500" />
+          <span>Daily Absentees</span>
+          {absentData?.total_absent !== undefined && absentData.total_absent > 0 && (
+            <Badge variant="destructive" className="ml-1 text-[10px] px-1.5 py-0 h-4">
+              {absentData.total_absent}
+            </Badge>
+          )}
         </button>
       </div>
 
@@ -1162,6 +1269,332 @@ export const AttendanceReportsPage: React.FC = () => {
                   </Table>
                 </div>
               )}
+            </Card>
+          )}
+        </div>
+      )}
+
+      {/* ========================================================================= */}
+      {/* TAB 4: Daily Absentees                                                    */}
+      {/* ========================================================================= */}
+      {activeTab === 'daily-absent' && (
+        <div className="space-y-6">
+          {/* Summary Cards */}
+          <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+            <Card className="border-border/60 hover:shadow-sm transition-shadow rounded-xl">
+              <CardHeader className="flex flex-row items-center justify-between pb-2 p-5 space-y-0">
+                <CardTitle className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">
+                  Total Absentees
+                </CardTitle>
+                <div className="p-2 bg-rose-500/10 text-rose-600 dark:text-rose-400 rounded-xl">
+                  <UserX className="h-4 w-4" />
+                </div>
+              </CardHeader>
+              <CardContent className="p-5 pt-0">
+                <div className="flex items-baseline gap-2">
+                  <div className="text-2xl font-bold text-foreground">
+                    {absentData?.total_absent ?? 0}
+                  </div>
+                  {(absentData?.total_absent ?? 0) > 0 ? (
+                    <Badge variant="destructive" className="text-[10px] h-5">
+                      Action Required
+                    </Badge>
+                  ) : (
+                    <Badge variant="success" className="text-[10px] h-5">
+                      All Present
+                    </Badge>
+                  )}
+                </div>
+                <p className="text-xs text-muted-foreground mt-1 truncate">
+                  Absent students recorded on this date
+                </p>
+              </CardContent>
+            </Card>
+
+            <Card className="border-border/60 hover:shadow-sm transition-shadow rounded-xl">
+              <CardHeader className="flex flex-row items-center justify-between pb-2 p-5 space-y-0">
+                <CardTitle className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">
+                  Inspection Date
+                </CardTitle>
+                <div className="p-2 bg-blue-500/10 text-blue-600 dark:text-blue-400 rounded-xl">
+                  <Calendar className="h-4 w-4" />
+                </div>
+              </CardHeader>
+              <CardContent className="p-5 pt-0">
+                <div className="text-2xl font-bold font-mono text-foreground">
+                  {absentDate}
+                </div>
+                <p className="text-xs text-muted-foreground mt-1 truncate">
+                  {absentDate === todayStr ? "Today's daily inspection" : 'Historical record inspection'}
+                </p>
+              </CardContent>
+            </Card>
+
+            <Card className="border-border/60 hover:shadow-sm transition-shadow rounded-xl">
+              <CardHeader className="flex flex-row items-center justify-between pb-2 p-5 space-y-0">
+                <CardTitle className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">
+                  Impacted Classes
+                </CardTitle>
+                <div className="p-2 bg-purple-500/10 text-purple-600 dark:text-purple-400 rounded-xl">
+                  <Users className="h-4 w-4" />
+                </div>
+              </CardHeader>
+              <CardContent className="p-5 pt-0">
+                <div className="flex items-baseline gap-2">
+                  <div className="text-2xl font-bold text-foreground">
+                    {impactedClassesCount}
+                  </div>
+                  <span className="text-xs text-muted-foreground">
+                    of {classesWithDetails.length} classes
+                  </span>
+                </div>
+                <p className="text-xs text-muted-foreground mt-1 truncate">
+                  Classes with at least one absentee recorded
+                </p>
+              </CardContent>
+            </Card>
+          </div>
+
+          {/* Filter Toolbar */}
+          <Card className="p-4 bg-card border-border/70">
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-3 items-end">
+              {/* Date Input */}
+              <div className="space-y-1.5">
+                <label htmlFor="absentDateInput" className="text-xs font-semibold text-muted-foreground flex items-center gap-1">
+                  <Calendar className="w-3.5 h-3.5" />
+                  Inspection Date
+                </label>
+                <Input
+                  id="absentDateInput"
+                  type="date"
+                  value={absentDate}
+                  max={todayStr}
+                  onChange={(e) => setAbsentDate(e.target.value)}
+                  className="h-9 text-xs font-mono"
+                />
+              </div>
+
+              {/* Class Selector */}
+              <div className="space-y-1.5">
+                <label htmlFor="absentClassSelect" className="text-xs font-semibold text-muted-foreground">Class</label>
+                <select
+                  id="absentClassSelect"
+                  value={absentClassId}
+                  onChange={(e) => {
+                    setAbsentClassId(e.target.value);
+                    setAbsentSectionId('');
+                  }}
+                  className="w-full h-9 px-3 rounded-lg border border-input bg-background text-xs text-foreground focus:outline-none focus:ring-2 focus:ring-primary"
+                >
+                  <option value="">All Classes</option>
+                  {classesWithDetails.map((cls) => (
+                    <option key={cls.id} value={cls.id}>
+                      {cls.name}
+                    </option>
+                  ))}
+                </select>
+              </div>
+
+              {/* Section Selector */}
+              <div className="space-y-1.5">
+                <label htmlFor="absentSectionSelect" className="text-xs font-semibold text-muted-foreground">Section</label>
+                <select
+                  id="absentSectionSelect"
+                  value={absentSectionId}
+                  onChange={(e) => setAbsentSectionId(e.target.value)}
+                  disabled={!absentSelectedClass || !absentSelectedClass.sections?.length}
+                  className="w-full h-9 px-3 rounded-lg border border-input bg-background text-xs text-foreground focus:outline-none focus:ring-2 focus:ring-primary disabled:opacity-50"
+                >
+                  <option value="">All Sections</option>
+                  {absentSelectedClass?.sections?.map((sec) => (
+                    <option key={sec.id} value={sec.id}>
+                      Section {sec.name}
+                    </option>
+                  ))}
+                </select>
+              </div>
+
+              {/* Search Input */}
+              <div className="space-y-1.5">
+                <label htmlFor="absentSearchInput" className="text-xs font-semibold text-muted-foreground">Search</label>
+                <div className="relative">
+                  <Search className="w-3.5 h-3.5 absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground" />
+                  <Input
+                    id="absentSearchInput"
+                    placeholder="Search by student name..."
+                    value={absentSearch}
+                    onChange={(e) => setAbsentSearch(e.target.value)}
+                    className="pl-8 pr-7 h-9 text-xs"
+                  />
+                  {absentSearch && (
+                    <button
+                      type="button"
+                      onClick={() => setAbsentSearch('')}
+                      className="absolute right-2 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground p-0.5 rounded cursor-pointer"
+                      title="Clear search"
+                    >
+                      <X className="w-3 h-3" />
+                    </button>
+                  )}
+                </div>
+              </div>
+
+              {/* Export Absentees CSV Button */}
+              <div>
+                <Button
+                  type="button"
+                  variant="outline"
+                  onClick={handleExportAbsentCsv}
+                  disabled={!absentData?.items || absentData.items.length === 0}
+                  className="w-full h-9 gap-1.5 text-xs cursor-pointer shadow-2xs font-medium"
+                >
+                  <Download className="w-3.5 h-3.5" />
+                  <span>Export Absentees CSV</span>
+                </Button>
+              </div>
+            </div>
+          </Card>
+
+          {/* Interactive Roster Table / Loading Skeleton / Empty State */}
+          {isAbsentLoading ? (
+            <Card className="p-8 border-border/70 space-y-4">
+              <div className="space-y-3">
+                {[1, 2, 3, 4, 5].map((i) => (
+                  <div
+                    key={i}
+                    className="p-3.5 rounded-xl border border-border/60 bg-muted/20 animate-pulse flex items-center justify-between gap-4"
+                  >
+                    <div className="flex items-center gap-3">
+                      <div className="w-8 h-8 rounded-full bg-muted" />
+                      <div className="space-y-2">
+                        <div className="h-3.5 bg-muted rounded w-32" />
+                        <div className="h-2.5 bg-muted rounded w-20" />
+                      </div>
+                    </div>
+                    <div className="h-3 bg-muted rounded w-24 hidden sm:block" />
+                    <div className="h-3 bg-muted rounded w-28 hidden md:block" />
+                    <div className="h-6 bg-muted rounded w-16" />
+                  </div>
+                ))}
+              </div>
+            </Card>
+          ) : !absentData?.items || absentData.items.length === 0 ? (
+            <Card className="p-12 text-center border-dashed border-border/80 bg-muted/5 space-y-3">
+              <div className="w-12 h-12 rounded-full bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 flex items-center justify-center mx-auto">
+                <CheckCircle2 className="w-6 h-6" />
+              </div>
+              <h3 className="font-semibold text-base text-foreground">No Absentees Found</h3>
+              <p className="text-xs text-muted-foreground max-w-md mx-auto">
+                {absentSearch || absentClassId || absentSectionId
+                  ? 'No absent students match your search or filter criteria for this date.'
+                  : `All marked students were present for ${absentDate} or no absences were recorded.`}
+              </p>
+            </Card>
+          ) : (
+            <Card className="overflow-hidden bg-card border-border/70 space-y-0">
+              <div className="p-4 border-b flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+                <div className="space-y-0.5">
+                  <h3 className="text-sm font-bold text-foreground flex items-center gap-2">
+                    <span>Daily Absentee Roster</span>
+                    <Badge variant="destructive" className="text-xs">
+                      {absentData.total_absent} {absentData.total_absent === 1 ? 'Absentee' : 'Absentees'}
+                    </Badge>
+                  </h3>
+                  <p className="text-xs text-muted-foreground">
+                    Recorded absences for {absentDate} across selected classes &amp; sections.
+                  </p>
+                </div>
+              </div>
+
+              <div className="overflow-x-auto">
+                <Table>
+                  <TableHeader>
+                    <TableRow className="hover:bg-transparent">
+                      <TableHead className="w-12">#</TableHead>
+                      <TableHead className="min-w-[180px]">Student Name</TableHead>
+                      <TableHead>Class &amp; Section</TableHead>
+                      <TableHead>Parent / Guardian</TableHead>
+                      <TableHead>Contact Phone</TableHead>
+                      <TableHead className="max-w-[200px]">Remarks</TableHead>
+                    </TableRow>
+                  </TableHeader>
+                  <TableBody>
+                    {absentData.items.map((item, idx) => {
+                      const fullName = [item.first_name, item.middle_name, item.last_name]
+                        .filter(Boolean)
+                        .join(' ');
+                      const initials = `${item.first_name?.[0] || ''}${item.last_name?.[0] || ''}`.toUpperCase() || 'S';
+
+                      return (
+                        <TableRow key={item.student_id} className="hover:bg-muted/30">
+                          <TableCell className="font-mono text-xs text-muted-foreground">
+                            {idx + 1}
+                          </TableCell>
+                          <TableCell>
+                            <div className="flex items-center gap-2.5">
+                              <div className="w-8 h-8 rounded-full bg-rose-500/10 text-rose-600 dark:text-rose-400 border border-rose-500/20 flex items-center justify-center font-bold text-xs shrink-0">
+                                {initials}
+                              </div>
+                              <span className="font-medium text-sm text-foreground">
+                                {fullName}
+                              </span>
+                            </div>
+                          </TableCell>
+                          <TableCell>
+                            <div className="flex flex-wrap items-center gap-1.5">
+                              <Badge variant="secondary" className="text-xs">
+                                {item.class_name}
+                              </Badge>
+                              {item.section_name && (
+                                <Badge variant="outline" className="text-xs">
+                                  Sec {item.section_name}
+                                </Badge>
+                              )}
+                            </div>
+                          </TableCell>
+                          <TableCell>
+                            <div className="flex items-center gap-1.5">
+                              <span className="font-medium text-xs text-foreground">
+                                {item.parent_name || 'No parent linked'}
+                              </span>
+                              {item.parent_relationship && (
+                                <Badge variant="outline" className="text-[10px] capitalize px-1.5 py-0">
+                                  {item.parent_relationship.toLowerCase()}
+                                </Badge>
+                              )}
+                            </div>
+                          </TableCell>
+                          <TableCell>
+                            {item.parent_phone ? (
+                              <a
+                                href={`tel:${item.parent_phone}`}
+                                className="inline-flex items-center gap-1.5 text-xs font-mono text-primary hover:underline"
+                                title={`Call ${item.parent_phone}`}
+                              >
+                                <Phone className="w-3.5 h-3.5 text-primary shrink-0" />
+                                <span>{item.parent_phone}</span>
+                              </a>
+                            ) : (
+                              <span className="text-xs text-muted-foreground italic">
+                                No phone
+                              </span>
+                            )}
+                          </TableCell>
+                          <TableCell>
+                            {item.remarks ? (
+                              <span className="text-xs text-muted-foreground line-clamp-2" title={item.remarks}>
+                                {item.remarks}
+                              </span>
+                            ) : (
+                              <span className="text-xs text-muted-foreground/50">&mdash;</span>
+                            )}
+                          </TableCell>
+                        </TableRow>
+                      );
+                    })}
+                  </TableBody>
+                </Table>
+              </div>
             </Card>
           )}
         </div>
