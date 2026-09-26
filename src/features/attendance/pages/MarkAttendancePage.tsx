@@ -648,7 +648,14 @@ export const MarkAttendancePage: React.FC = () => {
 
             {/* Attendance Progress Bar */}
             {totalCount > 0 && (
-              <div className="w-full mt-1 basis-full">
+              <div
+                role="progressbar"
+                aria-valuenow={attendancePercentage}
+                aria-valuemin={0}
+                aria-valuemax={100}
+                aria-label="Attendance rate"
+                className="w-full mt-1 basis-full"
+              >
                 <div className="h-1.5 w-full rounded-full bg-muted/60 overflow-hidden">
                   <div
                     className={`h-full rounded-full transition-all duration-500 ease-out ${
