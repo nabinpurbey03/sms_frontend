@@ -702,7 +702,7 @@ export const MarkAttendancePage: React.FC = () => {
               {searchQuery ? 'No students match your search.' : 'No active students in this section.'}
             </div>
           ) : (
-            <div className="overflow-x-auto max-h-[60vh] overflow-y-auto relative">
+            <div className="overflow-x-auto max-h-[60vh] overflow-y-auto relative [&>div]:overflow-visible">
               <Table>
                 <TableHeader className="sticky top-0 z-10 bg-card">
                   <TableRow className="hover:bg-transparent">
