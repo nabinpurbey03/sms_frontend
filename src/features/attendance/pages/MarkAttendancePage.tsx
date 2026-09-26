@@ -648,6 +648,11 @@ export const MarkAttendancePage: React.FC = () => {
                   Clear
                 </Button>
               )}
+              {searchQuery && (
+                <span className="text-[11px] text-muted-foreground tabular-nums">
+                  {filteredStudents.length} of {students.length} students
+                </span>
+              )}
             </div>
 
             {/* Batch Controls or Quick Edit */}
@@ -697,9 +702,9 @@ export const MarkAttendancePage: React.FC = () => {
               {searchQuery ? 'No students match your search.' : 'No active students in this section.'}
             </div>
           ) : (
-            <div className="overflow-x-auto">
+            <div className="overflow-x-auto max-h-[60vh] overflow-y-auto relative">
               <Table>
-                <TableHeader>
+                <TableHeader className="sticky top-0 z-10 bg-card">
                   <TableRow className="hover:bg-transparent">
                     <TableHead className="w-12">#</TableHead>
                     <TableHead>Student Name</TableHead>
