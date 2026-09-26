@@ -502,7 +502,47 @@ export const MarkAttendancePage: React.FC = () => {
       {/* Attendance Table */}
       {selectedSectionId && (
         <Card className="overflow-hidden bg-card shadow-xs border-border/70">
-          {/* Status & Overview Banner */}
+          {isReportLoading ? (
+            <div className="p-6 space-y-4 animate-pulse">
+              {/* Status banner skeleton */}
+              <div className="flex items-center justify-between">
+                <div className="flex items-center gap-2.5">
+                  <div className="h-7 w-36 rounded-full bg-muted" />
+                  <div className="h-4 w-40 rounded bg-muted" />
+                </div>
+                <div className="flex items-center gap-3">
+                  <div className="h-4 w-16 rounded bg-muted" />
+                  <div className="h-4 w-20 rounded bg-muted" />
+                  <div className="h-4 w-16 rounded bg-muted" />
+                </div>
+              </div>
+              {/* Search bar skeleton */}
+              <div className="flex items-center justify-between border-y py-3">
+                <div className="h-8 w-56 rounded-md bg-muted" />
+                <div className="flex gap-2">
+                  <div className="h-8 w-24 rounded-md bg-muted" />
+                  <div className="h-8 w-24 rounded-md bg-muted" />
+                </div>
+              </div>
+              {/* Table rows skeleton */}
+              {Array.from({ length: 8 }).map((_, i) => (
+                <div key={i} className="flex items-center gap-4 py-2">
+                  <div className="h-4 w-6 rounded bg-muted" />
+                  <div className="h-8 w-8 rounded-full bg-muted" />
+                  <div className="h-4 w-40 rounded bg-muted" />
+                  <div className="ml-auto h-6 w-20 rounded-full bg-muted" />
+                  <div className="h-8 w-22 rounded-md bg-muted" />
+                </div>
+              ))}
+              {/* Footer skeleton */}
+              <div className="flex items-center justify-between border-t pt-4">
+                <div className="h-4 w-64 rounded bg-muted" />
+                <div className="h-10 w-40 rounded-md bg-muted" />
+              </div>
+            </div>
+          ) : (
+            <>
+              {/* Status & Overview Banner */}
           <div className="p-4 border-b bg-muted/20 flex flex-col md:flex-row md:items-center justify-between gap-4">
             <div className="flex flex-wrap items-center gap-2.5">
               {/* Main Status Badge */}
@@ -892,6 +932,8 @@ export const MarkAttendancePage: React.FC = () => {
               )}
             </div>
           </div>
+            </>
+          )}
         </Card>
       )}
 
