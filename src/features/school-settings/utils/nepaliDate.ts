@@ -140,9 +140,10 @@ export function getBsMonthStartDayOfWeek(year: number, monthIndex: number): numb
 
 /**
  * Formats a single Gregorian date into dual calendar display
- * e.g. "Ashwin 15, 2082 (Oct 1, 2025)"
+ * When primary is 'BS': "Ashwin 15, 2082 (Oct 1, 2025)"
+ * When primary is 'AD': "Oct 1, 2025 (Ashwin 15, 2082 BS)"
  */
-export function formatDualDate(adDateStr: string): string {
+export function formatDualDate(adDateStr: string, primary: 'BS' | 'AD' = 'BS'): string {
   if (!adDateStr) return '';
   try {
     const [y, m, d] = adDateStr.split('-').map(Number);
@@ -158,6 +159,9 @@ export function formatDualDate(adDateStr: string): string {
       year: 'numeric',
     });
 
+    if (primary === 'AD') {
+      return `${adFormatted} (${bsFormatted} BS)`;
+    }
     return `${bsFormatted} (${adFormatted})`;
   } catch {
     return adDateStr;
@@ -166,12 +170,17 @@ export function formatDualDate(adDateStr: string): string {
 
 /**
  * Formats a date range into dual calendar display
- * e.g. "Ashwin 15–19, 2082 (Oct 1–5, 2025)"
+ * When primary is 'BS': "Ashwin 15–19, 2082 (Oct 1–5, 2025)"
+ * When primary is 'AD': "Oct 1–5, 2025 (Ashwin 15–19, 2082 BS)"
  */
-export function formatDualDateRange(startAdStr: string, endAdStr: string): string {
+export function formatDualDateRange(
+  startAdStr: string,
+  endAdStr: string,
+  primary: 'BS' | 'AD' = 'BS'
+): string {
   if (!startAdStr) return '';
   if (!endAdStr || startAdStr === endAdStr) {
-    return formatDualDate(startAdStr);
+    return formatDualDate(startAdStr, primary);
   }
 
   try {
@@ -211,6 +220,9 @@ export function formatDualDateRange(startAdStr: string, endAdStr: string): strin
       adText = `${startAdMonth} ${sd}, ${sy} – ${endAdMonth} ${ed}, ${ey}`;
     }
 
+    if (primary === 'AD') {
+      return `${adText} (${bsText} BS)`;
+    }
     return `${bsText} (${adText})`;
   } catch {
     return `${startAdStr} to ${endAdStr}`;
