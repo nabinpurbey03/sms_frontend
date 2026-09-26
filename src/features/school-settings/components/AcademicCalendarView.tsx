@@ -6,19 +6,18 @@ import {
   CalendarDays,
   Plus,
   Calendar,
-  BookOpen,
-  Sun,
-  PartyPopper,
+  List,
   Edit2,
   Trash2,
   AlertCircle,
   Loader2,
   Filter,
-  CheckCircle2,
 } from 'lucide-react';
 import { useAcademicYears } from '@/features/academic-year/hooks';
 import { useCalendarEvents, useDeleteCalendarEvent } from '../hooks';
 import { CalendarEventDialog } from './CalendarEventDialog';
+import { AcademicCalendarGrid } from './AcademicCalendarGrid';
+import { formatDualDateRange } from '../utils/nepaliDate';
 import type { AcademicCalendarEvent, CalendarEventType } from '../types';
 
 interface AcademicCalendarViewProps {
@@ -39,8 +38,27 @@ export const AcademicCalendarView: React.FC<AcademicCalendarViewProps> = ({
   }, [years]);
 
   const [selectedYearId, setSelectedYearId] = useState<string>('');
-
   const activeYearId = selectedYearId || currentYear?.id || '';
+
+  const activeYear = useMemo(() => {
+    return years.find((y) => y.id === activeYearId) || currentYear;
+  }, [years, activeYearId, currentYear]);
+
+  // View mode: 'list' | 'calendar'
+  const [viewMode, setViewMode] = useState<'list' | 'calendar'>('list');
+  const [preselectedDate, setPreselectedDate] = useState<string>('');
+
+  // Initial date for grid calendar view based on academic year
+  const initialGridDate = useMemo(() => {
+    if (!activeYear) return new Date();
+    const today = new Date();
+    const start = new Date(activeYear.start_date);
+    const end = new Date(activeYear.end_date);
+    if (today >= start && today <= end) {
+      return today;
+    }
+    return start;
+  }, [activeYear]);
 
   // Filter tab: 'ALL' | 'HOLIDAY' | 'EXAM' | 'VACATION' | 'EVENT'
   const [filterType, setFilterType] = useState<string>('ALL');
@@ -80,11 +98,19 @@ export const AcademicCalendarView: React.FC<AcademicCalendarViewProps> = ({
   }, [events]);
 
   const handleOpenAdd = () => {
+    setPreselectedDate('');
+    setEditingEvent(null);
+    setDialogOpen(true);
+  };
+
+  const handleSelectSlotDate = (adDateStr: string) => {
+    setPreselectedDate(adDateStr);
     setEditingEvent(null);
     setDialogOpen(true);
   };
 
   const handleOpenEdit = (event: AcademicCalendarEvent) => {
+    setPreselectedDate('');
     setEditingEvent(event);
     setDialogOpen(true);
   };
@@ -100,17 +126,19 @@ export const AcademicCalendarView: React.FC<AcademicCalendarViewProps> = ({
   };
 
   const getEventBadgeColor = (type: CalendarEventType, isHoliday: boolean) => {
+    if (isHoliday || type === 'HOLIDAY') {
+      return 'bg-rose-500/10 text-rose-600 dark:text-rose-400 border-rose-200 dark:border-rose-900';
+    }
     switch (type) {
-      case 'HOLIDAY':
-        return 'bg-rose-500/10 text-rose-600 dark:text-rose-400 border-rose-200 dark:border-rose-900';
       case 'EXAM':
         return 'bg-purple-500/10 text-purple-600 dark:text-purple-400 border-purple-200 dark:border-purple-900';
       case 'VACATION':
         return 'bg-amber-500/10 text-amber-600 dark:text-amber-400 border-amber-200 dark:border-amber-900';
       case 'EVENT':
-        return 'bg-blue-500/10 text-blue-600 dark:text-blue-400 border-blue-200 dark:border-blue-900';
+        return 'bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border-emerald-200 dark:border-emerald-900';
+      case 'OTHER':
       default:
-        return 'bg-secondary text-secondary-foreground border-border';
+        return 'bg-slate-500/10 text-slate-600 dark:text-slate-400 border-slate-200 dark:border-slate-800';
     }
   };
 
@@ -201,32 +229,58 @@ export const AcademicCalendarView: React.FC<AcademicCalendarViewProps> = ({
             </div>
           </div>
 
-          {/* Filter Pills */}
-          <div className="flex flex-wrap items-center gap-2 pt-2 border-t border-border">
-            <span className="text-xs font-medium text-muted-foreground mr-1 flex items-center gap-1">
-              <Filter className="w-3.5 h-3.5" /> Filter:
-            </span>
-            {[
-              { key: 'ALL', label: 'All Items' },
-              { key: 'HOLIDAY', label: 'Holidays Only' },
-              { key: 'EXAM', label: 'Examinations' },
-              { key: 'VACATION', label: 'Vacations' },
-              { key: 'EVENT', label: 'Events' },
-            ].map((tab) => (
+          {/* Filter Pills and View Mode Switcher */}
+          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pt-2 border-t border-border">
+            <div className="flex flex-wrap items-center gap-1.5">
+              <span className="text-xs font-medium text-muted-foreground mr-1 flex items-center gap-1">
+                <Filter className="w-3.5 h-3.5" /> Filter:
+              </span>
+              {[
+                { key: 'ALL', label: 'All Items' },
+                { key: 'HOLIDAY', label: 'Holidays Only' },
+                { key: 'EXAM', label: 'Examinations' },
+                { key: 'VACATION', label: 'Vacations' },
+                { key: 'EVENT', label: 'Events' },
+              ].map((tab) => (
+                <Button
+                  key={tab.key}
+                  type="button"
+                  variant={filterType === tab.key ? 'default' : 'outline'}
+                  size="sm"
+                  onClick={() => setFilterType(tab.key)}
+                  className="h-8 text-xs px-3"
+                >
+                  {tab.label}
+                </Button>
+              ))}
+            </div>
+
+            {/* List / Month Grid Toggle */}
+            <div className="flex items-center gap-1 bg-muted p-1 rounded-lg border border-border self-start sm:self-auto">
               <Button
-                key={tab.key}
                 type="button"
-                variant={filterType === tab.key ? 'default' : 'outline'}
+                variant={viewMode === 'list' ? 'secondary' : 'ghost'}
                 size="sm"
-                onClick={() => setFilterType(tab.key)}
-                className="h-8 text-xs px-3"
+                onClick={() => setViewMode('list')}
+                className="h-7 text-xs px-2.5 font-medium shadow-2xs"
               >
-                {tab.label}
+                <List className="w-3.5 h-3.5 mr-1.5" />
+                List View
               </Button>
-            ))}
+              <Button
+                type="button"
+                variant={viewMode === 'calendar' ? 'secondary' : 'ghost'}
+                size="sm"
+                onClick={() => setViewMode('calendar')}
+                className="h-7 text-xs px-2.5 font-medium shadow-2xs"
+              >
+                <Calendar className="w-3.5 h-3.5 mr-1.5" />
+                Month Grid
+              </Button>
+            </div>
           </div>
 
-          {/* Events List / Grid */}
+          {/* Events View: Month Grid vs List */}
           {isLoadingEvents ? (
             <div className="py-12 flex items-center justify-center">
               <Loader2 className="w-6 h-6 animate-spin text-primary" />
@@ -237,6 +291,14 @@ export const AcademicCalendarView: React.FC<AcademicCalendarViewProps> = ({
               <AlertCircle className="w-8 h-8 text-destructive mx-auto mb-2" />
               <p className="text-sm font-medium text-foreground">Could not load calendar events</p>
             </div>
+          ) : viewMode === 'calendar' ? (
+            <AcademicCalendarGrid
+              events={filteredEvents}
+              canManage={canManage}
+              onSelectDate={handleSelectSlotDate}
+              onSelectEvent={handleOpenEdit}
+              initialDate={initialGridDate}
+            />
           ) : filteredEvents.length === 0 ? (
             <div className="py-12 text-center border rounded-xl border-dashed border-border bg-muted/20">
               <Calendar className="w-10 h-10 text-muted-foreground mx-auto mb-3 opacity-60" />
@@ -257,7 +319,6 @@ export const AcademicCalendarView: React.FC<AcademicCalendarViewProps> = ({
             <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
               {filteredEvents.map((event) => {
                 const duration = calculateDaysDuration(event.start_date, event.end_date);
-                const isSingleDay = event.start_date === event.end_date;
 
                 return (
                   <div
@@ -320,19 +381,13 @@ export const AcademicCalendarView: React.FC<AcademicCalendarViewProps> = ({
                       )}
                     </div>
 
-                    <div className="mt-4 pt-3 border-t border-border flex items-center justify-between text-xs text-muted-foreground">
-                      <div className="flex items-center gap-1.5 font-medium text-foreground">
-                        <Calendar className="w-3.5 h-3.5 text-primary" />
-                        {isSingleDay ? (
-                          <span>{event.start_date}</span>
-                        ) : (
-                          <span>
-                            {event.start_date} <span className="text-muted-foreground">to</span> {event.end_date}
-                          </span>
-                        )}
+                    <div className="mt-4 pt-3 border-t border-border flex items-center justify-between text-xs text-muted-foreground gap-2">
+                      <div className="flex items-center gap-1.5 font-medium text-foreground min-w-0">
+                        <Calendar className="w-3.5 h-3.5 text-primary shrink-0" />
+                        <span className="truncate">{formatDualDateRange(event.start_date, event.end_date)}</span>
                       </div>
                       {duration && (
-                        <span className="text-muted-foreground bg-muted/60 px-2 py-0.5 rounded text-[11px]">
+                        <span className="text-muted-foreground bg-muted/60 px-2 py-0.5 rounded text-[11px] shrink-0 whitespace-nowrap">
                           {duration}
                         </span>
                       )}
@@ -353,6 +408,7 @@ export const AcademicCalendarView: React.FC<AcademicCalendarViewProps> = ({
           tenantId={tenantId}
           academicYearId={activeYearId}
           eventToEdit={editingEvent}
+          initialDate={preselectedDate}
         />
       )}
     </div>
