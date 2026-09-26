@@ -45,7 +45,6 @@ import { SchoolHeaderBadge } from './SchoolHeaderBadge';
 import {
   Tooltip,
   TooltipContent,
-  TooltipProvider,
   TooltipTrigger,
 } from '@/components/ui/tooltip';
 import {
@@ -392,7 +391,6 @@ export const AppShell: React.FC = () => {
       </header>
 
       {/* Desktop Fixed Sidebar (lg+) */}
-      <TooltipProvider delayDuration={150}>
       <aside
         className={`hidden lg:flex shrink-0 flex-col justify-between bg-card h-screen sticky top-0 z-30 shadow-xs transition-all duration-300 ${
           isDesktopSidebarCollapsed ? 'w-20' : 'w-64 xl:w-70'
@@ -499,7 +497,6 @@ export const AppShell: React.FC = () => {
           </div>
         </div>
       </aside>
-      </TooltipProvider>
 
       {/* Mobile Slide-Out Drawer (< lg screens) */}
       {sidebarOpen && (
