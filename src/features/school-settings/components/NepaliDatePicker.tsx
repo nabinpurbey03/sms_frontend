@@ -20,6 +20,7 @@ import {
   getBsMonthStartDayOfWeek,
   formatDualDate,
 } from '../utils/nepaliDate';
+import { useCalendarPreferenceStore } from '@/stores/calendarPreferenceStore';
 
 export interface NepaliDatePickerProps {
   id?: string;
@@ -27,6 +28,7 @@ export interface NepaliDatePickerProps {
   value: string; // ISO YYYY-MM-DD Gregorian
   onChange: (adDateStr: string) => void;
   minDate?: string; // ISO YYYY-MM-DD Gregorian
+  maxDate?: string; // ISO YYYY-MM-DD Gregorian
   error?: string;
   disabled?: boolean;
   placeholder?: string;
@@ -38,12 +40,18 @@ export const NepaliDatePicker: React.FC<NepaliDatePickerProps> = ({
   value,
   onChange,
   minDate,
+  maxDate,
   error,
   disabled = false,
   placeholder = 'Select date (BS / AD)',
 }) => {
+  const { calendarSystem } = useCalendarPreferenceStore();
   const [open, setOpen] = useState(false);
-  const [calendarMode, setCalendarMode] = useState<'BS' | 'AD'>('BS');
+  const [calendarMode, setCalendarMode] = useState<'BS' | 'AD'>(calendarSystem);
+
+  useEffect(() => {
+    setCalendarMode(calendarSystem);
+  }, [calendarSystem]);
 
   // Currently viewed BS year and month in the picker
   const [viewBsYear, setViewBsYear] = useState<number>(() => {
@@ -179,17 +187,31 @@ export const NepaliDatePicker: React.FC<NepaliDatePickerProps> = ({
           >
             <div className="flex flex-col items-start leading-snug">
               {selectedInfo ? (
-                <>
-                  <span className="text-sm font-semibold text-foreground flex items-center gap-1.5">
-                    {selectedInfo.monthNameEn} {selectedInfo.date}, {selectedInfo.year}
-                    <Badge variant="outline" className="text-[10px] py-0 px-1 font-mono">
-                      BS
-                    </Badge>
-                  </span>
-                  <span className="text-xs text-muted-foreground">
-                    {value} (Gregorian AD)
-                  </span>
-                </>
+                calendarMode === 'BS' ? (
+                  <>
+                    <span className="text-sm font-semibold text-foreground flex items-center gap-1.5">
+                      {selectedInfo.monthNameEn} {selectedInfo.date}, {selectedInfo.year}
+                      <Badge variant="outline" className="text-[10px] py-0 px-1 font-mono">
+                        BS
+                      </Badge>
+                    </span>
+                    <span className="text-xs text-muted-foreground">
+                      {value} (Gregorian AD)
+                    </span>
+                  </>
+                ) : (
+                  <>
+                    <span className="text-sm font-semibold text-foreground flex items-center gap-1.5">
+                      {value}
+                      <Badge variant="outline" className="text-[10px] py-0 px-1 font-mono">
+                        AD
+                      </Badge>
+                    </span>
+                    <span className="text-xs text-muted-foreground">
+                      {selectedInfo.monthNameEn} {selectedInfo.date}, {selectedInfo.year} BS
+                    </span>
+                  </>
+                )
               ) : (
                 <span className="text-sm text-muted-foreground">{placeholder}</span>
               )}
@@ -305,6 +327,8 @@ export const NepaliDatePicker: React.FC<NepaliDatePickerProps> = ({
                 <input
                   type="date"
                   value={value || ''}
+                  min={minDate}
+                  max={maxDate}
                   onChange={(e) => {
                     onChange(e.target.value);
                   }}
@@ -358,12 +382,14 @@ export const NepaliDatePicker: React.FC<NepaliDatePickerProps> = ({
                   const isSaturday = (startDayOfWeek + i) % 7 === 6;
 
                   const isBeforeMin = minDate ? currentAdStr < minDate : false;
+                  const isAfterMax = maxDate ? currentAdStr > maxDate : false;
+                  const isDisabledDate = isBeforeMin || isAfterMax;
 
                   return (
                     <button
                       key={dayNum}
                       type="button"
-                      disabled={isBeforeMin}
+                      disabled={isDisabledDate}
                       onClick={() => handleSelectBsDay(dayNum)}
                       className={`h-9 w-full rounded-md flex flex-col items-center justify-center text-xs transition-colors cursor-pointer relative ${
                         isSelected
@@ -373,7 +399,7 @@ export const NepaliDatePicker: React.FC<NepaliDatePickerProps> = ({
                           : isSaturday
                           ? 'text-destructive hover:bg-destructive/10'
                           : 'text-foreground hover:bg-muted'
-                      } ${isBeforeMin ? 'opacity-30 cursor-not-allowed hover:bg-transparent' : ''}`}
+                      } ${isDisabledDate ? 'opacity-25 cursor-not-allowed hover:bg-transparent pointer-events-none' : ''}`}
                     >
                       <span>{dayNum}</span>
                       {isSelected && (
@@ -390,7 +416,7 @@ export const NepaliDatePicker: React.FC<NepaliDatePickerProps> = ({
           <div className="mt-3 pt-2.5 border-t border-border flex items-center justify-between text-[11px] text-muted-foreground">
             <span>Selected:</span>
             <span className="font-medium text-foreground">
-              {value ? formatDualDate(value) : 'None'}
+              {value ? formatDualDate(value, calendarMode) : 'None'}
             </span>
           </div>
         </PopoverContent>

@@ -30,6 +30,8 @@ interface CalendarEventDialogProps {
   academicYearId: string;
   eventToEdit?: AcademicCalendarEvent | null;
   initialDate?: string;
+  minDate?: string;
+  maxDate?: string;
 }
 
 export const CalendarEventDialog: React.FC<CalendarEventDialogProps> = ({
@@ -39,6 +41,8 @@ export const CalendarEventDialog: React.FC<CalendarEventDialogProps> = ({
   academicYearId,
   eventToEdit,
   initialDate,
+  minDate,
+  maxDate,
 }) => {
   const isEditing = !!eventToEdit;
   const createMutation = useCreateCalendarEvent();
@@ -110,6 +114,15 @@ export const CalendarEventDialog: React.FC<CalendarEventDialogProps> = ({
 
   const onSubmit = async (data: CalendarEventFormData) => {
     if (!tenantId) return;
+
+    if (minDate && (data.start_date < minDate || data.end_date < minDate)) {
+      alert(`Event date cannot be before academic session start (${minDate}).`);
+      return;
+    }
+    if (maxDate && (data.start_date > maxDate || data.end_date > maxDate)) {
+      alert(`Event date cannot be after academic session end (${maxDate}).`);
+      return;
+    }
 
     if (isEditing && eventToEdit) {
       await updateMutation.mutateAsync({
@@ -196,7 +209,7 @@ export const CalendarEventDialog: React.FC<CalendarEventDialogProps> = ({
               )}
             </div>
 
-            {/* Dates: Start and End using Nepali (BS) Date Picker */}
+            {/* Dates: Start and End using Nepali (BS) Date Picker with Session Bounds */}
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
               <Controller
                 name="start_date"
@@ -206,6 +219,8 @@ export const CalendarEventDialog: React.FC<CalendarEventDialogProps> = ({
                     id="start_date"
                     label="Start Date *"
                     value={field.value}
+                    minDate={minDate}
+                    maxDate={maxDate}
                     onChange={(newStart) => {
                       field.onChange(newStart);
                       const currentEnd = watch('end_date');
@@ -226,8 +241,9 @@ export const CalendarEventDialog: React.FC<CalendarEventDialogProps> = ({
                     id="end_date"
                     label="End Date *"
                     value={field.value}
+                    minDate={watch('start_date') || minDate}
+                    maxDate={maxDate}
                     onChange={field.onChange}
-                    minDate={watch('start_date')}
                     error={errors.end_date?.message}
                   />
                 )}
