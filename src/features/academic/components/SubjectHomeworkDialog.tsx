@@ -10,6 +10,7 @@ import {
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
+import { NepaliDatePicker } from '@/components/ui/nepali-date-picker';
 import { Bell, Calendar, BookOpen, Send, Loader2 } from 'lucide-react';
 import { toast } from 'sonner';
 import { useCreateSectionNotice } from '../hooks';
@@ -150,12 +151,12 @@ export const SubjectHomeworkDialog: React.FC<SubjectHomeworkDialogProps> = ({
             </div>
 
             <div className="space-y-1.5">
-              <Label className="text-xs font-semibold">Due Date (Optional)</Label>
-              <Input
-                type="date"
+              <NepaliDatePicker
+                id="subject-due-date"
+                label="Due Date (Optional)"
                 value={dueDate}
-                onChange={(e) => setDueDate(e.target.value)}
-                className="h-9 text-xs"
+                onChange={(val) => setDueDate(val)}
+                size="sm"
               />
             </div>
           </div>

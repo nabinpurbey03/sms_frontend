@@ -9,6 +9,8 @@ import {
 } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
 import { CalendarCheck, CheckCircle2, AlertCircle, Loader2 } from 'lucide-react';
+import { useCalendarPreferenceStore } from '@/stores/calendarPreferenceStore';
+import { formatDualDate } from '@/features/school-settings/utils/nepaliDate';
 
 export interface AttendanceConfirmDialogProps {
   open: boolean;
@@ -39,6 +41,8 @@ export const AttendanceConfirmDialog: React.FC<AttendanceConfirmDialogProps> = (
   absentCount,
   attendancePercentage,
 }) => {
+  const { calendarSystem } = useCalendarPreferenceStore();
+
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="sm:max-w-md">
@@ -57,13 +61,7 @@ export const AttendanceConfirmDialog: React.FC<AttendanceConfirmDialogProps> = (
           <div className="flex items-center justify-between text-sm">
             <span className="text-muted-foreground">Date</span>
             <span className="font-medium">
-              {recordDate &&
-                new Date(recordDate + 'T00:00:00').toLocaleDateString('en-US', {
-                  weekday: 'short',
-                  year: 'numeric',
-                  month: 'short',
-                  day: 'numeric',
-                })}
+              {recordDate && formatDualDate(recordDate, calendarSystem)}
             </span>
           </div>
 

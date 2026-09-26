@@ -1,5 +1,7 @@
 import * as React from 'react';
 import { cn } from '@/lib/utils';
+import { useCalendarPreferenceStore } from '@/stores/calendarPreferenceStore';
+import { formatDualDate } from '@/features/school-settings/utils/nepaliDate';
 
 export interface CalendarHeatmapDataItem {
   date: string;
@@ -22,20 +24,12 @@ function getIntensityClass(value: number, maxValue: number): string {
   return 'bg-emerald-200 dark:bg-emerald-700/40';
 }
 
-function formatDate(dateStr: string): string {
-  const date = new Date(dateStr);
-  return new Intl.DateTimeFormat('en-US', {
-    weekday: 'short',
-    month: 'short',
-    day: 'numeric',
-  }).format(date);
-}
-
 function getWeekday(dateStr: string): number {
   return new Date(dateStr).getDay();
 }
 
 function CalendarHeatmap({ data, maxValue, className }: CalendarHeatmapProps) {
+  const { calendarSystem } = useCalendarPreferenceStore();
   const [hoveredItem, setHoveredItem] =
     React.useState<CalendarHeatmapDataItem | null>(null);
 
@@ -80,7 +74,7 @@ function CalendarHeatmap({ data, maxValue, className }: CalendarHeatmapProps) {
       {hoveredItem && (
         <div className="text-xs text-muted-foreground mb-2 text-center">
           <span className="font-medium text-foreground">
-            {formatDate(hoveredItem.date)}
+            {formatDualDate(hoveredItem.date, calendarSystem)}
           </span>
           {' — '}
           <span>
@@ -96,9 +90,12 @@ function CalendarHeatmap({ data, maxValue, className }: CalendarHeatmapProps) {
           {weekdays.map((day, i) => (
             <div
               key={day}
-              className="h-3 sm:h-4 flex items-center text-[10px] text-muted-foreground"
+              className={cn(
+                'h-3 sm:h-4 flex items-center text-[10px]',
+                i === 6 ? 'text-destructive font-semibold' : 'text-muted-foreground'
+              )}
             >
-              {i % 2 === 1 ? day : ''}
+              {i % 2 === 1 || i === 6 ? day : ''}
             </div>
           ))}
         </div>

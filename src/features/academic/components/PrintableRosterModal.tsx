@@ -11,6 +11,8 @@ import { Button } from '@/components/ui/button';
 import { Printer, Download, FileSpreadsheet, X } from 'lucide-react';
 import type { AcademicStudent, AcademicSection } from '../types';
 import type { ParentMappingDTO } from '@/features/members/types';
+import { useCalendarPreferenceStore } from '@/stores/calendarPreferenceStore';
+import { getNepaliDateFromAd, getBsDaysInMonth } from '@/features/school-settings/utils/nepaliDate';
 
 interface PrintableRosterModalProps {
   isOpen: boolean;
@@ -29,11 +31,17 @@ export const PrintableRosterModal: React.FC<PrintableRosterModalProps> = ({
   students,
   parentMap,
 }) => {
-  const daysInMonth = Array.from({ length: 31 }, (_, i) => i + 1);
-  const currentMonthYear = new Date().toLocaleDateString(undefined, {
-    month: 'long',
-    year: 'numeric',
-  });
+  const { calendarSystem } = useCalendarPreferenceStore();
+  const todayAd = new Date().toISOString().slice(0, 10);
+  const npInfo = getNepaliDateFromAd(todayAd);
+
+  const numDays = calendarSystem === 'BS' && npInfo ? getBsDaysInMonth(npInfo.year, npInfo.month) : 31;
+  const daysInMonth = Array.from({ length: numDays }, (_, i) => i + 1);
+
+  const currentMonthYear =
+    calendarSystem === 'BS' && npInfo
+      ? `${npInfo.monthNameEn} ${npInfo.year} BS (${new Date().toLocaleDateString('en-US', { month: 'short', year: 'numeric' })})`
+      : new Date().toLocaleDateString('en-US', { month: 'long', year: 'numeric' });
 
   const handlePrint = () => {
     window.print();

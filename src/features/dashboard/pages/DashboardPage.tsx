@@ -47,8 +47,11 @@ import { SuperAdminGrid } from '../components/SuperAdminGrid';
 import { PlatformTrendsSection } from '../components/PlatformTrendsSection';
 import { PlatformRankingsSection } from '../components/PlatformRankingsSection';
 import { TeacherMissionControlHub } from '../components/teacher/TeacherMissionControlHub';
+import { useCalendarPreferenceStore } from '@/stores/calendarPreferenceStore';
+import { formatDualDateRange } from '@/features/school-settings/utils/nepaliDate';
 
 export const DashboardPage: React.FC = () => {
+  const { calendarSystem } = useCalendarPreferenceStore();
   const { user, activeRole, activeTenantId } = useAuth();
   const { can, isSuperAdmin, isTeacher, isParent } = usePermission();
 
@@ -202,11 +205,11 @@ export const DashboardPage: React.FC = () => {
                     {activeAcademicYear?.name || (tenantMetrics?.academic_year_name ?? 'Active Session')}
                     {(activeAcademicYear?.start_date && activeAcademicYear?.end_date) ? (
                       <span className="text-xs font-normal text-muted-foreground ml-2">
-                        ({activeAcademicYear.start_date} ~ {activeAcademicYear.end_date})
+                        ({formatDualDateRange(activeAcademicYear.start_date, activeAcademicYear.end_date, calendarSystem)})
                       </span>
                     ) : (tenantMetrics?.academic_year_start_date && tenantMetrics?.academic_year_end_date) ? (
                       <span className="text-xs font-normal text-muted-foreground ml-2">
-                        ({tenantMetrics.academic_year_start_date} ~ {tenantMetrics.academic_year_end_date})
+                        ({formatDualDateRange(tenantMetrics.academic_year_start_date, tenantMetrics.academic_year_end_date, calendarSystem)})
                       </span>
                     ) : null}
                   </h3>

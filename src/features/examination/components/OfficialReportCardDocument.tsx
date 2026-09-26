@@ -1,6 +1,8 @@
 import React from 'react';
 import type { OfficialReportCardDTO } from '../types';
 import { cn, getMediaUrl } from '@/lib/utils';
+import { useCalendarPreferenceStore } from '@/stores/calendarPreferenceStore';
+import { formatDualDate } from '@/features/school-settings/utils/nepaliDate';
 import {
   GraduationCap,
   Award,
@@ -139,6 +141,7 @@ export const OfficialReportCardDocument: React.FC<OfficialReportCardDocumentProp
   reportCard,
   className,
 }) => {
+  const { calendarSystem } = useCalendarPreferenceStore();
   const { school, student, exam, subjects, summary, signatories } = reportCard;
   const [logoError, setLogoError] = React.useState(false);
   const isPassed =
@@ -265,7 +268,7 @@ export const OfficialReportCardDocument: React.FC<OfficialReportCardDocumentProp
               <Calendar className="h-3 w-3 text-primary" /> Date of Issue
             </span>
             <p className="font-bold text-foreground leading-tight">
-              {exam.issue_date}
+              {exam.issue_date ? formatDualDate(exam.issue_date, calendarSystem) : 'N/A'}
             </p>
           </div>
         </section>

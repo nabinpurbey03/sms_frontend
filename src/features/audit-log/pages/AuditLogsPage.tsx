@@ -7,8 +7,12 @@ import { Input } from '@/components/ui/input';
 import { Badge } from '@/components/ui/badge';
 import type { AuditLog } from '../schema';
 import { Button } from '@/components/ui/button';
+import { NepaliDatePicker } from '@/components/ui/nepali-date-picker';
+import { useCalendarPreferenceStore } from '@/stores/calendarPreferenceStore';
+import { formatDualDate } from '@/features/school-settings/utils/nepaliDate';
 
 export const AuditLogsPage: React.FC = () => {
+  const { calendarSystem } = useCalendarPreferenceStore();
   const [page, setPage] = useState(1);
   const [actionFilter, setActionFilter] = useState('');
   const [debouncedActionFilter, setDebouncedActionFilter] = useState('');
@@ -59,7 +63,15 @@ export const AuditLogsPage: React.FC = () => {
     {
       header: 'Date',
       accessorKey: 'created_at',
-      cell: (item) => <span className="text-sm">{new Date(item.created_at).toLocaleString()}</span>,
+      cell: (item) => {
+        const adDateStr = item.created_at.slice(0, 10);
+        const timeStr = new Date(item.created_at).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+        return (
+          <span className="text-sm">
+            {formatDualDate(adDateStr, calendarSystem)} {timeStr}
+          </span>
+        );
+      },
     },
   ];
 
@@ -92,23 +104,24 @@ export const AuditLogsPage: React.FC = () => {
               />
             </div>
             <div>
-              <label className="text-sm font-medium mb-1 block">Start Date</label>
-              <Input
-                type="date"
+              <NepaliDatePicker
+                id="audit-start-date"
+                label="Start Date"
                 value={startDate}
-                onChange={(e) => {
-                  setStartDate(e.target.value);
+                onChange={(val) => {
+                  setStartDate(val);
                   setPage(1);
                 }}
               />
             </div>
             <div>
-              <label className="text-sm font-medium mb-1 block">End Date</label>
-              <Input
-                type="date"
+              <NepaliDatePicker
+                id="audit-end-date"
+                label="End Date"
                 value={endDate}
-                onChange={(e) => {
-                  setEndDate(e.target.value);
+                minDate={startDate}
+                onChange={(val) => {
+                  setEndDate(val);
                   setPage(1);
                 }}
               />

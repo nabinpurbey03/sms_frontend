@@ -23,6 +23,8 @@ import {
 
 import { useAbsentStudents } from '@/features/attendance/hooks';
 import { useAllClassesWithDetails } from '@/features/academic/hooks';
+import { useCalendarPreferenceStore } from '@/stores/calendarPreferenceStore';
+import { formatDualDate } from '@/features/school-settings/utils/nepaliDate';
 
 export interface AbsentStudentsDrawerProps {
   open: boolean;
@@ -39,6 +41,7 @@ export const AbsentStudentsDrawer: React.FC<AbsentStudentsDrawerProps> = ({
   tenantId,
   initialDate,
 }) => {
+  const { calendarSystem } = useCalendarPreferenceStore();
   const [selectedDate, setSelectedDate] = useState<string>(initialDate || getTodayStr());
   const [classId, setClassId] = useState<string>('');
   const [searchQuery, setSearchQuery] = useState<string>('');
@@ -125,8 +128,8 @@ export const AbsentStudentsDrawer: React.FC<AbsentStudentsDrawerProps> = ({
                 {totalAbsent} {totalAbsent === 1 ? 'Absentee' : 'Absentees'}
               </Badge>
             </div>
-            <Badge variant="outline" className="font-mono text-xs">
-              {selectedDate}
+            <Badge variant="outline" className="text-xs">
+              {formatDualDate(selectedDate, calendarSystem)}
             </Badge>
           </div>
           <SheetDescription className="text-xs text-muted-foreground">

@@ -5,21 +5,20 @@ import { usePermission } from '@/auth/usePermission';
 import { useTenant } from '@/features/tenants/hooks';
 import { Badge } from '@/components/ui/badge';
 import { getMediaUrl } from '@/lib/utils';
+import { useCalendarPreferenceStore } from '@/stores/calendarPreferenceStore';
+import { formatDualDate } from '@/features/school-settings/utils/nepaliDate';
 
 export const DashboardHeroBanner: React.FC = () => {
   const { user, activeRole, activeTenantName, activeTenantId } = useAuth();
   const { isSuperAdmin } = usePermission();
+  const { calendarSystem } = useCalendarPreferenceStore();
   const { data: tenant } = useTenant(activeTenantId);
   const [failedLogoUrl, setFailedLogoUrl] = useState<string | null>(null);
   const resolvedLogoUrl = getMediaUrl(tenant?.logo_url);
   const hasValidLogo = !!resolvedLogoUrl && failedLogoUrl !== resolvedLogoUrl;
 
-  const formattedDate = new Intl.DateTimeFormat('en-US', {
-    weekday: 'short',
-    year: 'numeric',
-    month: 'short',
-    day: 'numeric',
-  }).format(new Date());
+  const todayStr = new Date().toISOString().slice(0, 10);
+  const formattedDate = formatDualDate(todayStr, calendarSystem);
 
   return (
     <div

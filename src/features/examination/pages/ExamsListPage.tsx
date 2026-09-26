@@ -28,6 +28,8 @@ import { Badge } from '@/components/ui/badge';
 import { Card, CardContent } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import { TenantRequiredState } from '@/components/common/TenantRequiredState';
+import { useCalendarPreferenceStore } from '@/stores/calendarPreferenceStore';
+import { formatDualDateRange } from '@/features/school-settings/utils/nepaliDate';
 
 function renderExamStatusBadge(status: ExamStatus) {
   switch (status) {
@@ -68,6 +70,7 @@ function renderExamStatusBadge(status: ExamStatus) {
 }
 
 export const ExamsListPage: React.FC = () => {
+  const { calendarSystem } = useCalendarPreferenceStore();
   const { activeTenantId } = useAuth();
   const { isAdmin, isOfficeAdmin, isSuperAdmin, isTeacher, can } = usePermission();
 
@@ -351,7 +354,9 @@ export const ExamsListPage: React.FC = () => {
                               Schedule:
                             </span>
                             <span className="font-medium text-foreground">
-                              {exam.start_date || 'TBD'} to {exam.end_date || 'TBD'}
+                              {exam.start_date && exam.end_date
+                                ? formatDualDateRange(exam.start_date, exam.end_date, calendarSystem)
+                                : exam.start_date || exam.end_date || 'TBD'}
                             </span>
                           </div>
                         )}

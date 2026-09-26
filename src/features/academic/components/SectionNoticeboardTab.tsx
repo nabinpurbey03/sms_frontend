@@ -14,6 +14,9 @@ import {
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
+import { NepaliDatePicker } from '@/components/ui/nepali-date-picker';
+import { useCalendarPreferenceStore } from '@/stores/calendarPreferenceStore';
+import { formatDualDate } from '@/features/school-settings/utils/nepaliDate';
 import {
   Dialog,
   DialogContent,
@@ -84,6 +87,7 @@ export const SectionNoticeboardTab: React.FC<SectionNoticeboardTabProps> = ({
   currentUserId,
   isAdmin,
 }) => {
+  const { calendarSystem } = useCalendarPreferenceStore();
   const sectionId = currentSection?.id || 'all';
   const { data: notices = [], isLoading } = useSectionNotices(tenantId, classId, sectionId);
   const createNoticeMutation = useCreateSectionNotice();
@@ -285,13 +289,13 @@ export const SectionNoticeboardTab: React.FC<SectionNoticeboardTabProps> = ({
                       {n.author_name || 'Teacher'}
                     </span>
                     <span>•</span>
-                    <span>{new Date(n.created_at).toLocaleDateString()}</span>
+                    <span>{formatDualDate(n.created_at.slice(0, 10), calendarSystem)}</span>
                   </div>
 
                   {n.due_date && (
                     <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-md font-semibold bg-rose-500/10 text-rose-700 dark:text-rose-400 border border-rose-500/20 text-[10px]">
                       <Calendar className="w-3 h-3" />
-                      Due: {new Date(n.due_date).toLocaleDateString()}
+                      Due: {formatDualDate(n.due_date.slice(0, 10), calendarSystem)}
                     </span>
                   )}
                 </div>
@@ -379,15 +383,12 @@ export const SectionNoticeboardTab: React.FC<SectionNoticeboardTabProps> = ({
 
             {/* Due Date (Visible especially for Homework) */}
             <div className="space-y-1">
-              <label className="text-xs font-semibold text-foreground flex items-center justify-between">
-                <span>Due Date / Deadline</span>
-                <span className="text-[10px] font-normal text-muted-foreground">Optional</span>
-              </label>
-              <Input
-                type="date"
+              <NepaliDatePicker
+                id="notice-due-date"
+                label="Due Date / Deadline (Optional)"
                 value={dueDate}
-                onChange={(e) => setDueDate(e.target.value)}
-                className="h-8 text-xs"
+                onChange={(val) => setDueDate(val)}
+                size="sm"
               />
             </div>
 

@@ -46,8 +46,11 @@ import {
 } from 'lucide-react';
 import type { AcademicClass, AcademicSection } from '@/features/academic/types';
 import { toast } from 'sonner';
+import { useCalendarPreferenceStore } from '@/stores/calendarPreferenceStore';
+import { formatDualDate } from '@/features/school-settings/utils/nepaliDate';
 
 export const MarkAttendancePage: React.FC = () => {
+  const { calendarSystem } = useCalendarPreferenceStore();
   const { activeTenantId } = useAuth();
   const { can, isSuperAdmin, activeRole } = usePermission();
 
@@ -940,24 +943,14 @@ export const MarkAttendancePage: React.FC = () => {
                       <span className="text-amber-600 dark:text-amber-400 font-medium flex items-center gap-1.5">
                         <Edit3 className="w-3.5 h-3.5" />
                         Editing attendance for{' '}
-                        {new Date(recordDate + 'T00:00:00').toLocaleDateString('en-US', {
-                          weekday: 'long',
-                          year: 'numeric',
-                          month: 'long',
-                          day: 'numeric',
-                        })}
+                        {formatDualDate(recordDate, calendarSystem)}
                         {hasUnsavedChanges ? ' (unsaved changes)' : ' (no changes yet)'}
                       </span>
                     ) : (
                       <span className="text-emerald-700 dark:text-emerald-400 font-medium flex items-center gap-1.5">
                         <CheckCircle2 className="w-3.5 h-3.5" />
                         Attendance recorded for{' '}
-                        {new Date(recordDate + 'T00:00:00').toLocaleDateString('en-US', {
-                          weekday: 'long',
-                          year: 'numeric',
-                          month: 'long',
-                          day: 'numeric',
-                        })}
+                        {formatDualDate(recordDate, calendarSystem)}
                         . Protected view.
                       </span>
                     )
@@ -965,12 +958,7 @@ export const MarkAttendancePage: React.FC = () => {
                     <span>
                       Marking attendance for{' '}
                       <span className="font-semibold text-foreground">
-                        {new Date(recordDate + 'T00:00:00').toLocaleDateString('en-US', {
-                          weekday: 'long',
-                          year: 'numeric',
-                          month: 'long',
-                          day: 'numeric',
-                        })}
+                        {formatDualDate(recordDate, calendarSystem)}
                       </span>
                     </span>
                   )}
