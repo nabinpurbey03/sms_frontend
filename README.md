@@ -52,6 +52,16 @@ A production-grade, domain-aligned **React 19 Single Page Application (SPA)** fo
 
 ## ✨ Recent Updates
 
+- **User Calendar Preference (Nepali BS vs Gregorian AD)**:
+  - Persistent user-selectable calendar system via Zustand (`src/stores/calendarPreferenceStore.ts`), preserved in `localStorage`.
+  - Accessible switchers mounted in top desktop header, mobile navigation drawer, user profile dropdown, and inline calendar view toolbar.
+  - Dynamically flips date priority across the app: **BS mode** renders Nepali Bikram Sambat dates prominently with Gregorian in subtext; **AD mode** renders Gregorian dates prominently.
+  - In Month Grid view, day cells dynamically display the chosen system's day number as the primary number.
+- **Academic Year Bounded Calendar & Prominent Event Titles**:
+  - Month Grid navigation strictly restricted to active academic session start and end dates; navigating outside session bounds is disabled.
+  - Modal date pickers enforce `minDate` and `maxDate` matching the active session, guarding against accidental out-of-year scheduling.
+  - Distinct category color palettes with solid left accent bars: Holidays (Rose), Exams (Purple), Vacations (Amber), Events (Emerald), Other (Blue/Slate).
+  - Event titles rendered boldly with crisp typography and status dots for maximum visibility in both light and dark modes.
 - **Nepali (Bikram Sambat / BS) Date Support & Dual Calendar**:
   - Full Nepali calendar integration for Academic Calendar events (`src/features/school-settings/components/NepaliDatePicker.tsx` and `src/features/school-settings/utils/nepaliDate.ts`).
   - Supports natural selection across Nepali months (Baisakh to Chaitra) with year pickers (2070–2090 BS) and instant BS/AD mode switcher.
