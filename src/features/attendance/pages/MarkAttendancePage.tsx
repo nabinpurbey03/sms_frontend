@@ -230,6 +230,16 @@ export const MarkAttendancePage: React.FC = () => {
     return false;
   }, [isAlreadyMarked, presentStudentIds, savedPresentStudentIds]);
 
+  // Warn before leaving with unsaved changes
+  useEffect(() => {
+    if (!hasUnsavedChanges) return;
+    const handler = (e: BeforeUnloadEvent) => {
+      e.preventDefault();
+    };
+    window.addEventListener('beforeunload', handler);
+    return () => window.removeEventListener('beforeunload', handler);
+  }, [hasUnsavedChanges]);
+
   // Quick stats
   const totalCount = students.length;
   const presentCount = presentStudentIds.size;
@@ -597,6 +607,17 @@ export const MarkAttendancePage: React.FC = () => {
                 >
                   <ShieldCheck className="w-3 h-3 text-emerald-600 dark:text-emerald-400" />
                   Protected View
+                </Badge>
+              )}
+
+              {/* Unsaved Changes Indicator */}
+              {canEdit && hasUnsavedChanges && (
+                <Badge
+                  variant="outline"
+                  className="text-[11px] gap-1 text-amber-700 dark:text-amber-400 bg-amber-500/10 border-amber-500/30 animate-pulse"
+                >
+                  <Edit3 className="w-3 h-3" />
+                  Unsaved Changes
                 </Badge>
               )}
 
