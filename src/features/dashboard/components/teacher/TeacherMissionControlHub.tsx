@@ -1,4 +1,5 @@
 import React, { useMemo, useState } from 'react';
+import { Link } from '@tanstack/react-router';
 import { useQueryClient } from '@tanstack/react-query';
 import { useAuth } from '@/auth/useAuth';
 import type { TeacherAssignmentResponse, AcademicStudent } from '@/features/academic/types';
@@ -174,37 +175,65 @@ export const TeacherMissionControlHub: React.FC<TeacherMissionControlHubProps> =
 
       {/* 3. 4 Scoped Teacher KPI Cards */}
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 sm:gap-6">
-        <StatCard
-          title="My Students"
-          value={myStudentsCount}
-          icon={GraduationCap}
-          description={
-            primaryClassTeacherDuty
-              ? `Enrolled in Section ${primaryClassTeacherDuty.section_name || 'A'}`
-              : 'Across your teaching classes'
-          }
-        />
+        <Link
+          to="/academic/parent-directory"
+          className="block group rounded-xl focus:outline-none focus-visible:ring-2 focus-visible:ring-primary"
+          title="View Student & Parent Directory"
+        >
+          <StatCard
+            title="My Students"
+            value={myStudentsCount}
+            icon={GraduationCap}
+            description={
+              primaryClassTeacherDuty
+                ? `Enrolled in Section ${primaryClassTeacherDuty.section_name || 'A'}`
+                : 'Across your teaching classes'
+            }
+            className="h-full cursor-pointer transition-all duration-200 group-hover:border-primary/50 group-hover:shadow-md group-hover:-translate-y-0.5 active:scale-[0.99]"
+          />
+        </Link>
 
-        <StatCard
-          title="Today's Attendance"
-          value={attendanceValue}
-          icon={CalendarCheck}
-          description={attendanceDescription}
-        />
+        <Link
+          to="/attendance/mark"
+          className="block group rounded-xl focus:outline-none focus-visible:ring-2 focus-visible:ring-primary"
+          title="Mark Attendance"
+        >
+          <StatCard
+            title="Today's Attendance"
+            value={attendanceValue}
+            icon={CalendarCheck}
+            description={attendanceDescription}
+            className="h-full cursor-pointer transition-all duration-200 group-hover:border-primary/50 group-hover:shadow-md group-hover:-translate-y-0.5 active:scale-[0.99]"
+          />
+        </Link>
 
-        <StatCard
-          title="Teaching Subjects"
-          value={uniqueSubjectsCount}
-          icon={BookOpen}
-          description={subjectsDescription}
-        />
+        <Link
+          to="/academic/my-assignments"
+          className="block group rounded-xl focus:outline-none focus-visible:ring-2 focus-visible:ring-primary"
+          title="View My Teaching Duties"
+        >
+          <StatCard
+            title="Teaching Subjects"
+            value={uniqueSubjectsCount}
+            icon={BookOpen}
+            description={subjectsDescription}
+            className="h-full cursor-pointer transition-all duration-200 group-hover:border-primary/50 group-hover:shadow-md group-hover:-translate-y-0.5 active:scale-[0.99]"
+          />
+        </Link>
 
-        <StatCard
-          title="Pending Exam Marks"
-          value={pendingExamMarksCount}
-          icon={Award}
-          description="Exam subjects awaiting scores"
-        />
+        <Link
+          to="/examination/exams"
+          className="block group rounded-xl focus:outline-none focus-visible:ring-2 focus-visible:ring-primary"
+          title="View Examinations & Grading"
+        >
+          <StatCard
+            title="Pending Exam Marks"
+            value={pendingExamMarksCount}
+            icon={Award}
+            description="Exam subjects awaiting scores"
+            className="h-full cursor-pointer transition-all duration-200 group-hover:border-primary/50 group-hover:shadow-md group-hover:-translate-y-0.5 active:scale-[0.99]"
+          />
+        </Link>
       </div>
 
       {/* 4. Classroom Section Hub (Class Teacher Duty) */}
