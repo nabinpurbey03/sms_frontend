@@ -96,11 +96,18 @@ export const TenantGridView: React.FC<TenantGridViewProps> = ({
 
                   <div className="space-y-1 min-w-0">
                     <div className="flex items-center gap-1.5 flex-wrap">
-                      <h3 className="font-bold text-sm text-foreground leading-tight truncate">
-                        {tenant.name}
+                      <h3 className="font-bold text-sm leading-tight truncate">
+                        <Link
+                          to={'/tenants/$tenantId' as any}
+                          params={{ tenantId: tenant.id } as any}
+                          className="text-foreground hover:text-primary hover:underline transition-colors"
+                          title={`View ${tenant.name} 360° Analytics`}
+                        >
+                          {tenant.name}
+                        </Link>
                       </h3>
                       {isCurrentActive && (
-                        <Badge variant="purple" className="text-[9px] px-1.5 py-0">
+                        <Badge variant="purple" className="text-[9px] px-1.5 py-0 shrink-0">
                           Active Scope
                         </Badge>
                       )}
@@ -215,15 +222,13 @@ export const TenantGridView: React.FC<TenantGridViewProps> = ({
             {/* Card Footer */}
             <CardFooter className="p-4 sm:p-5 pt-2 border-t flex items-center gap-2">
               <Button
-                asChild
                 variant="outline"
                 size="sm"
-                className="h-8 text-xs font-semibold gap-1.5 flex-1"
+                onClick={() => onSwitchTenant(tenant)}
+                className="h-8 text-xs font-semibold gap-1.5 flex-1 text-primary hover:text-primary hover:bg-primary/10 border-primary/20"
               >
-                <Link to={'/tenants/$tenantId' as any} params={{ tenantId: tenant.id } as any}>
-                  <BarChart2 className="h-3.5 w-3.5" />
-                  <span>360° Analytics</span>
-                </Link>
+                <Sparkles className="h-3.5 w-3.5" />
+                <span>Switch Scope</span>
               </Button>
 
               <DropdownMenu>
@@ -243,12 +248,15 @@ export const TenantGridView: React.FC<TenantGridViewProps> = ({
                   </DropdownMenuLabel>
                   <DropdownMenuSeparator />
 
-                  <DropdownMenuItem
-                    onClick={() => onSwitchTenant(tenant)}
-                    className="cursor-pointer text-xs font-semibold text-primary"
-                  >
-                    <Sparkles className="h-3.5 w-3.5 mr-2 text-primary" />
-                    <span>Switch School Scope</span>
+                  <DropdownMenuItem asChild className="cursor-pointer text-xs font-semibold text-primary">
+                    <Link
+                      to={'/tenants/$tenantId' as any}
+                      params={{ tenantId: tenant.id } as any}
+                      className="flex items-center w-full"
+                    >
+                      <BarChart2 className="h-3.5 w-3.5 mr-2" />
+                      <span>360° Analytics</span>
+                    </Link>
                   </DropdownMenuItem>
 
                   {onManageAdmins && (
