@@ -52,6 +52,17 @@ A production-grade, domain-aligned **React 19 Single Page Application (SPA)** fo
 
 ## ✨ Recent Updates
 
+- **Nepali (Bikram Sambat / BS) Date Support & Dual Calendar**:
+  - Full Nepali calendar integration for Academic Calendar events (`src/features/school-settings/components/NepaliDatePicker.tsx` and `src/features/school-settings/utils/nepaliDate.ts`).
+  - Supports natural selection across Nepali months (Baisakh to Chaitra) with year pickers (2070–2090 BS) and instant BS/AD mode switcher.
+  - Automatically translates BS selections to standard Gregorian ISO dates (`YYYY-MM-DD`) for seamless backend API compatibility without altering server schemas.
+  - Live dual-date preview badges displaying formatted BS and AD equivalents side-by-side (e.g. *Ashwin 15, 2082 (Oct 1, 2025)*).
+- **Visual Month Grid View (`react-big-calendar`)**:
+  - Dual view toggle ("List View" vs "Month Grid") with session-level date scoping.
+  - Visual month calendar with custom day cells rendering Gregorian day numbers alongside Nepali Bikram Sambat day subtext.
+  - Consistent category color badging across both list and month grid modes: Holidays (`rose`), Exam Periods (`purple`), Vacations (`amber`), Events (`emerald`), and Other (`slate`).
+  - Interactive grid actions: clicking an empty day pre-fills that date in the "Add Event" modal; clicking an event block opens its edit dialog.
+  - Category-aware "School Closed" holiday toggle: auto-checked ON for Holidays and Vacations, auto-checked OFF for Exams, Events, and Other (fully manually overridable).
 - **School Settings Hub (`/school-settings`) & Sidebar Administration**:
   - Centralized administrative hub under "Administration" in the sidebar with 4 tabbed workflows: **Academic Sessions** (`?tab=sessions`), **Weekly Academic Days** (`?tab=days`), **Academic Calendar** (`?tab=calendar`), and **School Profile** (`?tab=profile`).
   - Relocated session management from dashboard headers, and redirected `/academic-years` to `/school-settings?tab=sessions` to preserve all legacy bookmarks.
@@ -231,6 +242,8 @@ To support multi-tenancy seamlessly across all backend modules:
 | **Client State** | [Zustand](https://zustand-demo.pmnd.rs) | `^5.0.0` | Lightweight stores (`tenantStore`, `viewAsStore`, `themeStore`) |
 | **Icons** | [Lucide React](https://lucide.dev) | `^0.479.0` | Clean, modern vector icons |
 | **Notifications** | [Sonner](https://sonner.emilkowal.ski) | `^2.0.0` | Accessible rich toast alerts |
+| **Calendar Grid** | [react-big-calendar](https://github.com/jquense/react-big-calendar) | `^1.17.1` | Visual month grid view with dayjs localizer & custom date header |
+| **Nepali Date Engine** | [nepali-date-converter](https://github.com/sauravmh/nepali-date-converter) | `^3.4.0` | Bidirectional Bikram Sambat (BS) ↔ Gregorian (AD) date conversions |
 | **Linter** | [Oxlint](https://oxc.rs) | `^1.79.0` | High-speed Rust-based JavaScript/TypeScript linter |
 
 ---
@@ -299,6 +312,7 @@ frontend/
     │       ├── dropdown-menu.tsx
     │       ├── input.tsx             # Mobile 16px/14px anti-zoom input
     │       ├── label.tsx
+    │       ├── popover.tsx           # Accessible Popover primitive for datepickers
     │       ├── sheet.tsx             # Drawer primitive for detail views
     │       ├── sonner.tsx            # Rich toast notifications
     │       └── table.tsx
@@ -311,7 +325,10 @@ frontend/
     │   ├── platform-users/           # Platform user directory & memberships
     │   ├── academic/                 # Classes, sections, subjects & teacher assignments
     │   ├── academic-year/            # Academic year management & selector
-    │   ├── school-settings/          # School settings hub (sessions, days, calendar, profile)
+    │   ├── school-settings/          # School settings hub (sessions, days, BS/AD calendar, profile)
+    │   │   ├── components/           # NepaliDatePicker, AcademicCalendarGrid, CalendarEventDialog
+    │   │   ├── styles/calendar.css   # react-big-calendar custom styling
+    │   │   └── utils/nepaliDate.ts   # BS ↔ AD bidirectional date converter utilities
     │   ├── attendance/               # Daily attendance & reporting
     │   ├── examination/              # Exams, grading & report cards
     │   └── members/                  # School member directory & parent-student links
