@@ -266,58 +266,90 @@ export const DashboardPage: React.FC = () => {
 
           {/* KPI Stats Grid (1 col phone, 2 cols tablet, 4 cols desktop) */}
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 sm:gap-6">
-            <StatCard
-              title={isParent ? 'Linked Children' : 'Active Students'}
-              value={isParent ? (parentChildren?.length ?? 0) : (tenantMetrics?.total_students ?? totalEnrolledStudents)}
-              icon={isParent ? Baby : GraduationCap}
-              description={isParent ? 'Children linked to your account' : 'Total enrolled students'}
-            />
+            {/* 1. Active Students -> Students Roster */}
+            <Link
+              to={isParent ? '/academic/my-children' : '/academic/students'}
+              className="block group rounded-xl focus:outline-none focus-visible:ring-2 focus-visible:ring-primary"
+              title={isParent ? 'View Linked Children' : 'View Students Roster'}
+            >
+              <StatCard
+                title={isParent ? 'Linked Children' : 'Active Students'}
+                value={isParent ? (parentChildren?.length ?? 0) : (tenantMetrics?.total_students ?? totalEnrolledStudents)}
+                icon={isParent ? Baby : GraduationCap}
+                description={isParent ? 'Children linked to your account' : 'Total enrolled students'}
+                className="h-full cursor-pointer transition-all duration-200 group-hover:border-primary/50 group-hover:shadow-md group-hover:-translate-y-0.5 active:scale-[0.99]"
+              />
+            </Link>
 
-            <StatCard
-              title={isTeacher ? 'My Assignments' : 'Classes & Sections'}
-              value={isTeacher ? (teacherAssignments?.length ?? 0) : (tenantMetrics?.total_classes ?? classes.length)}
-              icon={BookOpen}
-              description={
-                isTeacher
-                  ? `${classTeacherDuties} class teacher duties`
-                  : `${totalSections} sections`
-              }
-            />
+            {/* 2. Classes & Sections -> Classes & Sections */}
+            <Link
+              to={isTeacher ? '/academic/my-assignments' : '/academic/classes'}
+              className="block group rounded-xl focus:outline-none focus-visible:ring-2 focus-visible:ring-primary"
+              title={isTeacher ? 'View My Teaching Duties' : 'View Classes & Sections'}
+            >
+              <StatCard
+                title={isTeacher ? 'My Assignments' : 'Classes & Sections'}
+                value={isTeacher ? (teacherAssignments?.length ?? 0) : (tenantMetrics?.total_classes ?? classes.length)}
+                icon={BookOpen}
+                description={
+                  isTeacher
+                    ? `${classTeacherDuties} class teacher duties`
+                    : `${totalSections} sections`
+                }
+                className="h-full cursor-pointer transition-all duration-200 group-hover:border-primary/50 group-hover:shadow-md group-hover:-translate-y-0.5 active:scale-[0.99]"
+              />
+            </Link>
 
-            <StatCard
-              title="Attendance Today"
-              value={
-                isParent
-                  ? (parentChildren?.length ? 'Active' : 'Pending')
-                  : `${attendanceRate != null ? `${attendanceRate.toFixed(1)}%` : 'Pending'}`
-              }
-              icon={CalendarCheck}
-              description={
-                isParent
-                  ? 'Children tracking status'
-                  : `${confirmedSections} of ${totalSections} sections confirmed`
-              }
-              trend={
-                !isParent && attendanceRate != null
-                  ? { value: attendanceRate >= 80 ? 2.1 : -1.5, label: 'vs yesterday' }
-                  : undefined
-              }
-            />
+            {/* 3. Attendance Today -> Attendance Reports */}
+            <Link
+              to="/attendance/reports"
+              className="block group rounded-xl focus:outline-none focus-visible:ring-2 focus-visible:ring-primary"
+              title="View Attendance Reports"
+            >
+              <StatCard
+                title="Attendance Today"
+                value={
+                  isParent
+                    ? (parentChildren?.length ? 'Active' : 'Pending')
+                    : `${attendanceRate != null ? `${attendanceRate.toFixed(1)}%` : 'Pending'}`
+                }
+                icon={CalendarCheck}
+                description={
+                  isParent
+                    ? 'Children tracking status'
+                    : `${confirmedSections} of ${totalSections} sections confirmed`
+                }
+                trend={
+                  !isParent && attendanceRate != null
+                    ? { value: attendanceRate >= 80 ? 2.1 : -1.5, label: 'vs yesterday' }
+                    : undefined
+                }
+                className="h-full cursor-pointer transition-all duration-200 group-hover:border-primary/50 group-hover:shadow-md group-hover:-translate-y-0.5 active:scale-[0.99]"
+              />
+            </Link>
 
-            <StatCard
-              title={isParent ? 'Report Cards' : 'Staff Members'}
-              value={
-                isParent
-                  ? (parentReportCards?.total_published_exams ?? 0)
-                  : (tenantMetrics?.total_teachers ?? 0)
-              }
-              icon={isParent ? Award : Users}
-              description={
-                isParent
-                  ? 'Published exam report cards'
-                  : 'Teachers & staff in your school'
-              }
-            />
+            {/* 4. Staff Members -> School Members */}
+            <Link
+              to={isParent ? '/academic/my-children' : '/members'}
+              className="block group rounded-xl focus:outline-none focus-visible:ring-2 focus-visible:ring-primary"
+              title={isParent ? 'View Report Cards' : 'View School Members'}
+            >
+              <StatCard
+                title={isParent ? 'Report Cards' : 'Staff Members'}
+                value={
+                  isParent
+                    ? (parentReportCards?.total_published_exams ?? 0)
+                    : (tenantMetrics?.total_teachers ?? 0)
+                }
+                icon={isParent ? Award : Users}
+                description={
+                  isParent
+                    ? 'Published exam report cards'
+                    : 'Teachers & staff in your school'
+                }
+                className="h-full cursor-pointer transition-all duration-200 group-hover:border-primary/50 group-hover:shadow-md group-hover:-translate-y-0.5 active:scale-[0.99]"
+              />
+            </Link>
           </div>
 
           {/* Live Attendance Reporting Hub */}
