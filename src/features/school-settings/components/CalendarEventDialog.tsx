@@ -13,7 +13,16 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Checkbox } from '@/components/ui/checkbox';
+import { Textarea } from '@/components/ui/textarea';
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from '@/components/ui/select';
 import { Loader2 } from 'lucide-react';
+import { toast } from 'sonner';
 import { NepaliDatePicker } from './NepaliDatePicker';
 import {
   calendarEventFormSchema,
@@ -116,11 +125,15 @@ export const CalendarEventDialog: React.FC<CalendarEventDialogProps> = ({
     if (!tenantId) return;
 
     if (minDate && (data.start_date < minDate || data.end_date < minDate)) {
-      alert(`Event date cannot be before academic session start (${minDate}).`);
+      toast.error('Invalid Date Range', {
+        description: `Event date cannot be before academic session start (${minDate}).`,
+      });
       return;
     }
     if (maxDate && (data.start_date > maxDate || data.end_date > maxDate)) {
-      alert(`Event date cannot be after academic session end (${maxDate}).`);
+      toast.error('Invalid Date Range', {
+        description: `Event date cannot be after academic session end (${maxDate}).`,
+      });
       return;
     }
 
@@ -190,20 +203,23 @@ export const CalendarEventDialog: React.FC<CalendarEventDialogProps> = ({
             {/* Event Type */}
             <div className="space-y-1.5">
               <Label htmlFor="event_type">Category *</Label>
-              <select
-                id="event_type"
+              <Select
                 value={selectedType}
-                onChange={(e) =>
-                  handleTypeChange(e.target.value as (typeof CALENDAR_EVENT_TYPES)[number])
+                onValueChange={(val) =>
+                  handleTypeChange(val as (typeof CALENDAR_EVENT_TYPES)[number])
                 }
-                className="w-full rounded-md border border-input bg-background px-3 py-2 text-sm shadow-sm focus:outline-none focus:ring-1 focus:ring-primary"
               >
-                <option value="HOLIDAY">Holiday (Public or School Holiday)</option>
-                <option value="EXAM">Examination Window</option>
-                <option value="VACATION">Vacation / Term Break</option>
-                <option value="EVENT">School Event / Celebration</option>
-                <option value="OTHER">Other Academic Milestone</option>
-              </select>
+                <SelectTrigger id="event_type" className="w-full">
+                  <SelectValue placeholder="Select category" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="HOLIDAY">Holiday (Public or School Holiday)</SelectItem>
+                  <SelectItem value="EXAM">Examination Window</SelectItem>
+                  <SelectItem value="VACATION">Vacation / Term Break</SelectItem>
+                  <SelectItem value="EVENT">School Event / Celebration</SelectItem>
+                  <SelectItem value="OTHER">Other Academic Milestone</SelectItem>
+                </SelectContent>
+              </Select>
               {errors.event_type && (
                 <p className="text-xs text-destructive">{errors.event_type.message}</p>
               )}
@@ -282,11 +298,10 @@ export const CalendarEventDialog: React.FC<CalendarEventDialogProps> = ({
             {/* Description */}
             <div className="space-y-1.5">
               <Label htmlFor="description">Description (Optional)</Label>
-              <textarea
+              <Textarea
                 id="description"
                 rows={3}
                 placeholder="Additional notes, schedule remarks, or notices..."
-                className="w-full rounded-md border border-input bg-background px-3 py-2 text-sm shadow-sm focus:outline-none focus:ring-1 focus:ring-primary"
                 {...register('description')}
               />
               {errors.description && (

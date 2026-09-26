@@ -3,6 +3,14 @@ import { Card, CardHeader, CardTitle, CardDescription, CardContent } from '@/com
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from '@/components/ui/select';
+import { ConfirmDialog } from '@/components/common/ConfirmDialog';
+import {
   CalendarDays,
   Plus,
   Calendar,
@@ -68,6 +76,7 @@ export const AcademicCalendarView: React.FC<AcademicCalendarViewProps> = ({
   // Dialog state
   const [dialogOpen, setDialogOpen] = useState(false);
   const [editingEvent, setEditingEvent] = useState<AcademicCalendarEvent | null>(null);
+  const [eventToDelete, setEventToDelete] = useState<AcademicCalendarEvent | null>(null);
 
   // Fetch events for active year
   const {
@@ -117,14 +126,20 @@ export const AcademicCalendarView: React.FC<AcademicCalendarViewProps> = ({
     setDialogOpen(true);
   };
 
-  const handleDelete = async (event: AcademicCalendarEvent) => {
-    if (!window.confirm(`Are you sure you want to delete "${event.title}" from the calendar?`)) {
-      return;
+  const handleDelete = (event: AcademicCalendarEvent) => {
+    setEventToDelete(event);
+  };
+
+  const executeDelete = async () => {
+    if (!eventToDelete) return;
+    try {
+      await deleteMutation.mutateAsync({
+        tenantId,
+        eventId: eventToDelete.id,
+      });
+    } finally {
+      setEventToDelete(null);
     }
-    await deleteMutation.mutateAsync({
-      tenantId,
-      eventId: event.id,
-    });
   };
 
   const getEventBadgeColor = (type: CalendarEventType, isHoliday: boolean) => {
@@ -187,18 +202,18 @@ export const AcademicCalendarView: React.FC<AcademicCalendarViewProps> = ({
                 <label htmlFor="calendar-year" className="text-xs font-medium text-muted-foreground whitespace-nowrap">
                   Academic Session:
                 </label>
-                <select
-                  id="calendar-year"
-                  value={activeYearId}
-                  onChange={(e) => setSelectedYearId(e.target.value)}
-                  className="rounded-md border border-input bg-background px-3 py-1.5 text-sm shadow-sm focus:outline-none focus:ring-1 focus:ring-primary font-medium"
-                >
-                  {years.map((y) => (
-                    <option key={y.id} value={y.id}>
-                      {y.name} {y.is_current ? '(Current Active)' : ''}
-                    </option>
-                  ))}
-                </select>
+                <Select value={activeYearId} onValueChange={(val) => setSelectedYearId(val)}>
+                  <SelectTrigger id="calendar-year" className="w-[200px] h-9 text-sm font-medium">
+                    <SelectValue placeholder="Select session" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {years.map((y) => (
+                      <SelectItem key={y.id} value={y.id}>
+                        {y.name} {y.is_current ? '(Current Active)' : ''}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
               </div>
 
               {canManage && (
@@ -264,6 +279,7 @@ export const AcademicCalendarView: React.FC<AcademicCalendarViewProps> = ({
                 <button
                   type="button"
                   onClick={() => setCalendarSystem('BS')}
+                  aria-pressed={calendarSystem === 'BS'}
                   className={`h-7 px-2.5 text-xs rounded-md font-medium transition-colors cursor-pointer ${
                     calendarSystem === 'BS'
                       ? 'bg-background text-foreground font-bold shadow-2xs'
@@ -275,6 +291,7 @@ export const AcademicCalendarView: React.FC<AcademicCalendarViewProps> = ({
                 <button
                   type="button"
                   onClick={() => setCalendarSystem('AD')}
+                  aria-pressed={calendarSystem === 'AD'}
                   className={`h-7 px-2.5 text-xs rounded-md font-medium transition-colors cursor-pointer ${
                     calendarSystem === 'AD'
                       ? 'bg-background text-foreground font-bold shadow-2xs'
@@ -449,6 +466,18 @@ export const AcademicCalendarView: React.FC<AcademicCalendarViewProps> = ({
           maxDate={activeYear?.end_date}
         />
       )}
+
+      {/* Accessible Confirmation Dialog for Event Deletion */}
+      <ConfirmDialog
+        open={!!eventToDelete}
+        onOpenChange={(open) => !open && setEventToDelete(null)}
+        title="Delete Calendar Event"
+        description={`Are you sure you want to delete "${eventToDelete?.title}" from the calendar? This action cannot be undone.`}
+        confirmLabel="Delete Event"
+        variant="destructive"
+        onConfirm={executeDelete}
+        isPending={deleteMutation.isPending}
+      />
     </div>
   );
 };

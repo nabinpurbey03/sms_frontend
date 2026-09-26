@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useRef } from 'react';
+import React, { useState, useEffect, useRef, useMemo } from 'react';
 import { Card, CardHeader, CardTitle, CardDescription, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -60,6 +60,20 @@ export const SchoolGeneralSettings: React.FC<SchoolGeneralSettingsProps> = ({
       });
     }
   }, [tenant]);
+
+  const isDirty = useMemo(() => {
+    if (!tenant) return false;
+    return (
+      formData.name !== (tenant.name || '') ||
+      formData.email !== (tenant.email || '') ||
+      formData.phone !== (tenant.phone || '') ||
+      formData.province !== (tenant.address?.province || '') ||
+      formData.district !== (tenant.address?.district || '') ||
+      formData.municipality !== (tenant.address?.municipality || '') ||
+      Number(formData.ward) !== Number(tenant.address?.ward || 1) ||
+      formData.tole !== (tenant.address?.tole || '')
+    );
+  }, [formData, tenant]);
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const { name, value } = e.target;
@@ -222,9 +236,9 @@ export const SchoolGeneralSettings: React.FC<SchoolGeneralSettingsProps> = ({
                     name="domain_name"
                     value={formData.domain_name}
                     disabled
-                    className="bg-muted cursor-not-allowed"
+                    className="bg-muted cursor-not-allowed pr-10"
                   />
-                  <Globe className="w-4 h-4 text-muted-foreground absolute right-3 top-3" />
+                  <Globe className="w-4 h-4 text-muted-foreground absolute right-3 top-3" aria-hidden="true" />
                 </div>
                 <span className="text-[11px] text-muted-foreground">Tenant domain identifier is managed by platform admin.</span>
               </div>
@@ -243,8 +257,9 @@ export const SchoolGeneralSettings: React.FC<SchoolGeneralSettingsProps> = ({
                     onChange={handleChange}
                     disabled={!canManage}
                     placeholder="info@school.edu.np"
+                    className="pr-10"
                   />
-                  <Mail className="w-4 h-4 text-muted-foreground absolute right-3 top-3" />
+                  <Mail className="w-4 h-4 text-muted-foreground absolute right-3 top-3" aria-hidden="true" />
                 </div>
               </div>
 
@@ -258,8 +273,9 @@ export const SchoolGeneralSettings: React.FC<SchoolGeneralSettingsProps> = ({
                     onChange={handleChange}
                     disabled={!canManage}
                     placeholder="01-4412345 or 98XXXXXXXX"
+                    className="pr-10"
                   />
-                  <Phone className="w-4 h-4 text-muted-foreground absolute right-3 top-3" />
+                  <Phone className="w-4 h-4 text-muted-foreground absolute right-3 top-3" aria-hidden="true" />
                 </div>
               </div>
             </div>
@@ -346,7 +362,7 @@ export const SchoolGeneralSettings: React.FC<SchoolGeneralSettingsProps> = ({
               <div className="pt-4 flex justify-end">
                 <Button
                   type="submit"
-                  disabled={updateTenantMutation.isPending}
+                  disabled={updateTenantMutation.isPending || !isDirty}
                 >
                   {updateTenantMutation.isPending ? (
                     <Loader2 className="w-4 h-4 mr-2 animate-spin" />

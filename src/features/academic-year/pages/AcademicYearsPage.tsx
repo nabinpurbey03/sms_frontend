@@ -5,6 +5,7 @@ import { useAcademicYears, useSetCurrentAcademicYear, useCloseAcademicYear } fro
 import { AcademicYearFormDialog } from '../components/AcademicYearFormDialog';
 import { PlatformRolloverDialog } from '../components/PlatformRolloverDialog';
 import { TenantRequiredState } from '@/components/common/TenantRequiredState';
+import { ConfirmDialog } from '@/components/common/ConfirmDialog';
 import { Card } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
@@ -30,15 +31,32 @@ import { SchoolSearchSelect } from '../components/SchoolSearchSelect';
 import { useAllClassesWithDetails } from '@/features/academic/hooks';
 import { ClassProgressionPipeline } from '@/features/academic/components/ClassProgressionPipeline';
 import { ClassReorderDialog } from '@/features/academic/components/ClassReorderDialog';
+import { formatDualDateRange } from '@/features/school-settings/utils/nepaliDate';
+import { useCalendarPreferenceStore } from '@/stores/calendarPreferenceStore';
 
-export const AcademicYearsPage: React.FC = () => {
+export interface AcademicYearsPageProps {
+  /** When provided, the component acts as an embedded panel — no duplicate header or school selector */
+  tenantId?: string;
+  canManage?: boolean;
+}
+
+export const AcademicYearsPage: React.FC<AcademicYearsPageProps> = ({
+  tenantId: externalTenantId,
+  canManage: externalCanManage,
+}) => {
   const { activeTenantId } = useAuth();
   const { can, isSuperAdmin } = usePermission();
-  const canManage = can('MANAGE_TENANT_SETTINGS') || isSuperAdmin;
+  const { calendarSystem } = useCalendarPreferenceStore();
 
-  // For Super Admins, allow selecting a specific tenant with search capability
+  const isEmbedded = externalTenantId !== undefined;
+  const internalCanManage = can('MANAGE_TENANT_SETTINGS') || isSuperAdmin;
+  const canManage = externalCanManage ?? internalCanManage;
+
+  // For Super Admins when standalone, allow selecting a specific tenant
   const [selectedTenantId, setSelectedTenantId] = useState<string>('');
-  const effectiveTenantId = selectedTenantId || activeTenantId || '';
+  const effectiveTenantId = isEmbedded
+    ? (externalTenantId || '')
+    : (selectedTenantId || activeTenantId || '');
   const { data: effectiveTenant } = useTenant(effectiveTenantId || null);
 
   const { data: years = [], isLoading } = useAcademicYears(effectiveTenantId || null);
@@ -51,76 +69,83 @@ export const AcademicYearsPage: React.FC = () => {
   const [isReorderOpen, setIsReorderOpen] = useState(false);
   const [processingId, setProcessingId] = useState<string | null>(null);
 
+  // Accessible confirmation dialog state
+  const [confirmAction, setConfirmAction] = useState<{
+    type: 'set-current' | 'close-year';
+    yearId: string;
+    yearName: string;
+  } | null>(null);
+
   // Non-superadmins require an active tenant to view or manage local academic years
-  if (!activeTenantId && !isSuperAdmin) {
+  if (!isEmbedded && !activeTenantId && !isSuperAdmin) {
     return <TenantRequiredState featureName="academic years management" />;
   }
 
-  const handleSetCurrent = async (yearId: string, name: string) => {
-    if (!effectiveTenantId) return;
-    if (!window.confirm(`Are you sure you want to set ${name} as the current academic year for the whole school?`)) {
-      return;
-    }
-    setProcessingId(yearId);
-    try {
-      await setCurrentMutation.mutateAsync({ tenantId: effectiveTenantId, yearId });
-    } finally {
-      setProcessingId(null);
-    }
+  const handleSetCurrent = (yearId: string, name: string) => {
+    setConfirmAction({ type: 'set-current', yearId, yearName: name });
   };
 
-  const handleCloseYear = async (yearId: string, name: string) => {
-    if (!effectiveTenantId) return;
-    if (!window.confirm(`Are you sure you want to close ${name}? This action might make data read-only.`)) {
-      return;
-    }
-    setProcessingId(yearId);
+  const handleCloseYear = (yearId: string, name: string) => {
+    setConfirmAction({ type: 'close-year', yearId, yearName: name });
+  };
+
+  const executeConfirmAction = async () => {
+    if (!confirmAction || !effectiveTenantId) return;
+    setProcessingId(confirmAction.yearId);
     try {
-      await closeMutation.mutateAsync({ tenantId: effectiveTenantId, yearId });
+      if (confirmAction.type === 'set-current') {
+        await setCurrentMutation.mutateAsync({ tenantId: effectiveTenantId, yearId: confirmAction.yearId });
+      } else {
+        await closeMutation.mutateAsync({ tenantId: effectiveTenantId, yearId: confirmAction.yearId });
+      }
     } finally {
       setProcessingId(null);
+      setConfirmAction(null);
     }
   };
 
   return (
     <div className="space-y-6 pb-12">
-      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
-        <div>
-          <h1 className="text-2xl font-bold tracking-tight text-foreground flex items-center gap-2">
-            <CalendarDays className="w-6 h-6 text-primary" />
-            Academic Years
-          </h1>
-          <p className="text-sm text-muted-foreground mt-1">
-            Manage academic sessions, define start and end dates, and set the current active year.
-          </p>
+      {/* Standalone Header */}
+      {!isEmbedded && (
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+          <div>
+            <h1 className="text-2xl font-bold tracking-tight text-foreground flex items-center gap-2">
+              <CalendarDays className="w-6 h-6 text-primary" />
+              Academic Years
+            </h1>
+            <p className="text-sm text-muted-foreground mt-1">
+              Manage academic sessions, define start and end dates, and set the current active year.
+            </p>
+          </div>
+          <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-2">
+            {isSuperAdmin && (
+              <Button
+                variant="destructive"
+                onClick={() => setIsRolloverOpen(true)}
+                className="w-full sm:w-auto shrink-0 bg-amber-600 hover:bg-amber-700 text-white"
+              >
+                <RefreshCw className="w-4 h-4 mr-2" />
+                Platform Rollover
+              </Button>
+            )}
+            {canManage && (
+              <Button
+                onClick={() => setIsFormOpen(true)}
+                disabled={!effectiveTenantId}
+                className="w-full sm:w-auto shrink-0"
+                title={!effectiveTenantId ? "Please select a school to create a year" : undefined}
+              >
+                <Plus className="w-4 h-4 mr-2" />
+                Create Year
+              </Button>
+            )}
+          </div>
         </div>
-        <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-2">
-          {isSuperAdmin && (
-            <Button
-              variant="destructive"
-              onClick={() => setIsRolloverOpen(true)}
-              className="w-full sm:w-auto shrink-0 bg-amber-600 hover:bg-amber-700 text-white"
-            >
-              <RefreshCw className="w-4 h-4 mr-2" />
-              Platform Rollover
-            </Button>
-          )}
-          {canManage && (
-            <Button
-              onClick={() => setIsFormOpen(true)}
-              disabled={!effectiveTenantId}
-              className="w-full sm:w-auto shrink-0"
-              title={!effectiveTenantId ? "Please select a school to create a year" : undefined}
-            >
-              <Plus className="w-4 h-4 mr-2" />
-              Create Year
-            </Button>
-          )}
-        </div>
-      </div>
+      )}
 
-      {/* Super Admin School Context Selector */}
-      {isSuperAdmin && (
+      {/* Standalone Super Admin School Context Selector */}
+      {!isEmbedded && isSuperAdmin && (
         <Card className="p-4 bg-muted/40 border-dashed flex flex-col sm:flex-row sm:items-center justify-between gap-3">
           <div className="flex items-center gap-2 text-sm text-foreground">
             <School className="w-4 h-4 text-primary shrink-0" />
@@ -136,6 +161,43 @@ export const AcademicYearsPage: React.FC = () => {
             />
           </div>
         </Card>
+      )}
+
+      {/* Embedded Action Bar */}
+      {isEmbedded && canManage && (
+        <div className="flex items-center justify-between gap-3 flex-wrap">
+          <div>
+            <h3 className="text-lg font-semibold text-foreground flex items-center gap-2">
+              <CalendarDays className="w-5 h-5 text-primary" />
+              Academic Sessions & Rollover
+            </h3>
+            <p className="text-xs text-muted-foreground mt-0.5">
+              Active sessions define the timeline for class enrollment, attendance marking, and holiday calendars.
+            </p>
+          </div>
+          <div className="flex items-center gap-2">
+            {isSuperAdmin && (
+              <Button
+                variant="destructive"
+                size="sm"
+                onClick={() => setIsRolloverOpen(true)}
+                className="bg-amber-600 hover:bg-amber-700 text-white"
+              >
+                <RefreshCw className="w-3.5 h-3.5 mr-1.5" />
+                Platform Rollover
+              </Button>
+            )}
+            <Button
+              size="sm"
+              onClick={() => setIsFormOpen(true)}
+              disabled={!effectiveTenantId}
+              title={!effectiveTenantId ? "Please select a school to create a year" : undefined}
+            >
+              <Plus className="w-3.5 h-3.5 mr-1.5" />
+              Create Year
+            </Button>
+          </div>
+        </div>
       )}
 
       <Card className="overflow-hidden">
@@ -171,7 +233,9 @@ export const AcademicYearsPage: React.FC = () => {
                   <TableRow key={year.id}>
                     <TableCell className="font-medium">{year.name}</TableCell>
                     <TableCell>
-                      {new Date(year.start_date).toLocaleDateString()} - {new Date(year.end_date).toLocaleDateString()}
+                      <span className="text-sm">
+                        {formatDualDateRange(year.start_date, year.end_date, calendarSystem)}
+                      </span>
                     </TableCell>
                     <TableCell>
                       <div className="flex items-center gap-2">
@@ -250,6 +314,22 @@ export const AcademicYearsPage: React.FC = () => {
         onClose={() => setIsReorderOpen(false)}
         classes={tenantClasses}
         tenantId={effectiveTenantId}
+      />
+
+      {/* Accessible Confirmation Dialog */}
+      <ConfirmDialog
+        open={!!confirmAction}
+        onOpenChange={(open) => !open && setConfirmAction(null)}
+        title={confirmAction?.type === 'set-current' ? 'Set Active Academic Year' : 'Close Academic Year'}
+        description={
+          confirmAction?.type === 'set-current'
+            ? `Are you sure you want to set "${confirmAction?.yearName}" as the current academic year for the whole school?`
+            : `Are you sure you want to close "${confirmAction?.yearName}"? This action might make data read-only.`
+        }
+        confirmLabel={confirmAction?.type === 'set-current' ? 'Set as Current' : 'Close Year'}
+        variant={confirmAction?.type === 'close-year' ? 'destructive' : 'default'}
+        onConfirm={executeConfirmAction}
+        isPending={!!processingId}
       />
     </div>
   );

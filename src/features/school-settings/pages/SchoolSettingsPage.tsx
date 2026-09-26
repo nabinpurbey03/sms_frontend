@@ -6,6 +6,7 @@ import { useTenant } from '@/features/tenants/hooks';
 import { TenantRequiredState } from '@/components/common/TenantRequiredState';
 import { Card } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
+import { Tabs, TabsList, TabsTrigger, TabsContent } from '@/components/ui/tabs';
 import {
   Settings,
   Calendar,
@@ -114,75 +115,62 @@ export const SchoolSettingsPage: React.FC = () => {
         </Card>
       )}
 
-      {/* Primary Tab Bar */}
-      <div className="border-b border-border">
-        <nav className="flex space-x-2 sm:space-x-4 overflow-x-auto pb-px" aria-label="Tabs">
+      {/* Accessible Tab Container with shadcn Tabs */}
+      <Tabs
+        value={currentTab}
+        onValueChange={(val) => handleTabChange(val as SchoolSettingsTab)}
+        className="space-y-4"
+      >
+        <TabsList className="w-full justify-start h-auto flex-wrap gap-1 bg-transparent p-0 border-b border-border rounded-none">
           {tabs.map((tab) => {
             const Icon = tab.icon;
-            const isActive = currentTab === tab.id;
             return (
-              <button
+              <TabsTrigger
                 key={tab.id}
-                type="button"
-                onClick={() => handleTabChange(tab.id)}
-                className={`flex items-center gap-2 px-4 py-3 text-sm font-medium border-b-2 whitespace-nowrap transition-colors min-h-[44px] cursor-pointer ${
-                  isActive
-                    ? 'border-primary text-primary font-semibold'
-                    : 'border-transparent text-muted-foreground hover:text-foreground hover:border-border'
-                }`}
+                value={tab.id}
+                className="flex items-center gap-2 px-4 py-3 text-sm font-medium rounded-none border-b-2 border-transparent data-[state=active]:border-primary data-[state=active]:text-primary data-[state=active]:shadow-none data-[state=active]:bg-transparent data-[state=active]:font-semibold text-muted-foreground hover:text-foreground hover:border-border cursor-pointer transition-colors"
               >
-                <Icon className={`w-4 h-4 ${isActive ? 'text-primary' : 'text-muted-foreground'}`} />
+                <Icon className="w-4 h-4" />
                 <span>{tab.label}</span>
-              </button>
+              </TabsTrigger>
             );
           })}
-        </nav>
-      </div>
+        </TabsList>
 
-      {/* Tab Panels */}
-      <div className="pt-2">
-        {currentTab === 'sessions' && (
-          <div>
-            <AcademicYearsPage />
-          </div>
-        )}
+        <TabsContent value="sessions" className="pt-2 focus-visible:outline-none">
+          <AcademicYearsPage tenantId={effectiveTenantId} canManage={canManage} />
+        </TabsContent>
 
-        {currentTab === 'days' && (
-          <div>
-            {effectiveTenantId ? (
-              <AcademicDaysConfig tenantId={effectiveTenantId} canManage={canManage} />
-            ) : (
-              <Card className="p-8 text-center text-muted-foreground">
-                Please select a school to configure weekly academic days.
-              </Card>
-            )}
-          </div>
-        )}
+        <TabsContent value="days" className="pt-2 focus-visible:outline-none">
+          {effectiveTenantId ? (
+            <AcademicDaysConfig tenantId={effectiveTenantId} canManage={canManage} />
+          ) : (
+            <Card className="p-8 text-center text-muted-foreground">
+              Please select a school to configure weekly academic days.
+            </Card>
+          )}
+        </TabsContent>
 
-        {currentTab === 'calendar' && (
-          <div>
-            {effectiveTenantId ? (
-              <AcademicCalendarView tenantId={effectiveTenantId} canManage={canManage} />
-            ) : (
-              <Card className="p-8 text-center text-muted-foreground">
-                Please select a school to view or configure its academic calendar.
-              </Card>
-            )}
-          </div>
-        )}
+        <TabsContent value="calendar" className="pt-2 focus-visible:outline-none">
+          {effectiveTenantId ? (
+            <AcademicCalendarView tenantId={effectiveTenantId} canManage={canManage} />
+          ) : (
+            <Card className="p-8 text-center text-muted-foreground">
+              Please select a school to view or configure its academic calendar.
+            </Card>
+          )}
+        </TabsContent>
 
-        {currentTab === 'profile' && (
-          <div>
-            {effectiveTenantId ? (
-              <SchoolGeneralSettings tenantId={effectiveTenantId} canManage={canManage} />
-            ) : (
-              <Card className="p-8 text-center text-muted-foreground">
-                Please select a school to view or edit institutional profile details.
-              </Card>
-            )}
-          </div>
-        )}
-      </div>
+        <TabsContent value="profile" className="pt-2 focus-visible:outline-none">
+          {effectiveTenantId ? (
+            <SchoolGeneralSettings tenantId={effectiveTenantId} canManage={canManage} />
+          ) : (
+            <Card className="p-8 text-center text-muted-foreground">
+              Please select a school to view or edit institutional profile details.
+            </Card>
+          )}
+        </TabsContent>
+      </Tabs>
     </div>
   );
 };
