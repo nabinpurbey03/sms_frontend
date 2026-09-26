@@ -18,6 +18,7 @@ import { useCalendarEvents, useDeleteCalendarEvent } from '../hooks';
 import { CalendarEventDialog } from './CalendarEventDialog';
 import { AcademicCalendarGrid } from './AcademicCalendarGrid';
 import { formatDualDateRange } from '../utils/nepaliDate';
+import { useCalendarPreferenceStore } from '@/stores/calendarPreferenceStore';
 import type { AcademicCalendarEvent, CalendarEventType } from '../types';
 
 interface AcademicCalendarViewProps {
@@ -29,6 +30,7 @@ export const AcademicCalendarView: React.FC<AcademicCalendarViewProps> = ({
   tenantId,
   canManage,
 }) => {
+  const { calendarSystem, setCalendarSystem } = useCalendarPreferenceStore();
   const { data: years = [], isLoading: isLoadingYears } = useAcademicYears(tenantId);
   const deleteMutation = useDeleteCalendarEvent();
 
@@ -255,28 +257,57 @@ export const AcademicCalendarView: React.FC<AcademicCalendarViewProps> = ({
               ))}
             </div>
 
-            {/* List / Month Grid Toggle */}
-            <div className="flex items-center gap-1 bg-muted p-1 rounded-lg border border-border self-start sm:self-auto">
-              <Button
-                type="button"
-                variant={viewMode === 'list' ? 'secondary' : 'ghost'}
-                size="sm"
-                onClick={() => setViewMode('list')}
-                className="h-7 text-xs px-2.5 font-medium shadow-2xs"
-              >
-                <List className="w-3.5 h-3.5 mr-1.5" />
-                List View
-              </Button>
-              <Button
-                type="button"
-                variant={viewMode === 'calendar' ? 'secondary' : 'ghost'}
-                size="sm"
-                onClick={() => setViewMode('calendar')}
-                className="h-7 text-xs px-2.5 font-medium shadow-2xs"
-              >
-                <Calendar className="w-3.5 h-3.5 mr-1.5" />
-                Month Grid
-              </Button>
+            {/* View Controls: Calendar System Switcher & List/Grid Toggle */}
+            <div className="flex flex-wrap items-center gap-2 self-start sm:self-auto">
+              {/* Calendar System Switcher */}
+              <div className="flex items-center gap-1 bg-muted p-1 rounded-lg border border-border">
+                <button
+                  type="button"
+                  onClick={() => setCalendarSystem('BS')}
+                  className={`h-7 px-2.5 text-xs rounded-md font-medium transition-colors cursor-pointer ${
+                    calendarSystem === 'BS'
+                      ? 'bg-background text-foreground font-bold shadow-2xs'
+                      : 'text-muted-foreground hover:text-foreground'
+                  }`}
+                >
+                  BS
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setCalendarSystem('AD')}
+                  className={`h-7 px-2.5 text-xs rounded-md font-medium transition-colors cursor-pointer ${
+                    calendarSystem === 'AD'
+                      ? 'bg-background text-foreground font-bold shadow-2xs'
+                      : 'text-muted-foreground hover:text-foreground'
+                  }`}
+                >
+                  AD
+                </button>
+              </div>
+
+              {/* List / Month Grid Toggle */}
+              <div className="flex items-center gap-1 bg-muted p-1 rounded-lg border border-border">
+                <Button
+                  type="button"
+                  variant={viewMode === 'list' ? 'secondary' : 'ghost'}
+                  size="sm"
+                  onClick={() => setViewMode('list')}
+                  className="h-7 text-xs px-2.5 font-medium shadow-2xs"
+                >
+                  <List className="w-3.5 h-3.5 mr-1.5" />
+                  List View
+                </Button>
+                <Button
+                  type="button"
+                  variant={viewMode === 'calendar' ? 'secondary' : 'ghost'}
+                  size="sm"
+                  onClick={() => setViewMode('calendar')}
+                  className="h-7 text-xs px-2.5 font-medium shadow-2xs"
+                >
+                  <Calendar className="w-3.5 h-3.5 mr-1.5" />
+                  Month Grid
+                </Button>
+              </div>
             </div>
           </div>
 
@@ -298,6 +329,9 @@ export const AcademicCalendarView: React.FC<AcademicCalendarViewProps> = ({
               onSelectDate={handleSelectSlotDate}
               onSelectEvent={handleOpenEdit}
               initialDate={initialGridDate}
+              minDate={activeYear?.start_date}
+              maxDate={activeYear?.end_date}
+              academicYearName={activeYear?.name}
             />
           ) : filteredEvents.length === 0 ? (
             <div className="py-12 text-center border rounded-xl border-dashed border-border bg-muted/20">
@@ -384,7 +418,9 @@ export const AcademicCalendarView: React.FC<AcademicCalendarViewProps> = ({
                     <div className="mt-4 pt-3 border-t border-border flex items-center justify-between text-xs text-muted-foreground gap-2">
                       <div className="flex items-center gap-1.5 font-medium text-foreground min-w-0">
                         <Calendar className="w-3.5 h-3.5 text-primary shrink-0" />
-                        <span className="truncate">{formatDualDateRange(event.start_date, event.end_date)}</span>
+                        <span className="truncate">
+                          {formatDualDateRange(event.start_date, event.end_date, calendarSystem)}
+                        </span>
                       </div>
                       {duration && (
                         <span className="text-muted-foreground bg-muted/60 px-2 py-0.5 rounded text-[11px] shrink-0 whitespace-nowrap">
@@ -409,6 +445,8 @@ export const AcademicCalendarView: React.FC<AcademicCalendarViewProps> = ({
           academicYearId={activeYearId}
           eventToEdit={editingEvent}
           initialDate={preselectedDate}
+          minDate={activeYear?.start_date}
+          maxDate={activeYear?.end_date}
         />
       )}
     </div>
