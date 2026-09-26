@@ -13,6 +13,7 @@ import { Button } from '@/components/ui/button';
 import { Card } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Input } from '@/components/ui/input';
+import { NepaliDatePicker } from '@/components/ui/nepali-date-picker';
 import {
   Table,
   TableBody,
@@ -432,14 +433,15 @@ export const MarkAttendancePage: React.FC = () => {
               Attendance Date
             </label>
             <div className="flex items-center gap-2 flex-wrap sm:flex-nowrap">
-              <Input
-                type="date"
-                value={recordDate}
-                onChange={(e) => setRecordDate(e.target.value)}
-                min={minDateStr}
-                max={todayStr}
-                className={`h-10 ${isDateOutOfRange ? 'border-amber-500/50 dark:border-amber-500/50' : ''}`}
-              />
+              <div className="flex-1 min-w-[200px]">
+                <NepaliDatePicker
+                  value={recordDate}
+                  onChange={(val) => setRecordDate(val)}
+                  minDate={minDateStr}
+                  maxDate={todayStr}
+                  className={`h-10 ${isDateOutOfRange ? 'border-amber-500/50 dark:border-amber-500/50' : ''}`}
+                />
+              </div>
               {recordDate === todayStr ? (
                 <Badge
                   variant="secondary"
