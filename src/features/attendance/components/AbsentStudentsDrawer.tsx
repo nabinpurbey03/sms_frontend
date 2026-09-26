@@ -9,6 +9,7 @@ import {
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Input } from '@/components/ui/input';
+import { NepaliDatePicker } from '@/components/ui/nepali-date-picker';
 import {
   Search,
   X,
@@ -136,14 +137,12 @@ export const AbsentStudentsDrawer: React.FC<AbsentStudentsDrawerProps> = ({
         {/* Toolbar & Filter Controls */}
         <div className="px-6 py-3 border-b border-border/60 bg-muted/5 flex flex-wrap items-center gap-2.5">
           {/* Date Picker */}
-          <div className="flex items-center gap-1.5">
-            <Calendar className="w-3.5 h-3.5 text-muted-foreground shrink-0" />
-            <Input
-              type="date"
+          <div className="flex items-center gap-1.5 w-[150px] sm:w-[170px]">
+            <NepaliDatePicker
+              size="sm"
               value={selectedDate}
-              max={getTodayStr()}
-              onChange={(e) => setSelectedDate(e.target.value)}
-              className="h-9 w-[130px] text-xs font-mono"
+              maxDate={getTodayStr()}
+              onChange={(val) => setSelectedDate(val)}
             />
           </div>
 

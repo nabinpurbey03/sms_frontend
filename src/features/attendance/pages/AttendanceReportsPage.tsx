@@ -13,6 +13,7 @@ import { Button } from '@/components/ui/button';
 import { Card, CardHeader, CardTitle, CardContent } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Input } from '@/components/ui/input';
+import { NepaliDatePicker } from '@/components/ui/nepali-date-picker';
 import {
   Table,
   TableBody,
@@ -461,28 +462,30 @@ export const AttendanceReportsPage: React.FC = () => {
                 <label htmlFor="fromDate" className="text-xs text-muted-foreground font-medium">
                   From:
                 </label>
-                <Input
-                  id="fromDate"
-                  type="date"
-                  value={fromDate}
-                  max={todayStr}
-                  onChange={(e) => handleFromDateChange(e.target.value)}
-                  className="h-8 text-xs w-36"
-                />
+                <div className="w-40 sm:w-48">
+                  <NepaliDatePicker
+                    id="fromDate"
+                    size="sm"
+                    value={fromDate}
+                    maxDate={todayStr}
+                    onChange={(val) => handleFromDateChange(val)}
+                  />
+                </div>
               </div>
               <div className="flex items-center gap-1.5">
                 <label htmlFor="toDate" className="text-xs text-muted-foreground font-medium">
                   To:
                 </label>
-                <Input
-                  id="toDate"
-                  type="date"
-                  value={toDate}
-                  min={fromDate}
-                  max={todayStr}
-                  onChange={(e) => handleToDateChange(e.target.value)}
-                  className="h-8 text-xs w-36"
-                />
+                <div className="w-40 sm:w-48">
+                  <NepaliDatePicker
+                    id="toDate"
+                    size="sm"
+                    value={toDate}
+                    minDate={fromDate}
+                    maxDate={todayStr}
+                    onChange={(val) => handleToDateChange(val)}
+                  />
+                </div>
               </div>
               {activePreset === 'custom' && (
                 <Badge variant="secondary" className="text-[10px] h-6 font-normal">
@@ -1455,13 +1458,12 @@ export const AttendanceReportsPage: React.FC = () => {
                   <Calendar className="w-3.5 h-3.5" />
                   Inspection Date
                 </label>
-                <Input
+                <NepaliDatePicker
                   id="absentDateInput"
-                  type="date"
+                  size="sm"
                   value={absentDate}
-                  max={todayStr}
-                  onChange={(e) => setAbsentDate(e.target.value)}
-                  className="h-9 text-xs font-mono"
+                  maxDate={todayStr}
+                  onChange={(val) => setAbsentDate(val)}
                 />
               </div>
 

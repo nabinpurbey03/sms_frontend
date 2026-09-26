@@ -31,6 +31,7 @@ import {
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
+import { NepaliDatePicker } from '@/components/ui/nepali-date-picker';
 import { Checkbox } from '@/components/ui/checkbox';
 import {
   Accordion,
@@ -439,30 +440,21 @@ export const CreateExamPage: React.FC = () => {
 
             {/* Start and End Dates */}
             <div className="grid grid-cols-2 gap-3">
-              <div className="space-y-1.5">
-                <Label htmlFor="start-date" className="text-sm font-semibold">
-                  Start Date
-                </Label>
-                <Input
-                  id="start-date"
-                  type="date"
-                  value={startDate}
-                  onChange={(e) => setStartDate(e.target.value)}
-                  disabled={isSubmitting}
-                />
-              </div>
-              <div className="space-y-1.5">
-                <Label htmlFor="end-date" className="text-sm font-semibold">
-                  End Date
-                </Label>
-                <Input
-                  id="end-date"
-                  type="date"
-                  value={endDate}
-                  onChange={(e) => setEndDate(e.target.value)}
-                  disabled={isSubmitting}
-                />
-              </div>
+              <NepaliDatePicker
+                id="start-date"
+                label="Start Date"
+                value={startDate}
+                onChange={(val) => setStartDate(val)}
+                disabled={isSubmitting}
+              />
+              <NepaliDatePicker
+                id="end-date"
+                label="End Date"
+                value={endDate}
+                onChange={(val) => setEndDate(val)}
+                minDate={startDate}
+                disabled={isSubmitting}
+              />
             </div>
           </div>
         </CardContent>

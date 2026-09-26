@@ -15,6 +15,7 @@ import {
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
+import { NepaliDatePicker } from '@/components/ui/nepali-date-picker';
 import { AlertTriangle, CheckCircle2, Loader2, RefreshCw } from 'lucide-react';
 
 interface PlatformRolloverDialogProps {
@@ -33,6 +34,8 @@ export const PlatformRolloverDialog: React.FC<PlatformRolloverDialogProps> = ({
     register,
     handleSubmit,
     reset,
+    watch,
+    setValue,
     formState: { errors },
   } = useForm<AcademicYearForm>({
     resolver: zodResolver(academicYearSchema),
@@ -134,32 +137,20 @@ export const PlatformRolloverDialog: React.FC<PlatformRolloverDialogProps> = ({
             </div>
 
             <div className="grid grid-cols-2 gap-4">
-              <div className="space-y-2">
-                <Label htmlFor="rollover-start-date">
-                  Start Date <span className="text-destructive">*</span>
-                </Label>
-                <Input
-                  id="rollover-start-date"
-                  type="date"
-                  {...register('start_date')}
-                />
-                {errors.start_date && (
-                  <p className="text-sm text-destructive">{errors.start_date.message}</p>
-                )}
-              </div>
-              <div className="space-y-2">
-                <Label htmlFor="rollover-end-date">
-                  End Date <span className="text-destructive">*</span>
-                </Label>
-                <Input
-                  id="rollover-end-date"
-                  type="date"
-                  {...register('end_date')}
-                />
-                {errors.end_date && (
-                  <p className="text-sm text-destructive">{errors.end_date.message}</p>
-                )}
-              </div>
+              <NepaliDatePicker
+                id="rollover-start-date"
+                label="Start Date *"
+                value={watch('start_date')}
+                onChange={(val) => setValue('start_date', val, { shouldValidate: true })}
+                error={errors.start_date?.message}
+              />
+              <NepaliDatePicker
+                id="rollover-end-date"
+                label="End Date *"
+                value={watch('end_date')}
+                onChange={(val) => setValue('end_date', val, { shouldValidate: true })}
+                error={errors.end_date?.message}
+              />
             </div>
 
             <DialogFooter className="pt-4">

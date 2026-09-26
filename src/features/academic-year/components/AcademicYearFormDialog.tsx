@@ -15,6 +15,7 @@ import {
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
+import { NepaliDatePicker } from '@/components/ui/nepali-date-picker';
 import { Loader2 } from 'lucide-react';
 
 interface AcademicYearFormDialogProps {
@@ -38,6 +39,8 @@ export const AcademicYearFormDialog: React.FC<AcademicYearFormDialogProps> = ({
     register,
     handleSubmit,
     reset,
+    watch,
+    setValue,
     formState: { errors, isSubmitting },
   } = useForm<AcademicYearForm>({
     resolver: zodResolver(academicYearSchema),
@@ -89,16 +92,20 @@ export const AcademicYearFormDialog: React.FC<AcademicYearFormDialogProps> = ({
           </div>
 
           <div className="grid grid-cols-2 gap-4">
-            <div className="space-y-2">
-              <Label htmlFor="start_date">Start Date <span className="text-destructive">*</span></Label>
-              <Input id="start_date" type="date" {...register('start_date')} />
-              {errors.start_date && <p className="text-sm text-destructive">{errors.start_date.message}</p>}
-            </div>
-            <div className="space-y-2">
-              <Label htmlFor="end_date">End Date <span className="text-destructive">*</span></Label>
-              <Input id="end_date" type="date" {...register('end_date')} />
-              {errors.end_date && <p className="text-sm text-destructive">{errors.end_date.message}</p>}
-            </div>
+            <NepaliDatePicker
+              id="start_date"
+              label="Start Date *"
+              value={watch('start_date')}
+              onChange={(val) => setValue('start_date', val, { shouldValidate: true })}
+              error={errors.start_date?.message}
+            />
+            <NepaliDatePicker
+              id="end_date"
+              label="End Date *"
+              value={watch('end_date')}
+              onChange={(val) => setValue('end_date', val, { shouldValidate: true })}
+              error={errors.end_date?.message}
+            />
           </div>
 
           <DialogFooter className="pt-4">

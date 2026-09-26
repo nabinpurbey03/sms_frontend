@@ -21,6 +21,7 @@ import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/com
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Input } from '@/components/ui/input';
+import { NepaliDatePicker } from '@/components/ui/nepali-date-picker';
 import { StatCard } from '@/components/ui/stat-card';
 import { ChartCard } from '@/components/ui/chart-card';
 import { DonutChart } from '@/components/ui/charts/donut-chart';
@@ -435,13 +436,14 @@ export const AttendanceDashboardHub: React.FC = () => {
           {/* Date Picker (enabled for single-date inspection) */}
           {timeframe === 'today' && (
             <div className="flex items-center gap-2">
-              <Input
-                type="date"
-                max={todayStr}
-                value={selectedDate}
-                onChange={(e) => setSelectedDate(e.target.value)}
-                className="h-9 text-xs w-[140px]"
-              />
+              <div className="w-[150px] sm:w-[170px]">
+                <NepaliDatePicker
+                  size="sm"
+                  maxDate={todayStr}
+                  value={selectedDate}
+                  onChange={(val) => setSelectedDate(val)}
+                />
+              </div>
               {selectedDate !== todayStr && (
                 <Button
                   variant="ghost"
