@@ -3,6 +3,7 @@ import { useNavigate } from '@tanstack/react-router';
 import { useAuth } from '@/auth/useAuth';
 import { useMyTeacherAssignments } from '@/features/academic/hooks';
 import { useDailyAttendanceStatus } from '../hooks';
+import { getLocalTodayDate, isSectionAttendanceMarked } from '../utils/attendanceStatus';
 import { Button } from '@/components/ui/button';
 import { Card } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
@@ -21,7 +22,7 @@ export const MyAssignmentsPage: React.FC = () => {
 
   const { data: assignments = [], isLoading } = useMyTeacherAssignments(activeTenantId);
 
-  const todayStr = useMemo(() => new Date().toISOString().split('T')[0], []);
+  const todayStr = useMemo(() => getLocalTodayDate(), []);
   const { data: dailyStatus } = useDailyAttendanceStatus(activeTenantId, todayStr, undefined, {
     enabled: !!activeTenantId,
   });
@@ -138,9 +139,7 @@ export const MyAssignmentsPage: React.FC = () => {
               </div>
               <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
                 {classTeacherAssignments.map(assignment => {
-                  const isMarkedToday = assignment.section_id
-                    ? markedSectionIds.has(assignment.section_id)
-                    : false;
+                  const isMarkedToday = isSectionAttendanceMarked(assignment.section_id, dailyStatus);
 
                   return (
                     <Card

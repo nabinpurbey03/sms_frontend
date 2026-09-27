@@ -27,6 +27,10 @@ import type { ParentMappingDTO } from '@/features/members/types';
 import { useClassWithDetails } from '@/features/academic/hooks';
 import { useParentMappings } from '@/features/members/hooks';
 import { useSectionAttendanceReport, useDailyAttendanceStatus } from '@/features/attendance/hooks';
+import {
+  getLocalTodayDate,
+  isSectionAttendanceMarked,
+} from '@/features/attendance/utils/attendanceStatus';
 
 export interface TeacherClassroomSectionCardProps {
   tenantId: string;
@@ -40,17 +44,22 @@ export const TeacherClassroomSectionCard: React.FC<TeacherClassroomSectionCardPr
   onLinkParentClick,
 }) => {
   const [copiedPhoneId, setCopiedPhoneId] = useState<string | null>(null);
-  const todayStr = useMemo(() => new Date().toISOString().split('T')[0], []);
+  const todayStr = useMemo(() => getLocalTodayDate(), []);
 
   // 1. Queries
   const { data: cls } = useClassWithDetails(tenantId || null, duty.class_id);
   const { data: classParentMappings = [] } = useParentMappings(tenantId || null, {
     class_id: duty.class_id,
   });
+
+  const effectiveSectionId = useMemo(() => {
+    return duty.section_id || (cls?.sections?.[0]?.id ?? '');
+  }, [duty.section_id, cls?.sections]);
+
   const { data: sectionReport } = useSectionAttendanceReport(
     tenantId || null,
     duty.class_id,
-    duty.section_id || '',
+    effectiveSectionId,
     todayStr,
     todayStr
   );
@@ -64,9 +73,9 @@ export const TeacherClassroomSectionCard: React.FC<TeacherClassroomSectionCardPr
   const sectionStudents = useMemo(() => {
     if (!cls?.students) return [];
     return cls.students.filter(
-      (s) => s.section_id === duty.section_id || !duty.section_id
+      (s) => (!effectiveSectionId || s.section_id === effectiveSectionId)
     );
-  }, [cls?.students, duty.section_id]);
+  }, [cls?.students, effectiveSectionId]);
 
   // Build parent lookup by student ID
   const parentByStudentId = useMemo(() => {
@@ -81,13 +90,14 @@ export const TeacherClassroomSectionCard: React.FC<TeacherClassroomSectionCardPr
 
   // Check if attendance is marked for this section today
   const isMarked = useMemo(() => {
-    if (!duty.section_id) return false;
-    const inMarkedIds = dailyAttendanceStatus?.marked_section_ids?.includes(duty.section_id);
-    const secStatus = dailyAttendanceStatus?.sections?.find(
-      (s) => s.section_id === duty.section_id
+    if (!effectiveSectionId) return false;
+    return isSectionAttendanceMarked(
+      effectiveSectionId,
+      dailyAttendanceStatus,
+      sectionReport,
+      todayStr
     );
-    return Boolean(inMarkedIds || secStatus?.is_marked);
-  }, [dailyAttendanceStatus, duty.section_id]);
+  }, [effectiveSectionId, dailyAttendanceStatus, sectionReport, todayStr]);
 
   // Identify absent students
   const absentStudents = useMemo(() => {

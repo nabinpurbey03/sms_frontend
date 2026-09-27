@@ -1,7 +1,7 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { toast } from 'sonner';
 import { attendanceApi } from './api';
-import type { AttendanceFilterDTO, AbsentStudentsFilterParams } from './types';
+import type { AttendanceFilterDTO, AbsentStudentsFilterParams, DailyAttendanceStatus } from './types';
 
 export const ATTENDANCE_QUERY_KEY = 'attendance';
 export const DAILY_ATTENDANCE_STATUS_KEY = 'daily_attendance_status';
@@ -138,9 +138,39 @@ export const useMarkAttendance = () => {
       recordDate: string;
       presentStudentIds: string[];
     }) => attendanceApi.markSectionAttendance(tenantId, classId, sectionId, recordDate, presentStudentIds),
-    onSuccess: (data, { recordDate, presentStudentIds }) => {
+    onSuccess: (data, { tenantId, sectionId, recordDate, presentStudentIds }) => {
+      // 1. Optimistically update daily_attendance_status cache so dashboard reflects immediately
+      queryClient.setQueriesData(
+        { queryKey: [DAILY_ATTENDANCE_STATUS_KEY, tenantId, recordDate] },
+        (old: DailyAttendanceStatus | undefined) => {
+          if (!old) return old;
+          const updatedMarkedIds = Array.from(new Set([...(old.marked_section_ids || []), sectionId]));
+          const updatedSections = (old.sections || []).map((sec) => {
+            if (sec.section_id === sectionId) {
+              const presentCount = data?.total_marked_present ?? presentStudentIds.length;
+              const absentCount = data?.total_marked_absent ?? Math.max(0, sec.total_students - presentCount);
+              return {
+                ...sec,
+                is_marked: true,
+                present_count: presentCount,
+                absent_count: absentCount,
+              };
+            }
+            return sec;
+          });
+          return {
+            ...old,
+            marked_section_ids: updatedMarkedIds,
+            sections: updatedSections,
+          };
+        }
+      );
+
+      // 2. Invalidate queries for fresh background synchronization
       queryClient.invalidateQueries({ queryKey: ['attendance'] });
       queryClient.invalidateQueries({ queryKey: [DAILY_ATTENDANCE_STATUS_KEY] });
+      queryClient.invalidateQueries({ queryKey: ['tenant_dashboard'] });
+
       const count = data?.total_marked_present ?? presentStudentIds.length;
       toast.success('Attendance Recorded', {
         description: `${count} student(s) marked present for ${recordDate}`,

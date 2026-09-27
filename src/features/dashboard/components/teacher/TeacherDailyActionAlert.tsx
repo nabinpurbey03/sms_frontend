@@ -4,35 +4,59 @@ import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Clock, CalendarCheck, CheckCircle2, Edit3, Sparkles } from 'lucide-react';
 import { useDailyAttendanceStatus } from '@/features/attendance/hooks';
+import { useAllClassesWithDetails } from '@/features/academic/hooks';
+import {
+  getLocalTodayDate,
+  isSectionAttendanceMarked,
+  resolveDutySectionId,
+} from '@/features/attendance/utils/attendanceStatus';
 import type { TeacherAssignmentResponse } from '@/features/academic/types';
 
 export interface TeacherDailyActionAlertProps {
   tenantId: string;
   primaryClassTeacherDuty: TeacherAssignmentResponse | null;
   subjectTeacherAssignments: TeacherAssignmentResponse[];
+  classTeacherAssignments?: TeacherAssignmentResponse[];
 }
 
 export const TeacherDailyActionAlert: React.FC<TeacherDailyActionAlertProps> = ({
   tenantId,
   primaryClassTeacherDuty,
   subjectTeacherAssignments,
+  classTeacherAssignments = [],
 }) => {
-  const todayStr = useMemo(() => new Date().toISOString().split('T')[0], []);
+  const todayStr = useMemo(() => getLocalTodayDate(), []);
   const { data: dailyAttendanceStatus } = useDailyAttendanceStatus(
     tenantId || null,
     todayStr
   );
+  const { data: classes = [] } = useAllClassesWithDetails(tenantId || null);
 
-  if (primaryClassTeacherDuty) {
-    const sectionStatus = dailyAttendanceStatus?.sections?.find(
-      (s) => s.section_id === primaryClassTeacherDuty.section_id
-    );
-    const isMarked = Boolean(
-      dailyAttendanceStatus?.marked_section_ids?.includes(primaryClassTeacherDuty.section_id!) ||
-      sectionStatus?.is_marked
-    );
+  const effectiveClassTeacherDuties = useMemo(() => {
+    if (classTeacherAssignments.length > 0) return classTeacherAssignments;
+    return primaryClassTeacherDuty ? [primaryClassTeacherDuty] : [];
+  }, [classTeacherAssignments, primaryClassTeacherDuty]);
 
-    if (!isMarked) {
+  if (effectiveClassTeacherDuties.length > 0) {
+    // Check marked status for each duty
+    const dutiesWithStatus = effectiveClassTeacherDuties.map((duty) => {
+      const sectionId = resolveDutySectionId(duty, classes);
+      const isMarked = isSectionAttendanceMarked(sectionId, dailyAttendanceStatus, null, todayStr);
+      const sectionStatus = dailyAttendanceStatus?.sections?.find((s) => s.section_id === sectionId);
+      return {
+        duty,
+        sectionId,
+        isMarked,
+        sectionStatus,
+      };
+    });
+
+    const pendingDuties = dutiesWithStatus.filter((d) => !d.isMarked);
+    const completedDuties = dutiesWithStatus.filter((d) => d.isMarked);
+    const isAllMarked = pendingDuties.length === 0;
+
+    if (!isAllMarked) {
+      const firstPending = pendingDuties[0];
       return (
         <div className="relative overflow-hidden rounded-xl border border-amber-500/30 bg-gradient-to-r from-amber-500/10 via-rose-500/10 to-amber-500/5 p-4 sm:p-5 shadow-xs">
           <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
@@ -49,8 +73,9 @@ export const TeacherDailyActionAlert: React.FC<TeacherDailyActionAlertProps> = (
                     Action Required
                   </Badge>
                   <h3 className="text-sm sm:text-base font-semibold text-foreground">
-                    Daily Attendance Pending: {primaryClassTeacherDuty.class_name} - Section{' '}
-                    {primaryClassTeacherDuty.section_name || 'A'}
+                    Daily Attendance Pending: {firstPending.duty.class_name} - Section{' '}
+                    {firstPending.duty.section_name || 'A'}
+                    {pendingDuties.length > 1 && ` (+${pendingDuties.length - 1} more)`}
                   </h3>
                 </div>
                 <p className="text-xs sm:text-sm text-muted-foreground">
@@ -67,8 +92,8 @@ export const TeacherDailyActionAlert: React.FC<TeacherDailyActionAlertProps> = (
                   to="/attendance/mark"
                   search={
                     {
-                      classId: primaryClassTeacherDuty.class_id,
-                      sectionId: primaryClassTeacherDuty.section_id,
+                      classId: firstPending.duty.class_id,
+                      sectionId: firstPending.sectionId || firstPending.duty.section_id,
                     } as any
                   }
                 >
@@ -81,11 +106,12 @@ export const TeacherDailyActionAlert: React.FC<TeacherDailyActionAlertProps> = (
       );
     }
 
-    // Attendance is marked
-    const present = sectionStatus?.present_count ?? 0;
-    const absent = sectionStatus?.absent_count ?? 0;
-    const total = present + absent || sectionStatus?.total_students || 0;
-    const rate = total > 0 ? Math.round((present / total) * 100) : 100;
+    // All assigned duties marked
+    const totalPresent = completedDuties.reduce((acc, d) => acc + (d.sectionStatus?.present_count ?? 0), 0);
+    const totalAbsent = completedDuties.reduce((acc, d) => acc + (d.sectionStatus?.absent_count ?? 0), 0);
+    const totalStudents = totalPresent + totalAbsent;
+    const rate = totalStudents > 0 ? Math.round((totalPresent / totalStudents) * 100) : 100;
+    const primaryDuty = effectiveClassTeacherDuties[0];
 
     return (
       <div className="relative overflow-hidden rounded-xl border border-emerald-500/25 bg-emerald-500/10 p-4 sm:p-5 shadow-xs">
@@ -103,11 +129,11 @@ export const TeacherDailyActionAlert: React.FC<TeacherDailyActionAlertProps> = (
                   Completed
                 </Badge>
                 <h3 className="text-sm sm:text-base font-semibold text-foreground">
-                  Today's Attendance Completed ({present} Present, {absent} Absent • {rate}% Presence)
+                  Today's Attendance Completed ({totalPresent} Present, {totalAbsent} Absent • {rate}% Presence)
                 </h3>
               </div>
               <p className="text-xs sm:text-sm text-muted-foreground">
-                Attendance for Section {primaryClassTeacherDuty.section_name || 'A'} is recorded and up to date for today.
+                Attendance for {effectiveClassTeacherDuties.map((d) => `${d.class_name} ${d.section_name || 'A'}`).join(', ')} is recorded and up to date for today.
               </p>
             </div>
           </div>
@@ -122,8 +148,8 @@ export const TeacherDailyActionAlert: React.FC<TeacherDailyActionAlertProps> = (
                 to="/attendance/mark"
                 search={
                   {
-                    classId: primaryClassTeacherDuty.class_id,
-                    sectionId: primaryClassTeacherDuty.section_id,
+                    classId: primaryDuty.class_id,
+                    sectionId: primaryDuty.section_id,
                   } as any
                 }
               >

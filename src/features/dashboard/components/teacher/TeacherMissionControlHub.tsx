@@ -17,6 +17,11 @@ import { GraduationCap, CalendarCheck, BookOpen, Award } from 'lucide-react';
 import { useTeacherExamAssignments } from '@/features/examination/hooks';
 import { useDailyAttendanceStatus } from '@/features/attendance/hooks';
 import { useAllClassesWithDetails } from '@/features/academic/hooks';
+import {
+  getLocalTodayDate,
+  isSectionAttendanceMarked,
+  resolveDutySectionId,
+} from '@/features/attendance/utils/attendanceStatus';
 
 export interface TeacherMissionControlHubProps {
   tenantId: string;
@@ -38,7 +43,7 @@ export const TeacherMissionControlHub: React.FC<TeacherMissionControlHubProps> =
   const { user } = useAuth();
   const queryClient = useQueryClient();
   const [linkParentStudent, setLinkParentStudent] = useState<AcademicStudent | null>(null);
-  const todayStr = useMemo(() => new Date().toISOString().split('T')[0], []);
+  const todayStr = useMemo(() => getLocalTodayDate(), []);
 
   // Identify Class Teacher assignments (is_class_teacher === true)
   const classTeacherAssignments = useMemo(() => {
@@ -61,24 +66,29 @@ export const TeacherMissionControlHub: React.FC<TeacherMissionControlHubProps> =
     selectedAcademicYearId || null
   );
 
+  // Resolved primary section ID (falls back to class first section if duty section_id is null)
+  const primarySectionId = useMemo(() => {
+    return resolveDutySectionId(primaryClassTeacherDuty, classes);
+  }, [primaryClassTeacherDuty, classes]);
+
   // Card 1: My Students
   const myStudentsCount = useMemo(() => {
     if (primaryClassTeacherDuty) {
       const targetClass = classes.find((c) => c.id === primaryClassTeacherDuty.class_id);
       if (!targetClass) {
         const secStatus = dailyAttendanceStatus?.sections?.find(
-          (s) => s.section_id === primaryClassTeacherDuty.section_id
+          (s) => s.section_id === primarySectionId
         );
         return secStatus?.total_students ?? 0;
       }
-      const sec = targetClass.sections?.find((s) => s.id === primaryClassTeacherDuty.section_id);
+      const sec = targetClass.sections?.find((s) => s.id === primarySectionId);
       if (sec && typeof (sec as any).student_count === 'number') {
         return (sec as any).student_count;
       }
       return (
         targetClass.students?.filter(
           (s) =>
-            s.section_id === primaryClassTeacherDuty.section_id &&
+            (!primarySectionId || s.section_id === primarySectionId) &&
             (s.status === 'ACTIVE' || !s.status)
         ).length ?? 0
       );
@@ -89,25 +99,22 @@ export const TeacherMissionControlHub: React.FC<TeacherMissionControlHubProps> =
     );
     const relevantClasses = classes.filter((c) => assignedClassIds.includes(c.id));
     return relevantClasses.reduce((acc, c) => acc + (c.students?.length ?? 0), 0);
-  }, [classes, primaryClassTeacherDuty, dailyAttendanceStatus, teacherAssignments]);
+  }, [classes, primaryClassTeacherDuty, primarySectionId, dailyAttendanceStatus, teacherAssignments]);
 
   // Card 2: Today's Attendance
   const primarySectionStatus = useMemo(() => {
-    if (!primaryClassTeacherDuty) return null;
+    if (!primarySectionId) return null;
     return (
       dailyAttendanceStatus?.sections?.find(
-        (s) => s.section_id === primaryClassTeacherDuty.section_id
+        (s) => s.section_id === primarySectionId
       ) || null
     );
-  }, [dailyAttendanceStatus, primaryClassTeacherDuty]);
+  }, [dailyAttendanceStatus, primarySectionId]);
 
   const isAttendanceMarked = useMemo(() => {
     if (!primaryClassTeacherDuty) return false;
-    return Boolean(
-      dailyAttendanceStatus?.marked_section_ids?.includes(primaryClassTeacherDuty.section_id!) ||
-      primarySectionStatus?.is_marked
-    );
-  }, [dailyAttendanceStatus, primaryClassTeacherDuty, primarySectionStatus]);
+    return isSectionAttendanceMarked(primarySectionId, dailyAttendanceStatus, null, todayStr);
+  }, [dailyAttendanceStatus, primaryClassTeacherDuty, primarySectionId, todayStr]);
 
   const attendanceRate = useMemo(() => {
     if (!primarySectionStatus) return null;
@@ -171,6 +178,7 @@ export const TeacherMissionControlHub: React.FC<TeacherMissionControlHubProps> =
         tenantId={tenantId}
         primaryClassTeacherDuty={primaryClassTeacherDuty}
         subjectTeacherAssignments={subjectTeacherAssignments}
+        classTeacherAssignments={classTeacherAssignments}
       />
 
       {/* 3. 4 Scoped Teacher KPI Cards */}

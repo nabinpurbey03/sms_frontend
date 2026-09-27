@@ -7,6 +7,7 @@ import {
   useAllClassesWithDetails,
 } from '@/features/academic/hooks';
 import { useMarkAttendance, useSectionAttendanceReport } from '../hooks';
+import { getLocalTodayDate } from '../utils/attendanceStatus';
 import { useSchoolSettings, useCalendarEvents } from '@/features/school-settings/hooks';
 import { AttendanceConfirmDialog } from '../components/AttendanceConfirmDialog';
 import { Button } from '@/components/ui/button';
@@ -76,11 +77,11 @@ export const MarkAttendancePage: React.FC = () => {
   const querySectionId = searchParams.get('sectionId') || '';
 
   // Date state: allow recording and updating for the last 7 days only
-  const todayStr = useMemo(() => new Date().toISOString().split('T')[0], []);
+  const todayStr = useMemo(() => getLocalTodayDate(), []);
   const minDateStr = useMemo(() => {
     const d = new Date();
     d.setDate(d.getDate() - 7);
-    return d.toISOString().split('T')[0];
+    return getLocalTodayDate(d);
   }, []);
   const [recordDate, setRecordDate] = useState<string>(todayStr);
   const isDateOutOfRange = recordDate < minDateStr || recordDate > todayStr;

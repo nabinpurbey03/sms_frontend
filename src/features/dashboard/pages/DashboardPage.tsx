@@ -51,6 +51,7 @@ import { TeacherMissionControlHub } from '../components/teacher/TeacherMissionCo
 import { DashboardUpcomingCalendar } from '../components/DashboardUpcomingCalendar';
 import { useCalendarPreferenceStore } from '@/stores/calendarPreferenceStore';
 import { formatDualDateRange } from '@/features/school-settings/utils/nepaliDate';
+import { getLocalTodayDate } from '@/features/attendance/utils/attendanceStatus';
 
 export const DashboardPage: React.FC = () => {
   const { calendarSystem } = useCalendarPreferenceStore();
@@ -59,7 +60,7 @@ export const DashboardPage: React.FC = () => {
 
   const isTeacherOnly = activeRole === 'TEACHER' && !can('MANAGE_TENANT_SETTINGS') && !isSuperAdmin;
 
-  const todayStr = useMemo(() => new Date().toISOString().split('T')[0], []);
+  const todayStr = useMemo(() => getLocalTodayDate(), []);
 
   // Academic years selection for school session scoping
   const { data: academicYears = [] } = useAcademicYears(activeTenantId);
@@ -140,8 +141,12 @@ export const DashboardPage: React.FC = () => {
 
   // Computed confirmed / marked sections today
   const confirmedSections = useMemo(() => {
-    return dailyAttendanceStatus?.marked_section_ids?.length ?? 0;
-  }, [dailyAttendanceStatus?.marked_section_ids]);
+    const fromMarkedIds = dailyAttendanceStatus?.marked_section_ids?.length ?? 0;
+    const fromSections = (dailyAttendanceStatus?.sections || []).filter(
+      (s) => s.is_marked || (s.present_count ?? 0) + (s.absent_count ?? 0) > 0
+    ).length;
+    return Math.max(fromMarkedIds, fromSections);
+  }, [dailyAttendanceStatus]);
 
   // Computed class teacher duties
   const classTeacherDuties = useMemo(() => {

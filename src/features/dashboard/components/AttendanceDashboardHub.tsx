@@ -45,10 +45,14 @@ import type {
   DailySchoolAttendanceItem,
   SectionDailyAttendanceStatus,
 } from '@/features/attendance/types';
+import {
+  getLocalTodayDate,
+  isSectionAttendanceMarked,
+} from '@/features/attendance/utils/attendanceStatus';
 
 type TimeframeOption = 'today' | '7d' | '30d';
 
-const getTodayStr = () => new Date().toISOString().split('T')[0];
+const getTodayStr = () => getLocalTodayDate();
 
 const getDateDaysAgo = (days: number): string => {
   const d = new Date();
@@ -275,7 +279,7 @@ export const AttendanceDashboardHub: React.FC = () => {
     schoolClasses.forEach((cls) => {
       (cls.sections || []).forEach((sec) => {
         const status = statusMap.get(sec.id);
-        const isMarked = markedIds.has(sec.id);
+        const isMarked = isSectionAttendanceMarked(sec.id, dailyStatus);
         result.push({
           classId: cls.id,
           className: cls.name,
