@@ -12,6 +12,7 @@ import { TeacherTeachingPortfolio } from './TeacherTeachingPortfolio';
 import { TeacherQuickShortcutsBar } from './TeacherQuickShortcutsBar';
 import { ParentStudentLinkDialog } from '@/features/members/components/ParentStudentLinkDialog';
 import { PARENT_MAPPINGS_QUERY_KEY, STUDENT_PARENTS_QUERY_KEY } from '@/features/members/hooks';
+import { DashboardUpcomingCalendar } from '../DashboardUpcomingCalendar';
 import { StatCard } from '@/components/ui/stat-card';
 import { GraduationCap, CalendarCheck, BookOpen, Award } from 'lucide-react';
 import { useTeacherExamAssignments } from '@/features/examination/hooks';
@@ -243,6 +244,14 @@ export const TeacherMissionControlHub: React.FC<TeacherMissionControlHubProps> =
           />
         </Link>
       </div>
+
+      {/* Upcoming Academic Calendar & Events — just below teacher statcards */}
+      {!!tenantId && (
+        <DashboardUpcomingCalendar
+          tenantId={tenantId}
+          academicYearId={selectedAcademicYearId || activeAcademicYear?.id}
+        />
+      )}
 
       {/* 4. Classroom Section Hub (Class Teacher Duty) */}
       {primaryClassTeacherDuty && (

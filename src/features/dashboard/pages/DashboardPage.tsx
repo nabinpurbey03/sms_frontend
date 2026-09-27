@@ -353,6 +353,14 @@ export const DashboardPage: React.FC = () => {
             </Link>
           </div>
 
+          {/* Upcoming Academic Calendar & Events — just below the statcards */}
+          {!!activeTenantId && (
+            <DashboardUpcomingCalendar
+              tenantId={activeTenantId}
+              academicYearId={selectedAcademicYearId || activeAcademicYear?.id}
+            />
+          )}
+
           {/* Live Attendance Reporting Hub */}
           <AttendanceDashboardHub />
 
@@ -659,14 +667,6 @@ export const DashboardPage: React.FC = () => {
         </div>
       </div>
     )}
-
-      {/* Academic Calendar Section — 4 upcoming events on dashboard for all school roles */}
-      {!!activeTenantId && (
-        <DashboardUpcomingCalendar
-          tenantId={activeTenantId}
-          academicYearId={selectedAcademicYearId || activeAcademicYear?.id}
-        />
-      )}
 
       {/* Session Context — collapsed by default */}
       <details className="mt-6">
