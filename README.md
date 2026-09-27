@@ -52,6 +52,37 @@ A production-grade, domain-aligned **React 19 Single Page Application (SPA)** fo
 
 ## ✨ Recent Updates
 
+- **Dashboard Upcoming Events Widget (`DashboardUpcomingCalendar.tsx`)**:
+  - Positioned directly below the KPI StatCards on the dashboard for all roles (Principals/Admins, Office Admins, Parents, and Teachers in Teacher Mission Control Hub).
+  - Displays the 4 upcoming school events (holidays, exams, vacations, milestones) with dual BS/AD date formatting, color-coded badges, relative time pills (`Ongoing`, `Tomorrow`, `In X days`), duration pills (`X days`), and a quick link to "View Full Calendar" (`/academic-calendar`).
+  - Graceful empty state ("No upcoming events scheduled") if no events are coming up.
+- **Dedicated Read-Only Academic Calendar for All Roles (`/academic-calendar`)**:
+  - Dedicated route accessible to all authenticated roles.
+  - Office Admin, Teacher, and Parent roles view the academic calendar in read-only mode (view holidays, exams, vacations, and school events without mutation actions).
+  - School Principals (`ADMIN`) and Super Admins retain full event creation, editing, and deletion capabilities.
+- **Attendance Reliability, Multi-Duty Support & Optimistic Cache Sync**:
+  - Created unified attendance helper module (`src/features/attendance/utils/attendanceStatus.ts`):
+    - `getLocalTodayDate()`: Standardizes all date comparisons on the user's local calendar day, resolving UTC timezone discrepancies in Nepal (UTC+5:45).
+    - `resolveDutySectionId()`: Automatically resolves fallback section from class if `duty.section_id` is null or unassigned.
+    - `isSectionAttendanceMarked()`: Comprehensive multi-tier check inspecting `marked_section_ids`, `sec.is_marked`, `(present_count + absent_count) > 0`, and live `sectionReport` student records.
+  - **Optimistic Cache Synchronization in `useMarkAttendance`**: Directly updates `queryClient.setQueriesData` for `[DAILY_ATTENDANCE_STATUS_KEY, tenantId, recordDate]` on mutation success so the dashboard immediately shows marked upon return without cache latency.
+  - **Multi-Section Awareness in Teacher Hero Alert (`TeacherDailyActionAlert.tsx`)**: Inspects all class teacher duties; displays green "Today's Attendance Completed" if all duties are marked, or specifies which section is still pending with a direct mark link.
+- **Universal Dual Calendar (Bikram Sambat BS / Gregorian AD) Propagation**:
+  - Propagated dual calendar representation across the entire platform:
+    - Attendance Heatmap (`calendar-heatmap.tsx`)
+    - Attendance Reports (`AttendanceReportsPage.tsx`, `SectionNoticeboardTab.tsx`)
+    - Mark Attendance date selection & confirmation (`MarkAttendancePage.tsx`, `AttendanceConfirmDialog.tsx`)
+    - Absent Students drawer (`AbsentStudentsDrawer.tsx`)
+    - Dashboard Hero Banner & Dashboard Page (`DashboardHeroBanner.tsx`, `DashboardPage.tsx`)
+    - Academic Calendar (`AcademicCalendarView.tsx`, `NepaliCalendarGrid.tsx`)
+    - Examination schedules & score entry (`ExamsListPage.tsx`)
+    - Official report cards & printable rosters (`OfficialReportCardDocument.tsx`, `PrintableRosterModal.tsx`)
+    - System Audit Logs (`AuditLogsPage.tsx`)
+- **School Settings UI/UX Modernization & Accessible Dialogs**:
+  - Replaced custom tab nav with accessible shadcn `Tabs`.
+  - Standardized accessible confirmation dialogs (`ConfirmDialog.tsx`, `alert-dialog.tsx`) replacing native `window.confirm()` and `alert()`.
+  - Dual-date representation in Academic Years list.
+  - Clean school search scope selector for Super Admins.
 - **User Calendar Preference (Nepali BS vs Gregorian AD)**:
   - Persistent user-selectable calendar system via Zustand (`src/stores/calendarPreferenceStore.ts`), preserved in `localStorage`.
   - Accessible switchers mounted in top desktop header, mobile navigation drawer, user profile dropdown, and inline calendar view toolbar.
@@ -302,7 +333,8 @@ frontend/
     ├── stores/                       # Lightweight Zustand Stores
     │   ├── tenantStore.ts            # Active tenant ID & name state
     │   ├── viewAsStore.ts            # 15-minute "View As" session store
-    │   └── themeStore.ts             # Theme mode (light, dark, system) state
+    │   ├── themeStore.ts             # Theme mode (light, dark, system) state
+    │   └── calendarPreferenceStore.ts # Dual calendar system preference (BS vs AD)
     │
     ├── components/                   # Shared UI Primitives & Layouts
     │   ├── layout/
@@ -311,35 +343,47 @@ frontend/
     │   │   └── SchoolHeaderBadge.tsx # Tenant indicator and switcher badge
     │   ├── common/
     │   │   ├── ResponsiveDataTable.tsx # Auto dual-mode: stacked cards (<md) & table (md+)
+    │   │   ├── ConfirmDialog.tsx     # Accessible confirmation dialog (replaces window.confirm)
     │   │   └── PlaceholderPage.tsx   # Scaffold placeholder for upcoming feature routes
     │   └── ui/                       # Accessible shadcn primitives
+    │       ├── alert-dialog.tsx      # Radix-based accessible modal alert dialogs
     │       ├── avatar.tsx
     │       ├── badge.tsx
     │       ├── button.tsx            # 44px mobile touch target button
     │       ├── card.tsx
+    │       ├── chart-card.tsx        # Styled chart container card
     │       ├── checkbox.tsx          # 44px touch row checkbox
     │       ├── dialog.tsx            # Full-screen (<sm) and centered modal (sm+)
     │       ├── dropdown-menu.tsx
     │       ├── input.tsx             # Mobile 16px/14px anti-zoom input
     │       ├── label.tsx
+    │       ├── nepali-date-picker.tsx # Universal BS/AD dual calendar date picker
     │       ├── popover.tsx           # Accessible Popover primitive for datepickers
     │       ├── sheet.tsx             # Drawer primitive for detail views
     │       ├── sonner.tsx            # Rich toast notifications
-    │       └── table.tsx
+    │       ├── stat-card.tsx         # Standardized metric card primitive
+    │       ├── table.tsx
+    │       └── textarea.tsx
     │
     ├── features/                     # Domain Feature Slices (5-file standard)
     │   ├── auth/                     # Authentication & Login
-    │   ├── dashboard/                # Unified and Super Admin KPI Hubs
+    │   ├── dashboard/                # Unified, Teacher Mission Control & Super Admin KPI Hubs
+    │   │   ├── components/           # DashboardUpcomingCalendar, AttendanceDashboardHub, SchoolResultsDashboardHub
+    │   │   └── components/teacher/   # TeacherMissionControlHub, TeacherDailyActionAlert, TeacherClassroomSectionCard
     │   ├── audit-log/                # System audit trail & detail drawers
     │   ├── tenants/                  # Tenant management & onboarding wizard
     │   ├── platform-users/           # Platform user directory & memberships
     │   ├── academic/                 # Classes, sections, subjects & teacher assignments
     │   ├── academic-year/            # Academic year management & selector
     │   ├── school-settings/          # School settings hub (sessions, days, BS/AD calendar, profile)
-    │   │   ├── components/           # NepaliDatePicker, AcademicCalendarGrid, CalendarEventDialog
+    │   │   ├── pages/                # SchoolSettingsPage, AcademicCalendarPage (read-only view)
+    │   │   ├── components/           # AcademicCalendarView, AcademicCalendarGrid, CalendarEventDialog
     │   │   ├── styles/calendar.css   # react-big-calendar custom styling
     │   │   └── utils/nepaliDate.ts   # BS ↔ AD bidirectional date converter utilities
     │   ├── attendance/               # Daily attendance & reporting
+    │   │   ├── pages/                # MarkAttendancePage, AttendanceReportsPage, MyAssignmentsPage
+    │   │   ├── components/           # AbsentStudentsDrawer, AttendanceConfirmDialog
+    │   │   └── utils/                # attendanceStatus.ts (local date, marked checks, duty resolution)
     │   ├── examination/              # Exams, grading & report cards
     │   └── members/                  # School member directory & parent-student links
     │
@@ -387,7 +431,6 @@ VITE_APP_NAME=Schools Up Pro
 ### Running the Development Server
 
 ```bash
-```bash
 npm run dev
 ```
 
@@ -429,7 +472,8 @@ Defined in [`src/config/permissions.ts`](file:///E:/SSUP/frontend/src/config/per
 | **Manage Platform Users** | ✅ | ❌ | ❌ | ❌ | ❌ |
 | **Manage School Settings / Logo** | ✅ | ✅ | 👁️ (View Only) | ❌ | ❌ |
 | **Manage Weekly Academic Days** | ✅ | ✅ | 👁️ (View Only) | ❌ | ❌ |
-| **Manage Academic Calendar & Holidays** | ✅ | ✅ | 👁️ (View Only) | ❌ | ❌ |
+| **View Academic Calendar (`/academic-calendar`)** | ✅ | ✅ | 👁️ (View Only) | 👁️ (View Only) | 👁️ (View Only) |
+| **Manage Academic Calendar & Holidays** | ✅ | ✅ | ❌ | ❌ | ❌ |
 | **Create Office Admin** | ✅ | ✅ | ❌ | ❌ | ❌ |
 | **Create Teacher / Parent User** | ✅ | ✅ | ✅ | ❌ | ❌ |
 | **Assign / Revoke Member Roles** | ✅ | ✅ | ❌ | ❌ | ❌ |
