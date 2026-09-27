@@ -52,6 +52,16 @@ A production-grade, domain-aligned **React 19 Single Page Application (SPA)** fo
 
 ## ✨ Recent Updates
 
+- **UI/UX Modernization & Design System Upgrade (Phases 1–5)**:
+  - **Global Command Palette (`Cmd+K` / `Ctrl+K`)**: Fast accessible command palette modal ([`CommandPalette.tsx`](file:///E:/SSUP/frontend/src/components/layout/CommandPalette.tsx)) featuring role-aware page navigation, live keyword filtering, keyboard arrows/enter support, and direct actions (theme and calendar system toggles).
+  - **Interactive Notification Popover ([`NotificationPopover.tsx`](file:///E:/SSUP/frontend/src/components/layout/NotificationPopover.tsx))**: Replaced the static header bell icon with a real-time notification popover displaying today's classroom attendance pending prompts (with 1-click navigation to mark attendance), upcoming calendar events, and "Mark all as read" dismiss controls.
+  - **Theme Tokens & Accessible Neutrality ([`src/index.css`](file:///E:/SSUP/frontend/src/index.css))**: Harmonized light-mode `--muted` to neutral slate (`#f1f5f9`) and `--muted-foreground` to Slate-500 (`#64748b`), eliminating saturated cyan backgrounds in tab bars, disabled elements, and table headers while guaranteeing WCAG AA (>= 4.5:1) text contrast.
+  - **Content-Shaped Skeleton Loading ([`skeleton.tsx`](file:///E:/SSUP/frontend/src/components/ui/skeleton.tsx))**: Reusable Radix/shadcn skeleton primitive; enhanced [`StatCard`](file:///E:/SSUP/frontend/src/components/ui/stat-card.tsx) with built-in loading skeletons to eliminate metric flash and layout jumps during tenant or session switching.
+  - **Accessible Breadcrumb System ([`breadcrumb.tsx`](file:///E:/SSUP/frontend/src/components/ui/breadcrumb.tsx))**: Radix Slot-based breadcrumb hierarchy with semantic ARIA landmarks across Create Exam, Exam Review, and Score Entry screens.
+  - **Instant Search Filter Clear Buttons (`✕`)**: Integrated quick-clear buttons into all table filter search inputs across Classes, Members, Teacher Assignments, Platform Users, and Examinations.
+  - **Accessible Form Error State Styling**: Enhanced `Input` and `Textarea` primitives with automatic `aria-[invalid=true]` red border and ring styling.
+  - **School Setup Checklist ([`SchoolOnboardingChecklist.tsx`](file:///E:/SSUP/frontend/src/features/dashboard/components/SchoolOnboardingChecklist.tsx))**: Dynamic 5-step onboarding guide on the dashboard for newly onboarded schools (sessions, classes, members, duties, calendar) with completion progress bar.
+  - **100% Elimination of Native Popups**: Replaced legacy `window.confirm` and `alert()` calls with accessible [`ConfirmDialog`](file:///E:/SSUP/frontend/src/components/common/ConfirmDialog.tsx) and Sonner `toast.error`.
 - **Dashboard Upcoming Events Widget (`DashboardUpcomingCalendar.tsx`)**:
   - Positioned directly below the KPI StatCards on the dashboard for all roles (Principals/Admins, Office Admins, Parents, and Teachers in Teacher Mission Control Hub).
   - Displays the 4 upcoming school events (holidays, exams, vacations, milestones) with dual BS/AD date formatting, color-coded badges, relative time pills (`Ongoing`, `Tomorrow`, `In X days`), duration pills (`X days`), and a quick link to "View Full Calendar" (`/academic-calendar`).
@@ -339,6 +349,8 @@ frontend/
     ├── components/                   # Shared UI Primitives & Layouts
     │   ├── layout/
     │   │   ├── AppShell.tsx          # Responsive mobile drawer + desktop sidebar layout
+    │   │   ├── CommandPalette.tsx    # Accessible Cmd+K / Ctrl+K quick navigation modal
+    │   │   ├── NotificationPopover.tsx # Header notification popover (attendance alerts, events)
     │   │   ├── ViewAsBanner.tsx      # Sticky warning banner with countdown timer
     │   │   └── SchoolHeaderBadge.tsx # Tenant indicator and switcher badge
     │   ├── common/
@@ -349,26 +361,28 @@ frontend/
     │       ├── alert-dialog.tsx      # Radix-based accessible modal alert dialogs
     │       ├── avatar.tsx
     │       ├── badge.tsx
+    │       ├── breadcrumb.tsx        # Radix-based accessible breadcrumb system
     │       ├── button.tsx            # 44px mobile touch target button
     │       ├── card.tsx
     │       ├── chart-card.tsx        # Styled chart container card
     │       ├── checkbox.tsx          # 44px touch row checkbox
     │       ├── dialog.tsx            # Full-screen (<sm) and centered modal (sm+)
     │       ├── dropdown-menu.tsx
-    │       ├── input.tsx             # Mobile 16px/14px anti-zoom input
+    │       ├── input.tsx             # Mobile 16px/14px anti-zoom input with aria-invalid styling
     │       ├── label.tsx
     │       ├── nepali-date-picker.tsx # Universal BS/AD dual calendar date picker
     │       ├── popover.tsx           # Accessible Popover primitive for datepickers
     │       ├── sheet.tsx             # Drawer primitive for detail views
+    │       ├── skeleton.tsx          # Shimmer content-shaped loading skeleton primitive
     │       ├── sonner.tsx            # Rich toast notifications
-    │       ├── stat-card.tsx         # Standardized metric card primitive
+    │       ├── stat-card.tsx         # Standardized metric card primitive with loading skeleton
     │       ├── table.tsx
     │       └── textarea.tsx
     │
     ├── features/                     # Domain Feature Slices (5-file standard)
     │   ├── auth/                     # Authentication & Login
     │   ├── dashboard/                # Unified, Teacher Mission Control & Super Admin KPI Hubs
-    │   │   ├── components/           # DashboardUpcomingCalendar, AttendanceDashboardHub, SchoolResultsDashboardHub
+    │   │   ├── components/           # DashboardUpcomingCalendar, SchoolOnboardingChecklist, AttendanceDashboardHub, SchoolResultsDashboardHub
     │   │   └── components/teacher/   # TeacherMissionControlHub, TeacherDailyActionAlert, TeacherClassroomSectionCard
     │   ├── audit-log/                # System audit trail & detail drawers
     │   ├── tenants/                  # Tenant management & onboarding wizard

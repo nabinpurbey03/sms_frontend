@@ -49,6 +49,8 @@ import { PlatformTrendsSection } from '../components/PlatformTrendsSection';
 import { PlatformRankingsSection } from '../components/PlatformRankingsSection';
 import { TeacherMissionControlHub } from '../components/teacher/TeacherMissionControlHub';
 import { DashboardUpcomingCalendar } from '../components/DashboardUpcomingCalendar';
+import { SchoolOnboardingChecklist } from '../components/SchoolOnboardingChecklist';
+import { useCalendarEvents } from '@/features/school-settings/hooks';
 import { useCalendarPreferenceStore } from '@/stores/calendarPreferenceStore';
 import { formatDualDateRange } from '@/features/school-settings/utils/nepaliDate';
 import { getLocalTodayDate } from '@/features/attendance/utils/attendanceStatus';
@@ -127,6 +129,7 @@ export const DashboardPage: React.FC = () => {
     activeTenantId,
     selectedAcademicYearId || null
   );
+  const { data: calendarEvents = [] } = useCalendarEvents(activeTenantId);
 
   const isStudentsLoading = isParent ? isParentChildrenLoading : (isTenantMetricsLoading && isClassesLoading);
   const isClassesStatLoading = isTeacher ? isTeacherAssignmentsLoading : (isTenantMetricsLoading && isClassesLoading);
@@ -270,6 +273,17 @@ export const DashboardPage: React.FC = () => {
                 )}
               </div>
             </div>
+          )}
+
+          {/* School Onboarding Checklist for Admins */}
+          {(can('MANAGE_TENANT_SETTINGS') || isSuperAdmin) && !isParent && (
+            <SchoolOnboardingChecklist
+              hasAcademicYear={academicYears.length > 0}
+              hasClasses={classes.length > 0}
+              hasStudents={totalEnrolledStudents > 0 || (tenantMetrics?.total_students ?? 0) > 0}
+              hasTeacherAssignments={(tenantMetrics?.total_teachers ?? 0) > 0 || teacherAssignments.length > 0}
+              hasCalendarEvents={calendarEvents.length > 0}
+            />
           )}
 
           {/* KPI Stats Grid (1 col phone, 2 cols tablet, 4 cols desktop) */}
