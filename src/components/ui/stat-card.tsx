@@ -12,10 +12,28 @@ export interface StatCardProps extends React.HTMLAttributes<HTMLDivElement> {
     value: number;
     label: string;
   };
+  loading?: boolean;
 }
 
 const StatCard = React.forwardRef<HTMLDivElement, StatCardProps>(
-  ({ title, value, icon: Icon, description, trend, className, ...props }, ref) => {
+  ({ title, value, icon: Icon, description, trend, loading = false, className, ...props }, ref) => {
+    if (loading) {
+      return (
+        <Card ref={ref} className={cn('relative overflow-hidden', className)} {...props}>
+          <CardContent className="p-4 sm:p-6">
+            <div className="flex items-start justify-between">
+              <div className="space-y-2.5 min-w-0 flex-1">
+                <div className="h-4 w-24 bg-muted animate-pulse rounded" />
+                <div className="h-8 w-20 bg-muted animate-pulse rounded" />
+                <div className="h-3.5 w-36 bg-muted animate-pulse rounded" />
+              </div>
+              <div className="h-10 w-10 sm:h-11 sm:w-11 bg-muted animate-pulse rounded-lg shrink-0 ml-3" />
+            </div>
+          </CardContent>
+        </Card>
+      );
+    }
+
     const isPositiveTrend = trend && trend.value >= 0;
 
     return (

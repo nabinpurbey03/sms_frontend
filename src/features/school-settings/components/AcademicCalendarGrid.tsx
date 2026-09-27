@@ -6,6 +6,7 @@ import { ChevronLeft, ChevronRight } from 'lucide-react';
 import { getNepaliDateFromAd } from '../utils/nepaliDate';
 import { useCalendarPreferenceStore } from '@/stores/calendarPreferenceStore';
 import { NepaliCalendarGrid } from './NepaliCalendarGrid';
+import { toast } from 'sonner';
 import type { AcademicCalendarEvent, CalendarEventType } from '../types';
 import '../styles/calendar.css';
 
@@ -193,11 +194,11 @@ const GregorianCalendarGridInner: React.FC<GregorianCalendarGridInnerProps> = ({
     const adDateStr = `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}`;
 
     if (minDate && adDateStr < minDate) {
-      alert(`Selected date is before academic session start (${minDate}).`);
+      toast.error(`Selected date is before academic session start (${minDate}).`);
       return;
     }
     if (maxDate && adDateStr > maxDate) {
-      alert(`Selected date is after academic session end (${maxDate}).`);
+      toast.error(`Selected date is after academic session end (${maxDate}).`);
       return;
     }
 

@@ -24,13 +24,13 @@
     --secondary: 200.8 100.0% 35.7%;
     --secondary-foreground: 210 40% 98%;
 
-    /* Ocean Muted (Fourth): #90E0EF */
-    --muted: 189.5 74.8% 75.1%;
-    --muted-foreground: 239.3 93.8% 19.0%;
+    /* Refined Neutral Muted (Table headers, skeletons, tab lists): #f1f5f9 */
+    --muted: 210 20% 96%;
+    --muted-foreground: 215.4 16.3% 46.9%; /* Slate-500 #64748b */
 
-    /* Ocean Accent (Fifth): #CAF0F8 */
-    --accent: 190.4 76.7% 88.2%;
-    --accent-foreground: 239.3 93.8% 19.0%;
+    /* Neutral Interactive Accent / Hover: #e2e8f0 */
+    --accent: 210 20% 94%;
+    --accent-foreground: 222.2 47.4% 11.2%;
 
     --destructive: 0 84.2% 60.2%;
     --destructive-foreground: 210 40% 98%;

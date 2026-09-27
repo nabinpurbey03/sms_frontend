@@ -37,6 +37,7 @@ import { useSuperAdminDashboard } from '@/features/dashboard/hooks';
 import { toast } from 'sonner';
 import { UserMembershipsDrawer } from '../components/UserMembershipsDrawer';
 import { useViewAsStore } from '@/stores/viewAsStore';
+import { ConfirmDialog } from '@/components/common/ConfirmDialog';
 
 export const PlatformUsersPage: React.FC = () => {
   const { user } = useAuth();
@@ -66,6 +67,7 @@ export const PlatformUsersPage: React.FC = () => {
   const startSession = useViewAsStore((state) => state.startSession);
 
   const { data: dashboardMetrics, isLoading: isDashboardLoading } = useSuperAdminDashboard(isSuperAdmin);
+  const [userToHardDelete, setUserToHardDelete] = useState<PlatformUser | null>(null);
 
   if (!isSuperAdmin) {
     return <Navigate to="/dashboard" replace />;
@@ -79,13 +81,21 @@ export const PlatformUsersPage: React.FC = () => {
     await softDeleteMutation.mutateAsync(u.id);
   };
 
-  const handleHardDelete = async (u: PlatformUser) => {
+  const handleHardDelete = (u: PlatformUser) => {
     if (u.id === user?.id) {
       toast.error('Cannot delete yourself');
       return;
     }
-    if (window.confirm(`Are you sure you want to permanently delete ${u.first_name}? This cannot be undone.`)) {
-      await hardDeleteMutation.mutateAsync(u.id);
+    setUserToHardDelete(u);
+  };
+
+  const handleConfirmHardDelete = async () => {
+    if (!userToHardDelete) return;
+    try {
+      await hardDeleteMutation.mutateAsync(userToHardDelete.id);
+      setUserToHardDelete(null);
+    } catch {
+      // error handled in mutation
     }
   };
 
@@ -498,6 +508,18 @@ export const PlatformUsersPage: React.FC = () => {
           </DialogFooter>
         </DialogContent>
       </Dialog>
+
+      {/* Hard Delete Confirmation Dialog */}
+      <ConfirmDialog
+        open={!!userToHardDelete}
+        onOpenChange={(open) => !open && setUserToHardDelete(null)}
+        title="Permanently Delete Platform User"
+        description={`Are you sure you want to permanently delete ${userToHardDelete?.first_name} ${userToHardDelete?.last_name}? This action cannot be undone and will revoke all associated memberships.`}
+        confirmLabel="Permanently Delete"
+        variant="destructive"
+        isPending={hardDeleteMutation.isPending}
+        onConfirm={handleConfirmHardDelete}
+      />
     </div>
   );
 };

@@ -39,6 +39,14 @@ import {
   AccordionTrigger,
   AccordionContent,
 } from '@/components/ui/accordion';
+import {
+  Breadcrumb,
+  BreadcrumbList,
+  BreadcrumbItem,
+  BreadcrumbLink,
+  BreadcrumbPage,
+  BreadcrumbSeparator,
+} from '@/components/ui/breadcrumb';
 import { TenantRequiredState } from '@/components/common/TenantRequiredState';
 import {
   ExamSubjectConfigList,
@@ -343,13 +351,19 @@ export const CreateExamPage: React.FC = () => {
     <form onSubmit={handleSubmit} className="space-y-6 max-w-5xl mx-auto pb-12">
       {/* Header & Breadcrumb */}
       <div className="space-y-3 border-b pb-5">
-        <Link
-          to={'/examination/exams' as any}
-          className="inline-flex items-center gap-1.5 text-sm font-medium text-muted-foreground hover:text-foreground transition-colors"
-        >
-          <ArrowLeft className="w-4 h-4" />
-          <span>Back to Examinations</span>
-        </Link>
+        <Breadcrumb>
+          <BreadcrumbList>
+            <BreadcrumbItem>
+              <BreadcrumbLink asChild>
+                <Link to={'/examination/exams' as any}>Examinations</Link>
+              </BreadcrumbLink>
+            </BreadcrumbItem>
+            <BreadcrumbSeparator />
+            <BreadcrumbItem>
+              <BreadcrumbPage>Create Examination</BreadcrumbPage>
+            </BreadcrumbItem>
+          </BreadcrumbList>
+        </Breadcrumb>
         <div>
           <h1 className="text-2xl font-bold tracking-tight text-foreground">
             Create New Examination

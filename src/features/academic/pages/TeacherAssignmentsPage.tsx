@@ -31,6 +31,7 @@ import {
 } from 'lucide-react';
 import { TenantRequiredState } from '@/components/common/TenantRequiredState';
 import { EmptyState } from '@/components/common/EmptyState';
+import { ConfirmDialog } from '@/components/common/ConfirmDialog';
 import type { TeacherAssignment } from '../types';
 
 export const TeacherAssignmentsPage: React.FC = () => {
@@ -49,6 +50,7 @@ export const TeacherAssignmentsPage: React.FC = () => {
   const [dialogOpen, setDialogOpen] = useState(false);
   const [dialogMode, setDialogMode] = useState<'subject' | 'class_teacher'>('subject');
   const [deletingId, setDeletingId] = useState<string | null>(null);
+  const [assignmentToDelete, setAssignmentToDelete] = useState<TeacherAssignment | null>(null);
 
   // Filters State
   const [selectedClassFilter, setSelectedClassFilter] = useState<string>('ALL');
@@ -60,19 +62,19 @@ export const TeacherAssignmentsPage: React.FC = () => {
     setDialogOpen(true);
   };
 
-  const handleDelete = async (assignment: TeacherAssignment) => {
-    if (!activeTenantId) return;
-    const confirmed = window.confirm(
-      `Remove assignment for ${assignment.teacher_name || 'this teacher'} in ${assignment.class_name || 'Class'}?`
-    );
-    if (!confirmed) return;
+  const handleDelete = (assignment: TeacherAssignment) => {
+    setAssignmentToDelete(assignment);
+  };
 
-    setDeletingId(assignment.id);
+  const handleConfirmDelete = async () => {
+    if (!activeTenantId || !assignmentToDelete) return;
+    setDeletingId(assignmentToDelete.id);
     try {
       await deleteAssignmentMutation.mutateAsync({
         tenantId: activeTenantId,
-        assignmentId: assignment.id,
+        assignmentId: assignmentToDelete.id,
       });
+      setAssignmentToDelete(null);
     } finally {
       setDeletingId(null);
     }
@@ -375,6 +377,18 @@ export const TeacherAssignmentsPage: React.FC = () => {
           initialMode={dialogMode}
         />
       )}
+
+      {/* Delete Confirmation Dialog */}
+      <ConfirmDialog
+        open={!!assignmentToDelete}
+        onOpenChange={(open) => !open && setAssignmentToDelete(null)}
+        title="Remove Teacher Assignment"
+        description={`Are you sure you want to remove the assignment for ${assignmentToDelete?.teacher_name || 'this teacher'} in ${assignmentToDelete?.class_name || 'this class'}?`}
+        confirmLabel="Remove Assignment"
+        variant="destructive"
+        isPending={!!deletingId}
+        onConfirm={handleConfirmDelete}
+      />
     </div>
   );
 };

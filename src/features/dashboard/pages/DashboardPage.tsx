@@ -87,27 +87,27 @@ export const DashboardPage: React.FC = () => {
   }, [academicYears, selectedAcademicYearId]);
 
   // Queries for live metrics
-  const { data: attendanceSummary } = useAttendanceSummary(
+  const { data: attendanceSummary, isLoading: isAttendanceSummaryLoading } = useAttendanceSummary(
     !isParent ? activeTenantId : null,
     todayStr,
     { enabled: !!activeTenantId && !isParent }
   );
-  const { data: dailyAttendanceStatus } = useDailyAttendanceStatus(
+  const { data: dailyAttendanceStatus, isLoading: isAttendanceStatusLoading } = useDailyAttendanceStatus(
     !isParent ? activeTenantId : null,
     todayStr,
     undefined,
     { enabled: !!activeTenantId && !isParent }
   );
-  const { data: classes = [] } = useAllClassesWithDetails(
+  const { data: classes = [], isLoading: isClassesLoading } = useAllClassesWithDetails(
     !isParent ? activeTenantId : null,
     selectedAcademicYearId || null
   );
-  const { data: teacherAssignments = [] } = useMyTeacherAssignments(
+  const { data: teacherAssignments = [], isLoading: isTeacherAssignmentsLoading } = useMyTeacherAssignments(
     activeTenantId,
     { enabled: !!activeTenantId && isTeacher }
   );
-  const { data: allParentChildren = [] } = useAllMyChildren(isParent);
-  const { data: tenantParentChildren = [] } = useParentChildren(
+  const { data: allParentChildren = [], isLoading: isAllParentChildrenLoading } = useAllMyChildren(isParent);
+  const { data: tenantParentChildren = [], isLoading: isTenantParentChildrenLoading } = useParentChildren(
     activeTenantId,
     isParent ? (user?.id ?? null) : null
   );
@@ -115,16 +115,23 @@ export const DashboardPage: React.FC = () => {
     if (allParentChildren && allParentChildren.length > 0) return allParentChildren;
     return tenantParentChildren;
   }, [allParentChildren, tenantParentChildren]);
-  const { data: parentReportCards } = useMyChildrenReportCards(
+  const isParentChildrenLoading = isAllParentChildrenLoading || isTenantParentChildrenLoading;
+
+  const { data: parentReportCards, isLoading: isParentReportCardsLoading } = useMyChildrenReportCards(
     activeTenantId,
     { enabled: !!activeTenantId && isParent }
   );
 
   const { data: superAdminMetrics } = useSuperAdminDashboard(isSuperAdmin && !activeTenantId);
-  const { data: tenantMetrics } = useTenantDashboard(
+  const { data: tenantMetrics, isLoading: isTenantMetricsLoading } = useTenantDashboard(
     activeTenantId,
     selectedAcademicYearId || null
   );
+
+  const isStudentsLoading = isParent ? isParentChildrenLoading : (isTenantMetricsLoading && isClassesLoading);
+  const isClassesStatLoading = isTeacher ? isTeacherAssignmentsLoading : (isTenantMetricsLoading && isClassesLoading);
+  const isAttendanceStatLoading = isAttendanceSummaryLoading || isAttendanceStatusLoading;
+  const isStaffStatLoading = isParent ? isParentReportCardsLoading : isTenantMetricsLoading;
 
   // Computed total students
   const totalEnrolledStudents = useMemo(() => {
@@ -278,6 +285,7 @@ export const DashboardPage: React.FC = () => {
                 value={isParent ? (parentChildren?.length ?? 0) : (tenantMetrics?.total_students ?? totalEnrolledStudents)}
                 icon={isParent ? Baby : GraduationCap}
                 description={isParent ? 'Children linked to your account' : 'Total enrolled students'}
+                loading={isStudentsLoading}
                 className="h-full cursor-pointer transition-all duration-200 group-hover:border-primary/50 group-hover:shadow-md group-hover:-translate-y-0.5 active:scale-[0.99]"
               />
             </Link>
@@ -297,6 +305,7 @@ export const DashboardPage: React.FC = () => {
                     ? `${classTeacherDuties} class teacher duties`
                     : `${totalSections} sections`
                 }
+                loading={isClassesStatLoading}
                 className="h-full cursor-pointer transition-all duration-200 group-hover:border-primary/50 group-hover:shadow-md group-hover:-translate-y-0.5 active:scale-[0.99]"
               />
             </Link>
@@ -325,6 +334,7 @@ export const DashboardPage: React.FC = () => {
                     ? { value: attendanceRate >= 80 ? 2.1 : -1.5, label: 'vs yesterday' }
                     : undefined
                 }
+                loading={isAttendanceStatLoading}
                 className="h-full cursor-pointer transition-all duration-200 group-hover:border-primary/50 group-hover:shadow-md group-hover:-translate-y-0.5 active:scale-[0.99]"
               />
             </Link>
@@ -348,6 +358,7 @@ export const DashboardPage: React.FC = () => {
                     ? 'Published exam report cards'
                     : 'Teachers & staff in your school'
                 }
+                loading={isStaffStatLoading}
                 className="h-full cursor-pointer transition-all duration-200 group-hover:border-primary/50 group-hover:shadow-md group-hover:-translate-y-0.5 active:scale-[0.99]"
               />
             </Link>
