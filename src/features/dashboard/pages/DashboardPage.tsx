@@ -48,6 +48,7 @@ import { SuperAdminGrid } from '../components/SuperAdminGrid';
 import { PlatformTrendsSection } from '../components/PlatformTrendsSection';
 import { PlatformRankingsSection } from '../components/PlatformRankingsSection';
 import { TeacherMissionControlHub } from '../components/teacher/TeacherMissionControlHub';
+import { DashboardUpcomingCalendar } from '../components/DashboardUpcomingCalendar';
 import { useCalendarPreferenceStore } from '@/stores/calendarPreferenceStore';
 import { formatDualDateRange } from '@/features/school-settings/utils/nepaliDate';
 
@@ -502,37 +503,6 @@ export const DashboardPage: React.FC = () => {
             </Card>
           )}
 
-          {/* Academic Calendar — visible to all school roles */}
-          {!!activeTenantId && (
-            <Card className="group border-border/60 hover:border-primary/50 transition-all rounded-xl">
-              <CardHeader className="p-5 pb-3">
-                <div className="flex items-center justify-between">
-                  <div className="p-2 bg-cyan-500/10 text-cyan-600 rounded-lg group-hover:scale-105 transition-transform">
-                    <CalendarDays className="h-5 w-5" />
-                  </div>
-                  <ArrowRight className="h-4 w-4 text-muted-foreground group-hover:text-primary group-hover:translate-x-1 transition-all" />
-                </div>
-                <CardTitle className="text-base font-semibold pt-2">
-                  Academic Calendar
-                </CardTitle>
-                <CardDescription className="text-xs">
-                  {isParent
-                    ? 'Check school holidays, exam schedules, and vacation dates'
-                    : 'View holidays, exam periods, events, and vacation planner'}
-                </CardDescription>
-              </CardHeader>
-              <CardContent className="p-5 pt-0">
-                <Button
-                  variant="outline"
-                  className="w-full text-xs font-semibold h-10"
-                  asChild
-                >
-                  <Link to="/academic-calendar">View Calendar</Link>
-                </Button>
-              </CardContent>
-            </Card>
-          )}
-
           {/* Parent Linked Children */}
           {isParent && (
             <Card className="group border-border/60 hover:border-primary/50 transition-all rounded-xl">
@@ -685,6 +655,13 @@ export const DashboardPage: React.FC = () => {
       </div>
     )}
 
+      {/* Academic Calendar Section — 4 upcoming events on dashboard for all school roles */}
+      {!!activeTenantId && (
+        <DashboardUpcomingCalendar
+          tenantId={activeTenantId}
+          academicYearId={selectedAcademicYearId || activeAcademicYear?.id}
+        />
+      )}
 
       {/* Session Context — collapsed by default */}
       <details className="mt-6">
