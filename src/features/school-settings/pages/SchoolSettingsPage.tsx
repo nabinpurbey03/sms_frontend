@@ -21,7 +21,7 @@ import { AcademicCalendarView } from '../components/AcademicCalendarView';
 import { SchoolGeneralSettings } from '../components/SchoolGeneralSettings';
 import { SchoolSearchSelect } from '@/features/academic-year/components/SchoolSearchSelect';
 
-export type SchoolSettingsTab = 'sessions' | 'days' | 'calendar' | 'profile';
+export type SchoolSettingsTab = 'calendar' | 'days' | 'sessions' | 'profile';
 
 export const SchoolSettingsPage: React.FC = () => {
   const { activeTenantId } = useAuth();
@@ -30,7 +30,7 @@ export const SchoolSettingsPage: React.FC = () => {
 
   const searchParams = useSearch({ strict: false }) as any;
   const navigate = useNavigate();
-  const currentTab = (searchParams?.tab as SchoolSettingsTab) || 'sessions';
+  const currentTab = (searchParams?.tab as SchoolSettingsTab) || 'calendar';
 
   // Super Admin tenant selection
   const [selectedTenantId, setSelectedTenantId] = useState<string>('');
@@ -56,10 +56,10 @@ export const SchoolSettingsPage: React.FC = () => {
     icon: React.ComponentType<{ className?: string }>;
   }[] = [
     {
-      id: 'sessions',
-      label: 'Academic Sessions',
-      description: 'Manage sessions, start & end dates, and rollover',
-      icon: Calendar,
+      id: 'calendar',
+      label: 'Academic Calendar',
+      description: 'Holidays, exam schedules & vacation planner',
+      icon: CalendarDays,
     },
     {
       id: 'days',
@@ -68,10 +68,10 @@ export const SchoolSettingsPage: React.FC = () => {
       icon: Clock,
     },
     {
-      id: 'calendar',
-      label: 'Academic Calendar',
-      description: 'Holidays, exam schedules & vacation planner',
-      icon: CalendarDays,
+      id: 'sessions',
+      label: 'Academic Sessions',
+      description: 'Manage sessions, start & end dates, and rollover',
+      icon: Calendar,
     },
     {
       id: 'profile',
@@ -137,8 +137,14 @@ export const SchoolSettingsPage: React.FC = () => {
           })}
         </TabsList>
 
-        <TabsContent value="sessions" className="pt-2 focus-visible:outline-none">
-          <AcademicYearsPage tenantId={effectiveTenantId} canManage={canManage} />
+        <TabsContent value="calendar" className="pt-2 focus-visible:outline-none">
+          {effectiveTenantId ? (
+            <AcademicCalendarView tenantId={effectiveTenantId} canManage={canManage} />
+          ) : (
+            <Card className="p-8 text-center text-muted-foreground">
+              Please select a school to view or configure its academic calendar.
+            </Card>
+          )}
         </TabsContent>
 
         <TabsContent value="days" className="pt-2 focus-visible:outline-none">
@@ -151,14 +157,8 @@ export const SchoolSettingsPage: React.FC = () => {
           )}
         </TabsContent>
 
-        <TabsContent value="calendar" className="pt-2 focus-visible:outline-none">
-          {effectiveTenantId ? (
-            <AcademicCalendarView tenantId={effectiveTenantId} canManage={canManage} />
-          ) : (
-            <Card className="p-8 text-center text-muted-foreground">
-              Please select a school to view or configure its academic calendar.
-            </Card>
-          )}
+        <TabsContent value="sessions" className="pt-2 focus-visible:outline-none">
+          <AcademicYearsPage tenantId={effectiveTenantId} canManage={canManage} />
         </TabsContent>
 
         <TabsContent value="profile" className="pt-2 focus-visible:outline-none">
