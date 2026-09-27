@@ -42,6 +42,8 @@ import { Input } from '@/components/ui/input';
 import { Badge } from '@/components/ui/badge';
 import { Avatar, AvatarFallback } from '@/components/ui/avatar';
 import { SchoolHeaderBadge } from './SchoolHeaderBadge';
+import { CommandPalette, type CommandItem } from './CommandPalette';
+import { NotificationPopover } from './NotificationPopover';
 import {
   Tooltip,
   TooltipContent,
@@ -125,6 +127,18 @@ export const AppShell: React.FC = () => {
   const { calendarSystem, setCalendarSystem, toggleCalendarSystem } = useCalendarPreferenceStore();
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const [isDesktopSidebarCollapsed, setIsDesktopSidebarCollapsed] = useState(false);
+  const [isCommandPaletteOpen, setIsCommandPaletteOpen] = useState(false);
+
+  useEffect(() => {
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if ((e.metaKey || e.ctrlKey) && e.key === 'k') {
+        e.preventDefault();
+        setIsCommandPaletteOpen((prev) => !prev);
+      }
+    };
+    window.addEventListener('keydown', handleKeyDown);
+    return () => window.removeEventListener('keydown', handleKeyDown);
+  }, []);
 
   const handleLogout = async () => {
     await logout();
@@ -341,14 +355,60 @@ export const AppShell: React.FC = () => {
     return navItems.find((item) => isNavItemActive(location.pathname, item.href));
   }, [location.pathname, navItems]);
 
-  const searchTimeoutRef = React.useRef<ReturnType<typeof setTimeout> | null>(null);
-  const handleSearch = (e: React.ChangeEvent<HTMLInputElement>) => {
-    if (searchTimeoutRef.current) clearTimeout(searchTimeoutRef.current);
-    searchTimeoutRef.current = setTimeout(() => {
-      console.log("Searching for:", e.target.value);
-      // Future integration: Global search API call
-    }, 500);
-  };
+  const commandItems = React.useMemo<CommandItem[]>(() => {
+    const items: CommandItem[] = [];
+
+    // Add visible navigation items
+    navItems
+      .filter((n) => n.show)
+      .forEach((n) => {
+        items.push({
+          id: n.href,
+          label: n.label,
+          category: n.category,
+          description: n.description,
+          icon: n.icon,
+          action: () => navigate({ to: n.href as any }),
+          keywords: [n.label, n.category, n.description],
+        });
+      });
+
+    // Add Academic Calendar
+    if (activeTenantId) {
+      items.push({
+        id: '/academic-calendar',
+        label: 'Academic Calendar',
+        category: 'Academics',
+        description: 'View school holidays, exams, vacations, and milestones.',
+        icon: CalendarDays,
+        action: () => navigate({ to: '/academic-calendar' as any }),
+        keywords: ['calendar', 'events', 'holidays', 'exams', 'vacation'],
+      });
+    }
+
+    // Add Preferences & Quick Actions
+    items.push({
+      id: 'action-toggle-calendar',
+      label: `Switch Calendar to ${calendarSystem === 'BS' ? 'Gregorian (AD)' : 'Bikram Sambat (BS)'}`,
+      category: 'Preferences',
+      description: `Toggle active calendar system (currently ${calendarSystem})`,
+      icon: CalendarDays,
+      action: toggleCalendarSystem,
+      keywords: ['calendar', 'nepali', 'gregorian', 'bs', 'ad', 'bikram sambat'],
+    });
+
+    items.push({
+      id: 'action-toggle-theme',
+      label: `Switch to ${theme === 'dark' ? 'Light' : 'Dark'} Mode`,
+      category: 'Preferences',
+      description: `Toggle visual theme (currently ${theme})`,
+      icon: theme === 'dark' ? Sun : Moon,
+      action: () => setTheme(theme === 'dark' ? 'light' : 'dark'),
+      keywords: ['theme', 'dark', 'light', 'mode', 'appearance'],
+    });
+
+    return items;
+  }, [navItems, activeTenantId, calendarSystem, toggleCalendarSystem, theme, setTheme, navigate]);
 
   return (
     <div className="flex flex-col h-screen h-dvh overflow-hidden">
@@ -694,14 +754,32 @@ export const AppShell: React.FC = () => {
 
           {/* Right: Search, Controls & Profile */}
           <div className="flex flex-1 min-w-0 items-center justify-end gap-2 sm:gap-3 shrink-0">
-            <div className="relative hidden lg:block w-[300px] xl:w-[400px] mr-2 transition-all duration-300">
-              <Search className="absolute left-2.5 top-2 h-4 w-4 text-muted-foreground" />
-              <Input 
-                placeholder="Search students, classes, and more..."
-                className="w-full bg-background border border-input pl-9 h-8 focus-visible:ring-1 focus-visible:ring-primary transition-colors text-xs rounded-full shadow-sm"
-                onChange={handleSearch}
-              />
-            </div>
+            {/* Desktop Command Palette Trigger */}
+            <button
+              type="button"
+              onClick={() => setIsCommandPaletteOpen(true)}
+              className="relative hidden lg:flex items-center justify-between w-[240px] xl:w-[300px] h-8 px-3 rounded-full border border-input bg-background/80 hover:bg-accent/50 text-muted-foreground text-xs transition-colors shadow-2xs cursor-pointer mr-1"
+              aria-label="Open command palette"
+            >
+              <div className="flex items-center gap-2 truncate">
+                <Search className="h-3.5 w-3.5 shrink-0" />
+                <span className="truncate">Search pages & actions...</span>
+              </div>
+              <kbd className="hidden sm:inline-flex h-5 items-center gap-0.5 rounded border border-border/80 bg-muted px-1.5 font-mono text-[10px] font-medium text-muted-foreground shrink-0">
+                <span>⌘</span>K
+              </kbd>
+            </button>
+
+            {/* Mobile / Tablet Command Palette Trigger Icon */}
+            <Button
+              variant="ghost"
+              size="icon"
+              onClick={() => setIsCommandPaletteOpen(true)}
+              className="lg:hidden h-9 w-9 rounded-full text-muted-foreground hover:bg-accent hover:text-foreground"
+              aria-label="Search pages"
+            >
+              <Search className="h-5 w-5" />
+            </Button>
             {/* Calendar System Switcher (AD / BS) */}
             <Tooltip>
               <TooltipTrigger asChild>
@@ -732,11 +810,8 @@ export const AppShell: React.FC = () => {
               {theme === 'dark' ? <Sun className="h-5 w-5" /> : <Moon className="h-5 w-5" />}
             </Button>
           
-          {/* Notifications */}
-          <Button variant="ghost" size="icon" className="h-9 w-9 rounded-full text-muted-foreground hover:bg-accent hover:text-foreground relative">
-            <Bell className="h-5 w-5" />
-            <span className="absolute top-1.5 right-1.5 h-2 w-2 rounded-full bg-destructive border border-card" />
-          </Button>
+            {/* Notifications Popover */}
+            <NotificationPopover />
           
           <div className="w-px h-6 bg-border/50 mx-1" /> {/* Divider */}
 
@@ -978,6 +1053,13 @@ export const AppShell: React.FC = () => {
         </main>
       </div>
       </div>
+
+      {/* Global Command Palette (Cmd+K / Ctrl+K) */}
+      <CommandPalette
+        open={isCommandPaletteOpen}
+        onOpenChange={setIsCommandPaletteOpen}
+        items={commandItems}
+      />
     </div>
   );
 };

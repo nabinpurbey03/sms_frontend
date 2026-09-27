@@ -28,6 +28,7 @@ import {
   Search,
   GraduationCap,
   Layers,
+  X,
 } from 'lucide-react';
 import { TenantRequiredState } from '@/components/common/TenantRequiredState';
 import { EmptyState } from '@/components/common/EmptyState';
@@ -171,8 +172,18 @@ export const TeacherAssignmentsPage: React.FC = () => {
               placeholder="Search teacher, subject, class..."
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
-              className="pl-9 h-9 text-xs"
+              className="pl-9 pr-8 h-9 text-xs"
             />
+            {searchQuery && (
+              <button
+                type="button"
+                onClick={() => setSearchQuery('')}
+                className="absolute right-2.5 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground"
+                aria-label="Clear search"
+              >
+                <X className="w-3.5 h-3.5" />
+              </button>
+            )}
           </div>
 
           {/* Filter by Type */}

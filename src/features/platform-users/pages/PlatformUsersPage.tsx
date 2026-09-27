@@ -29,7 +29,7 @@ import {
   DropdownMenuTrigger,
   DropdownMenuSeparator,
 } from '@/components/ui/dropdown-menu';
-import { UsersRound, Search, MoreVertical, Loader2, Trash, UserMinus, CheckCircle2, AlertTriangle, ShieldCheck, UserCog, Briefcase, GraduationCap, Users, Eye } from 'lucide-react';
+import { UsersRound, Search, MoreVertical, Loader2, Trash, UserMinus, CheckCircle2, AlertTriangle, ShieldCheck, UserCog, Briefcase, GraduationCap, Users, Eye, X } from 'lucide-react';
 import { usePlatformUsers, useSoftDeleteUser, useHardDeleteUser, PlatformUser } from '../api';
 import { useStartViewSession } from '../hooks';
 import { useDebounce } from 'use-debounce';
@@ -252,13 +252,26 @@ export const PlatformUsersPage: React.FC = () => {
             <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
             <Input
               placeholder="Search by name, email, or phone..."
-              className="pl-9 h-9"
+              className="pl-9 pr-8 h-9"
               value={searchTerm}
               onChange={(e) => {
                 setSearchTerm(e.target.value);
                 setPage(1);
               }}
             />
+            {searchTerm && (
+              <button
+                type="button"
+                onClick={() => {
+                  setSearchTerm('');
+                  setPage(1);
+                }}
+                className="absolute right-2.5 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground"
+                aria-label="Clear search"
+              >
+                <X className="w-3.5 h-3.5" />
+              </button>
+            )}
           </div>
           
           <div className="flex items-center gap-4 text-sm">

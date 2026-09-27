@@ -14,6 +14,7 @@ import {
   Layers,
   Table as TableIcon,
   BookOpen,
+  X,
 } from 'lucide-react';
 import { useAuth } from '@/auth/useAuth';
 import { usePermission } from '@/auth/usePermission';
@@ -241,8 +242,18 @@ export const ExamsListPage: React.FC = () => {
                   placeholder="Search exam name..."
                   value={examSearch}
                   onChange={(e) => setExamSearch(e.target.value)}
-                  className="pl-9 h-9 text-xs"
+                  className="pl-9 pr-8 h-9 text-xs"
                 />
+                {examSearch && (
+                  <button
+                    type="button"
+                    onClick={() => setExamSearch('')}
+                    className="absolute right-2.5 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground"
+                    aria-label="Clear exam search"
+                  >
+                    <X className="w-3.5 h-3.5" />
+                  </button>
+                )}
               </div>
 
               {/* Class Dropdown Filter */}
@@ -397,8 +408,18 @@ export const ExamsListPage: React.FC = () => {
                   placeholder="Search subject, exam, or class..."
                   value={dutySearch}
                   onChange={(e) => setDutySearch(e.target.value)}
-                  className="pl-9 h-9 text-xs"
+                  className="pl-9 pr-8 h-9 text-xs"
                 />
+                {dutySearch && (
+                  <button
+                    type="button"
+                    onClick={() => setDutySearch('')}
+                    className="absolute right-2.5 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground"
+                    aria-label="Clear duty search"
+                  >
+                    <X className="w-3.5 h-3.5" />
+                  </button>
+                )}
               </div>
 
               <div className="flex items-center gap-1">
