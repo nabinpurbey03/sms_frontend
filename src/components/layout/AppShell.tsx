@@ -207,6 +207,14 @@ export const AppShell: React.FC = () => {
       category: 'Administration',
     },
     {
+      label: 'Academic Calendar',
+      href: '/academic-calendar',
+      icon: CalendarDays,
+      description: 'View holidays, exams, vacations, and school events.',
+      show: !!activeTenantId,
+      category: 'Academics',
+    },
+    {
       label: 'Parent-Student Links',
       href: '/academic/parent-links',
       icon: HeartHandshake,
@@ -318,7 +326,7 @@ export const AppShell: React.FC = () => {
       show: isParent,
       category: 'Parent Portal',
     },
-  ], [isSuperAdmin, can, isTeacher, isParent]);
+  ], [isSuperAdmin, can, isTeacher, isParent, activeTenantId]);
 
   const currentMembership = user?.memberships?.find(
     (m) => m.tenant_id === activeTenantId

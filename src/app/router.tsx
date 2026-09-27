@@ -40,6 +40,7 @@ import { Button } from '@/components/ui/button';
 import { Toaster } from '@/components/ui/sonner';
 import { AcademicYearsPage } from '@/features/academic-year/pages/AcademicYearsPage';
 import { SchoolSettingsPage } from '@/features/school-settings/pages/SchoolSettingsPage';
+import { AcademicCalendarPage } from '@/features/school-settings/pages/AcademicCalendarPage';
 import { PlatformUsersPage } from '@/features/platform-users/pages/PlatformUsersPage';
 import { AuditLogsPage } from '@/features/audit-log/pages/AuditLogsPage';
 
@@ -222,6 +223,12 @@ const schoolSettingsRoute = createRoute({
   component: SchoolSettingsPage,
 });
 
+const academicCalendarRoute = createRoute({
+  getParentRoute: () => protectedLayoutRoute,
+  path: '/academic-calendar',
+  component: AcademicCalendarPage,
+});
+
 const examsRoute = createRoute({
   getParentRoute: () => protectedLayoutRoute,
   path: '/examination/exams',
@@ -294,6 +301,7 @@ const routeTree = rootRoute.addChildren([
     platformUsersRoute,
     academicYearsRoute,
     schoolSettingsRoute,
+    academicCalendarRoute,
     examsRoute,
     createExamRoute,
     examReviewRoute,
