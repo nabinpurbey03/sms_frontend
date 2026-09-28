@@ -17,6 +17,7 @@ import {
 } from 'lucide-react';
 import { useTenant, useUpdateTenant, useUploadTenantLogo } from '@/features/tenants/hooks';
 import { toast } from 'sonner';
+import { getMediaUrl } from '@/lib/utils';
 
 interface SchoolGeneralSettingsProps {
   tenantId: string;
@@ -32,6 +33,7 @@ export const SchoolGeneralSettings: React.FC<SchoolGeneralSettingsProps> = ({
   const uploadLogoMutation = useUploadTenantLogo();
 
   const fileInputRef = useRef<HTMLInputElement>(null);
+  const [logoError, setLogoError] = useState(false);
 
   const [formData, setFormData] = useState({
     name: '',
@@ -47,6 +49,7 @@ export const SchoolGeneralSettings: React.FC<SchoolGeneralSettingsProps> = ({
 
   useEffect(() => {
     if (tenant) {
+      setLogoError(false);
       setFormData({
         name: tenant.name || '',
         email: tenant.email || '',
@@ -166,11 +169,12 @@ export const SchoolGeneralSettings: React.FC<SchoolGeneralSettingsProps> = ({
             <div className="flex flex-col sm:flex-row items-center sm:items-start gap-5 p-4 rounded-xl border border-border bg-muted/20">
               <div className="relative group shrink-0">
                 <div className="w-24 h-24 rounded-2xl border-2 border-border bg-background flex items-center justify-center overflow-hidden shadow-xs">
-                  {tenant.logo_url ? (
+                  {tenant.logo_url && !logoError ? (
                     <img
-                      src={tenant.logo_url}
+                      src={getMediaUrl(tenant.logo_url)}
                       alt={tenant.name}
                       className="w-full h-full object-contain p-2"
+                      onError={() => setLogoError(true)}
                     />
                   ) : (
                     <Building className="w-10 h-10 text-muted-foreground/50" />
