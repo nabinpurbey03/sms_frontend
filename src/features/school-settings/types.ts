@@ -57,4 +57,7 @@ export interface CalendarEventFilterParams {
   is_holiday?: boolean;
   from_date?: string;
   to_date?: string;
+  order_by?: 'start_date' | 'created_at';
+  order_direction?: 'asc' | 'desc';
 }
+

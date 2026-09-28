@@ -20,6 +20,7 @@ import {
   AlertCircle,
   Loader2,
   Filter,
+  ArrowUpDown,
 } from 'lucide-react';
 import { useAcademicYears } from '@/features/academic-year/hooks';
 import { useCalendarEvents, useDeleteCalendarEvent } from '../hooks';
@@ -27,7 +28,7 @@ import { CalendarEventDialog } from './CalendarEventDialog';
 import { AcademicCalendarGrid } from './AcademicCalendarGrid';
 import { formatDualDateRange } from '../utils/nepaliDate';
 import { useCalendarPreferenceStore } from '@/stores/calendarPreferenceStore';
-import type { AcademicCalendarEvent, CalendarEventType } from '../types';
+import type { AcademicCalendarEvent, CalendarEventType, CalendarEventFilterParams } from '../types';
 
 interface AcademicCalendarViewProps {
   tenantId: string;
@@ -73,17 +74,44 @@ export const AcademicCalendarView: React.FC<AcademicCalendarViewProps> = ({
   // Filter tab: 'ALL' | 'HOLIDAY' | 'EXAM' | 'VACATION' | 'EVENT'
   const [filterType, setFilterType] = useState<string>('ALL');
 
+  // Sort order: 'LATEST_DATE' (default) | 'EARLIEST_DATE' | 'RECENTLY_ADDED'
+  const [sortOrder, setSortOrder] = useState<'LATEST_DATE' | 'EARLIEST_DATE' | 'RECENTLY_ADDED'>('LATEST_DATE');
+
   // Dialog state
   const [dialogOpen, setDialogOpen] = useState(false);
   const [editingEvent, setEditingEvent] = useState<AcademicCalendarEvent | null>(null);
   const [eventToDelete, setEventToDelete] = useState<AcademicCalendarEvent | null>(null);
+
+  // Build calendar event query parameters for backend
+  const calendarParams = useMemo<CalendarEventFilterParams | undefined>(() => {
+    if (!activeYearId) return undefined;
+    if (sortOrder === 'RECENTLY_ADDED') {
+      return {
+        academic_year_id: activeYearId,
+        order_by: 'created_at',
+        order_direction: 'desc',
+      };
+    }
+    if (sortOrder === 'EARLIEST_DATE') {
+      return {
+        academic_year_id: activeYearId,
+        order_by: 'start_date',
+        order_direction: 'asc',
+      };
+    }
+    return {
+      academic_year_id: activeYearId,
+      order_by: 'start_date',
+      order_direction: 'desc',
+    };
+  }, [activeYearId, sortOrder]);
 
   // Fetch events for active year
   const {
     data: events = [],
     isLoading: isLoadingEvents,
     isError,
-  } = useCalendarEvents(tenantId, activeYearId ? { academic_year_id: activeYearId } : undefined);
+  } = useCalendarEvents(tenantId, calendarParams);
 
   // Filtered and sorted events
   const filteredEvents = useMemo(() => {
@@ -95,9 +123,28 @@ export const AcademicCalendarView: React.FC<AcademicCalendarViewProps> = ({
         list = list.filter((e) => e.event_type === filterType);
       }
     }
-    // Sort by start_date ascending
-    return list.sort((a, b) => a.start_date.localeCompare(b.start_date));
-  }, [events, filterType]);
+
+    return list.sort((a, b) => {
+      if (sortOrder === 'LATEST_DATE') {
+        // Latest event date first
+        const dateCmp = b.start_date.localeCompare(a.start_date);
+        if (dateCmp !== 0) return dateCmp;
+        return a.title.localeCompare(b.title);
+      }
+      if (sortOrder === 'RECENTLY_ADDED') {
+        // Most recently created first
+        if (a.created_at && b.created_at) {
+          const createCmp = b.created_at.localeCompare(a.created_at);
+          if (createCmp !== 0) return createCmp;
+        }
+        return b.start_date.localeCompare(a.start_date);
+      }
+      // Earliest event date first
+      const dateCmp = a.start_date.localeCompare(b.start_date);
+      if (dateCmp !== 0) return dateCmp;
+      return a.title.localeCompare(b.title);
+    });
+  }, [events, filterType, sortOrder]);
 
   // KPIs
   const stats = useMemo(() => {
@@ -272,8 +319,25 @@ export const AcademicCalendarView: React.FC<AcademicCalendarViewProps> = ({
               ))}
             </div>
 
-            {/* View Controls: Calendar System Switcher & List/Grid Toggle */}
+            {/* View Controls: Sort Selector, Calendar System Switcher & List/Grid Toggle */}
             <div className="flex flex-wrap items-center gap-2 self-start sm:self-auto">
+              {/* Sort Order Selector (Visible in List View) */}
+              {viewMode === 'list' && (
+                <div className="flex items-center gap-1.5">
+                  <Select value={sortOrder} onValueChange={(val) => setSortOrder(val as typeof sortOrder)}>
+                    <SelectTrigger className="h-8 text-xs font-medium w-[165px]" aria-label="Sort events order">
+                      <ArrowUpDown className="w-3.5 h-3.5 mr-1.5 text-muted-foreground" />
+                      <SelectValue placeholder="Sort events" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="LATEST_DATE">Latest Date First</SelectItem>
+                      <SelectItem value="EARLIEST_DATE">Earliest Date First</SelectItem>
+                      <SelectItem value="RECENTLY_ADDED">Recently Added</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+              )}
+
               {/* Calendar System Switcher */}
               <div className="flex items-center gap-1 bg-muted p-1 rounded-lg border border-border">
                 <button
