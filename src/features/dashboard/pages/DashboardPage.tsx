@@ -5,7 +5,6 @@ import {
   BookOpen,
   CalendarCheck,
   Calendar,
-  CalendarDays,
   Building2,
   ShieldCheck,
   ArrowRight,
@@ -17,7 +16,6 @@ import {
   Plus,
   ChevronDown,
   TrendingUp,
-  Settings,
 } from 'lucide-react';
 
 import { useAuth } from '@/auth/useAuth';
@@ -52,7 +50,7 @@ import { DashboardUpcomingCalendar } from '../components/DashboardUpcomingCalend
 import { SchoolOnboardingChecklist } from '../components/SchoolOnboardingChecklist';
 import { useCalendarEvents } from '@/features/school-settings/hooks';
 import { useCalendarPreferenceStore } from '@/stores/calendarPreferenceStore';
-import { formatDualDateRange } from '@/features/school-settings/utils/nepaliDate';
+import { formatDateRange } from '@/features/school-settings/utils/nepaliDate';
 import { getLocalTodayDate } from '@/features/attendance/utils/attendanceStatus';
 
 export const DashboardPage: React.FC = () => {
@@ -222,11 +220,11 @@ export const DashboardPage: React.FC = () => {
                     {activeAcademicYear?.name || (tenantMetrics?.academic_year_name ?? 'Active Session')}
                     {(activeAcademicYear?.start_date && activeAcademicYear?.end_date) ? (
                       <span className="text-xs font-normal text-muted-foreground ml-2">
-                        ({formatDualDateRange(activeAcademicYear.start_date, activeAcademicYear.end_date, calendarSystem)})
+                        ({formatDateRange(activeAcademicYear.start_date, activeAcademicYear.end_date, calendarSystem)})
                       </span>
                     ) : (tenantMetrics?.academic_year_start_date && tenantMetrics?.academic_year_end_date) ? (
                       <span className="text-xs font-normal text-muted-foreground ml-2">
-                        ({formatDualDateRange(tenantMetrics.academic_year_start_date, tenantMetrics.academic_year_end_date, calendarSystem)})
+                        ({formatDateRange(tenantMetrics.academic_year_start_date, tenantMetrics.academic_year_end_date, calendarSystem)})
                       </span>
                     ) : null}
                   </h3>

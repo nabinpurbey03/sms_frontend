@@ -169,6 +169,86 @@ export function formatDualDate(adDateStr: string, primary: 'BS' | 'AD' = 'BS'): 
 }
 
 /**
+ * Formats a single Gregorian date into a single calendar display (either BS or AD)
+ * When calendarSystem is 'BS': "Ashwin 15, 2082"
+ * When calendarSystem is 'AD': "Oct 1, 2025"
+ */
+export function formatDate(adDateStr: string, calendarSystem: 'BS' | 'AD' = 'BS'): string {
+  if (!adDateStr) return '';
+  try {
+    const [y, m, d] = adDateStr.split('-').map(Number);
+    if (!y || !m || !d) return adDateStr;
+    const adDate = new Date(y, m - 1, d);
+
+    if (calendarSystem === 'AD') {
+      return adDate.toLocaleDateString('en-US', {
+        month: 'short',
+        day: 'numeric',
+        year: 'numeric',
+      });
+    }
+
+    const npInfo = getNepaliDateFromAd(adDate);
+    if (!npInfo) return adDateStr;
+    return `${npInfo.monthNameEn} ${npInfo.date}, ${npInfo.year}`;
+  } catch {
+    return adDateStr;
+  }
+}
+
+/**
+ * Formats a date range into a single calendar display (either BS or AD, not both)
+ * When calendarSystem is 'BS': "Ashwin 15 – Kartik 20, 2082" (or "Ashwin 15–20, 2082")
+ * When calendarSystem is 'AD': "Oct 1 – Nov 5, 2025" (or "Oct 1–5, 2025")
+ */
+export function formatDateRange(
+  startAdStr: string,
+  endAdStr: string,
+  calendarSystem: 'BS' | 'AD' = 'BS'
+): string {
+  if (!startAdStr) return '';
+  if (!endAdStr || startAdStr === endAdStr) {
+    return formatDate(startAdStr, calendarSystem);
+  }
+
+  try {
+    const [sy, sm, sd] = startAdStr.split('-').map(Number);
+    const [ey, em, ed] = endAdStr.split('-').map(Number);
+    const startDate = new Date(sy, sm - 1, sd);
+    const endDate = new Date(ey, em - 1, ed);
+
+    if (calendarSystem === 'AD') {
+      const startAdMonth = startDate.toLocaleDateString('en-US', { month: 'short' });
+      const endAdMonth = endDate.toLocaleDateString('en-US', { month: 'short' });
+      if (sy === ey) {
+        if (sm === em) {
+          return `${startAdMonth} ${sd}–${ed}, ${sy}`;
+        }
+        return `${startAdMonth} ${sd} – ${endAdMonth} ${ed}, ${sy}`;
+      }
+      return `${startAdMonth} ${sd}, ${sy} – ${endAdMonth} ${ed}, ${ey}`;
+    }
+
+    const startNp = getNepaliDateFromAd(startDate);
+    const endNp = getNepaliDateFromAd(endDate);
+
+    if (!startNp || !endNp) {
+      return `${startAdStr} to ${endAdStr}`;
+    }
+
+    if (startNp.year === endNp.year) {
+      if (startNp.month === endNp.month) {
+        return `${startNp.monthNameEn} ${startNp.date}–${endNp.date}, ${startNp.year}`;
+      }
+      return `${startNp.monthNameEn} ${startNp.date} – ${endNp.monthNameEn} ${endNp.date}, ${startNp.year}`;
+    }
+    return `${startNp.monthNameEn} ${startNp.date}, ${startNp.year} – ${endNp.monthNameEn} ${endNp.date}, ${endNp.year}`;
+  } catch {
+    return `${startAdStr} to ${endAdStr}`;
+  }
+}
+
+/**
  * Formats a date range into dual calendar display
  * When primary is 'BS': "Ashwin 15–19, 2082 (Oct 1–5, 2025)"
  * When primary is 'AD': "Oct 1–5, 2025 (Ashwin 15–19, 2082 BS)"
@@ -183,50 +263,13 @@ export function formatDualDateRange(
     return formatDualDate(startAdStr, primary);
   }
 
-  try {
-    const [sy, sm, sd] = startAdStr.split('-').map(Number);
-    const [ey, em, ed] = endAdStr.split('-').map(Number);
-    const startDate = new Date(sy, sm - 1, sd);
-    const endDate = new Date(ey, em - 1, ed);
+  const bsText = formatDateRange(startAdStr, endAdStr, 'BS');
+  const adText = formatDateRange(startAdStr, endAdStr, 'AD');
 
-    const startNp = getNepaliDateFromAd(startDate);
-    const endNp = getNepaliDateFromAd(endDate);
-
-    if (!startNp || !endNp) {
-      return `${startAdStr} to ${endAdStr}`;
-    }
-
-    let bsText = '';
-    if (startNp.year === endNp.year) {
-      if (startNp.month === endNp.month) {
-        bsText = `${startNp.monthNameEn} ${startNp.date}–${endNp.date}, ${startNp.year}`;
-      } else {
-        bsText = `${startNp.monthNameEn} ${startNp.date} – ${endNp.monthNameEn} ${endNp.date}, ${startNp.year}`;
-      }
-    } else {
-      bsText = `${startNp.monthNameEn} ${startNp.date}, ${startNp.year} – ${endNp.monthNameEn} ${endNp.date}, ${endNp.year}`;
-    }
-
-    let adText = '';
-    const startAdMonth = startDate.toLocaleDateString('en-US', { month: 'short' });
-    const endAdMonth = endDate.toLocaleDateString('en-US', { month: 'short' });
-    if (sy === ey) {
-      if (sm === em) {
-        adText = `${startAdMonth} ${sd}–${ed}, ${sy}`;
-      } else {
-        adText = `${startAdMonth} ${sd} – ${endAdMonth} ${ed}, ${sy}`;
-      }
-    } else {
-      adText = `${startAdMonth} ${sd}, ${sy} – ${endAdMonth} ${ed}, ${ey}`;
-    }
-
-    if (primary === 'AD') {
-      return `${adText} (${bsText} BS)`;
-    }
-    return `${bsText} (${adText})`;
-  } catch {
-    return `${startAdStr} to ${endAdStr}`;
+  if (primary === 'AD') {
+    return `${adText} (${bsText} BS)`;
   }
+  return `${bsText} (${adText})`;
 }
 
 /**
