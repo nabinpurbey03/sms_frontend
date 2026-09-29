@@ -186,7 +186,7 @@ export const MyTeachersPage: React.FC = () => {
                         </CardDescription>
                       </div>
                     </div>
-                    <Badge className="bg-emerald-600 text-white text-xs px-2.5 py-0.5 font-semibold shadow-2xs shrink-0">
+                    <Badge variant="role-teacher" className="text-xs px-2.5 py-0.5 font-semibold shrink-0">
                       Class Teacher
                     </Badge>
                   </div>

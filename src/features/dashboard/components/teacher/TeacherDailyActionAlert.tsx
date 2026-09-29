@@ -86,7 +86,7 @@ export const TeacherDailyActionAlert: React.FC<TeacherDailyActionAlertProps> = (
             <div className="self-end sm:self-center shrink-0">
               <Button
                 asChild
-                className="bg-purple-600 hover:bg-purple-700 text-white font-semibold text-xs shadow-xs"
+                className="font-semibold text-xs shadow-xs"
               >
                 <Link
                   to="/attendance/mark"

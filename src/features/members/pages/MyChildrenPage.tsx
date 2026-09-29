@@ -29,11 +29,11 @@ const RELATIONSHIP_LABELS: Record<string, string> = {
   OTHER: 'Other',
 };
 
-const STATUS_LABELS: Record<string, { label: string; class: string }> = {
-  ACTIVE: { label: 'Active', class: 'bg-emerald-500/10 text-emerald-700 dark:text-emerald-400 border-emerald-500/20' },
-  TRANSFERRED: { label: 'Transferred', class: 'bg-amber-500/10 text-amber-700 dark:text-amber-400 border-amber-500/20' },
-  GRADUATED: { label: 'Graduated', class: 'bg-blue-500/10 text-blue-700 dark:text-blue-400 border-blue-500/20' },
-  SUSPENDED: { label: 'Suspended', class: 'bg-red-500/10 text-red-700 dark:text-red-400 border-red-500/20' },
+const STATUS_LABELS: Record<string, { label: string; variant: 'success' | 'warning' | 'info' | 'destructive' }> = {
+  ACTIVE: { label: 'Active', variant: 'success' },
+  TRANSFERRED: { label: 'Transferred', variant: 'warning' },
+  GRADUATED: { label: 'Graduated', variant: 'info' },
+  SUSPENDED: { label: 'Suspended', variant: 'destructive' },
 };
 
 export const MyChildrenPage: React.FC = () => {
@@ -265,7 +265,7 @@ const ChildCard: React.FC<ChildCardProps> = ({
 
   const status = STATUS_LABELS[child.status] ?? {
     label: child.status,
-    class: 'bg-muted text-muted-foreground border-border',
+    variant: 'outline' as const,
   };
 
   const handleSwitchToSchool = (e?: React.MouseEvent) => {
@@ -317,8 +317,8 @@ const ChildCard: React.FC<ChildCardProps> = ({
               <p className="text-sm font-bold text-foreground leading-tight truncate">{fullName}</p>
               {isCurrentSchool ? (
                 <Badge
-                  variant="outline"
-                  className="text-[9px] px-1.5 py-0 bg-emerald-500/10 text-emerald-700 dark:text-emerald-400 border-emerald-500/30 shrink-0"
+                  variant="success"
+                  className="text-[9px] px-1.5 py-0 shrink-0"
                 >
                   Active School
                 </Badge>
@@ -357,11 +357,12 @@ const ChildCard: React.FC<ChildCardProps> = ({
             </span>
 
             {/* Student status */}
-            <span
-              className={`inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-semibold border ${status.class}`}
+            <Badge
+              variant={status.variant}
+              className="text-[10px] px-2 py-0.5"
             >
               ● {status.label}
-            </span>
+            </Badge>
           </div>
         </div>
 

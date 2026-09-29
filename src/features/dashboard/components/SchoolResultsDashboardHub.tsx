@@ -532,7 +532,7 @@ export const SchoolResultsDashboardHub: React.FC<SchoolResultsDashboardHubProps>
               <div className="flex items-center gap-3 shrink-0">
                 <Button
                   size="sm"
-                  className="bg-amber-600 hover:bg-amber-700 text-white text-sm h-10 px-4 font-semibold shadow-sm"
+                  className="text-sm h-10 px-4 font-semibold shadow-sm"
                   onClick={() =>
                     navigate({
                       to: `/examination/exams/${analytics.pending_approvals[0].exam_id}/review` as any,

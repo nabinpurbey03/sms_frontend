@@ -8,6 +8,7 @@ import {
   DialogFooter,
 } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
+import { Badge } from '@/components/ui/badge';
 import { Input } from '@/components/ui/input';
 import {
   Table,
@@ -302,9 +303,9 @@ export const ClassDetailModal: React.FC<ClassDetailModalProps> = ({
                                 {fullName}
                               </TableCell>
                               <TableCell>
-                                <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-semibold bg-emerald-500/10 text-emerald-700 dark:text-emerald-400 border border-emerald-500/20">
+                                <Badge variant="success" className="text-[10px]">
                                   ● {st.status}
-                                </span>
+                                </Badge>
                               </TableCell>
                             </TableRow>
                           );

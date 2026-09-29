@@ -997,7 +997,7 @@ export const AttendanceDashboardHub: React.FC = () => {
                         ) : (
                           <Button
                             size="sm"
-                            className="w-full text-xs font-semibold h-8 bg-purple-600 hover:bg-purple-700 text-white gap-1.5"
+                            className="w-full text-xs font-semibold h-8 gap-1.5"
                             asChild
                           >
                             <Link

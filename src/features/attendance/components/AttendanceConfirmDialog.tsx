@@ -118,7 +118,7 @@ export const AttendanceConfirmDialog: React.FC<AttendanceConfirmDialogProps> = (
           <Button
             onClick={onConfirm}
             disabled={isPending}
-            className="gap-2 bg-emerald-600 hover:bg-emerald-700 text-white cursor-pointer"
+            className="gap-2 cursor-pointer"
           >
             {isPending ? (
               <Loader2 className="w-4 h-4 animate-spin" />

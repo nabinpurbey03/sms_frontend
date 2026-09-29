@@ -996,7 +996,7 @@ export const MarkAttendancePage: React.FC = () => {
                         !hasUnsavedChanges ||
                         (isTeacherOnly && !isClassTeacherForSelected)
                       }
-                      className="gap-2 bg-emerald-600 hover:bg-emerald-700 text-white font-medium cursor-pointer"
+                      className="gap-2 font-medium cursor-pointer"
                     >
                       {markAttendanceMutation.isPending ? (
                         <Loader2 className="w-4 h-4 animate-spin" />

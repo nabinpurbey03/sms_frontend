@@ -356,7 +356,7 @@ export const TeacherClassroomSectionCard: React.FC<TeacherClassroomSectionCardPr
                   <Button
                     asChild
                     size="sm"
-                    className="bg-purple-600 hover:bg-purple-700 text-white font-semibold text-xs shadow-xs cursor-pointer"
+                    className="font-semibold text-xs shadow-xs cursor-pointer"
                   >
                     <Link
                       to="/attendance/mark"

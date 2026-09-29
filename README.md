@@ -18,6 +18,10 @@ A production-grade, domain-aligned **React 19 Single Page Application (SPA)** fo
 
 - [✨ Recent Updates](#-recent-updates)
 - [✨ Features](#-features)
+- [🎨 Unified UI/UX Design System & Primitives](#-unified-uiux-design-system--primitives)
+  - [Modern UI Component Primitives](#modern-ui-component-primitives)
+  - [Standardized Role Badges & Status System](#standardized-role-badges--status-system)
+  - [Accessible Light & Dark Mode Token Architecture](#accessible-light--dark-mode-token-architecture)
 - [🏛 Architecture & Design Principles](#-architecture--design-principles)
   - [Layered Domain Alignment](#layered-domain-alignment)
   - [Per-Feature 5-File Slice Standard](#per-feature-5-file-slice-standard)
@@ -160,6 +164,140 @@ A production-grade, domain-aligned **React 19 Single Page Application (SPA)** fo
 | **Academic Management** | Class catalog with auto-provisioned Section A; 20-student eligibility check before sequential section expansion; single & bulk student enrollment (CSV/XLSX template download); subjects management. |
 | **Attendance Tracking** | Daily section attendance checklist with batch toggle actions (Mark All Present/Absent); Class Teacher verification; date range section reports; linked child reports for parents; multi-level dashboard summary. |
 | **Modern Component System** | Accessible **shadcn/ui** design tokens built on Tailwind CSS v4, Radix UI primitives, Lucide icons, and Sonner toast notifications. |
+
+---
+
+## 🎨 Unified UI/UX Design System & Primitives
+
+The application implements a strict, accessible design token and component system built on **Tailwind CSS v4**, **Radix UI**, and custom primitives. All screens adhere to uniform spacing, typography scales, contrast standards, and semantic role mappings.
+
+### Modern UI Component Primitives
+
+#### 1. `PageHeader` (`src/components/common/PageHeader.tsx`)
+A standardized responsive page header enforcing visual hierarchy across all feature views:
+- **Responsive Alignment**: Responsive flex layout wrapping on mobile displays and horizontally distributing actions on desktop (`sm+`).
+- **Semantic Structure**: Title (`h1`, `text-2xl` bold, tracking-tight), optional description (`text-sm text-muted-foreground`), and optional badge indicator (`badge` slot).
+- **Actions Slot**: Dedicated container (`actions` prop) for primary buttons, exported reports, or session selectors.
+
+```tsx
+<PageHeader
+  title="Curriculum Subjects"
+  description="Manage subject codes, credit weightings, and faculty assignments."
+  badge={<Badge variant="outline">Academic Year 2081/82</Badge>}
+  actions={
+    <Button onClick={() => setIsCreateOpen(true)}>
+      <Plus className="w-4 h-4 mr-2" /> Add Subject
+    </Button>
+  }
+/>
+```
+
+#### 2. `FilterToolbar` (`src/components/common/FilterToolbar.tsx`)
+A generic, type-safe filtering and search bar primitive eliminating repetitive ad-hoc form rows:
+- **Search Input**: Uniform `h-9` height, integrated clear button (`✕`), search icon with `pointer-events-none`, and debounced or live binding.
+- **Status Segmented Pills**: Compact pill control with active background, borders, and badge counts (`statusOptions`, `activeStatus`, `onStatusChange`).
+- **Record Counter**: Built-in "Showing X of Y records" counter (`showingCount`, `totalCount`).
+- **Custom Filters Slot**: Accepts domain dropdowns (`Select`, `SchoolSearchSelect`) via children with normalized `h-9` trigger heights.
+- **Actions Alignment**: Aligns export, add, or bulk buttons on the far right.
+
+```tsx
+<FilterToolbar
+  searchPlaceholder="Search curriculum subjects..."
+  searchValue={searchTerm}
+  onSearchChange={setSearchTerm}
+  showingCount={filteredSubjects.length}
+  totalCount={allSubjects.length}
+  statusOptions={[
+    { value: 'ALL', label: 'All Subjects', count: allSubjects.length },
+    { value: 'ACTIVE', label: 'Active', count: activeCount },
+  ]}
+  activeStatus={statusFilter}
+  onStatusChange={setStatusFilter}
+  actions={
+    <Button size="sm" onClick={() => setIsCreateOpen(true)}>
+      <Plus className="w-3.5 h-3.5 mr-1.5" /> New Subject
+    </Button>
+  }
+>
+  <Select value={classFilter} onValueChange={setClassFilter}>
+    <SelectTrigger className="w-[180px] h-9">
+      <SelectValue placeholder="All Classes" />
+    </SelectTrigger>
+    {/* options */}
+  </Select>
+</FilterToolbar>
+```
+
+#### 3. `StatCard` (`src/components/ui/stat-card.tsx`)
+Standardized metric summary card primitive replacing inconsistent KPI boxes:
+- **Semantic Color Variants**: `default` (Teal/Neutral), `emerald` (Success/Academic), `amber` (Warning/Attention), `blue` (Info/Governance), `purple` (Admin/Super).
+- **Built-in Skeleton Loading**: Integrated `loading` prop rendering matching `rounded-xl` shimmering skeletons to eliminate layout shifts.
+- **Trend Indicators**: Optional `trend` prop displaying positive/negative percentages with directional Lucide arrows.
+- **Interactive Filtering**: `onClick` and `selected` props rendering active ring indicators (`ring-2 ring-primary/40`) and "Filtered" badges.
+
+```tsx
+<StatCard
+  title="Teaching Faculty"
+  value={teachersCount}
+  icon={GraduationCap}
+  variant="emerald"
+  trend={{ value: 4.5, label: "vs last term" }}
+  selected={activeFilter === 'TEACHER'}
+  onClick={() => setActiveFilter('TEACHER')}
+/>
+```
+
+#### 4. `SchoolSearchSelect` (`src/features/academic-year/components/SchoolSearchSelect.tsx`)
+A universal school context selector utilized across Super Admin pages (`ClassesPage`, `AcademicYearsPage`, `TenantsPage`):
+- Debounced live search querying the active tenant catalog.
+- Popover-based interface with smooth keyboard navigation, selected checkmarks, and clear triggers.
+- Uniform presentation across all multi-school administrative views.
+
+---
+
+### Standardized Role Badges & Status System
+
+SSUP establishes a universal role and status color hierarchy across badges, avatar borders, and KPI cards to ensure immediate cognitive recognition:
+
+#### Role Badges Mapping (`src/components/ui/badge.tsx`)
+
+| Role | Badge Variant | Light Mode Tokens | Dark Mode Tokens | Usage Domain |
+|---|---|---|---|---|
+| **Super Admin** | `role-super-admin` | `bg-purple-500/15 text-purple-700 border-purple-500/30` | `dark:text-purple-300` | Platform Governance & Audit Trails |
+| **Principal / Admin** | `role-admin` | `bg-primary/10 text-primary border-primary/30` | `dark:text-cyan-300` | School Leadership & Operations |
+| **Office Admin** | `role-office-admin` | `bg-blue-500/15 text-blue-700 border-blue-500/30` | `dark:text-blue-300` | Administrative Staff & Registrars |
+| **Teacher / Faculty** | `role-teacher` | `bg-emerald-500/15 text-emerald-700 border-emerald-500/30` | `dark:text-emerald-300` | Class Teachers & Subject Faculty |
+| **Parent / Guardian** | `role-parent` | `bg-amber-500/15 text-amber-700 border-amber-500/30` | `dark:text-amber-300` | Student Guardians & Family Portals |
+
+#### Universal Status Badges
+
+| Status Variant | Color Family | Associated Entities |
+|---|---|---|
+| `success` | Emerald (`emerald-500`) | `ACTIVE`, `RECORDED`, `PUBLISHED`, `PASSED` |
+| `warning` | Amber (`amber-500`) | `PENDING`, `LOCKED`, `UNSAVED`, `TRANSFERRED` |
+| `info` | Blue (`blue-500`) | `DRAFT`, `ENROLLED`, `SCHEDULED` |
+| `destructive` | Rose / Red (`destructive`) | `SUSPENDED`, `INACTIVE`, `FAILED`, `NON_ACADEMIC_DAY` |
+| `purple` | Purple (`purple-500`) | `GRADUATED`, `ALUMNI`, `SPECIAL_EVENT` |
+| `outline` | Neutral Slate | `PROTECTED_VIEW`, `OFFICIAL_DOCUMENT` |
+
+---
+
+### Accessible Light & Dark Mode Token Architecture
+
+The design system is powered by Tailwind CSS v4 variables defined in `src/index.css` guaranteeing WCAG 2.1 AA (≥ 4.5:1 text contrast) and AAA compliance:
+
+- **Neutral Slate Surfaces**:
+  - Light mode `--muted`: `#f1f5f9` (`slate-100`)
+  - Light mode `--muted-foreground`: `#64748b` (`slate-500`, contrast ratio 4.6:1 against background)
+  - Eliminates artificial saturated cyan casts in table headers, disabled form controls, and segmented tabs.
+- **Dark Mode Elevation & Deep Blacks**:
+  - Dark mode `--background`: `#090d16` (deep obsidian slate)
+  - Dark mode `--card`: `#0f172a` (`slate-900`)
+  - Dark mode `--border`: `#1e293b` (`slate-800`)
+- **Explicit Contrast Accents**:
+  - All colored badges and interactive chips include explicit `dark:text-{color}-300` or `dark:text-{color}-400` classes to maintain high contrast legibility against dark slate card surfaces.
+- **Class-Based Theme Activation**:
+  - Strict `.dark` class targeting configured in `@variant dark (&:where(.dark, .dark *));`, eliminating OS media query overrides when user explicitly sets light/dark mode preference via `themeStore`.
 
 ---
 
@@ -354,6 +492,8 @@ frontend/
     │   │   ├── ViewAsBanner.tsx      # Sticky warning banner with countdown timer
     │   │   └── SchoolHeaderBadge.tsx # Tenant indicator and switcher badge
     │   ├── common/
+    │   │   ├── PageHeader.tsx        # Standard responsive page title, description & actions header
+    │   │   ├── FilterToolbar.tsx     # Generic status segmented pills, search & count filter bar
     │   │   ├── ResponsiveDataTable.tsx # Auto dual-mode: stacked cards (<md) & table (md+)
     │   │   ├── ConfirmDialog.tsx     # Accessible confirmation dialog (replaces window.confirm)
     │   │   └── PlaceholderPage.tsx   # Scaffold placeholder for upcoming feature routes

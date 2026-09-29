@@ -432,10 +432,11 @@ export const ClassDetailPage: React.FC = () => {
                   search: { classId: cls.id, sectionId: currentSection?.id } as any,
                 })
               }
-              className={`gap-2 text-white shadow-xs cursor-pointer text-xs ${
+              variant={isCurrentSectionMarkedToday ? "outline" : "default"}
+              className={`gap-2 shadow-xs cursor-pointer text-xs ${
                 isCurrentSectionMarkedToday
-                  ? 'bg-emerald-600 hover:bg-emerald-700'
-                  : 'bg-purple-600 hover:bg-purple-700'
+                  ? 'border-emerald-500/40 text-emerald-700 dark:text-emerald-400 hover:bg-emerald-500/10'
+                  : ''
               }`}
             >
               {isCurrentSectionMarkedToday ? (

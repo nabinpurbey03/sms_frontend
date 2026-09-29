@@ -346,7 +346,7 @@ export const ExamReviewPage: React.FC = () => {
             <Button
               type="button"
               onClick={() => setIsConfirmOpen(true)}
-              className="bg-emerald-600 hover:bg-emerald-700 text-white font-semibold gap-2 shadow-xs"
+              className="font-semibold gap-2 shadow-xs"
             >
               <CheckCircle2 className="w-4 h-4" />
               Approve & Publish Exam
@@ -445,7 +445,7 @@ export const ExamReviewPage: React.FC = () => {
             </Button>
             <Button
               type="button"
-              className="bg-emerald-600 hover:bg-emerald-700 text-white font-semibold"
+              className="font-semibold"
               onClick={handleApprove}
               disabled={isApproving}
             >

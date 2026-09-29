@@ -352,8 +352,8 @@ export const GraduatedStudentsTable: React.FC<GraduatedStudentsTableProps> = ({ 
                       {/* Status */}
                       <TableCell>
                         <Badge
-                          variant="outline"
-                          className="bg-purple-500/10 text-purple-700 dark:text-purple-400 border-purple-500/20 text-[10px] gap-1 px-2 py-0.5"
+                          variant="purple"
+                          className="text-[10px] gap-1 px-2 py-0.5"
                         >
                           <GraduationCap className="w-3 h-3" />
                           Graduated

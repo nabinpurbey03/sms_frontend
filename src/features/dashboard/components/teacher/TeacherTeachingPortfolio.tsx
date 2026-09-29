@@ -190,7 +190,7 @@ export const TeacherTeachingPortfolio: React.FC<TeacherTeachingPortfolioProps> =
                       <Button
                         asChild
                         size="sm"
-                        className="h-8 text-xs font-semibold bg-purple-600 hover:bg-purple-700 text-white cursor-pointer"
+                        className="h-8 text-xs font-semibold cursor-pointer"
                       >
                         <Link
                           to="/attendance/mark"

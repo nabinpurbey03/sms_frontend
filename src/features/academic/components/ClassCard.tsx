@@ -272,12 +272,13 @@ export const ClassCard: React.FC<ClassCardProps> = ({
               <>
                 <Button
                   size="sm"
+                  variant="outline"
                   onClick={(e) => {
                     e.stopPropagation();
                     const targetSecId = teacherScope.classTeacherSections[0]?.id;
                     onMarkAttendance?.(cls.id, targetSecId);
                   }}
-                  className="text-xs gap-1.5 bg-emerald-600 hover:bg-emerald-700 text-white shadow-xs cursor-pointer h-8"
+                  className="text-xs gap-1.5 border-emerald-500/40 text-emerald-700 dark:text-emerald-400 hover:bg-emerald-500/10 shadow-xs cursor-pointer h-8"
                 >
                   <Edit3 className="w-3.5 h-3.5" />
                   <span>Update Today's Attendance</span>
@@ -290,12 +291,13 @@ export const ClassCard: React.FC<ClassCardProps> = ({
             ) : (
               <Button
                 size="sm"
+                variant="default"
                 onClick={(e) => {
                   e.stopPropagation();
                   const targetSecId = teacherScope.classTeacherSections[0]?.id;
                   onMarkAttendance?.(cls.id, targetSecId);
                 }}
-                className="text-xs gap-1.5 bg-purple-600 hover:bg-purple-700 text-white shadow-xs cursor-pointer h-8"
+                className="text-xs gap-1.5 shadow-xs cursor-pointer h-8"
               >
                 <CalendarCheck className="w-3.5 h-3.5" />
                 <span>Mark Today's Attendance</span>

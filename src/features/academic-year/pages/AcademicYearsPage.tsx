@@ -265,7 +265,7 @@ export const AcademicYearsPage: React.FC<AcademicYearsPageProps> = ({
                     <TableCell>
                       <div className="flex items-center gap-2">
                         {year.is_current && (
-                          <Badge variant="default" className="bg-green-600 hover:bg-green-700">
+                          <Badge variant="success">
                             Current
                           </Badge>
                         )}

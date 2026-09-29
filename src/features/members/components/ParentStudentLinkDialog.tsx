@@ -11,6 +11,7 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Checkbox } from '@/components/ui/checkbox';
 import { Avatar, AvatarFallback } from '@/components/ui/avatar';
+import { Badge } from '@/components/ui/badge';
 import {
   Smartphone,
   Search,
@@ -668,9 +669,9 @@ export const ParentStudentLinkDialog: React.FC<ParentStudentLinkDialogProps> = (
                             <h4 className="text-xs sm:text-sm font-bold text-foreground truncate">
                               {foundParent.first_name} {foundParent.last_name}
                             </h4>
-                            <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-semibold bg-emerald-500/20 text-emerald-700 dark:text-emerald-300 border border-emerald-500/25">
+                            <Badge variant="success" className="gap-1 text-[10px] font-semibold">
                               <UserCheck className="w-3 h-3" /> Registered
-                            </span>
+                            </Badge>
                           </div>
                           <p className="text-xs text-muted-foreground truncate">{foundParent.email}</p>
                         </div>
