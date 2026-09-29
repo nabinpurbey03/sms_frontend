@@ -114,7 +114,7 @@ export const ClassDetailPage: React.FC = () => {
     { enabled: isTeacherOnly }
   );
 
-  const [activeTab, setActiveTab] = useState<'roster' | 'notices' | 'subjects' | 'assignments' | 'expansion'>('roster');
+  const [activeTab, setActiveTab] = useState<'roster' | 'subjects' | 'assignments' | 'expansion' | 'notices'>('roster');
   const [selectedSectionId, setSelectedSectionId] = useState<string>('');
   const [selectedStudentForDrawer, setSelectedStudentForDrawer] = useState<AcademicStudent | null>(null);
   const [isPrintRosterOpen, setIsPrintRosterOpen] = useState(false);
@@ -477,9 +477,11 @@ export const ClassDetailPage: React.FC = () => {
       </div>
 
       {/* Navigation Tabs */}
-      <div className="flex gap-1 border-b border-border/60 overflow-x-auto">
+      <div role="tablist" aria-label="Class navigation tabs" className="flex gap-1 border-b border-border/60 overflow-x-auto">
         <button
           type="button"
+          role="tab"
+          aria-selected={activeTab === 'roster'}
           onClick={() => setActiveTab('roster')}
           className={`px-3 py-2 text-xs font-semibold border-b-2 transition-colors cursor-pointer flex items-center gap-1.5 whitespace-nowrap ${
             activeTab === 'roster'
@@ -492,18 +494,8 @@ export const ClassDetailPage: React.FC = () => {
         </button>
         <button
           type="button"
-          onClick={() => setActiveTab('notices')}
-          className={`px-3 py-2 text-xs font-semibold border-b-2 transition-colors cursor-pointer flex items-center gap-1.5 whitespace-nowrap ${
-            activeTab === 'notices'
-              ? 'border-primary text-primary'
-              : 'border-transparent text-muted-foreground hover:text-foreground'
-          }`}
-        >
-          <Bell className="w-3.5 h-3.5" />
-          Noticeboard & Homework
-        </button>
-        <button
-          type="button"
+          role="tab"
+          aria-selected={activeTab === 'subjects'}
           onClick={() => setActiveTab('subjects')}
           className={`px-3 py-2 text-xs font-semibold border-b-2 transition-colors cursor-pointer flex items-center gap-1.5 whitespace-nowrap ${
             activeTab === 'subjects'
@@ -517,6 +509,8 @@ export const ClassDetailPage: React.FC = () => {
         {canManage && (
           <button
             type="button"
+            role="tab"
+            aria-selected={activeTab === 'assignments'}
             onClick={() => setActiveTab('assignments')}
             className={`px-3 py-2 text-xs font-semibold border-b-2 transition-colors cursor-pointer flex items-center gap-1.5 whitespace-nowrap ${
               activeTab === 'assignments'
@@ -536,6 +530,8 @@ export const ClassDetailPage: React.FC = () => {
         {canManage && (
           <button
             type="button"
+            role="tab"
+            aria-selected={activeTab === 'expansion'}
             onClick={() => setActiveTab('expansion')}
             className={`px-3 py-2 text-xs font-semibold border-b-2 transition-colors cursor-pointer flex items-center gap-1.5 whitespace-nowrap ${
               activeTab === 'expansion'
@@ -547,6 +543,20 @@ export const ClassDetailPage: React.FC = () => {
             20-Student Expansion
           </button>
         )}
+        <button
+          type="button"
+          role="tab"
+          aria-selected={activeTab === 'notices'}
+          onClick={() => setActiveTab('notices')}
+          className={`px-3 py-2 text-xs font-semibold border-b-2 transition-colors cursor-pointer flex items-center gap-1.5 whitespace-nowrap ${
+            activeTab === 'notices'
+              ? 'border-primary text-primary'
+              : 'border-transparent text-muted-foreground hover:text-foreground'
+          }`}
+        >
+          <Bell className="w-3.5 h-3.5" />
+          Noticeboard & Homework
+        </button>
       </div>
 
       {/* Tab Content */}
@@ -777,20 +787,6 @@ export const ClassDetailPage: React.FC = () => {
           </div>
         )}
 
-        {/* Tab: Noticeboard & Homework */}
-        {activeTab === 'notices' && (
-          <SectionNoticeboardTab
-            tenantId={tenantId}
-            classId={cls.id}
-            className={cls.name}
-            currentSection={currentSection}
-            allSections={visibleSections}
-            canPostNotice={isClassTeacherForThisClass || canManage}
-            currentUserId={user?.id}
-            isAdmin={canManage}
-          />
-        )}
-
         {/* Tab: Teacher Assignments */}
         {activeTab === 'assignments' && canManage && (
           <TeacherAssignmentBoard
@@ -1016,6 +1012,20 @@ export const ClassDetailPage: React.FC = () => {
               </div>
             )}
           </div>
+        )}
+
+        {/* Tab: Noticeboard & Homework */}
+        {activeTab === 'notices' && (
+          <SectionNoticeboardTab
+            tenantId={tenantId}
+            classId={cls.id}
+            className={cls.name}
+            currentSection={currentSection}
+            allSections={visibleSections}
+            canPostNotice={isClassTeacherForThisClass || canManage}
+            currentUserId={user?.id}
+            isAdmin={canManage}
+          />
         )}
       </div>
 
