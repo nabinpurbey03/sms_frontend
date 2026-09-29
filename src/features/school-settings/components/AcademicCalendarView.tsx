@@ -74,8 +74,8 @@ export const AcademicCalendarView: React.FC<AcademicCalendarViewProps> = ({
   // Filter tab: 'ALL' | 'HOLIDAY' | 'EXAM' | 'VACATION' | 'EVENT'
   const [filterType, setFilterType] = useState<string>('ALL');
 
-  // Sort order: 'LATEST_DATE' (default) | 'EARLIEST_DATE' | 'RECENTLY_ADDED'
-  const [sortOrder, setSortOrder] = useState<'LATEST_DATE' | 'EARLIEST_DATE' | 'RECENTLY_ADDED'>('LATEST_DATE');
+  // Sort order: 'EARLIEST_DATE' (default) | 'RECENTLY_ADDED'
+  const [sortOrder, setSortOrder] = useState<'EARLIEST_DATE' | 'RECENTLY_ADDED'>('EARLIEST_DATE');
 
   // Dialog state
   const [dialogOpen, setDialogOpen] = useState(false);
@@ -92,17 +92,10 @@ export const AcademicCalendarView: React.FC<AcademicCalendarViewProps> = ({
         order_direction: 'desc',
       };
     }
-    if (sortOrder === 'EARLIEST_DATE') {
-      return {
-        academic_year_id: activeYearId,
-        order_by: 'start_date',
-        order_direction: 'asc',
-      };
-    }
     return {
       academic_year_id: activeYearId,
       order_by: 'start_date',
-      order_direction: 'desc',
+      order_direction: 'asc',
     };
   }, [activeYearId, sortOrder]);
 
@@ -125,12 +118,6 @@ export const AcademicCalendarView: React.FC<AcademicCalendarViewProps> = ({
     }
 
     return list.sort((a, b) => {
-      if (sortOrder === 'LATEST_DATE') {
-        // Latest event date first
-        const dateCmp = b.start_date.localeCompare(a.start_date);
-        if (dateCmp !== 0) return dateCmp;
-        return a.title.localeCompare(b.title);
-      }
       if (sortOrder === 'RECENTLY_ADDED') {
         // Most recently created first
         if (a.created_at && b.created_at) {
@@ -139,7 +126,7 @@ export const AcademicCalendarView: React.FC<AcademicCalendarViewProps> = ({
         }
         return b.start_date.localeCompare(a.start_date);
       }
-      // Earliest event date first
+      // Earliest event date first (default)
       const dateCmp = a.start_date.localeCompare(b.start_date);
       if (dateCmp !== 0) return dateCmp;
       return a.title.localeCompare(b.title);
@@ -330,7 +317,6 @@ export const AcademicCalendarView: React.FC<AcademicCalendarViewProps> = ({
                       <SelectValue placeholder="Sort events" />
                     </SelectTrigger>
                     <SelectContent>
-                      <SelectItem value="LATEST_DATE">Latest Date First</SelectItem>
                       <SelectItem value="EARLIEST_DATE">Earliest Date First</SelectItem>
                       <SelectItem value="RECENTLY_ADDED">Recently Added</SelectItem>
                     </SelectContent>
