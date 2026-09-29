@@ -537,8 +537,8 @@ export const AttendanceDashboardHub: React.FC = () => {
                     </CardDescription>
                   </CardHeader>
 
-                  <CardContent className="p-5 pt-0 flex-1 flex flex-col justify-between space-y-4">
-                    <div className="flex-1 min-h-[210px] flex items-center justify-center py-1">
+                  <CardContent className="p-5 pt-0 flex-1 flex flex-col items-center justify-center">
+                    <div className="w-full flex items-center justify-center py-2">
                       <DonutChart
                         data={[
                           { name: 'Present', value: totalPresent, color: '#10b981' },
@@ -552,32 +552,6 @@ export const AttendanceDashboardHub: React.FC = () => {
                         centerValue={`${presenceRate != null ? presenceRate.toFixed(0) : '—'}%`}
                         centerLabel="Attendance"
                       />
-                    </div>
-
-                    {/* Compact Legend & Totals Footer */}
-                    <div className="flex items-center justify-around border-t border-border/60 pt-3 text-xs">
-                      <div className="flex items-center gap-1.5">
-                        <span className="h-2.5 w-2.5 rounded-full bg-emerald-500 shrink-0" />
-                        <span className="text-muted-foreground">Present:</span>
-                        <span className="font-bold text-foreground font-mono">{totalPresent}</span>
-                      </div>
-                      <button
-                        type="button"
-                        onClick={() => setAbsentDrawerOpen(true)}
-                        className="flex items-center gap-1.5 px-2 py-1 -my-1 rounded-md hover:bg-rose-500/10 transition-colors cursor-pointer group"
-                        title="Click to view absent students roster"
-                      >
-                        <span className="h-2.5 w-2.5 rounded-full bg-rose-500 shrink-0 group-hover:scale-110 transition-transform" />
-                        <span className="text-muted-foreground group-hover:text-foreground">Absent:</span>
-                        <span className="font-bold text-foreground font-mono">{totalAbsent}</span>
-                      </button>
-                      <div className="flex items-center gap-1.5">
-                        <span className="h-2.5 w-2.5 rounded-full bg-slate-400 shrink-0" />
-                        <span className="text-muted-foreground">Unmarked:</span>
-                        <span className="font-bold text-foreground font-mono">
-                          {Math.max(0, totalEnrolled - totalPresent - totalAbsent)}
-                        </span>
-                      </div>
                     </div>
                   </CardContent>
                 </Card>
