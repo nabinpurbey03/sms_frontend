@@ -37,6 +37,7 @@ import {
   AlertCircle,
   Calendar,
   Search,
+  Users,
   Loader2,
   RotateCcw,
   Edit3,
@@ -45,6 +46,8 @@ import {
   Clock,
   ShieldCheck,
 } from 'lucide-react';
+import { EmptyState } from '@/components/common/EmptyState';
+import { ErrorState } from '@/components/common/ErrorState';
 import type { AcademicClass, AcademicSection } from '@/features/academic/types';
 import { toast } from 'sonner';
 import { useCalendarPreferenceStore } from '@/stores/calendarPreferenceStore';
@@ -380,15 +383,11 @@ export const MarkAttendancePage: React.FC = () => {
   if (isTeacherOnly && accessibleSections.length === 0) {
     return (
       <div className="space-y-6 pb-12">
-        <Card className="border-dashed p-12 text-center space-y-3 bg-card/60">
-          <AlertCircle className="w-10 h-10 mx-auto text-amber-500/80" />
-          <div>
-            <p className="text-base font-bold text-foreground">No Class Teacher Assignments</p>
-            <p className="text-xs text-muted-foreground mt-1.5 max-w-md mx-auto leading-relaxed">
-              Only designated Class Teachers can record daily student attendance. If you are a Subject Teacher, you can view class rosters under Classes &amp; Sections. Please contact your school administrator if you need attendance marking rights.
-            </p>
-          </div>
-        </Card>
+        <EmptyState
+          icon={AlertCircle}
+          title="No Class Teacher Assignments"
+          description="Only designated Class Teachers can record daily student attendance. If you are a Subject Teacher, you can view class rosters under Classes & Sections. Please contact your school administrator if you need attendance marking rights."
+        />
       </div>
     );
   }
@@ -397,13 +396,10 @@ export const MarkAttendancePage: React.FC = () => {
   if (!canManage && !isTeacherOnly && !can('MARK_ATTENDANCE')) {
     return (
       <div className="space-y-6 pb-12">
-        <div className="rounded-xl border border-destructive/30 bg-destructive/10 p-8 text-center space-y-3">
-          <AlertCircle className="w-10 h-10 mx-auto text-destructive/60" />
-          <h2 className="text-lg font-bold text-foreground">No Attendance Access</h2>
-          <p className="text-sm text-muted-foreground max-w-md mx-auto">
-            You don't have permission to mark attendance.
-          </p>
-        </div>
+        <ErrorState
+          title="No Attendance Access"
+          message="You don't have permission to mark attendance."
+        />
       </div>
     );
   }
@@ -412,15 +408,11 @@ export const MarkAttendancePage: React.FC = () => {
   if (accessibleSections.length === 0) {
     return (
       <div className="space-y-6 pb-12">
-        <Card className="border-dashed p-12 text-center space-y-3 bg-card/60">
-          <CalendarCheck className="w-10 h-10 mx-auto text-muted-foreground/60" />
-          <div>
-            <p className="text-base font-bold text-foreground">No Classes or Sections Available</p>
-            <p className="text-xs text-muted-foreground mt-1.5 max-w-md mx-auto leading-relaxed">
-              There are no classes or sections set up yet. Create classes and sections first under Academics.
-            </p>
-          </div>
-        </Card>
+        <EmptyState
+          icon={CalendarCheck}
+          title="No Classes or Sections Available"
+          description="There are no classes or sections set up yet. Create classes and sections first under Academics."
+        />
       </div>
     );
   }
@@ -443,13 +435,14 @@ export const MarkAttendancePage: React.FC = () => {
                   onChange={(val) => setRecordDate(val)}
                   minDate={minDateStr}
                   maxDate={todayStr}
-                  className={`h-10 ${isDateOutOfRange ? 'border-amber-500/50 dark:border-amber-500/50' : ''}`}
+                  size="sm"
+                  className={`h-9 ${isDateOutOfRange ? 'border-amber-500/50 dark:border-amber-500/50' : ''}`}
                 />
               </div>
               {recordDate === todayStr ? (
                 <Badge
-                  variant="secondary"
-                  className="text-xs h-10 px-3 bg-primary/10 text-primary border-primary/20 shrink-0 font-medium flex items-center"
+                  variant="info"
+                  className="text-xs h-9 px-3 shrink-0 font-medium flex items-center"
                 >
                   Today
                 </Badge>
@@ -459,7 +452,7 @@ export const MarkAttendancePage: React.FC = () => {
                   variant="outline"
                   size="sm"
                   onClick={() => setRecordDate(todayStr)}
-                  className="h-10 px-3 text-xs gap-1.5 shrink-0 cursor-pointer text-muted-foreground hover:text-foreground"
+                  className="h-9 px-3 text-xs gap-1.5 shrink-0 cursor-pointer text-muted-foreground hover:text-foreground"
                 >
                   <RotateCcw className="w-3.5 h-3.5" />
                   <span>Reset to Today</span>
@@ -468,7 +461,7 @@ export const MarkAttendancePage: React.FC = () => {
               {!selectedDayInfo.isAcademicDay ? (
                 <Badge
                   variant="destructive"
-                  className="text-xs gap-1 h-10 px-2.5 shrink-0 flex items-center font-medium"
+                  className="text-xs gap-1 h-9 px-2.5 shrink-0 flex items-center font-medium"
                 >
                   <AlertCircle className="w-3.5 h-3.5" />
                   {selectedDayInfo.dayName} Off (Non-Academic Day)
@@ -476,25 +469,25 @@ export const MarkAttendancePage: React.FC = () => {
               ) : selectedDayInfo.holidayEvent ? (
                 <Badge
                   variant="destructive"
-                  className="text-xs gap-1 h-10 px-2.5 shrink-0 flex items-center font-medium"
+                  className="text-xs gap-1 h-9 px-2.5 shrink-0 flex items-center font-medium"
                 >
                   <AlertCircle className="w-3.5 h-3.5" />
                   Holiday: {selectedDayInfo.holidayEvent.title}
                 </Badge>
               ) : recordDate < minDateStr ? (
                 <Badge
-                  variant="outline"
-                  className="text-xs bg-amber-500/10 text-amber-700 dark:text-amber-400 border-amber-500/30 gap-1 h-10 px-2.5 shrink-0 flex items-center"
+                  variant="warning"
+                  className="text-xs gap-1 h-9 px-2.5 shrink-0 flex items-center font-medium"
                 >
-                  <Lock className="w-3.5 h-3.5 text-amber-600 dark:text-amber-400" />
+                  <Lock className="w-3.5 h-3.5" />
                   Locked (&gt;7 days)
                 </Badge>
               ) : isAlreadyMarked ? (
                 <Badge
-                  variant="outline"
-                  className="text-xs bg-emerald-500/10 text-emerald-700 dark:text-emerald-400 border-emerald-500/30 gap-1 h-10 px-2.5 shrink-0 flex items-center"
+                  variant="success"
+                  className="text-xs gap-1 h-9 px-2.5 shrink-0 flex items-center font-medium"
                 >
-                  <CheckCircle2 className="w-3.5 h-3.5 text-emerald-600 dark:text-emerald-400" />
+                  <CheckCircle2 className="w-3.5 h-3.5" />
                   Recorded for this date
                 </Badge>
               ) : null}
@@ -524,12 +517,12 @@ export const MarkAttendancePage: React.FC = () => {
               }}
               disabled={isLoading}
             >
-              <SelectTrigger className="w-full h-10">
+              <SelectTrigger className="w-full h-9 text-xs">
                 <SelectValue placeholder="Select a class..." />
               </SelectTrigger>
               <SelectContent>
                 {availableClasses.map((cls) => (
-                  <SelectItem key={cls.id} value={cls.id}>
+                  <SelectItem key={cls.id} value={cls.id} className="text-xs">
                     {cls.name}
                   </SelectItem>
                 ))}
@@ -551,14 +544,14 @@ export const MarkAttendancePage: React.FC = () => {
               }}
               disabled={!selectedClassId || isLoading}
             >
-              <SelectTrigger className="w-full h-10">
+              <SelectTrigger className="w-full h-9 text-xs">
                 <SelectValue placeholder="Select a section..." />
               </SelectTrigger>
               <SelectContent>
                 {accessibleSections
                   .filter(({ class: cls }) => cls.id === selectedClassId)
                   .map(({ section }) => (
-                    <SelectItem key={section.id} value={section.id}>
+                    <SelectItem key={section.id} value={section.id} className="text-xs">
                       Section {section.name} ({section.student_count ?? 0} students)
                     </SelectItem>
                   ))}
@@ -634,34 +627,34 @@ export const MarkAttendancePage: React.FC = () => {
               {/* Main Status Badge */}
               {isDateOutOfRange ? (
                 <Badge
-                  variant="outline"
-                  className="bg-amber-500/10 text-amber-700 dark:text-amber-400 border-amber-500/30 gap-1.5 py-1 px-3 text-xs font-medium"
+                  variant="warning"
+                  className="gap-1.5 py-1 px-3 text-xs font-medium"
                 >
-                  <Lock className="w-3.5 h-3.5 text-amber-600 dark:text-amber-400" />
+                  <Lock className="w-3.5 h-3.5" />
                   {recordDate < minDateStr ? 'Locked (>7 days)' : 'Future Date Locked'}
                 </Badge>
               ) : isAlreadyMarked ? (
                 isEditing ? (
                   <Badge
-                    variant="outline"
-                    className="bg-amber-500/15 text-amber-800 dark:text-amber-300 border-amber-500/40 gap-1.5 py-1 px-3 text-xs font-semibold animate-pulse"
+                    variant="warning"
+                    className="gap-1.5 py-1 px-3 text-xs font-semibold animate-pulse"
                   >
                     <Edit3 className="w-3.5 h-3.5" />
                     Editing Recorded Attendance
                   </Badge>
                 ) : (
                   <Badge
-                    variant="outline"
-                    className="bg-emerald-500/15 text-emerald-800 dark:text-emerald-300 border-emerald-500/40 gap-1.5 py-1 px-3 text-xs font-semibold"
+                    variant="success"
+                    className="gap-1.5 py-1 px-3 text-xs font-semibold"
                   >
-                    <CheckCircle2 className="w-3.5 h-3.5 text-emerald-600 dark:text-emerald-400" />
+                    <CheckCircle2 className="w-3.5 h-3.5" />
                     Attendance Recorded
                   </Badge>
                 )
               ) : (
                 <Badge
                   variant="secondary"
-                  className="bg-muted text-muted-foreground border-border gap-1.5 py-1 px-3 text-xs font-medium"
+                  className="gap-1.5 py-1 px-3 text-xs font-medium"
                 >
                   <Clock className="w-3.5 h-3.5" />
                   Not Yet Recorded
@@ -671,8 +664,8 @@ export const MarkAttendancePage: React.FC = () => {
               {/* Mode Indicator */}
               {isAlreadyMarked && !isEditing && !isDateOutOfRange && (
                 <Badge
-                  variant="secondary"
-                  className="text-[11px] gap-1 text-muted-foreground bg-background/80 border"
+                  variant="outline"
+                  className="text-[11px] gap-1 font-medium"
                 >
                   <ShieldCheck className="w-3 h-3 text-emerald-600 dark:text-emerald-400" />
                   Protected View
@@ -682,8 +675,8 @@ export const MarkAttendancePage: React.FC = () => {
               {/* Unsaved Changes Indicator */}
               {canEdit && hasUnsavedChanges && (
                 <Badge
-                  variant="outline"
-                  className="text-[11px] gap-1 text-amber-700 dark:text-amber-400 bg-amber-500/10 border-amber-500/30 animate-pulse"
+                  variant="warning"
+                  className="text-[11px] gap-1 font-semibold animate-pulse"
                 >
                   <Edit3 className="w-3 h-3" />
                   Unsaved Changes
@@ -813,8 +806,16 @@ export const MarkAttendancePage: React.FC = () => {
 
           {/* Students Table */}
           {filteredStudents.length === 0 ? (
-            <div className="p-8 text-center text-muted-foreground text-sm">
-              {searchQuery ? 'No students match your search.' : 'No active students in this section.'}
+            <div className="p-6">
+              <EmptyState
+                icon={searchQuery ? Search : Users}
+                title={searchQuery ? 'No matching students' : 'No students found'}
+                description={
+                  searchQuery
+                    ? `No students match "${searchQuery}". Try a different search term.`
+                    : 'No active students enrolled in this section.'
+                }
+              />
             </div>
           ) : (
             <div className="overflow-x-auto max-h-[60vh] overflow-y-auto relative [&>div]:overflow-visible">

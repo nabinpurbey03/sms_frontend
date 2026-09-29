@@ -28,9 +28,17 @@ import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Card, CardContent } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from '@/components/ui/select';
 import { TenantRequiredState } from '@/components/common/TenantRequiredState';
 import { useCalendarPreferenceStore } from '@/stores/calendarPreferenceStore';
 import { formatDualDateRange } from '@/features/school-settings/utils/nepaliDate';
+import { cn } from '@/lib/utils';
 
 function renderExamStatusBadge(status: ExamStatus) {
   switch (status) {
@@ -177,16 +185,19 @@ export const ExamsListPage: React.FC = () => {
     <div className="space-y-6 max-w-7xl mx-auto pb-16">
       {/* Tabs Switcher & Action */}
       <div className="flex items-center justify-between gap-3 border-b pb-2 flex-wrap">
-        <div className="flex items-center gap-2 flex-wrap">
-          <Button
+        <div className="inline-flex items-center gap-1 p-1 rounded-xl bg-muted/40 border border-border/60">
+          <button
             type="button"
-            variant={activeTab === 'all-exams' ? 'default' : 'ghost'}
-            size="sm"
             onClick={() => setActiveTab('all-exams')}
-            className="gap-2 font-medium"
+            className={cn(
+              'flex items-center gap-2 px-3 py-1.5 text-xs rounded-lg transition-colors cursor-pointer select-none font-medium',
+              activeTab === 'all-exams'
+                ? 'bg-background text-foreground shadow-2xs font-semibold'
+                : 'text-muted-foreground hover:text-foreground hover:bg-background/50'
+            )}
           >
             <Layers className="w-4 h-4" />
-            All School Exams
+            <span>All School Exams</span>
             {exams.length > 0 && (
               <Badge
                 variant={activeTab === 'all-exams' ? 'secondary' : 'outline'}
@@ -195,18 +206,21 @@ export const ExamsListPage: React.FC = () => {
                 {exams.length}
               </Badge>
             )}
-          </Button>
+          </button>
 
           {canGrade && (
-            <Button
+            <button
               type="button"
-              variant={activeTab === 'my-duties' ? 'default' : 'ghost'}
-              size="sm"
               onClick={() => setActiveTab('my-duties')}
-              className="gap-2 font-medium"
+              className={cn(
+                'flex items-center gap-2 px-3 py-1.5 text-xs rounded-lg transition-colors cursor-pointer select-none font-medium',
+                activeTab === 'my-duties'
+                  ? 'bg-background text-foreground shadow-2xs font-semibold'
+                  : 'text-muted-foreground hover:text-foreground hover:bg-background/50'
+              )}
             >
               <BookOpen className="w-4 h-4" />
-              My Grading Duties
+              <span>My Grading Duties</span>
               {teacherAssignments.length > 0 && (
                 <Badge
                   variant={pendingDutiesCount > 0 ? 'warning' : 'secondary'}
@@ -215,7 +229,7 @@ export const ExamsListPage: React.FC = () => {
                   {pendingDutiesCount > 0 ? `${pendingDutiesCount} Pending` : teacherAssignments.length}
                 </Badge>
               )}
-            </Button>
+            </button>
           )}
         </div>
 
@@ -258,36 +272,38 @@ export const ExamsListPage: React.FC = () => {
 
               {/* Class Dropdown Filter */}
               <div className="flex items-center gap-1.5">
-                <span className="text-xs text-muted-foreground font-medium">Class:</span>
-                <select
-                  value={selectedClassId}
-                  onChange={(e) => setSelectedClassId(e.target.value)}
-                  className="h-9 rounded-md border border-input bg-background px-2.5 py-1 text-xs shadow-2xs focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring"
-                >
-                  <option value="ALL">All Classes</option>
-                  {classes.map((cls) => (
-                    <option key={cls.id} value={cls.id}>
-                      {cls.name}
-                    </option>
-                  ))}
-                </select>
+                <span className="text-xs text-muted-foreground font-medium whitespace-nowrap">Class:</span>
+                <Select value={selectedClassId} onValueChange={setSelectedClassId}>
+                  <SelectTrigger className="h-9 min-w-[130px] rounded-lg text-xs font-medium">
+                    <SelectValue placeholder="All Classes" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="ALL" className="text-xs">All Classes</SelectItem>
+                    {classes.map((cls) => (
+                      <SelectItem key={cls.id} value={cls.id} className="text-xs">
+                        {cls.name}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
               </div>
 
               {/* Status Dropdown Filter */}
               <div className="flex items-center gap-1.5">
-                <span className="text-xs text-muted-foreground font-medium">Status:</span>
-                <select
-                  value={selectedStatus}
-                  onChange={(e) => setSelectedStatus(e.target.value)}
-                  className="h-9 rounded-md border border-input bg-background px-2.5 py-1 text-xs shadow-2xs focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring"
-                >
-                  <option value="ALL">All Statuses</option>
-                  <option value="DRAFT">Draft</option>
-                  <option value="IN_PROGRESS">In Progress</option>
-                  <option value="PENDING_APPROVAL">Pending Approval</option>
-                  <option value="APPROVED">Approved</option>
-                  <option value="CANCELLED">Cancelled</option>
-                </select>
+                <span className="text-xs text-muted-foreground font-medium whitespace-nowrap">Status:</span>
+                <Select value={selectedStatus} onValueChange={setSelectedStatus}>
+                  <SelectTrigger className="h-9 min-w-[130px] rounded-lg text-xs font-medium">
+                    <SelectValue placeholder="All Statuses" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="ALL" className="text-xs">All Statuses</SelectItem>
+                    <SelectItem value="DRAFT" className="text-xs">Draft</SelectItem>
+                    <SelectItem value="IN_PROGRESS" className="text-xs">In Progress</SelectItem>
+                    <SelectItem value="PENDING_APPROVAL" className="text-xs">Pending Approval</SelectItem>
+                    <SelectItem value="APPROVED" className="text-xs">Approved</SelectItem>
+                    <SelectItem value="CANCELLED" className="text-xs">Cancelled</SelectItem>
+                  </SelectContent>
+                </Select>
               </div>
             </div>
 

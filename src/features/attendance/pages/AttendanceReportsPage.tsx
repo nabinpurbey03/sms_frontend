@@ -13,6 +13,14 @@ import { Button } from '@/components/ui/button';
 import { Card, CardHeader, CardTitle, CardContent } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Input } from '@/components/ui/input';
+import { StatCard } from '@/components/ui/stat-card';
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from '@/components/ui/select';
 import { NepaliDatePicker } from '@/components/ui/nepali-date-picker';
 import {
   Table,
@@ -372,72 +380,64 @@ export const AttendanceReportsPage: React.FC = () => {
       <Card className="p-4 bg-card shadow-xs border-border/70">
         <div className="flex flex-col xl:flex-row xl:items-center justify-between gap-4">
           {/* Preset Buttons */}
-          <div className="flex items-center gap-1.5 flex-wrap">
+          <div className="flex items-center gap-2 flex-wrap">
             <span className="text-xs font-semibold text-muted-foreground mr-1 flex items-center gap-1">
               <Calendar className="w-3.5 h-3.5" />
               Timeframe:
             </span>
-            <Button
-              type="button"
-              variant={activePreset === 'today' ? 'default' : 'outline'}
-              size="sm"
-              onClick={() => handleSelectPreset('today')}
-              className="h-8 px-3 text-xs"
-            >
-              Today
-            </Button>
-            <Button
-              type="button"
-              variant={activePreset === '7d' ? 'default' : 'outline'}
-              size="sm"
-              onClick={() => handleSelectPreset('7d')}
-              className="h-8 px-3 text-xs"
-            >
-              Last 7 Days
-            </Button>
-            <Button
-              type="button"
-              variant={activePreset === '30d' ? 'default' : 'outline'}
-              size="sm"
-              onClick={() => handleSelectPreset('30d')}
-              className="h-8 px-3 text-xs"
-            >
-              Last 30 Days
-            </Button>
-            <Button
-              type="button"
-              variant={activePreset === 'mtd' ? 'default' : 'outline'}
-              size="sm"
-              onClick={() => handleSelectPreset('mtd')}
-              className="h-8 px-3 text-xs"
-            >
-              Month to Date
-            </Button>
-            <Button
-              type="button"
-              variant={activePreset === 'academic_year' ? 'default' : 'outline'}
-              size="sm"
-              onClick={() => handleSelectPreset('academic_year')}
-              className="h-8 px-3 text-xs font-medium"
-              disabled={!activeYear}
-              title={activeYear ? `Load full session for ${activeYear.name}` : 'No active session'}
-            >
-              Full Academic Year
-            </Button>
+            <div className="inline-flex items-center gap-1 p-1 rounded-xl bg-muted/40 border border-border/60 flex-wrap">
+              {(
+                [
+                  { id: 'today', label: 'Today' },
+                  { id: '7d', label: 'Last 7 Days' },
+                  { id: '30d', label: 'Last 30 Days' },
+                  { id: 'mtd', label: 'Month to Date' },
+                  {
+                    id: 'academic_year',
+                    label: 'Full Academic Year',
+                    disabled: !activeYear,
+                    title: activeYear ? `Load full session for ${activeYear.name}` : 'No active session',
+                  },
+                ] as Array<{
+                  id: 'today' | '7d' | '30d' | 'mtd' | 'academic_year';
+                  label: string;
+                  disabled?: boolean;
+                  title?: string;
+                }>
+              ).map((preset) => {
+                const isActive = activePreset === preset.id;
+                return (
+                  <button
+                    key={preset.id}
+                    type="button"
+                    disabled={preset.disabled}
+                    onClick={() => handleSelectPreset(preset.id)}
+                    title={preset.title}
+                    className={cn(
+                      'px-3 py-1.5 text-xs rounded-lg transition-colors cursor-pointer select-none font-medium',
+                      isActive
+                        ? 'bg-background text-foreground shadow-2xs font-semibold'
+                        : 'text-muted-foreground hover:text-foreground hover:bg-background/50',
+                      preset.disabled && 'opacity-50 cursor-not-allowed'
+                    )}
+                  >
+                    {preset.label}
+                  </button>
+                );
+              })}
+            </div>
           </div>
 
           {/* Date Range Inputs, Session Switcher & Actions */}
           <div className="flex items-center gap-3 flex-wrap justify-between xl:justify-end">
             {academicYears.length > 0 && (
               <div className="flex items-center gap-1.5">
-                <label htmlFor="academic-session-select" className="text-xs text-muted-foreground font-medium whitespace-nowrap">
+                <span className="text-xs text-muted-foreground font-medium whitespace-nowrap">
                   Session:
-                </label>
-                <select
-                  id="academic-session-select"
+                </span>
+                <Select
                   value={selectedAcademicYearId}
-                  onChange={(e) => {
-                    const newId = e.target.value;
+                  onValueChange={(newId) => {
                     setSelectedAcademicYearId(newId);
                     if (activePreset === 'academic_year') {
                       const yr = academicYears.find((y) => y.id === newId);
@@ -447,14 +447,18 @@ export const AttendanceReportsPage: React.FC = () => {
                       }
                     }
                   }}
-                  className="h-8 rounded-md border border-input bg-background px-2 py-1 text-xs shadow-sm focus:outline-none focus:ring-1 focus:ring-primary font-medium"
                 >
-                  {academicYears.map((ay) => (
-                    <option key={ay.id} value={ay.id}>
-                      {ay.name} {ay.is_current ? '(Current)' : ''}
-                    </option>
-                  ))}
-                </select>
+                  <SelectTrigger id="academic-session-select" className="h-8 w-auto min-w-[140px] text-xs font-medium">
+                    <SelectValue placeholder="Select session" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {academicYears.map((ay) => (
+                      <SelectItem key={ay.id} value={ay.id} className="text-xs">
+                        {ay.name} {ay.is_current ? '(Current)' : ''}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
               </div>
             )}
             <div className="flex items-center gap-2 flex-wrap sm:flex-nowrap">
@@ -517,6 +521,7 @@ export const AttendanceReportsPage: React.FC = () => {
               </Button>
               <Button
                 type="button"
+                variant="default"
                 size="sm"
                 onClick={handleExportCsv}
                 disabled={
@@ -524,7 +529,7 @@ export const AttendanceReportsPage: React.FC = () => {
                     ? !absentData?.items || absentData.items.length === 0 || isAbsentLoading
                     : !schoolReport || isSchoolLoading
                 }
-                className="h-8 gap-1.5 text-xs bg-emerald-600 hover:bg-emerald-700 text-white cursor-pointer shadow-xs"
+                className="h-8 gap-1.5 text-xs cursor-pointer shadow-xs"
               >
                 <Download className="w-3.5 h-3.5" />
                 <span>Export CSV</span>
@@ -537,137 +542,60 @@ export const AttendanceReportsPage: React.FC = () => {
       {/* Executive KPI Cards */}
       {isSchoolLoading && !schoolReport ? (
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-          {[1, 2, 3, 4].map((i) => (
-            <Card key={i} className="p-5 border-border/60 animate-pulse space-y-3">
-              <div className="h-4 bg-muted rounded w-1/2" />
-              <div className="h-8 bg-muted rounded w-3/4" />
-              <div className="h-3 bg-muted rounded w-2/3" />
-            </Card>
-          ))}
+          <StatCard loading title="Average Daily Attendance (ADA)" value="" icon={Percent} variant="emerald" />
+          <StatCard loading title="Total Enrolled Students" value="" icon={Users} variant="default" />
+          <StatCard loading title="Operating School Days" value="" icon={CalendarDays} variant="blue" />
+          <StatCard loading title="Chronic Absenteeism Flag" value="" icon={AlertTriangle} variant="amber" />
         </div>
       ) : schoolReport ? (
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
           {/* KPI 1: Average Daily Attendance (ADA) */}
-          <Card className="border-border/60 hover:shadow-sm transition-shadow rounded-xl">
-            <CardHeader className="flex flex-row items-center justify-between pb-2 p-5 space-y-0">
-              <CardTitle className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">
-                Average Daily Attendance (ADA)
-              </CardTitle>
-              <div className="p-2 bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 rounded-xl">
-                <Percent className="h-4 w-4" />
-              </div>
-            </CardHeader>
-            <CardContent className="p-5 pt-0">
-              <div className="flex items-baseline gap-2">
-                <div className="text-2xl font-bold text-foreground">
-                  {schoolReport.overall_attendance_percentage}%
-                </div>
-                <Badge
-                  variant={
-                    schoolReport.overall_attendance_percentage >= 90
-                      ? 'success'
-                      : schoolReport.overall_attendance_percentage >= 75
-                      ? 'warning'
-                      : 'destructive'
-                  }
-                  className="text-[10px] h-5"
-                >
-                  {schoolReport.overall_attendance_percentage >= 90
-                    ? 'Optimal'
-                    : schoolReport.overall_attendance_percentage >= 75
-                    ? 'Attention'
-                    : 'Critical'}
-                </Badge>
-              </div>
-              <p className="text-xs text-muted-foreground mt-1 truncate">
-                {schoolReport.total_present} present / {schoolReport.total_absent} absent student-days
-              </p>
-            </CardContent>
-          </Card>
+          <StatCard
+            title="Average Daily Attendance (ADA)"
+            value={`${schoolReport.overall_attendance_percentage}%`}
+            icon={Percent}
+            variant="emerald"
+            description={`${schoolReport.total_present} present / ${schoolReport.total_absent} absent student-days`}
+          />
 
-          {/* KPI 2: Active Student Headcount */}
-          <Card className="border-border/60 hover:shadow-sm transition-shadow rounded-xl">
-            <CardHeader className="flex flex-row items-center justify-between pb-2 p-5 space-y-0">
-              <CardTitle className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">
-                Active Student Headcount
-              </CardTitle>
-              <div className="p-2 bg-blue-500/10 text-blue-600 dark:text-blue-400 rounded-xl">
-                <Users className="h-4 w-4" />
-              </div>
-            </CardHeader>
-            <CardContent className="p-5 pt-0">
-              <div className="text-2xl font-bold text-foreground">
-                {schoolReport.total_students}
-              </div>
-              <p className="text-xs text-muted-foreground mt-1 truncate">
-                Across {schoolReport.classes.length} active classes
-              </p>
-            </CardContent>
-          </Card>
+          {/* KPI 2: Total Enrolled Students */}
+          <StatCard
+            title="Total Enrolled Students"
+            value={schoolReport.total_students}
+            icon={Users}
+            variant="default"
+            description={`Across ${schoolReport.classes.length} active classes`}
+          />
 
-          {/* KPI 3: Operational School Days */}
-          <Card className="border-border/60 hover:shadow-sm transition-shadow rounded-xl">
-            <CardHeader className="flex flex-row items-center justify-between pb-2 p-5 space-y-0">
-              <CardTitle className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">
-                Operational School Days
-              </CardTitle>
-              <div className="p-2 bg-purple-500/10 text-purple-600 dark:text-purple-400 rounded-xl">
-                <CalendarDays className="h-4 w-4" />
-              </div>
-            </CardHeader>
-            <CardContent className="p-5 pt-0">
-              <div className="text-2xl font-bold text-foreground">
-                {schoolReport.total_school_days}
-                {schoolReport.expected_school_days !== undefined && schoolReport.expected_school_days !== null && (
-                  <span className="text-sm font-normal text-muted-foreground ml-1.5">
-                    / {schoolReport.expected_school_days} scheduled
-                  </span>
-                )}
-              </div>
-              <p className="text-xs text-muted-foreground mt-1 truncate">
-                {schoolReport.academic_year_name
-                  ? `${schoolReport.academic_year_name} Academic Session`
-                  : 'Distinct recorded days in range'}
-              </p>
-            </CardContent>
-          </Card>
+          {/* KPI 3: Operating School Days */}
+          <StatCard
+            title="Operating School Days"
+            value={
+              schoolReport.expected_school_days !== undefined && schoolReport.expected_school_days !== null
+                ? `${schoolReport.total_school_days} / ${schoolReport.expected_school_days}`
+                : schoolReport.total_school_days
+            }
+            icon={CalendarDays}
+            variant="blue"
+            description={
+              schoolReport.academic_year_name
+                ? `${schoolReport.academic_year_name} Academic Session`
+                : 'Distinct recorded days in range'
+            }
+          />
 
-          {/* KPI 4: Chronic Absenteeism Rate */}
-          <Card className="border-border/60 hover:shadow-sm transition-shadow rounded-xl">
-            <CardHeader className="flex flex-row items-center justify-between pb-2 p-5 space-y-0">
-              <CardTitle className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">
-                Chronic Absenteeism Rate
-              </CardTitle>
-              <div
-                className={cn(
-                  'p-2 rounded-xl',
-                  schoolReport.chronic_absentee_count > 0
-                    ? 'bg-rose-500/10 text-rose-600 dark:text-rose-400'
-                    : 'bg-emerald-500/10 text-emerald-600 dark:text-emerald-400'
-                )}
-              >
-                <AlertTriangle className="h-4 w-4" />
-              </div>
-            </CardHeader>
-            <CardContent className="p-5 pt-0">
-              <div className="flex items-baseline gap-2">
-                <div className="text-2xl font-bold text-foreground">
-                  {schoolReport.chronic_absentee_rate}%
-                </div>
-                {schoolReport.chronic_absentee_count > 0 && (
-                  <Badge variant="destructive" className="text-[10px] h-5 gap-1">
-                    <AlertTriangle className="w-2.5 h-2.5" />
-                    {schoolReport.chronic_absentee_count} Flagged
-                  </Badge>
-                )}
-              </div>
-              <p className="text-xs text-muted-foreground mt-1 truncate">
-                {schoolReport.chronic_absentee_count === 0
-                  ? 'No students below 85% attendance'
-                  : `${schoolReport.chronic_absentee_count} student(s) below 85% attendance`}
-              </p>
-            </CardContent>
-          </Card>
+          {/* KPI 4: Chronic Absenteeism Flag */}
+          <StatCard
+            title="Chronic Absenteeism Flag"
+            value={`${schoolReport.chronic_absentee_rate}%`}
+            icon={AlertTriangle}
+            variant="amber"
+            description={
+              schoolReport.chronic_absentee_count === 0
+                ? 'No students below 85% attendance'
+                : `${schoolReport.chronic_absentee_count} student(s) below 85% attendance`
+            }
+          />
         </div>
       ) : null}
 
