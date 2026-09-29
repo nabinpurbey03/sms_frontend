@@ -13,11 +13,51 @@ export const academicYearSchema = z.object({
 
 export type AcademicYearForm = z.infer<typeof academicYearSchema>;
 
+export type RolloverAction = 'PROMOTE' | 'RETAIN' | 'TRANSFER' | 'GRADUATE';
+
+export interface StudentRolloverOverride {
+  student_id: string;
+  action: RolloverAction;
+}
+
+export interface StudentPreviewItem {
+  student_id: string;
+  name: string;
+  current_class_id: string;
+  current_class_name: string;
+  current_section_id?: string | null;
+  current_section_name?: string | null;
+  target_class_id?: string | null;
+  target_class_name?: string | null;
+  default_action: RolloverAction;
+}
+
+export interface ClassRolloverPreviewItem {
+  class_id: string;
+  class_name: string;
+  sequence_order: number;
+  target_class_id?: string | null;
+  target_class_name?: string | null;
+  total_students: number;
+  students: StudentPreviewItem[];
+}
+
+export interface RolloverPreviewResponse {
+  current_academic_year_id: string;
+  current_academic_year_name: string;
+  total_students: number;
+  default_promoted: number;
+  default_graduated: number;
+  teacher_assignments_count: number;
+  classes: ClassRolloverPreviewItem[];
+}
+
 export interface TenantAcademicYearRolloverRequest {
   name: string;
   start_date: string;
   end_date: string;
   copy_teacher_assignments: boolean;
+  student_overrides?: StudentRolloverOverride[];
 }
 
 export interface TenantRolloverSummaryResponse {
@@ -25,6 +65,8 @@ export interface TenantRolloverSummaryResponse {
   academic_year_id: string;
   academic_year_name: string;
   total_students_promoted: number;
+  total_students_retained: number;
+  total_students_transferred: number;
   total_students_graduated: number;
   teacher_assignments_copied: number;
 }

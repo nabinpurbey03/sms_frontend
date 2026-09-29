@@ -77,6 +77,15 @@ export const usePlatformRollover = () => {
   });
 };
 
+export const useRolloverPreview = (tenantId: string | null, enabled: boolean = false) => {
+  return useQuery({
+    queryKey: ['rollover_preview', tenantId],
+    queryFn: () => (tenantId ? academicYearApi.previewRollover(tenantId) : Promise.reject('No tenant')),
+    enabled: !!tenantId && enabled,
+    staleTime: 0,
+  });
+};
+
 export const useTenantRollover = () => {
   const queryClient = useQueryClient();
   return useMutation({
@@ -85,7 +94,7 @@ export const useTenantRollover = () => {
     onSuccess: (res, variables) => {
       const summary = res;
       toast.success(
-        `Academic session rollover to '${summary?.academic_year_name ?? ''}' successful! Promoted: ${summary?.total_students_promoted ?? 0}, Graduated: ${summary?.total_students_graduated ?? 0}`
+        `Academic session rollover to '${summary?.academic_year_name ?? ''}' successful! Promoted: ${summary?.total_students_promoted ?? 0}, Retained: ${summary?.total_students_retained ?? 0}, Transferred: ${summary?.total_students_transferred ?? 0}, Graduated: ${summary?.total_students_graduated ?? 0}`
       );
       queryClient.invalidateQueries({ queryKey: [ACADEMIC_YEARS_QUERY_KEY, variables.tenantId] });
       queryClient.invalidateQueries({ queryKey: ['classes', variables.tenantId] });

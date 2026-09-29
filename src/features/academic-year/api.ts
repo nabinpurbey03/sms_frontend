@@ -6,10 +6,17 @@ import type {
   PlatformRolloverDTO,
   PlatformRolloverSummaryDTO,
 } from './types';
-import type { TenantAcademicYearRolloverRequest, TenantRolloverSummaryResponse } from './schema';
+import type {
+  TenantAcademicYearRolloverRequest,
+  TenantRolloverSummaryResponse,
+  RolloverPreviewResponse,
+} from './schema';
 import type { ApiResponse } from '@/api/types';
 
 export const academicYearApi = {
+  previewRollover: async (tenantId: string): Promise<RolloverPreviewResponse> => {
+    return apiClient.post(`/academic/tenants/${tenantId}/academic-years/rollover/preview`);
+  },
   getAcademicYears: async (tenantId: string): Promise<AcademicYear[]> => {
     return apiClient.get(`/academic/tenants/${tenantId}/academic-years`);
   },
