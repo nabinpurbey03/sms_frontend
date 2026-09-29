@@ -9,6 +9,7 @@ import {
 } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
+import { Label } from '@/components/ui/label';
 import {
   Table,
   TableBody,
@@ -23,6 +24,9 @@ import {
   DropdownMenuItem,
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
+import { Badge } from '@/components/ui/badge';
+import { EmptyState } from '@/components/common/EmptyState';
+import { cn } from '@/lib/utils';
 import {
   Layers,
   Users,
@@ -37,21 +41,22 @@ import {
   MoreVertical,
   UserCog,
   UserCheck,
+  User,
   Loader2,
   CalendarCheck,
   Edit3,
   CheckCircle2,
   Printer,
-  Download,
   Bell,
   FileSpreadsheet,
   Eye,
   ShieldCheck,
   Award,
   GraduationCap,
-  ExternalLink,
   Pencil,
   ArrowRightLeft,
+  Search,
+  X,
 } from 'lucide-react';
 import { useQueryClient } from '@tanstack/react-query';
 import { useNavigate, useParams } from '@tanstack/react-router';
@@ -127,6 +132,8 @@ export const ClassDetailPage: React.FC = () => {
   const [linkParentStudent, setLinkParentStudent] = useState<AcademicStudent | null>(null);
   const [editingStudent, setEditingStudent] = useState<AcademicStudent | null>(null);
   const [changingSectionStudent, setChangingSectionStudent] = useState<AcademicStudent | null>(null);
+  const [studentSearchQuery, setStudentSearchQuery] = useState('');
+  const [isAddSubjectOpen, setIsAddSubjectOpen] = useState(false);
 
   const createSubjectMutation = useCreateSubject();
   const deleteSubjectMutation = useDeleteSubject();
@@ -298,6 +305,16 @@ export const ClassDetailPage: React.FC = () => {
     ? cls.students.filter((st) => st.section_id === currentSection.id)
     : [];
 
+  const filteredSectionStudents = !studentSearchQuery.trim()
+    ? sectionStudents
+    : sectionStudents.filter((st) => {
+        const fullName = [st.first_name, st.middle_name, st.last_name]
+          .filter(Boolean)
+          .join(' ')
+          .toLowerCase();
+        return fullName.includes(studentSearchQuery.toLowerCase().trim());
+      });
+
   const handleCreateSubject = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!tenantId || !newSubjectName.trim()) return;
@@ -308,6 +325,7 @@ export const ClassDetailPage: React.FC = () => {
     });
     setNewSubjectName('');
     setNewSubjectCode('');
+    setIsAddSubjectOpen(false);
     invalidateClassData();
   };
 
@@ -462,100 +480,120 @@ export const ClassDetailPage: React.FC = () => {
       </div>
 
       {/* Quick Metrics */}
-      <div className="flex flex-wrap gap-2">
-        <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-semibold bg-primary/10 text-primary border border-primary/20">
+      <div className="flex flex-wrap gap-2.5">
+        <div className="inline-flex items-center gap-2 px-3 py-1.5 rounded-xl text-xs font-semibold bg-primary/10 text-primary border border-primary/20 shadow-2xs">
           <Users className="w-3.5 h-3.5" />
-          {visibleStudentsCount} Total Students
-        </span>
-        <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-semibold bg-indigo-500/10 text-indigo-700 dark:text-indigo-400 border border-indigo-500/20">
+          <span>{visibleStudentsCount} Total Students</span>
+        </div>
+        <div className="inline-flex items-center gap-2 px-3 py-1.5 rounded-xl text-xs font-semibold bg-blue-500/10 text-blue-700 dark:text-blue-300 border border-blue-500/20 shadow-2xs">
           <Layers className="w-3.5 h-3.5" />
-          {visibleSections.length} {visibleSections.length === 1 ? 'Section' : 'Sections'}
-        </span>
-        <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-semibold bg-muted text-muted-foreground border border-border">
-          {cls.subjects.length} Subjects
-        </span>
+          <span>{visibleSections.length} {visibleSections.length === 1 ? 'Section' : 'Sections'}</span>
+        </div>
+        <div className="inline-flex items-center gap-2 px-3 py-1.5 rounded-xl text-xs font-semibold bg-purple-500/10 text-purple-700 dark:text-purple-300 border border-purple-500/20 shadow-2xs">
+          <BookOpen className="w-3.5 h-3.5" />
+          <span>{cls.subjects.length} Subjects</span>
+        </div>
       </div>
 
       {/* Navigation Tabs */}
-      <div role="tablist" aria-label="Class navigation tabs" className="flex gap-1 border-b border-border/60 overflow-x-auto">
+      <div
+        role="tablist"
+        aria-label="Class navigation tabs"
+        className="p-1 rounded-xl bg-muted/40 border border-border/60 inline-flex flex-wrap gap-1 max-w-full overflow-x-auto"
+      >
         <button
           type="button"
           role="tab"
           aria-selected={activeTab === 'roster'}
           onClick={() => setActiveTab('roster')}
-          className={`px-3 py-2 text-xs font-semibold border-b-2 transition-colors cursor-pointer flex items-center gap-1.5 whitespace-nowrap ${
+          className={cn(
+            'px-3 py-1.5 text-xs font-semibold rounded-lg transition-all cursor-pointer flex items-center gap-1.5 whitespace-nowrap',
             activeTab === 'roster'
-              ? 'border-primary text-primary'
-              : 'border-transparent text-muted-foreground hover:text-foreground'
-          }`}
+              ? 'bg-card text-foreground shadow-xs font-bold'
+              : 'text-muted-foreground hover:text-foreground hover:bg-card/50'
+          )}
         >
-          <Users className="w-3.5 h-3.5" />
-          Section Rosters
+          <Users className="w-3.5 h-3.5 text-primary" />
+          <span>Section Rosters</span>
+          <Badge variant="secondary" className="text-[10px] px-1.5 py-0 font-bold ml-1">
+            {cls.students.length}
+          </Badge>
         </button>
+
         <button
           type="button"
           role="tab"
           aria-selected={activeTab === 'subjects'}
           onClick={() => setActiveTab('subjects')}
-          className={`px-3 py-2 text-xs font-semibold border-b-2 transition-colors cursor-pointer flex items-center gap-1.5 whitespace-nowrap ${
+          className={cn(
+            'px-3 py-1.5 text-xs font-semibold rounded-lg transition-all cursor-pointer flex items-center gap-1.5 whitespace-nowrap',
             activeTab === 'subjects'
-              ? 'border-primary text-primary'
-              : 'border-transparent text-muted-foreground hover:text-foreground'
-          }`}
+              ? 'bg-card text-foreground shadow-xs font-bold'
+              : 'text-muted-foreground hover:text-foreground hover:bg-card/50'
+          )}
         >
-          <BookOpen className="w-3.5 h-3.5" />
-          Curriculum Subjects ({cls.subjects.length})
+          <BookOpen className="w-3.5 h-3.5 text-blue-500" />
+          <span>Curriculum Subjects</span>
+          <Badge variant="secondary" className="text-[10px] px-1.5 py-0 font-bold ml-1">
+            {cls.subjects.length}
+          </Badge>
         </button>
+
         {canManage && (
           <button
             type="button"
             role="tab"
             aria-selected={activeTab === 'assignments'}
             onClick={() => setActiveTab('assignments')}
-            className={`px-3 py-2 text-xs font-semibold border-b-2 transition-colors cursor-pointer flex items-center gap-1.5 whitespace-nowrap ${
+            className={cn(
+              'px-3 py-1.5 text-xs font-semibold rounded-lg transition-all cursor-pointer flex items-center gap-1.5 whitespace-nowrap',
               activeTab === 'assignments'
-                ? 'border-primary text-primary'
-                : 'border-transparent text-muted-foreground hover:text-foreground'
-            }`}
+                ? 'bg-card text-foreground shadow-xs font-bold'
+                : 'text-muted-foreground hover:text-foreground hover:bg-card/50'
+            )}
           >
-            <UserCheck className="w-3.5 h-3.5" />
-            Teacher Assignments
+            <UserCheck className="w-3.5 h-3.5 text-emerald-500" />
+            <span>Teacher Assignments</span>
             {classAssignments.length > 0 && (
-              <span className="ml-1 px-1.5 py-0.5 rounded-full bg-primary/10 text-primary text-[10px] font-bold">
+              <Badge variant="secondary" className="text-[10px] px-1.5 py-0 font-bold ml-1">
                 {classAssignments.length}
-              </span>
+              </Badge>
             )}
           </button>
         )}
+
         {canManage && (
           <button
             type="button"
             role="tab"
             aria-selected={activeTab === 'expansion'}
             onClick={() => setActiveTab('expansion')}
-            className={`px-3 py-2 text-xs font-semibold border-b-2 transition-colors cursor-pointer flex items-center gap-1.5 whitespace-nowrap ${
+            className={cn(
+              'px-3 py-1.5 text-xs font-semibold rounded-lg transition-all cursor-pointer flex items-center gap-1.5 whitespace-nowrap',
               activeTab === 'expansion'
-                ? 'border-primary text-primary'
-                : 'border-transparent text-muted-foreground hover:text-foreground'
-            }`}
+                ? 'bg-card text-foreground shadow-xs font-bold'
+                : 'text-muted-foreground hover:text-foreground hover:bg-card/50'
+            )}
           >
-            <Layers className="w-3.5 h-3.5" />
-            20-Student Expansion
+            <Layers className="w-3.5 h-3.5 text-indigo-500" />
+            <span>20-Student Expansion</span>
           </button>
         )}
+
         <button
           type="button"
           role="tab"
           aria-selected={activeTab === 'notices'}
           onClick={() => setActiveTab('notices')}
-          className={`px-3 py-2 text-xs font-semibold border-b-2 transition-colors cursor-pointer flex items-center gap-1.5 whitespace-nowrap ${
+          className={cn(
+            'px-3 py-1.5 text-xs font-semibold rounded-lg transition-all cursor-pointer flex items-center gap-1.5 whitespace-nowrap',
             activeTab === 'notices'
-              ? 'border-primary text-primary'
-              : 'border-transparent text-muted-foreground hover:text-foreground'
-          }`}
+              ? 'bg-card text-foreground shadow-xs font-bold'
+              : 'text-muted-foreground hover:text-foreground hover:bg-card/50'
+          )}
         >
-          <Bell className="w-3.5 h-3.5" />
-          Noticeboard & Homework
+          <Bell className="w-3.5 h-3.5 text-amber-500" />
+          <span>Noticeboard & Homework</span>
         </button>
       </div>
 
@@ -643,36 +681,113 @@ export const ClassDetailPage: React.FC = () => {
               </div>
             </div>
 
-            {/* Section Capacity Pill */}
-            {currentSection && (
-              <div className="flex items-center justify-between p-2.5 rounded-lg bg-muted/40 border border-border/50 text-xs">
-                <span className="text-muted-foreground font-medium">
-                  Section {currentSection.name} Capacity:
-                </span>
-                <span className="font-semibold text-foreground">
-                  {sectionStudents.length} / 20 Students{' '}
-                  {sectionStudents.length >= 20 ? (
-                    <span className="text-emerald-600 dark:text-emerald-400 font-bold ml-1">
-                      (Capacity met for next expansion)
-                    </span>
-                  ) : (
-                    <span className="text-amber-600 dark:text-amber-400 font-normal ml-1">
-                      ({20 - sectionStudents.length} more needed for next section)
-                    </span>
-                  )}
+            {/* Section Capacity Visual Progress Bar */}
+            {currentSection && (() => {
+              const capacityCount = sectionStudents.length;
+              const capacityTarget = 20;
+              const capacityPercent = Math.min(100, Math.round((capacityCount / capacityTarget) * 100));
+              const isCapacityMet = capacityCount >= capacityTarget;
+
+              return (
+                <div className="p-3.5 sm:p-4 rounded-xl bg-card border border-border/70 space-y-2.5 shadow-2xs">
+                  <div className="flex items-center justify-between text-xs flex-wrap gap-2">
+                    <div className="flex items-center gap-2 font-semibold text-foreground">
+                      <Layers className="w-3.5 h-3.5 text-primary" />
+                      <span>Section {currentSection.name} Capacity</span>
+                    </div>
+                    <div className="flex items-center gap-2">
+                      <span className="font-bold text-foreground font-mono text-xs">
+                        {capacityCount} / {capacityTarget} Students
+                      </span>
+                      {isCapacityMet ? (
+                        <Badge variant="success" className="text-[10px] px-2 py-0 gap-1 font-bold">
+                          <Sparkles className="w-3 h-3" />
+                          Capacity Met (≥20)
+                        </Badge>
+                      ) : (
+                        <span className="text-[11px] text-amber-600 dark:text-amber-400 font-medium">
+                          ({capacityTarget - capacityCount} more needed for next section)
+                        </span>
+                      )}
+                    </div>
+                  </div>
+                  <div className="h-2 w-full bg-muted rounded-full overflow-hidden">
+                    <div
+                      className={cn(
+                        "h-full rounded-full transition-all duration-300",
+                        isCapacityMet ? "bg-emerald-500" : "bg-primary"
+                      )}
+                      style={{ width: `${capacityPercent}%` }}
+                    />
+                  </div>
+                </div>
+              );
+            })()}
+
+            {/* Roster Search & Count Bar */}
+            <div className="flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-3 pt-1">
+              <div className="relative flex-1 max-w-sm">
+                <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground pointer-events-none" />
+                <Input
+                  value={studentSearchQuery}
+                  onChange={(e) => setStudentSearchQuery(e.target.value)}
+                  placeholder="Search students in this section..."
+                  className="h-9 pl-9 pr-8 text-xs rounded-xl bg-background/80"
+                />
+                {studentSearchQuery && (
+                  <button
+                    type="button"
+                    onClick={() => setStudentSearchQuery('')}
+                    className="absolute right-2.5 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground p-0.5 rounded cursor-pointer"
+                    aria-label="Clear student search"
+                  >
+                    <X className="w-3.5 h-3.5" />
+                  </button>
+                )}
+              </div>
+              <div className="text-xs text-muted-foreground flex items-center gap-2 self-end sm:self-center">
+                <span>
+                  Showing <strong className="text-foreground">{filteredSectionStudents.length}</strong> of{' '}
+                  <strong className="text-foreground">{sectionStudents.length}</strong> students
                 </span>
               </div>
-            )}
+            </div>
 
             {/* Students Table */}
             {sectionStudents.length === 0 ? (
-              <div className="p-8 rounded-xl border border-dashed border-border/80 text-center space-y-2">
-                <Users className="w-8 h-8 text-muted-foreground mx-auto" />
-                <p className="text-xs font-semibold text-foreground">No Students Enrolled</p>
-                <p className="text-[11px] text-muted-foreground">
-                  Click Enroll Student to register pupils into Section {currentSection?.name || 'A'}.
-                </p>
-              </div>
+              <EmptyState
+                icon={Users}
+                title="No Students Enrolled"
+                description={`Click Enroll Student to register pupils into Section ${currentSection?.name || 'A'}.`}
+                action={
+                  canManage ? (
+                    <Button
+                      size="sm"
+                      onClick={() => setIsEnrollStudentOpen(true)}
+                      className="gap-1.5 text-xs shadow-xs"
+                    >
+                      <UserPlus className="w-3.5 h-3.5" />
+                      Enroll First Student
+                    </Button>
+                  ) : undefined
+                }
+              />
+            ) : filteredSectionStudents.length === 0 ? (
+              <EmptyState
+                icon={Search}
+                title="No Matching Students"
+                description={`No students found matching "${studentSearchQuery}" in Section ${currentSection?.name || 'A'}.`}
+                action={
+                  <Button
+                    size="sm"
+                    variant="outline"
+                    onClick={() => setStudentSearchQuery('')}
+                    className="text-xs"
+                  >
+                    Clear Search Filter
+                  </Button>
+                }
+              />
             ) : (
               <div className="rounded-xl border border-border/60 overflow-hidden shadow-xs">
                 <Table>
@@ -680,13 +795,13 @@ export const ClassDetailPage: React.FC = () => {
                     <TableRow className="hover:bg-transparent">
                       <TableHead className="w-[60px]">#</TableHead>
                       <TableHead>Student Name</TableHead>
-                      <TableHead className="w-[160px]">Parent</TableHead>
+                      <TableHead className="w-[180px]">Parent</TableHead>
                       <TableHead className="w-[120px]">Status</TableHead>
                       <TableHead className="w-[60px] text-right">Actions</TableHead>
                     </TableRow>
                   </TableHeader>
                   <TableBody>
-                    {sectionStudents.map((st: AcademicStudent, index: number) => {
+                    {filteredSectionStudents.map((st: AcademicStudent, index: number) => {
                       const fullName = [st.first_name, st.middle_name, st.last_name]
                         .filter(Boolean)
                         .join(' ');
@@ -706,21 +821,27 @@ export const ClassDetailPage: React.FC = () => {
                             {linkedParent ? (
                               <div className="flex items-center gap-1.5 min-w-0">
                                 <UserCheck className="w-3.5 h-3.5 text-emerald-600 dark:text-emerald-400 shrink-0" />
-                                <span className="text-xs text-foreground truncate max-w-[120px]">
+                                <span className="text-xs text-foreground truncate max-w-[140px]">
                                   {linkedParent.parent_name}
                                 </span>
                               </div>
                             ) : (
-                              <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-semibold bg-muted text-muted-foreground border border-border/60">
-                                <AlertTriangle className="w-3 h-3" />
+                              <Badge
+                                variant="outline"
+                                className="text-amber-600 dark:text-amber-400 border-amber-500/30 bg-amber-500/10 gap-1 text-[10px] px-1.5 py-0"
+                              >
+                                <AlertTriangle className="w-3 h-3 text-amber-500 shrink-0" />
                                 No parent
-                              </span>
+                              </Badge>
                             )}
                           </TableCell>
                           <TableCell>
-                            <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-semibold bg-emerald-500/10 text-emerald-700 dark:text-emerald-400 border border-emerald-500/20">
-                              ● {st.status}
-                            </span>
+                            <Badge
+                              variant={st.status === 'ACTIVE' ? 'success' : 'outline'}
+                              className="text-[10px] font-semibold px-2 py-0.5 capitalize"
+                            >
+                              {st.status.toLowerCase()}
+                            </Badge>
                           </TableCell>
                           <TableCell className="text-right">
                             <DropdownMenu>
@@ -800,50 +921,43 @@ export const ClassDetailPage: React.FC = () => {
         {/* Tab 2: Curriculum Subjects */}
         {activeTab === 'subjects' && (
           <div className="space-y-4">
-            {canManage && (
-              <form
-                onSubmit={handleCreateSubject}
-                className="flex flex-col sm:flex-row items-stretch sm:items-end gap-2.5 p-3.5 rounded-xl border border-border/70 bg-card"
-              >
-                <div className="flex-1 space-y-1">
-                  <label className="text-xs font-semibold text-foreground">Subject Name *</label>
-                  <Input
-                    value={newSubjectName}
-                    onChange={(e) => setNewSubjectName(e.target.value)}
-                    placeholder="e.g. Environmental Science"
-                    className="h-8 text-xs"
-                    required
-                  />
-                </div>
-                <div className="w-full sm:w-36 space-y-1">
-                  <label className="text-xs font-semibold text-foreground">Code (Optional)</label>
-                  <Input
-                    value={newSubjectCode}
-                    onChange={(e) => setNewSubjectCode(e.target.value)}
-                    placeholder="e.g. ENV10"
-                    className="h-8 text-xs font-mono uppercase"
-                  />
-                </div>
+            <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3">
+              <div>
+                <h3 className="text-sm font-bold text-foreground">Curriculum Subjects</h3>
+                <p className="text-xs text-muted-foreground">
+                  Subjects and assigned teaching faculty configured for {cls.name}.
+                </p>
+              </div>
+              {canManage && (
                 <Button
-                  type="submit"
                   size="sm"
-                  disabled={createSubjectMutation.isPending || !newSubjectName.trim()}
-                  className="h-8 text-xs gap-1.5"
+                  onClick={() => setIsAddSubjectOpen(true)}
+                  className="h-8 text-xs gap-1.5 shadow-xs cursor-pointer"
                 >
                   <Plus className="w-3.5 h-3.5" />
                   Add Subject
                 </Button>
-              </form>
-            )}
+              )}
+            </div>
 
             {cls.subjects.length === 0 ? (
-              <div className="p-8 rounded-xl border border-dashed border-border/80 text-center space-y-2">
-                <BookOpen className="w-8 h-8 text-muted-foreground mx-auto" />
-                <p className="text-xs font-semibold text-foreground">No Subjects Configured</p>
-                <p className="text-[11px] text-muted-foreground">
-                  Register curriculum subjects taught in {cls.name}.
-                </p>
-              </div>
+              <EmptyState
+                icon={BookOpen}
+                title="No Subjects Configured"
+                description={`Register curriculum subjects taught in ${cls.name}.`}
+                action={
+                  canManage ? (
+                    <Button
+                      size="sm"
+                      onClick={() => setIsAddSubjectOpen(true)}
+                      className="gap-1.5 text-xs shadow-xs cursor-pointer"
+                    >
+                      <Plus className="w-3.5 h-3.5" />
+                      Add First Subject
+                    </Button>
+                  ) : undefined
+                }
+              />
             ) : (
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                 {cls.subjects.map((sub) => {
@@ -856,37 +970,53 @@ export const ClassDetailPage: React.FC = () => {
                   return (
                     <div
                       key={sub.id}
-                      className={`p-3.5 rounded-xl border transition-all ${
+                      className={cn(
+                        "p-3.5 rounded-xl border transition-all",
                         isAssignedToMe
-                          ? 'border-primary/40 bg-primary/5 ring-1 ring-primary/20 shadow-xs'
-                          : 'border-border/60 bg-card shadow-xs'
-                      }`}
+                          ? "border-primary/40 bg-primary/5 ring-1 ring-primary/20 shadow-xs"
+                          : "border-border/60 bg-card shadow-xs hover:border-border"
+                      )}
                     >
                       <div className="flex items-start justify-between gap-2">
-                        <div className="space-y-1 min-w-0">
+                        <div className="space-y-1.5 min-w-0 flex-1">
                           <div className="flex items-center gap-2 flex-wrap">
                             <p className="text-xs font-bold text-foreground">{sub.name}</p>
                             {isAssignedToMe && (
-                              <span className="inline-flex items-center gap-1 text-[10px] font-semibold text-primary bg-primary/10 border border-primary/20 px-2 py-0.5 rounded-full">
+                              <Badge
+                                variant="outline"
+                                className="text-[10px] font-semibold text-primary bg-primary/10 border-primary/25 px-2 py-0 gap-1"
+                              >
                                 <Award className="w-3 h-3 text-primary" />
                                 Assigned to You
-                              </span>
+                              </Badge>
                             )}
                             {sub.code && (
-                              <span className="font-mono text-[10px] text-muted-foreground bg-muted px-1.5 py-0.5 rounded">
+                              <Badge
+                                variant="secondary"
+                                className="font-mono text-[10px] text-muted-foreground px-1.5 py-0 uppercase"
+                              >
                                 {sub.code}
-                              </span>
+                              </Badge>
                             )}
                           </div>
 
-                          <div className="text-[11px] text-muted-foreground flex items-center gap-1.5 pt-0.5">
+                          <div className="text-[11px] text-muted-foreground flex items-center gap-1.5 flex-wrap pt-0.5">
                             <span className="text-muted-foreground/70">Instructor:</span>
                             {uniqueTeachers.length > 0 ? (
-                              <span className="font-medium text-foreground">
-                                {uniqueTeachers.join(', ')}
-                              </span>
+                              <div className="flex items-center gap-1.5 flex-wrap">
+                                {uniqueTeachers.map((teacherName) => (
+                                  <Badge
+                                    key={teacherName}
+                                    variant="outline"
+                                    className="gap-1 text-[10px] font-medium py-0 px-1.5 bg-muted/40 border-border/70 text-foreground"
+                                  >
+                                    <User className="w-2.5 h-2.5 text-muted-foreground" />
+                                    {teacherName}
+                                  </Badge>
+                                ))}
+                              </div>
                             ) : (
-                              <span className="italic text-muted-foreground/60">No teacher assigned</span>
+                              <span className="italic text-muted-foreground/60 text-xs">No teacher assigned</span>
                             )}
                           </div>
                         </div>
@@ -1210,6 +1340,75 @@ export const ClassDetailPage: React.FC = () => {
               {deleteSectionMutation.isPending ? 'Deleting...' : 'Confirm Delete'}
             </Button>
           </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* Add Subject Modal Dialog */}
+      <Dialog open={isAddSubjectOpen} onOpenChange={setIsAddSubjectOpen}>
+        <DialogContent className="sm:max-w-md">
+          <form onSubmit={handleCreateSubject}>
+            <DialogHeader>
+              <DialogTitle className="text-base font-bold text-foreground">
+                Add Curriculum Subject
+              </DialogTitle>
+              <DialogDescription className="text-xs text-muted-foreground">
+                Register a new subject taught in {cls.name}.
+              </DialogDescription>
+            </DialogHeader>
+            <div className="space-y-4 py-4">
+              <div className="space-y-1.5">
+                <Label htmlFor="modal-subject-name" className="text-xs font-semibold text-foreground">
+                  Subject Name *
+                </Label>
+                <Input
+                  id="modal-subject-name"
+                  value={newSubjectName}
+                  onChange={(e) => setNewSubjectName(e.target.value)}
+                  placeholder="e.g. Environmental Science"
+                  className="h-9 text-xs"
+                  required
+                  autoFocus
+                />
+              </div>
+              <div className="space-y-1.5">
+                <Label htmlFor="modal-subject-code" className="text-xs font-semibold text-foreground">
+                  Subject Code (Optional)
+                </Label>
+                <Input
+                  id="modal-subject-code"
+                  value={newSubjectCode}
+                  onChange={(e) => setNewSubjectCode(e.target.value)}
+                  placeholder="e.g. ENV10"
+                  className="h-9 text-xs font-mono uppercase"
+                />
+              </div>
+            </div>
+            <DialogFooter className="gap-2 sm:gap-0 pt-2">
+              <Button
+                type="button"
+                variant="outline"
+                size="sm"
+                onClick={() => setIsAddSubjectOpen(false)}
+                disabled={createSubjectMutation.isPending}
+                className="text-xs cursor-pointer"
+              >
+                Cancel
+              </Button>
+              <Button
+                type="submit"
+                size="sm"
+                disabled={createSubjectMutation.isPending || !newSubjectName.trim()}
+                className="text-xs gap-1.5 cursor-pointer shadow-xs"
+              >
+                {createSubjectMutation.isPending ? (
+                  <Loader2 className="w-3.5 h-3.5 animate-spin" />
+                ) : (
+                  <Plus className="w-3.5 h-3.5" />
+                )}
+                Create Subject
+              </Button>
+            </DialogFooter>
+          </form>
         </DialogContent>
       </Dialog>
 
