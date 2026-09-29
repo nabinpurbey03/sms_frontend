@@ -12,15 +12,26 @@ const badgeVariants = cva(
         secondary:
           'border-transparent bg-secondary text-secondary-foreground hover:bg-secondary/80',
         destructive:
-          'border-transparent bg-destructive text-destructive-foreground shadow hover:bg-destructive/80',
-        outline: 'text-foreground',
+          'border-transparent bg-destructive/15 text-destructive dark:text-red-400 border-destructive/30',
+        outline: 'text-foreground border-border/80',
         success:
-          'border-transparent bg-emerald-500/15 text-emerald-700 dark:text-emerald-400 border-emerald-500/30',
+          'border-emerald-500/30 bg-emerald-500/15 text-emerald-700 dark:text-emerald-300',
         warning:
-          'border-transparent bg-amber-500/15 text-amber-700 dark:text-amber-400 border-amber-500/30',
-        info: 'border-transparent bg-blue-500/15 text-blue-700 dark:text-blue-400 border-blue-500/30',
+          'border-amber-500/30 bg-amber-500/15 text-amber-700 dark:text-amber-300',
+        info: 'border-blue-500/30 bg-blue-500/15 text-blue-700 dark:text-blue-300',
         purple:
-          'border-transparent bg-purple-500/15 text-purple-700 dark:text-purple-400 border-purple-500/30',
+          'border-purple-500/30 bg-purple-500/15 text-purple-700 dark:text-purple-300',
+        // Semantic Role Variants
+        'role-super-admin':
+          'border-purple-500/30 bg-purple-500/15 text-purple-700 dark:text-purple-300',
+        'role-admin':
+          'border-primary/30 bg-primary/10 text-primary dark:text-cyan-300',
+        'role-office-admin':
+          'border-blue-500/30 bg-blue-500/15 text-blue-700 dark:text-blue-300',
+        'role-teacher':
+          'border-emerald-500/30 bg-emerald-500/15 text-emerald-700 dark:text-emerald-300',
+        'role-parent':
+          'border-amber-500/30 bg-amber-500/15 text-amber-700 dark:text-amber-300',
       },
     },
     defaultVariants: {
@@ -39,4 +50,4 @@ function Badge({ className, variant, ...props }: BadgeProps) {
   );
 }
 
-export { Badge };
+export { Badge, badgeVariants };
