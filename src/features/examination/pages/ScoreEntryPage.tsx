@@ -158,8 +158,12 @@ export const ScoreEntryPage: React.FC = () => {
           st.subject_scores[subject.id]
         : undefined;
 
-      const score =
+      const rawScore: any =
         local !== undefined ? local.score : (existing?.score ?? null);
+      const score =
+        rawScore !== null && rawScore !== undefined && rawScore !== ''
+          ? Number(rawScore)
+          : null;
       const isAbsent =
         local !== undefined
           ? local.isAbsent
@@ -195,8 +199,8 @@ export const ScoreEntryPage: React.FC = () => {
   }, [studentRows, selectedSectionId]);
 
   // Subject constants & counters
-  const fullMark = subject?.full_mark ?? 100;
-  const passMark = subject?.pass_mark ?? 40;
+  const fullMark = Number(subject?.full_mark ?? 100);
+  const passMark = Number(subject?.pass_mark ?? 40);
   const isLocked = !isPrivileged && subject?.status === 'SUBMITTED';
 
   const totalStudents = studentRows.length;
@@ -205,7 +209,7 @@ export const ScoreEntryPage: React.FC = () => {
     (r) => r.isAbsent || r.score !== null
   ).length;
   const passCount = studentRows.filter(
-    (r) => !r.isAbsent && r.score !== null && r.score >= passMark
+    (r) => !r.isAbsent && r.score !== null && Number(r.score) >= passMark
   ).length;
 
   // Tenant Guard
@@ -291,12 +295,11 @@ export const ScoreEntryPage: React.FC = () => {
     if (!activeTenantId || !subject || isLocked || isSaving) return;
 
     // Validate scores bounds
-    const invalidRow = studentRows.find(
-      (r) =>
-        !r.isAbsent &&
-        r.score !== null &&
-        (r.score < 0 || r.score > fullMark)
-    );
+    const invalidRow = studentRows.find((r) => {
+      if (r.isAbsent || r.score === null) return false;
+      const s = Number(r.score);
+      return isNaN(s) || s < 0 || s > fullMark;
+    });
     if (invalidRow) {
       toast.error('Validation Error', {
         description: `Student ${invalidRow.studentName} has an invalid score. Must be between 0 and ${fullMark}.`,
@@ -306,7 +309,7 @@ export const ScoreEntryPage: React.FC = () => {
 
     const payload: StudentScoreItemDTO[] = studentRows.map((r) => ({
       student_id: r.studentId,
-      score: r.isAbsent ? 0 : r.score,
+      score: r.isAbsent ? 0 : (r.score !== null ? Number(r.score) : null),
       is_absent: r.isAbsent,
     }));
 
@@ -329,12 +332,11 @@ export const ScoreEntryPage: React.FC = () => {
     if (!activeTenantId || !subject || isLocked || isSubmitting) return;
 
     // Validate scores bounds
-    const invalidRow = studentRows.find(
-      (r) =>
-        !r.isAbsent &&
-        r.score !== null &&
-        (r.score < 0 || r.score > fullMark)
-    );
+    const invalidRow = studentRows.find((r) => {
+      if (r.isAbsent || r.score === null) return false;
+      const s = Number(r.score);
+      return isNaN(s) || s < 0 || s > fullMark;
+    });
     if (invalidRow) {
       toast.error('Validation Error', {
         description: `Student ${invalidRow.studentName} has an invalid score. Must be between 0 and ${fullMark}.`,
@@ -344,7 +346,7 @@ export const ScoreEntryPage: React.FC = () => {
 
     const payload: StudentScoreItemDTO[] = studentRows.map((r) => ({
       student_id: r.studentId,
-      score: r.isAbsent ? 0 : r.score,
+      score: r.isAbsent ? 0 : (r.score !== null ? Number(r.score) : null),
       is_absent: r.isAbsent,
     }));
 

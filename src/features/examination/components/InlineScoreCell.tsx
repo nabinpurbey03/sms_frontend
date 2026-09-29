@@ -114,8 +114,9 @@ export const InlineScoreCell: React.FC<InlineScoreCellProps> = ({
       return;
     }
 
-    if (numVal < 0 || numVal > fullMark) {
-      setErrorMessage(`Must be 0 - ${fullMark}`);
+    const numFull = Number(fullMark);
+    if (numVal < 0 || numVal > numFull) {
+      setErrorMessage(`Must be 0 - ${numFull}`);
       return;
     }
 
@@ -152,7 +153,7 @@ export const InlineScoreCell: React.FC<InlineScoreCellProps> = ({
         </Badge>
       );
     } else if (score !== null && score !== undefined) {
-      const isPassed = score >= passMark;
+      const isPassed = Number(score) >= Number(passMark);
       content = (
         <span
           className={cn(

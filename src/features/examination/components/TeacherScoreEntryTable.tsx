@@ -42,8 +42,14 @@ function renderResultBadge(row: StudentGradingRow, passMark: number) {
   if (row.isAbsent) {
     return <Badge variant="destructive">Absent (0)</Badge>;
   }
-  if (row.score !== null) {
-    if (row.score >= passMark) {
+  const rawScore: any = row.score;
+  const scoreNum =
+    rawScore !== null && rawScore !== undefined && rawScore !== ''
+      ? Number(rawScore)
+      : null;
+  const passMarkNum = Number(passMark);
+  if (scoreNum !== null && !isNaN(scoreNum)) {
+    if (scoreNum >= passMarkNum) {
       return <Badge variant="success">Pass</Badge>;
     }
     return <Badge variant="destructive">Fail</Badge>;
@@ -114,10 +120,17 @@ export const TeacherScoreEntryTable: React.FC<TeacherScoreEntryTableProps> = ({
         header: 'Score Input',
         className: 'w-44 text-center',
         cell: (row) => {
+          const rawScore: any = row.score;
+          const scoreNum =
+            rawScore !== null && rawScore !== undefined && rawScore !== ''
+              ? Number(rawScore)
+              : null;
+          const fullMarkNum = Number(fullMark);
           const isInvalid =
             !row.isAbsent &&
-            row.score !== null &&
-            (row.score < 0 || row.score > fullMark);
+            scoreNum !== null &&
+            !isNaN(scoreNum) &&
+            (scoreNum < 0 || scoreNum > fullMarkNum);
 
           return (
             <div className="flex flex-col items-center justify-center">
@@ -187,10 +200,17 @@ export const TeacherScoreEntryTable: React.FC<TeacherScoreEntryTableProps> = ({
   );
 
   const renderCard = (row: StudentGradingRow) => {
+    const rawScore: any = row.score;
+    const scoreNum =
+      rawScore !== null && rawScore !== undefined && rawScore !== ''
+        ? Number(rawScore)
+        : null;
+    const fullMarkNum = Number(fullMark);
     const isInvalid =
       !row.isAbsent &&
-      row.score !== null &&
-      (row.score < 0 || row.score > fullMark);
+      scoreNum !== null &&
+      !isNaN(scoreNum) &&
+      (scoreNum < 0 || scoreNum > fullMarkNum);
 
     return (
       <Card className="border-border/70 shadow-sm p-4 space-y-3 bg-card">
