@@ -122,7 +122,9 @@ export const ExamSubjectConfigList: React.FC<ExamSubjectConfigListProps> = ({
               <TableHead>Subject</TableHead>
               <TableHead className="w-[140px]">Full Mark</TableHead>
               <TableHead className="w-[160px]">Pass Mark</TableHead>
-              <TableHead className="w-[280px]">Grading Teacher</TableHead>
+              <TableHead className="w-[280px]">
+                Grading Teacher <span className="text-destructive">*</span>
+              </TableHead>
             </TableRow>
           </TableHeader>
           <TableBody>
@@ -252,12 +254,15 @@ export const ExamSubjectConfigList: React.FC<ExamSubjectConfigListProps> = ({
                           handleTeacherChange(index, e.target.value)
                         }
                         disabled={disabled || isExcluded}
-                        className="w-full h-9 px-3 rounded-lg border border-input bg-background text-sm focus:outline-none focus:ring-2 focus:ring-primary disabled:cursor-not-allowed disabled:opacity-50"
+                        className={cn(
+                          "w-full h-9 px-3 rounded-lg border border-input bg-background text-sm focus:outline-none focus:ring-2 focus:ring-primary disabled:cursor-not-allowed disabled:opacity-50",
+                          !item.assignedTeacherId && item.included && "border-amber-500/80 focus:ring-amber-500 text-amber-900 dark:text-amber-100"
+                        )}
                       >
                         <option value="">
                           {item.autoAssignedTeacherName
                             ? `-- None (Unassigned) --`
-                            : `-- Select Grading Teacher (Optional) --`}
+                            : `-- Select Grading Teacher --`}
                         </option>
                         {teachers.map((t) => (
                           <option key={t.user_id} value={t.user_id}>
@@ -266,6 +271,11 @@ export const ExamSubjectConfigList: React.FC<ExamSubjectConfigListProps> = ({
                           </option>
                         ))}
                       </select>
+                      {item.included && !item.assignedTeacherId && (
+                        <p className="text-[11px] text-amber-600 dark:text-amber-400 font-medium">
+                          * Grading teacher is required
+                        </p>
+                      )}
                       {item.autoAssignedTeacherName ? (
                         <p className="text-[11px] text-muted-foreground truncate">
                           Subject Teacher:{' '}
@@ -384,7 +394,7 @@ export const ExamSubjectConfigList: React.FC<ExamSubjectConfigListProps> = ({
                 <div className="space-y-1.5 pt-1">
                   <div className="flex items-center justify-between gap-1">
                     <label className="text-xs font-medium text-muted-foreground">
-                      Grading Teacher
+                      Grading Teacher <span className="text-destructive">*</span>
                     </label>
                     <div className="flex items-center gap-1.5">
                       {item.autoAssignedTeacherId &&
@@ -425,12 +435,15 @@ export const ExamSubjectConfigList: React.FC<ExamSubjectConfigListProps> = ({
                       handleTeacherChange(index, e.target.value)
                     }
                     disabled={disabled || isExcluded}
-                    className="w-full h-10 px-3 rounded-lg border border-input bg-background text-sm focus:outline-none focus:ring-2 focus:ring-primary disabled:cursor-not-allowed disabled:opacity-50"
+                    className={cn(
+                      "w-full h-10 px-3 rounded-lg border border-input bg-background text-sm focus:outline-none focus:ring-2 focus:ring-primary disabled:cursor-not-allowed disabled:opacity-50",
+                      !item.assignedTeacherId && item.included && "border-amber-500/80 focus:ring-amber-500 text-amber-900 dark:text-amber-100"
+                    )}
                   >
                     <option value="">
                       {item.autoAssignedTeacherName
                         ? `-- None (Unassigned) --`
-                        : `-- Select Grading Teacher (Optional) --`}
+                        : `-- Select Grading Teacher --`}
                     </option>
                     {teachers.map((t) => (
                       <option key={t.user_id} value={t.user_id}>
@@ -439,6 +452,11 @@ export const ExamSubjectConfigList: React.FC<ExamSubjectConfigListProps> = ({
                       </option>
                     ))}
                   </select>
+                  {item.included && !item.assignedTeacherId && (
+                    <p className="text-[11px] text-amber-600 dark:text-amber-400 font-medium">
+                      * Grading teacher is required
+                    </p>
+                  )}
                   {item.autoAssignedTeacherName ? (
                     <p className="text-[11px] text-muted-foreground truncate">
                       Subject Teacher:{' '}

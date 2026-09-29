@@ -255,6 +255,16 @@ export const CreateExamPage: React.FC = () => {
         });
         return;
       }
+
+      const unassignedSubjects = included.filter((s) => !s.assignedTeacherId);
+      if (unassignedSubjects.length > 0) {
+        const cls = classes.find((c) => c.id === classId);
+        const subjectNames = unassignedSubjects.map((s) => s.subjectName).join(', ');
+        toast.error('Validation Error', {
+          description: `Please assign a grading teacher for all included subjects in ${cls?.name || 'the selected class'}: ${subjectNames}.`,
+        });
+        return;
+      }
       
       const hasInvalidMarks = included.some(
         (s) => s.passMark > s.fullMark || s.fullMark < 1 || s.passMark < 0
@@ -308,7 +318,14 @@ export const CreateExamPage: React.FC = () => {
       navigate({ to: '/examination/exams' as any });
     } catch (err: any) {
       console.error('Failed to create examinations:', err);
-      toast.error('Failed to create some examinations. Please check the logs.');
+      const errorMessage =
+        err?.response?.data?.message ||
+        err?.response?.data?.detail ||
+        err?.message ||
+        'Failed to create some examinations. Please check the logs.';
+      toast.error('Failed to create examinations', {
+        description: errorMessage,
+      });
     } finally {
       setIsSubmitting(false);
     }
