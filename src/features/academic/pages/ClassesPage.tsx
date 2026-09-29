@@ -20,87 +20,17 @@ import { SectionAddDialog } from '../components/SectionAddDialog';
 import { ClassDetailModal } from '../components/ClassDetailModal';
 import { ClassProgressionPipeline } from '../components/ClassProgressionPipeline';
 import { ClassReorderDialog } from '../components/ClassReorderDialog';
-import { Plus, Search, X, BookOpen, ShieldCheck } from 'lucide-react';
+import { Plus, BookOpen, ShieldCheck, School } from 'lucide-react';
 import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
 import { useNavigate } from '@tanstack/react-router';
 import { TenantRequiredState } from '@/components/common/TenantRequiredState';
 import { EmptyState } from '@/components/common/EmptyState';
+import { FilterToolbar } from '@/components/common/FilterToolbar';
+import { Card } from '@/components/ui/card';
+import { Badge } from '@/components/ui/badge';
+import { SchoolSearchSelect } from '@/features/academic-year/components/SchoolSearchSelect';
+import { useTenant } from '@/features/tenants/hooks';
 import type { ClassWithDetails, AcademicClass, AcademicStats } from '../types';
-import { useTenants } from '@/features/tenants/hooks';
-import { useDebounce } from 'use-debounce';
-
-const SchoolSearchSelector = ({
-  tenants,
-  value,
-  onChange,
-  onSearchChange,
-}: {
-  tenants: any[];
-  value: string | null;
-  onChange: (id: string | null) => void;
-  onSearchChange: (search: string) => void;
-}) => {
-  const [isOpen, setIsOpen] = useState(false);
-  const [searchTerm, setSearchTerm] = useState('');
-  
-  // No internal filtering, the parent passes filtered tenants
-  const filtered = tenants;
-
-  const selectedTenant = tenants.find(t => t.id === value);
-
-  return (
-    <div className="relative w-full sm:w-[300px]">
-      <div 
-        className="flex h-10 w-full items-center justify-between rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background cursor-pointer"
-        onClick={() => setIsOpen(!isOpen)}
-      >
-        <span className="truncate">
-          {selectedTenant ? selectedTenant.name : "-- Select a School --"}
-        </span>
-      </div>
-      {isOpen && (
-        <>
-          <div className="fixed inset-0 z-40" onClick={() => setIsOpen(false)} />
-          <div className="absolute top-full mt-1 w-full rounded-md border bg-popover text-popover-foreground shadow-md z-50">
-            <div className="p-2 border-b">
-              <input 
-                className="flex h-8 w-full rounded-sm border border-input bg-transparent px-3 py-1 text-sm shadow-sm transition-colors focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring" 
-                placeholder="Search schools..."
-                value={searchTerm}
-                onChange={e => {
-                  setSearchTerm(e.target.value);
-                  onSearchChange(e.target.value);
-                }}
-                autoFocus
-              />
-            </div>
-            <ul className="max-h-[190px] overflow-auto p-1 custom-scrollbar">
-              {filtered.length === 0 ? (
-                <li className="p-2 text-sm text-muted-foreground text-center">No schools found.</li>
-              ) : (
-                filtered.map(t => (
-                  <li
-                    key={t.id}
-                    className={`relative flex w-full cursor-pointer select-none items-center rounded-sm py-1.5 px-2 text-sm outline-none hover:bg-accent hover:text-accent-foreground ${t.id === value ? 'bg-accent font-medium' : ''}`}
-                    onClick={() => {
-                      onChange(t.id);
-                      setIsOpen(false);
-                      setSearchTerm('');
-                      onSearchChange('');
-                    }}
-                  >
-                    {t.name}
-                  </li>
-                ))
-              )}
-            </ul>
-          </div>
-        </>
-      )}
-    </div>
-  );
-};
 
 export const ClassesPage: React.FC = () => {
   const { activeTenantId, activeRole } = useAuth();
@@ -113,12 +43,8 @@ export const ClassesPage: React.FC = () => {
     setPageTenantId(activeTenantId);
   }, [activeTenantId]);
 
-  const [tenantSearch, setTenantSearch] = useState('');
-  const [debouncedTenantSearch] = useDebounce(tenantSearch, 400);
+  const { data: effectiveTenant } = useTenant(pageTenantId);
 
-  // We fetch up to 100 since the backend max is 100
-  const { data: tenantsResponse } = useTenants({ page: 1, page_size: 100, search: debouncedTenantSearch || undefined });
-  const allTenants = tenantsResponse?.items || [];
 
   const canManage =
     isSuperAdmin || can('MANAGE_CLASSES_SUBJECTS') || activeRole === 'ADMIN' || activeRole === 'OFFICE_ADMIN';
@@ -256,12 +182,14 @@ export const ClassesPage: React.FC = () => {
   }, [sortedClasses, isTeacherOnly, assignedClassIds, teacherScopeByClassId]);
 
   // Compute Stats
-  const stats: AcademicStats = useMemo(() => {
+  const stats: AcademicStats & { configuredSubjects?: number } = useMemo(() => {
     const totalClasses = scopedClasses.length;
     let totalSections = 0;
     let totalStudents = 0;
+    let configuredSubjects = 0;
 
     for (const c of scopedClasses) {
+      configuredSubjects += c.subjects?.length || 0;
       if (isTeacherOnly) {
         const scope = teacherScopeByClassId.get(c.id);
         const secIds = new Set(scope?.classTeacherSections.map((s) => s.id) || []);
@@ -286,6 +214,7 @@ export const ClassesPage: React.FC = () => {
       totalSections,
       totalStudents,
       avgStudentsPerSection,
+      configuredSubjects,
     };
   }, [scopedClasses, isTeacherOnly, teacherScopeByClassId]);
 
@@ -319,21 +248,46 @@ export const ClassesPage: React.FC = () => {
     <div className="space-y-6 pb-12">
       {/* Super Admin Tenant Selector */}
       {isSuperAdmin && (
-        <div className="bg-muted/30 p-4 rounded-xl border border-border/50 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
-          <div>
-            <h3 className="font-semibold text-foreground flex items-center gap-2">
-              <ShieldCheck className="w-4 h-4 text-primary" />
-              Super Admin View
-            </h3>
-            <p className="text-sm text-muted-foreground">Select a school to view its classes and sections.</p>
+        <Card className="p-3.5 sm:p-4 rounded-2xl border border-primary/20 bg-primary/[0.03] dark:bg-primary/[0.06] shadow-xs flex flex-col sm:flex-row sm:items-center justify-between gap-3.5 transition-all">
+          <div className="flex items-center gap-3 min-w-0">
+            <div className="w-10 h-10 rounded-xl bg-primary/10 border border-primary/20 flex items-center justify-center text-primary shrink-0">
+              <School className="w-5 h-5" />
+            </div>
+            <div className="min-w-0">
+              <div className="flex items-center gap-2">
+                <span className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">
+                  School Scope
+                </span>
+                <Badge variant="outline" className="text-[10px] py-0 px-1.5 border-primary/30 text-primary font-medium">
+                  Super Admin
+                </Badge>
+              </div>
+              <p className="text-sm font-medium text-foreground truncate mt-0.5">
+                {effectiveTenant ? (
+                  <span className="flex items-center gap-1.5">
+                    <span className="font-semibold text-foreground">{effectiveTenant.name}</span>
+                    {effectiveTenant.domain_name && (
+                      <span className="text-xs text-muted-foreground font-normal">
+                        ({effectiveTenant.domain_name})
+                      </span>
+                    )}
+                  </span>
+                ) : (
+                  <span className="text-muted-foreground text-xs">
+                    Select a school to view its classes and sections
+                  </span>
+                )}
+              </p>
+            </div>
           </div>
-            <SchoolSearchSelector 
-              tenants={allTenants} 
-              value={pageTenantId} 
-              onChange={setPageTenantId} 
-              onSearchChange={setTenantSearch}
+          <div className="flex items-center gap-2 shrink-0">
+            <SchoolSearchSelect
+              selectedTenantId={pageTenantId || ''}
+              onSelectTenant={(id) => setPageTenantId(id || null)}
+              className="w-full sm:w-80"
             />
-        </div>
+          </div>
+        </Card>
       )}
 
       {!pageTenantId && isSuperAdmin ? (
@@ -345,33 +299,16 @@ export const ClassesPage: React.FC = () => {
           {/* KPI Stats */}
           <AcademicStatsCards stats={stats} isLoading={isLoading} />
 
-          {/* Search Bar */}
-          <div className="flex items-center justify-between gap-3 p-4 rounded-xl border border-border/60 bg-card shadow-xs">
-            <div className="relative flex-1 max-w-md">
-              <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
-              <Input
-                value={searchQuery}
-                onChange={(e) => setSearchQuery(e.target.value)}
-                placeholder="Search classes by name or section..."
-                className="pl-9 pr-8 h-9 text-xs"
-              />
-              {searchQuery && (
-                <button
-                  type="button"
-                  onClick={() => setSearchQuery('')}
-                  className="absolute right-2.5 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground"
-                >
-                  <X className="w-3.5 h-3.5" />
-                </button>
-              )}
-            </div>
-
-            <div className="flex items-center gap-3">
-              <div className="text-xs text-muted-foreground hidden sm:inline">
-                Showing <span className="font-semibold text-foreground">{filteredClasses.length}</span>{' '}
-                {filteredClasses.length === 1 ? 'class' : 'classes'}
-              </div>
-              {canManage && (
+          {/* Search and Action Bar */}
+          <FilterToolbar
+            searchQuery={searchQuery}
+            onSearchChange={setSearchQuery}
+            searchPlaceholder="Search classes by name or section..."
+            showingCount={filteredClasses.length}
+            totalCount={scopedClasses.length}
+            unitLabel={scopedClasses.length === 1 ? 'class' : 'classes'}
+            actions={
+              canManage ? (
                 <Button
                   onClick={() => setIsCreateClassOpen(true)}
                   size="sm"
@@ -380,29 +317,29 @@ export const ClassesPage: React.FC = () => {
                   <Plus className="w-3.5 h-3.5" />
                   <span>Create Class</span>
                 </Button>
-              )}
+              ) : undefined
+            }
+          />
+
+          {/* Error Alert */}
+          {isError && (
+            <div className="p-4 rounded-xl border border-destructive/30 bg-destructive/10 text-destructive text-xs flex items-center justify-between">
+              <span>Failed to load classes from server. Showing cached data.</span>
+              <Button variant="outline" size="sm" onClick={() => refetch()} className="h-7 text-xs">
+                Retry
+              </Button>
             </div>
-          </div>
+          )}
 
-      {/* Error Alert */}
-      {isError && (
-        <div className="p-4 rounded-xl border border-destructive/30 bg-destructive/10 text-destructive text-xs flex items-center justify-between">
-          <span>Failed to load classes from server. Showing cached data.</span>
-          <Button variant="outline" size="sm" onClick={() => refetch()} className="h-7 text-xs">
-            Retry
-          </Button>
-        </div>
-      )}
-
-      {/* Teacher View Scope Banner */}
-      {isTeacherOnly && (
-        <div className="flex items-center gap-2 p-3 rounded-xl bg-purple-500/10 border border-purple-500/20 text-purple-800 dark:text-purple-300 text-xs">
-          <ShieldCheck className="w-4 h-4 shrink-0 text-purple-600 dark:text-purple-400" />
-          <span>
-            <strong>Teacher View:</strong> Displaying only classes where you are assigned as a Class Teacher or Subject Teacher.
-          </span>
-        </div>
-      )}
+          {/* Teacher View Scope Banner */}
+          {isTeacherOnly && (
+            <div className="flex items-center gap-2.5 p-3 rounded-xl bg-blue-500/10 border border-blue-500/20 text-blue-800 dark:text-blue-300 text-xs">
+              <ShieldCheck className="w-4 h-4 shrink-0 text-blue-600 dark:text-blue-400" />
+              <span>
+                <strong>Teacher View:</strong> Displaying only classes where you are assigned as a Class Teacher or Subject Teacher.
+              </span>
+            </div>
+          )}
 
       {/* Classes Grid */}
       {isLoading ? (

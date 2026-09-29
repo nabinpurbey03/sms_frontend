@@ -42,6 +42,9 @@ import {
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Badge } from '@/components/ui/badge';
+import { StatCard } from '@/components/ui/stat-card';
+import { FilterToolbar } from '@/components/common/FilterToolbar';
+import { cn } from '@/lib/utils';
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -302,137 +305,131 @@ export const SubjectsPage: React.FC = () => {
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4">
         {isTeacherOnly ? (
           <>
-            <div className="p-4 rounded-2xl bg-card border shadow-2xs space-y-1">
-              <div className="flex items-center justify-between text-muted-foreground">
-                <span className="text-xs font-semibold">My Teaching Subjects</span>
-                <Award className="w-4 h-4 text-primary" />
-              </div>
-              <p className="text-2xl font-bold text-foreground">{metrics.mySubjectsCount}</p>
-              <p className="text-[11px] text-muted-foreground">Assigned courses</p>
-            </div>
-
-            <div className="p-4 rounded-2xl bg-card border shadow-2xs space-y-1">
-              <div className="flex items-center justify-between text-muted-foreground">
-                <span className="text-xs font-semibold">Classes Taught</span>
-                <GraduationCap className="w-4 h-4 text-emerald-600 dark:text-emerald-400" />
-              </div>
-              <p className="text-2xl font-bold text-emerald-600 dark:text-emerald-400">
-                {metrics.myClassesCount}
-              </p>
-              <p className="text-[11px] text-muted-foreground">Active cohorts</p>
-            </div>
-
-            <div className="p-4 rounded-2xl bg-card border shadow-2xs space-y-1">
-              <div className="flex items-center justify-between text-muted-foreground">
-                <span className="text-xs font-semibold">Total Curriculum</span>
-                <BookOpen className="w-4 h-4 text-primary" />
-              </div>
-              <p className="text-2xl font-bold text-foreground">{metrics.totalSubjects}</p>
-              <p className="text-[11px] text-muted-foreground">Across all grades</p>
-            </div>
-
-            <div className="p-4 rounded-2xl bg-card border shadow-2xs space-y-1">
-              <div className="flex items-center justify-between text-muted-foreground">
-                <span className="text-xs font-semibold">Standardized Codes</span>
-                <Tag className="w-4 h-4 text-primary" />
-              </div>
-              <p className="text-2xl font-bold text-foreground">{metrics.codedSubjects}</p>
-              <p className="text-[11px] text-muted-foreground">Report card codes</p>
-            </div>
+            <StatCard
+              title="My Teaching Subjects"
+              value={metrics.mySubjectsCount}
+              icon={Award}
+              description="Assigned courses"
+              variant="default"
+              loading={isLoading}
+            />
+            <StatCard
+              title="Classes Taught"
+              value={metrics.myClassesCount}
+              icon={GraduationCap}
+              description="Active cohorts"
+              variant="emerald"
+              loading={isLoading}
+            />
+            <StatCard
+              title="Total Curriculum"
+              value={metrics.totalSubjects}
+              icon={BookOpen}
+              description="Across all grades"
+              variant="blue"
+              loading={isLoading}
+            />
+            <StatCard
+              title="Standardized Codes"
+              value={metrics.codedSubjects}
+              icon={Tag}
+              description="Report card codes"
+              variant="purple"
+              loading={isLoading}
+            />
           </>
         ) : (
           <>
-            <div className="p-4 rounded-2xl bg-card border shadow-2xs space-y-1">
-              <div className="flex items-center justify-between text-muted-foreground">
-                <span className="text-xs font-semibold">Total Subjects</span>
-                <BookOpen className="w-4 h-4 text-primary" />
-              </div>
-              <p className="text-2xl font-bold text-foreground">{metrics.totalSubjects}</p>
-              <p className="text-[11px] text-muted-foreground">Across curriculum</p>
-            </div>
-
-            <div className="p-4 rounded-2xl bg-card border shadow-2xs space-y-1">
-              <div className="flex items-center justify-between text-muted-foreground">
-                <span className="text-xs font-semibold">Active Classes</span>
-                <GraduationCap className="w-4 h-4 text-emerald-600 dark:text-emerald-400" />
-              </div>
-              <p className="text-2xl font-bold text-emerald-600 dark:text-emerald-400">
-                {metrics.classesCount}
-              </p>
-              <p className="text-[11px] text-muted-foreground">Grades with subjects</p>
-            </div>
-
-            <div className="p-4 rounded-2xl bg-card border shadow-2xs space-y-1">
-              <div className="flex items-center justify-between text-muted-foreground">
-                <span className="text-xs font-semibold">Standardized Codes</span>
-                <Tag className="w-4 h-4 text-primary" />
-              </div>
-              <p className="text-2xl font-bold text-foreground">{metrics.codedSubjects}</p>
-              <p className="text-[11px] text-muted-foreground">Report card codes</p>
-            </div>
-
-            <div className="p-4 rounded-2xl bg-card border shadow-2xs space-y-1">
-              <div className="flex items-center justify-between text-muted-foreground">
-                <span className="text-xs font-semibold">Avg Per Grade</span>
-                <Layers className="w-4 h-4 text-primary" />
-              </div>
-              <p className="text-2xl font-bold text-foreground">{metrics.avgPerClass}</p>
-              <p className="text-[11px] text-muted-foreground">Courses per class</p>
-            </div>
+            <StatCard
+              title="Total Subjects"
+              value={metrics.totalSubjects}
+              icon={BookOpen}
+              description="Across curriculum"
+              variant="default"
+              loading={isLoading}
+            />
+            <StatCard
+              title="Active Classes"
+              value={metrics.classesCount}
+              icon={GraduationCap}
+              description="Grades with subjects"
+              variant="emerald"
+              loading={isLoading}
+            />
+            <StatCard
+              title="Standardized Codes"
+              value={metrics.codedSubjects}
+              icon={Tag}
+              description="Report card codes"
+              variant="purple"
+              loading={isLoading}
+            />
+            <StatCard
+              title="Avg Per Grade"
+              value={metrics.avgPerClass}
+              icon={Layers}
+              description="Courses per class"
+              variant="blue"
+              loading={isLoading}
+            />
           </>
         )}
       </div>
 
       {/* View Switcher: My Teaching Subjects vs All Curriculum Subjects */}
-      <div className="flex flex-wrap items-center justify-between gap-3 p-1.5 rounded-xl bg-muted/40 border border-border/50">
-        <div className="flex items-center gap-1.5">
-          <Button
+      <div className="flex flex-wrap items-center justify-between gap-3 p-1 rounded-xl bg-muted/40 border border-border/60">
+        <div className="inline-flex items-center gap-1 p-0.5">
+          <button
             type="button"
-            variant={subjectViewTab === 'my' ? 'default' : 'ghost'}
-            size="sm"
             onClick={() => setSubjectViewTab('my')}
-            className={`h-8 text-xs font-semibold gap-2 ${
-              subjectViewTab === 'my' ? 'shadow-xs' : 'text-muted-foreground hover:text-foreground'
-            }`}
+            className={cn(
+              'flex items-center gap-2 px-3 py-1.5 text-xs rounded-lg transition-colors cursor-pointer select-none font-medium',
+              subjectViewTab === 'my'
+                ? 'bg-background text-foreground shadow-2xs font-semibold'
+                : 'text-muted-foreground hover:text-foreground'
+            )}
           >
             <Award className="w-3.5 h-3.5" />
             <span>My Teaching Subjects</span>
             <span
-              className={`px-1.5 py-0.2 rounded-full text-[10px] font-bold ${
+              className={cn(
+                'px-1.5 py-0.5 rounded-full text-[10px] font-bold',
                 subjectViewTab === 'my'
-                  ? 'bg-primary-foreground/20 text-primary-foreground'
+                  ? 'bg-primary/10 text-primary'
                   : 'bg-muted text-muted-foreground'
-              }`}
+              )}
             >
               {myTeachingSubjects.length}
             </span>
-          </Button>
+          </button>
 
-          <Button
+          <button
             type="button"
-            variant={subjectViewTab === 'all' ? 'default' : 'ghost'}
-            size="sm"
             onClick={() => setSubjectViewTab('all')}
-            className={`h-8 text-xs font-semibold gap-2 ${
-              subjectViewTab === 'all' ? 'shadow-xs' : 'text-muted-foreground hover:text-foreground'
-            }`}
+            className={cn(
+              'flex items-center gap-2 px-3 py-1.5 text-xs rounded-lg transition-colors cursor-pointer select-none font-medium',
+              subjectViewTab === 'all'
+                ? 'bg-background text-foreground shadow-2xs font-semibold'
+                : 'text-muted-foreground hover:text-foreground'
+            )}
           >
             <BookOpen className="w-3.5 h-3.5" />
             <span>All Curriculum Subjects</span>
             <span
-              className={`px-1.5 py-0.2 rounded-full text-[10px] font-bold ${
+              className={cn(
+                'px-1.5 py-0.5 rounded-full text-[10px] font-bold',
                 subjectViewTab === 'all'
-                  ? 'bg-primary-foreground/20 text-primary-foreground'
+                  ? 'bg-primary/10 text-primary'
                   : 'bg-muted text-muted-foreground'
-              }`}
+              )}
             >
               {allSubjects.length}
             </span>
-          </Button>
+          </button>
         </div>
 
         {isTeacherOnly && (
-          <div className="text-[11px] text-muted-foreground px-2 flex items-center gap-1.5">
+          <div className="text-[11px] text-muted-foreground px-3 py-1 flex items-center gap-1.5">
             <span className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse" />
             Teacher Teaching Mode Active
           </div>
@@ -440,34 +437,15 @@ export const SubjectsPage: React.FC = () => {
       </div>
 
       {/* Filter and Search Bar */}
-      <div className="p-4 rounded-xl border border-border/60 bg-card shadow-xs space-y-3">
-        <div className="flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-3">
-          {/* Search Box */}
-          <div className="relative flex-1 max-w-md">
-            <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
-            <Input
-              value={searchQuery}
-              onChange={(e) => setSearchQuery(e.target.value)}
-              placeholder="Search by subject name, code, or class..."
-              className="pl-9 pr-8 h-9 text-xs"
-            />
-            {searchQuery && (
-              <button
-                type="button"
-                onClick={() => setSearchQuery('')}
-                className="absolute right-2.5 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground"
-              >
-                <X className="w-3.5 h-3.5" />
-              </button>
-            )}
-          </div>
-
-          {/* Export & Actions & Record Count */}
-          <div className="flex items-center justify-between sm:justify-end gap-2 flex-wrap">
-            <span className="text-xs text-muted-foreground hidden lg:inline mr-1">
-              Showing <strong className="text-foreground">{filteredSubjects.length}</strong> of{' '}
-              {allSubjects.length}
-            </span>
+      <FilterToolbar
+        searchQuery={searchQuery}
+        onSearchChange={setSearchQuery}
+        searchPlaceholder="Search by subject name, code, or class..."
+        showingCount={filteredSubjects.length}
+        totalCount={allSubjects.length}
+        unitLabel={allSubjects.length === 1 ? 'subject' : 'subjects'}
+        actions={
+          <div className="flex items-center gap-2">
             <Button
               variant="outline"
               size="sm"
@@ -502,45 +480,42 @@ export const SubjectsPage: React.FC = () => {
               </>
             )}
           </div>
+        }
+      >
+        <div className="flex items-center gap-1.5 text-muted-foreground mr-1">
+          <Filter className="w-3.5 h-3.5" />
+          <span className="font-semibold text-xs">Filter:</span>
         </div>
 
-        {/* Dropdown Filters Row */}
-        <div className="flex flex-wrap items-center gap-2 pt-1 border-t border-border/50 text-xs">
-          <div className="flex items-center gap-1.5 text-muted-foreground mr-1">
-            <Filter className="w-3.5 h-3.5" />
-            <span className="font-semibold">Filter by:</span>
-          </div>
+        {/* Class Filter */}
+        <select
+          value={classFilter}
+          onChange={(e) => setClassFilter(e.target.value)}
+          className="h-9 rounded-lg border border-input bg-background px-2.5 text-xs text-foreground focus:outline-none focus:ring-1 focus:ring-primary shadow-2xs"
+        >
+          <option value="ALL">All Academic Classes</option>
+          {availableClasses.map((cls) => (
+            <option key={cls.id} value={cls.id}>
+              {cls.name}
+            </option>
+          ))}
+        </select>
 
-          {/* Class Filter */}
-          <select
-            value={classFilter}
-            onChange={(e) => setClassFilter(e.target.value)}
-            className="h-8 rounded-lg border border-input bg-background px-2.5 text-xs text-foreground focus:outline-none focus:ring-1 focus:ring-primary"
+        {/* Reset Filters */}
+        {(classFilter !== 'ALL' || searchQuery) && (
+          <Button
+            variant="ghost"
+            size="sm"
+            onClick={() => {
+              setClassFilter('ALL');
+              setSearchQuery('');
+            }}
+            className="h-9 text-xs text-muted-foreground hover:text-foreground"
           >
-            <option value="ALL">All Academic Classes</option>
-            {availableClasses.map((cls) => (
-              <option key={cls.id} value={cls.id}>
-                {cls.name}
-              </option>
-            ))}
-          </select>
-
-          {/* Reset Filters */}
-          {(classFilter !== 'ALL' || searchQuery) && (
-            <Button
-              variant="ghost"
-              size="sm"
-              onClick={() => {
-                setClassFilter('ALL');
-                setSearchQuery('');
-              }}
-              className="h-8 text-xs text-muted-foreground hover:text-foreground ml-auto"
-            >
-              Reset Filters
-            </Button>
-          )}
-        </div>
-      </div>
+            Reset Filters
+          </Button>
+        )}
+      </FilterToolbar>
 
       {/* Error Alert */}
       {isError && (

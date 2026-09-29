@@ -42,6 +42,8 @@ import {
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Badge } from '@/components/ui/badge';
+import { StatCard } from '@/components/ui/stat-card';
+import { FilterToolbar } from '@/components/common/FilterToolbar';
 import { Avatar, AvatarFallback } from '@/components/ui/avatar';
 import {
   DropdownMenu,
@@ -51,7 +53,7 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
-import { Link } from '@tanstack/react-router';
+import { Link, useNavigate } from '@tanstack/react-router';
 import { toast } from 'sonner';
 
 type EnrichedStudent = AcademicStudent & {
@@ -60,9 +62,11 @@ type EnrichedStudent = AcademicStudent & {
 };
 
 export const StudentsPage: React.FC = () => {
+  const navigate = useNavigate();
   const { activeTenantId, activeTenantName } = useAuth();
   const { can, isSuperAdmin } = usePermission();
   const canManage = can('MANAGE_SECTIONS_STUDENTS') || isSuperAdmin;
+
 
 
   // Search & Filter State
@@ -231,28 +235,28 @@ export const StudentsPage: React.FC = () => {
     switch (status) {
       case 'ACTIVE':
         return (
-          <Badge variant="outline" className="bg-emerald-500/10 text-emerald-700 dark:text-emerald-400 border-emerald-500/20 text-[10px] gap-1 px-2 py-0.5">
+          <Badge variant="success" className="text-[10px] gap-1 px-2 py-0.5">
             <CheckCircle2 className="w-3 h-3" />
             Active
           </Badge>
         );
       case 'TRANSFERRED':
         return (
-          <Badge variant="outline" className="bg-amber-500/10 text-amber-700 dark:text-amber-400 border-amber-500/20 text-[10px] gap-1 px-2 py-0.5">
+          <Badge variant="warning" className="text-[10px] gap-1 px-2 py-0.5">
             <ArrowRightLeft className="w-3 h-3" />
             Transferred
           </Badge>
         );
       case 'GRADUATED':
         return (
-          <Badge variant="outline" className="bg-purple-500/10 text-purple-700 dark:text-purple-400 border-purple-500/20 text-[10px] gap-1 px-2 py-0.5">
+          <Badge variant="purple" className="text-[10px] gap-1 px-2 py-0.5">
             <GraduationCap className="w-3 h-3" />
             Graduated
           </Badge>
         );
       case 'SUSPENDED':
         return (
-          <Badge variant="outline" className="bg-destructive/10 text-destructive border-destructive/20 text-[10px] gap-1 px-2 py-0.5">
+          <Badge variant="destructive" className="text-[10px] gap-1 px-2 py-0.5">
             <Ban className="w-3 h-3" />
             Suspended
           </Badge>
@@ -321,99 +325,58 @@ export const StudentsPage: React.FC = () => {
     <div className="space-y-6 pb-12">
       {/* KPI Stats Cards */}
       <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-3 sm:gap-4">
-        <div className="p-4 rounded-2xl bg-card border shadow-2xs space-y-1">
-          <div className="flex items-center justify-between text-muted-foreground">
-            <span className="text-xs font-semibold">Total Students</span>
-            <Users className="w-4 h-4 text-primary" />
-          </div>
-          <p className="text-2xl font-bold text-foreground">{metrics.total}</p>
-          <p className="text-[11px] text-muted-foreground">Across entire school</p>
-        </div>
-
-        <div className="p-4 rounded-2xl bg-card border shadow-2xs space-y-1">
-          <div className="flex items-center justify-between text-muted-foreground">
-            <span className="text-xs font-semibold">Active Enrollment</span>
-            <CheckCircle2 className="w-4 h-4 text-emerald-600 dark:text-emerald-400" />
-          </div>
-          <p className="text-2xl font-bold text-emerald-600 dark:text-emerald-400">
-            {metrics.active}
-          </p>
-          <p className="text-[11px] text-muted-foreground">Attending classes</p>
-        </div>
-
-        <div className="p-4 rounded-2xl bg-card border shadow-2xs space-y-1">
-          <div className="flex items-center justify-between text-muted-foreground">
-            <span className="text-xs font-semibold">Enrolled Classes</span>
-            <GraduationCap className="w-4 h-4 text-primary" />
-          </div>
-          <p className="text-2xl font-bold text-foreground">{metrics.classesCount}</p>
-          <p className="text-[11px] text-muted-foreground">Active grades</p>
-        </div>
-
-        <div className="p-4 rounded-2xl bg-card border shadow-2xs space-y-1">
-          <div className="flex items-center justify-between text-muted-foreground">
-            <span className="text-xs font-semibold">Active Sections</span>
-            <Layers className="w-4 h-4 text-primary" />
-          </div>
-          <p className="text-2xl font-bold text-foreground">{metrics.sectionsCount}</p>
-          <p className="text-[11px] text-muted-foreground">Section cohorts</p>
-        </div>
-
-        <Link
-          to="/academic/alumni"
-          className="p-4 rounded-2xl bg-card border hover:border-purple-500/40 hover:shadow-md transition-all space-y-1 group relative block"
-        >
-          <div className="flex items-center justify-between text-muted-foreground">
-            <span className="text-xs font-semibold group-hover:text-purple-600 dark:group-hover:text-purple-400 transition-colors">
-              Graduated / Alumni
-            </span>
-            <div className="w-6 h-6 rounded-lg bg-purple-500/10 text-purple-600 dark:text-purple-400 flex items-center justify-center group-hover:scale-110 transition-transform">
-              <GraduationCap className="w-3.5 h-3.5" />
-            </div>
-          </div>
-          <div className="flex items-baseline justify-between">
-            <p className="text-2xl font-bold text-purple-600 dark:text-purple-400">
-              {graduatedData?.total_graduates ?? 0}
-            </p>
-            <span className="text-[11px] font-medium text-purple-600 dark:text-purple-400 flex items-center opacity-0 group-hover:opacity-100 transition-opacity">
-              View alumni &rarr;
-            </span>
-          </div>
-          <p className="text-[11px] text-muted-foreground group-hover:text-muted-foreground/80">
-            Graduated alumni records
-          </p>
-        </Link>
+        <StatCard
+          title="Total Students"
+          value={metrics.total}
+          icon={Users}
+          description="Across entire school"
+          variant="default"
+          loading={isLoading}
+        />
+        <StatCard
+          title="Active Enrollment"
+          value={metrics.active}
+          icon={CheckCircle2}
+          description="Attending classes"
+          variant="emerald"
+          loading={isLoading}
+        />
+        <StatCard
+          title="Enrolled Classes"
+          value={metrics.classesCount}
+          icon={GraduationCap}
+          description="Active grades"
+          variant="default"
+          loading={isLoading}
+        />
+        <StatCard
+          title="Active Sections"
+          value={metrics.sectionsCount}
+          icon={Layers}
+          description="Section cohorts"
+          variant="blue"
+          loading={isLoading}
+        />
+        <StatCard
+          title="Graduated / Alumni"
+          value={graduatedData?.total_graduates ?? 0}
+          icon={GraduationCap}
+          description="Graduated alumni records"
+          variant="purple"
+          onClick={() => navigate({ to: '/academic/alumni' })}
+        />
       </div>
 
       {/* Filter and Search Bar */}
-      <div className="p-4 rounded-xl border border-border/60 bg-card shadow-xs space-y-3">
-        <div className="flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-3">
-          {/* Search Box */}
-          <div className="relative flex-1 max-w-md">
-            <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
-            <Input
-              value={searchQuery}
-              onChange={(e) => setSearchQuery(e.target.value)}
-              placeholder="Search by student name, class, or section..."
-              className="pl-9 pr-8 h-9 text-xs"
-            />
-            {searchQuery && (
-              <button
-                type="button"
-                onClick={() => setSearchQuery('')}
-                className="absolute right-2.5 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground"
-              >
-                <X className="w-3.5 h-3.5" />
-              </button>
-            )}
-          </div>
-
-          {/* Export Action & Record Counter */}
-          <div className="flex items-center justify-between sm:justify-end gap-2 flex-wrap">
-            <span className="text-xs text-muted-foreground hidden lg:inline mr-1">
-              Showing <strong className="text-foreground">{filteredStudents.length}</strong> of{' '}
-              {allStudents.length}
-            </span>
+      <FilterToolbar
+        searchQuery={searchQuery}
+        onSearchChange={setSearchQuery}
+        searchPlaceholder="Search by student name, class, or section..."
+        showingCount={filteredStudents.length}
+        totalCount={allStudents.length}
+        unitLabel="students"
+        actions={
+          <div className="flex items-center gap-2">
             <Button
               variant="outline"
               size="sm"
@@ -447,77 +410,74 @@ export const StudentsPage: React.FC = () => {
               </>
             )}
           </div>
+        }
+      >
+        <div className="flex items-center gap-1.5 text-muted-foreground mr-1">
+          <Filter className="w-3.5 h-3.5" />
+          <span className="font-semibold text-xs">Filter:</span>
         </div>
 
-        {/* Dropdown Filters Row */}
-        <div className="flex flex-wrap items-center gap-2 pt-1 border-t border-border/50 text-xs">
-          <div className="flex items-center gap-1.5 text-muted-foreground mr-1">
-            <Filter className="w-3.5 h-3.5" />
-            <span className="font-semibold">Filter by:</span>
-          </div>
+        {/* Class Filter */}
+        <select
+          value={classFilter}
+          onChange={(e) => {
+            setClassFilter(e.target.value);
+            setSectionFilter('ALL');
+          }}
+          className="h-9 rounded-lg border border-input bg-background px-2.5 text-xs text-foreground focus:outline-none focus:ring-1 focus:ring-primary shadow-2xs"
+        >
+          <option value="ALL">All Classes</option>
+          {availableClasses.map((cls) => (
+            <option key={cls.id} value={cls.id}>
+              {cls.name}
+            </option>
+          ))}
+        </select>
 
-          {/* Class Filter */}
-          <select
-            value={classFilter}
-            onChange={(e) => {
-              setClassFilter(e.target.value);
+        {/* Section Filter */}
+        <select
+          value={sectionFilter}
+          onChange={(e) => setSectionFilter(e.target.value)}
+          className="h-9 rounded-lg border border-input bg-background px-2.5 text-xs text-foreground focus:outline-none focus:ring-1 focus:ring-primary shadow-2xs"
+        >
+          <option value="ALL">All Sections</option>
+          {availableSections.map((secName) => (
+            <option key={secName} value={secName}>
+              Section {secName}
+            </option>
+          ))}
+        </select>
+
+        {/* Status Filter */}
+        <select
+          value={statusFilter}
+          onChange={(e) => setStatusFilter(e.target.value)}
+          className="h-9 rounded-lg border border-input bg-background px-2.5 text-xs text-foreground focus:outline-none focus:ring-1 focus:ring-primary shadow-2xs"
+        >
+          <option value="ALL">All Statuses</option>
+          <option value="ACTIVE">Active</option>
+          <option value="TRANSFERRED">Transferred</option>
+          <option value="GRADUATED">Graduated</option>
+          <option value="SUSPENDED">Suspended</option>
+        </select>
+
+        {/* Reset Filters button */}
+        {(classFilter !== 'ALL' || sectionFilter !== 'ALL' || statusFilter !== 'ALL' || searchQuery) && (
+          <Button
+            variant="ghost"
+            size="sm"
+            onClick={() => {
+              setClassFilter('ALL');
               setSectionFilter('ALL');
+              setStatusFilter('ALL');
+              setSearchQuery('');
             }}
-            className="h-8 rounded-lg border border-input bg-background px-2.5 text-xs text-foreground focus:outline-none focus:ring-1 focus:ring-primary"
+            className="h-9 text-xs text-muted-foreground hover:text-foreground"
           >
-            <option value="ALL">All Classes</option>
-            {availableClasses.map((cls) => (
-              <option key={cls.id} value={cls.id}>
-                {cls.name}
-              </option>
-            ))}
-          </select>
-
-          {/* Section Filter */}
-          <select
-            value={sectionFilter}
-            onChange={(e) => setSectionFilter(e.target.value)}
-            className="h-8 rounded-lg border border-input bg-background px-2.5 text-xs text-foreground focus:outline-none focus:ring-1 focus:ring-primary"
-          >
-            <option value="ALL">All Sections</option>
-            {availableSections.map((secName) => (
-              <option key={secName} value={secName}>
-                Section {secName}
-              </option>
-            ))}
-          </select>
-
-          {/* Status Filter */}
-          <select
-            value={statusFilter}
-            onChange={(e) => setStatusFilter(e.target.value)}
-            className="h-8 rounded-lg border border-input bg-background px-2.5 text-xs text-foreground focus:outline-none focus:ring-1 focus:ring-primary"
-          >
-            <option value="ALL">All Statuses</option>
-            <option value="ACTIVE">Active</option>
-            <option value="TRANSFERRED">Transferred</option>
-            <option value="GRADUATED">Graduated</option>
-            <option value="SUSPENDED">Suspended</option>
-          </select>
-
-          {/* Reset Filters button */}
-          {(classFilter !== 'ALL' || sectionFilter !== 'ALL' || statusFilter !== 'ALL' || searchQuery) && (
-            <Button
-              variant="ghost"
-              size="sm"
-              onClick={() => {
-                setClassFilter('ALL');
-                setSectionFilter('ALL');
-                setStatusFilter('ALL');
-                setSearchQuery('');
-              }}
-              className="h-8 text-xs text-muted-foreground hover:text-foreground ml-auto"
-            >
-              Reset Filters
-            </Button>
-          )}
-        </div>
-      </div>
+            Reset Filters
+          </Button>
+        )}
+      </FilterToolbar>
 
       {/* Error Alert */}
       {isError && (
