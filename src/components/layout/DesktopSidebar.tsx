@@ -149,7 +149,7 @@ export const DesktopSidebar: React.FC<DesktopSidebarProps> = ({
                           aria-label={item.label}
                           className={`relative flex items-center rounded-xl text-sm transition-all duration-150 focus-visible:ring-2 focus-visible:ring-primary/40 focus-visible:outline-none justify-center px-0 h-9 w-full ${
                             isActive
-                              ? 'bg-primary/10 text-primary dark:bg-primary/15 dark:text-primary-foreground font-semibold shadow-2xs before:absolute before:left-0 before:top-1.5 before:bottom-1.5 before:w-1 before:rounded-r-full before:bg-primary'
+                              ? 'bg-primary/10 text-primary dark:bg-primary/20 dark:text-cyan-300 font-semibold shadow-2xs before:absolute before:left-0 before:top-1.5 before:bottom-1.5 before:w-1 before:rounded-r-full before:bg-primary'
                               : 'text-muted-foreground hover:bg-accent/60 hover:text-foreground font-medium'
                           }`}
                         >
@@ -170,7 +170,7 @@ export const DesktopSidebar: React.FC<DesktopSidebarProps> = ({
                     aria-current={isActive ? 'page' : undefined}
                     className={`relative flex items-center rounded-xl text-sm transition-all duration-150 focus-visible:ring-2 focus-visible:ring-primary/40 focus-visible:outline-none gap-3 px-3 h-9 ${
                       isActive
-                        ? 'bg-primary/10 text-primary dark:bg-primary/15 dark:text-primary-foreground font-semibold shadow-2xs before:absolute before:left-0 before:top-1.5 before:bottom-1.5 before:w-1 before:rounded-r-full before:bg-primary'
+                        ? 'bg-primary/10 text-primary dark:bg-primary/20 dark:text-cyan-300 font-semibold shadow-2xs before:absolute before:left-0 before:top-1.5 before:bottom-1.5 before:w-1 before:rounded-r-full before:bg-primary'
                         : 'text-muted-foreground hover:bg-accent/60 hover:text-foreground font-medium'
                     }`}
                   >
