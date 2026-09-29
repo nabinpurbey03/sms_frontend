@@ -720,12 +720,21 @@ export const TenantRolloverDialog: React.FC<TenantRolloverDialogProps> = ({
                                         <SelectValue />
                                       </SelectTrigger>
                                       <SelectContent align="end">
-                                        <SelectItem value="PROMOTE">
-                                          <div className="flex items-center gap-1.5">
-                                            <ArrowRight className="w-3.5 h-3.5 text-emerald-600" />
-                                            <span>Promote</span>
-                                          </div>
-                                        </SelectItem>
+                                        {student.target_class_id ? (
+                                          <SelectItem value="PROMOTE">
+                                            <div className="flex items-center gap-1.5">
+                                              <ArrowRight className="w-3.5 h-3.5 text-emerald-600" />
+                                              <span>Promote</span>
+                                            </div>
+                                          </SelectItem>
+                                        ) : (
+                                          <SelectItem value="PROMOTE" disabled>
+                                            <div className="flex items-center gap-1.5 opacity-50">
+                                              <ArrowRight className="w-3.5 h-3.5 text-muted-foreground" />
+                                              <span>Promote (Final Grade)</span>
+                                            </div>
+                                          </SelectItem>
+                                        )}
                                         <SelectItem value="RETAIN">
                                           <div className="flex items-center gap-1.5">
                                             <RotateCcw className="w-3.5 h-3.5 text-amber-600" />
