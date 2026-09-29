@@ -22,6 +22,10 @@ import { Link } from '@tanstack/react-router';
 import { toast } from 'sonner';
 import type { TenantMember, MemberRole, TenantMemberCreateDTO } from '../types';
 
+/**
+ * School Members Governance & Directory Portal
+ * Harmonized role metrics, standardized filter toolbars, and ReBAC role assignment.
+ */
 export const MembersPage: React.FC = () => {
   const { activeTenantId, activeTenantName, activeRole } = useAuth();
   const { isSuperAdmin } = usePermission();

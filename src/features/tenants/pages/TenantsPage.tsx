@@ -13,6 +13,7 @@ import { useAuth } from '@/auth/useAuth';
 import { usePermission } from '@/auth/usePermission';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
+import { cn } from '@/lib/utils';
 import {
   Dialog,
   DialogContent,
@@ -207,18 +208,19 @@ export const TenantsPage: React.FC = () => {
 
         <div className="flex items-center gap-2 flex-wrap sm:flex-nowrap">
           {/* Status Filter */}
-          <div className="flex items-center rounded-xl border p-1 bg-muted/30">
+          <div className="flex items-center rounded-lg border border-border/70 p-0.5 bg-muted/40">
             <button
               type="button"
               onClick={() => {
                 setStatusFilter('all');
                 setPage(1);
               }}
-              className={`px-3 py-1.5 text-xs font-medium rounded-lg transition-colors ${
+              className={cn(
+                'px-2.5 py-1 text-xs font-medium rounded-md transition-colors cursor-pointer select-none',
                 statusFilter === 'all'
-                  ? 'bg-card text-foreground shadow-xs'
+                  ? 'bg-background text-foreground shadow-2xs font-semibold'
                   : 'text-muted-foreground hover:text-foreground'
-              }`}
+              )}
             >
               All
             </button>
@@ -228,11 +230,12 @@ export const TenantsPage: React.FC = () => {
                 setStatusFilter('active');
                 setPage(1);
               }}
-              className={`px-3 py-1.5 text-xs font-medium rounded-lg transition-colors ${
+              className={cn(
+                'px-2.5 py-1 text-xs font-medium rounded-md transition-colors cursor-pointer select-none',
                 statusFilter === 'active'
-                  ? 'bg-emerald-500/10 text-emerald-600 dark:text-emerald-400'
+                  ? 'bg-background text-foreground shadow-2xs font-semibold'
                   : 'text-muted-foreground hover:text-foreground'
-              }`}
+              )}
             >
               Active
             </button>
@@ -242,26 +245,28 @@ export const TenantsPage: React.FC = () => {
                 setStatusFilter('inactive');
                 setPage(1);
               }}
-              className={`px-3 py-1.5 text-xs font-medium rounded-lg transition-colors ${
+              className={cn(
+                'px-2.5 py-1 text-xs font-medium rounded-md transition-colors cursor-pointer select-none',
                 statusFilter === 'inactive'
-                  ? 'bg-amber-500/10 text-amber-600 dark:text-amber-400'
+                  ? 'bg-background text-foreground shadow-2xs font-semibold'
                   : 'text-muted-foreground hover:text-foreground'
-              }`}
+              )}
             >
               Inactive
             </button>
           </div>
 
           {/* View Toggle (Grid / Table) */}
-          <div className="flex items-center rounded-xl border p-1 bg-muted/30">
+          <div className="flex items-center rounded-lg border border-border/70 p-0.5 bg-muted/40">
             <button
               type="button"
               onClick={() => setViewMode('table')}
-              className={`p-1.5 rounded-lg transition-colors ${
+              className={cn(
+                'p-1.5 rounded-md transition-colors cursor-pointer select-none',
                 viewMode === 'table'
-                  ? 'bg-card text-foreground shadow-xs'
+                  ? 'bg-background text-foreground shadow-2xs'
                   : 'text-muted-foreground hover:text-foreground'
-              }`}
+              )}
               title="Table View"
               aria-label="Table View"
             >
@@ -270,11 +275,12 @@ export const TenantsPage: React.FC = () => {
             <button
               type="button"
               onClick={() => setViewMode('grid')}
-              className={`p-1.5 rounded-lg transition-colors ${
+              className={cn(
+                'p-1.5 rounded-md transition-colors cursor-pointer select-none',
                 viewMode === 'grid'
-                  ? 'bg-card text-foreground shadow-xs'
+                  ? 'bg-background text-foreground shadow-2xs'
                   : 'text-muted-foreground hover:text-foreground'
-              }`}
+              )}
               title="Grid Cards View"
               aria-label="Grid Cards View"
             >

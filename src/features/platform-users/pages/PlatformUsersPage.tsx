@@ -30,6 +30,8 @@ import {
   DropdownMenuSeparator,
 } from '@/components/ui/dropdown-menu';
 import { UsersRound, Search, MoreVertical, Loader2, Trash, UserMinus, CheckCircle2, AlertTriangle, ShieldCheck, UserCog, Briefcase, GraduationCap, Users, Eye, X } from 'lucide-react';
+import { StatCard } from '@/components/ui/stat-card';
+import { cn } from '@/lib/utils';
 import { usePlatformUsers, useSoftDeleteUser, useHardDeleteUser, PlatformUser } from '../api';
 import { useStartViewSession } from '../hooks';
 import { useDebounce } from 'use-debounce';
@@ -38,6 +40,41 @@ import { toast } from 'sonner';
 import { UserMembershipsDrawer } from '../components/UserMembershipsDrawer';
 import { useViewAsStore } from '@/stores/viewAsStore';
 import { ConfirmDialog } from '@/components/common/ConfirmDialog';
+
+const getRoleBadgeVariant = (role: string): 'role-super-admin' | 'role-admin' | 'role-office-admin' | 'role-teacher' | 'role-parent' | 'secondary' => {
+  switch (role.toUpperCase()) {
+    case 'SUPER_ADMIN':
+      return 'role-super-admin';
+    case 'ADMIN':
+    case 'PRINCIPAL':
+      return 'role-admin';
+    case 'OFFICE_ADMIN':
+      return 'role-office-admin';
+    case 'TEACHER':
+      return 'role-teacher';
+    case 'PARENT':
+      return 'role-parent';
+    default:
+      return 'secondary';
+  }
+};
+
+const formatRole = (role: string): string => {
+  switch (role.toUpperCase()) {
+    case 'SUPER_ADMIN':
+      return 'Super Admin';
+    case 'ADMIN':
+      return 'Principal';
+    case 'OFFICE_ADMIN':
+      return 'Office Admin';
+    case 'TEACHER':
+      return 'Teacher';
+    case 'PARENT':
+      return 'Parent';
+    default:
+      return role.charAt(0).toUpperCase() + role.slice(1).toLowerCase();
+  }
+};
 
 export const PlatformUsersPage: React.FC = () => {
   const { user } = useAuth();
@@ -132,127 +169,71 @@ export const PlatformUsersPage: React.FC = () => {
     <div className="p-4 sm:p-6 lg:p-8 max-w-7xl mx-auto min-h-[calc(100vh-64px)]">
       <div className="space-y-6 pb-12">
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4 mb-6">
-          <Card className="border-border/60 hover:shadow-md transition-shadow rounded-2xl bg-card">
-            <div className="p-4 sm:p-5 flex flex-row items-center justify-between pb-2">
-              <h3 className="text-xs font-bold text-muted-foreground uppercase tracking-wider font-mono">Total Users</h3>
-              <div className="p-2.5 bg-primary/10 text-primary rounded-xl">
-                <UsersRound className="h-5 w-5" />
-              </div>
-            </div>
-            <div className="px-4 sm:px-5 pb-5">
-              <div className="text-2xl sm:text-3xl font-bold tracking-tight text-foreground font-sans">
-                {isDashboardLoading ? '...' : dashboardMetrics?.total_platform_users ?? 0}
-              </div>
-            </div>
-          </Card>
-          
-          <Card className="border-border/60 hover:shadow-md transition-shadow rounded-2xl bg-card">
-            <div className="p-4 sm:p-5 flex flex-row items-center justify-between pb-2">
-              <h3 className="text-xs font-bold text-muted-foreground uppercase tracking-wider font-mono">Active Users</h3>
-              <div className="p-2.5 bg-green-500/10 text-green-600 rounded-xl">
-                <CheckCircle2 className="h-5 w-5" />
-              </div>
-            </div>
-            <div className="px-4 sm:px-5 pb-5">
-              <div className="text-2xl sm:text-3xl font-bold tracking-tight text-foreground font-sans">
-                {isDashboardLoading ? '...' : dashboardMetrics?.active_users ?? 0}
-              </div>
-            </div>
-          </Card>
-
-          <Card className="border-border/60 hover:shadow-md transition-shadow rounded-2xl bg-card">
-            <div className="p-4 sm:p-5 flex flex-row items-center justify-between pb-2">
-              <h3 className="text-xs font-bold text-muted-foreground uppercase tracking-wider font-mono">Super Admins</h3>
-              <div className="p-2.5 bg-purple-500/10 text-purple-600 rounded-xl">
-                <ShieldCheck className="h-5 w-5" />
-              </div>
-            </div>
-            <div className="px-4 sm:px-5 pb-5">
-              <div className="text-2xl sm:text-3xl font-bold tracking-tight text-foreground font-sans">
-                {isDashboardLoading ? '...' : dashboardMetrics?.total_super_admins ?? 0}
-              </div>
-            </div>
-          </Card>
-
-          <Card className="border-border/60 hover:shadow-md transition-shadow rounded-2xl bg-card">
-            <div className="p-4 sm:p-5 flex flex-row items-center justify-between pb-2">
-              <h3 className="text-xs font-bold text-muted-foreground uppercase tracking-wider font-mono">Inactive Users</h3>
-              <div className="p-2.5 bg-red-500/10 text-red-600 rounded-xl">
-                <AlertTriangle className="h-5 w-5" />
-              </div>
-            </div>
-            <div className="px-4 sm:px-5 pb-5">
-              <div className="text-2xl sm:text-3xl font-bold tracking-tight text-foreground font-sans">
-                {isDashboardLoading ? '...' : dashboardMetrics?.inactive_users ?? 0}
-              </div>
-            </div>
-          </Card>
-
-          {/* New Role Cards Row */}
-          <Card className="border-border/60 hover:shadow-md transition-shadow rounded-2xl bg-card">
-            <div className="p-4 sm:p-5 flex flex-row items-center justify-between pb-2">
-              <h3 className="text-xs font-bold text-muted-foreground uppercase tracking-wider font-mono">School Admins</h3>
-              <div className="p-2.5 bg-blue-500/10 text-blue-600 rounded-xl">
-                <UserCog className="h-5 w-5" />
-              </div>
-            </div>
-            <div className="px-4 sm:px-5 pb-5">
-              <div className="text-2xl sm:text-3xl font-bold tracking-tight text-foreground font-sans">
-                {isDashboardLoading ? '...' : dashboardMetrics?.total_admins ?? 0}
-              </div>
-            </div>
-          </Card>
-
-          <Card className="border-border/60 hover:shadow-md transition-shadow rounded-2xl bg-card">
-            <div className="p-4 sm:p-5 flex flex-row items-center justify-between pb-2">
-              <h3 className="text-xs font-bold text-muted-foreground uppercase tracking-wider font-mono">Office Admins</h3>
-              <div className="p-2.5 bg-cyan-500/10 text-cyan-600 rounded-xl">
-                <Briefcase className="h-5 w-5" />
-              </div>
-            </div>
-            <div className="px-4 sm:px-5 pb-5">
-              <div className="text-2xl sm:text-3xl font-bold tracking-tight text-foreground font-sans">
-                {isDashboardLoading ? '...' : dashboardMetrics?.total_office_admins ?? 0}
-              </div>
-            </div>
-          </Card>
-
-          <Card className="border-border/60 hover:shadow-md transition-shadow rounded-2xl bg-card">
-            <div className="p-4 sm:p-5 flex flex-row items-center justify-between pb-2">
-              <h3 className="text-xs font-bold text-muted-foreground uppercase tracking-wider font-mono">Teachers</h3>
-              <div className="p-2.5 bg-orange-500/10 text-orange-600 rounded-xl">
-                <GraduationCap className="h-5 w-5" />
-              </div>
-            </div>
-            <div className="px-4 sm:px-5 pb-5">
-              <div className="text-2xl sm:text-3xl font-bold tracking-tight text-foreground font-sans">
-                {isDashboardLoading ? '...' : dashboardMetrics?.total_teachers ?? 0}
-              </div>
-            </div>
-          </Card>
-
-          <Card className="border-border/60 hover:shadow-md transition-shadow rounded-2xl bg-card">
-            <div className="p-4 sm:p-5 flex flex-row items-center justify-between pb-2">
-              <h3 className="text-xs font-bold text-muted-foreground uppercase tracking-wider font-mono">Parents</h3>
-              <div className="p-2.5 bg-pink-500/10 text-pink-600 rounded-xl">
-                <Users className="h-5 w-5" />
-              </div>
-            </div>
-            <div className="px-4 sm:px-5 pb-5">
-              <div className="text-2xl sm:text-3xl font-bold tracking-tight text-foreground font-sans">
-                {isDashboardLoading ? '...' : dashboardMetrics?.total_parents ?? 0}
-              </div>
-            </div>
-          </Card>
+          <StatCard
+            title="Total Users"
+            value={dashboardMetrics?.total_platform_users ?? 0}
+            loading={isDashboardLoading}
+            icon={UsersRound}
+            variant="default"
+          />
+          <StatCard
+            title="Active Users"
+            value={dashboardMetrics?.active_users ?? 0}
+            loading={isDashboardLoading}
+            icon={CheckCircle2}
+            variant="emerald"
+          />
+          <StatCard
+            title="Super Admins"
+            value={dashboardMetrics?.total_super_admins ?? 0}
+            loading={isDashboardLoading}
+            icon={ShieldCheck}
+            variant="purple"
+          />
+          <StatCard
+            title="Inactive Users"
+            value={dashboardMetrics?.inactive_users ?? 0}
+            loading={isDashboardLoading}
+            icon={AlertTriangle}
+            variant="amber"
+          />
+          <StatCard
+            title="School Admins"
+            value={dashboardMetrics?.total_admins ?? 0}
+            loading={isDashboardLoading}
+            icon={UserCog}
+            variant="default"
+          />
+          <StatCard
+            title="Office Admins"
+            value={dashboardMetrics?.total_office_admins ?? 0}
+            loading={isDashboardLoading}
+            icon={Briefcase}
+            variant="blue"
+          />
+          <StatCard
+            title="Teachers"
+            value={dashboardMetrics?.total_teachers ?? 0}
+            loading={isDashboardLoading}
+            icon={GraduationCap}
+            variant="emerald"
+          />
+          <StatCard
+            title="Parents"
+            value={dashboardMetrics?.total_parents ?? 0}
+            loading={isDashboardLoading}
+            icon={Users}
+            variant="amber"
+          />
         </div>
 
         <Card className="overflow-hidden flex flex-col h-[calc(100vh-200px)]">
-        <div className="p-4 border-b flex flex-col sm:flex-row sm:items-center justify-between gap-4 bg-muted/20 shrink-0">
+        <div className="p-3.5 sm:p-4 border-b flex flex-col sm:flex-row sm:items-center justify-between gap-3 bg-muted/20 shrink-0">
           <div className="relative max-w-sm w-full">
-            <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
+            <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground pointer-events-none" />
             <Input
               placeholder="Search by name, email, or phone..."
-              className="pl-9 pr-8 h-9"
+              className="pl-9 pr-8 h-9 text-xs rounded-lg"
               value={searchTerm}
               onChange={(e) => {
                 setSearchTerm(e.target.value);
@@ -266,7 +247,7 @@ export const PlatformUsersPage: React.FC = () => {
                   setSearchTerm('');
                   setPage(1);
                 }}
-                className="absolute right-2.5 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground"
+                className="absolute right-2.5 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground cursor-pointer p-0.5"
                 aria-label="Clear search"
               >
                 <X className="w-3.5 h-3.5" />
@@ -274,62 +255,80 @@ export const PlatformUsersPage: React.FC = () => {
             )}
           </div>
           
-          <div className="flex items-center gap-4 text-sm">
-            <div className="flex items-center gap-1.5 p-1 rounded-lg border bg-background">
+          <div className="flex items-center gap-3 text-sm flex-wrap">
+            <div className="flex items-center rounded-lg border border-border/70 p-0.5 bg-muted/40">
               <button
                 type="button"
                 onClick={() => { setStatusFilter('all'); setPage(1); }}
-                className={`px-3 py-1 text-xs font-medium rounded-md transition-colors ${
-                  statusFilter === 'all' ? 'bg-muted text-foreground' : 'text-muted-foreground hover:text-foreground'
-                }`}
+                className={cn(
+                  'px-2.5 py-1 text-xs font-medium rounded-md transition-colors cursor-pointer select-none',
+                  statusFilter === 'all'
+                    ? 'bg-background text-foreground shadow-2xs font-semibold'
+                    : 'text-muted-foreground hover:text-foreground'
+                )}
               >
                 All
               </button>
               <button
                 type="button"
                 onClick={() => { setStatusFilter('active'); setPage(1); }}
-                className={`px-3 py-1 text-xs font-medium rounded-md transition-colors ${
-                  statusFilter === 'active' ? 'bg-green-500/10 text-green-600 dark:text-green-400' : 'text-muted-foreground hover:text-foreground'
-                }`}
+                className={cn(
+                  'px-2.5 py-1 text-xs font-medium rounded-md transition-colors cursor-pointer select-none',
+                  statusFilter === 'active'
+                    ? 'bg-background text-foreground shadow-2xs font-semibold'
+                    : 'text-muted-foreground hover:text-foreground'
+                )}
               >
                 Active
               </button>
               <button
                 type="button"
                 onClick={() => { setStatusFilter('inactive'); setPage(1); }}
-                className={`px-3 py-1 text-xs font-medium rounded-md transition-colors ${
-                  statusFilter === 'inactive' ? 'bg-red-500/10 text-red-600 dark:text-red-400' : 'text-muted-foreground hover:text-foreground'
-                }`}
+                className={cn(
+                  'px-2.5 py-1 text-xs font-medium rounded-md transition-colors cursor-pointer select-none',
+                  statusFilter === 'inactive'
+                    ? 'bg-background text-foreground shadow-2xs font-semibold'
+                    : 'text-muted-foreground hover:text-foreground'
+                )}
               >
                 Inactive
               </button>
             </div>
 
-            <div className="flex items-center gap-1.5 p-1 rounded-lg border bg-background hidden sm:flex">
+            <div className="flex items-center rounded-lg border border-border/70 p-0.5 bg-muted/40 hidden sm:flex">
               <button
                 type="button"
                 onClick={() => { setRoleFilter('all'); setPage(1); }}
-                className={`px-3 py-1 text-xs font-medium rounded-md transition-colors ${
-                  roleFilter === 'all' ? 'bg-muted text-foreground' : 'text-muted-foreground hover:text-foreground'
-                }`}
+                className={cn(
+                  'px-2.5 py-1 text-xs font-medium rounded-md transition-colors cursor-pointer select-none',
+                  roleFilter === 'all'
+                    ? 'bg-background text-foreground shadow-2xs font-semibold'
+                    : 'text-muted-foreground hover:text-foreground'
+                )}
               >
                 Any Role
               </button>
               <button
                 type="button"
                 onClick={() => { setRoleFilter('super_admin'); setPage(1); }}
-                className={`px-3 py-1 text-xs font-medium rounded-md transition-colors ${
-                  roleFilter === 'super_admin' ? 'bg-primary/10 text-primary' : 'text-muted-foreground hover:text-foreground'
-                }`}
+                className={cn(
+                  'px-2.5 py-1 text-xs font-medium rounded-md transition-colors cursor-pointer select-none',
+                  roleFilter === 'super_admin'
+                    ? 'bg-background text-foreground shadow-2xs font-semibold'
+                    : 'text-muted-foreground hover:text-foreground'
+                )}
               >
                 Platform Admins
               </button>
               <button
                 type="button"
                 onClick={() => { setRoleFilter('user'); setPage(1); }}
-                className={`px-3 py-1 text-xs font-medium rounded-md transition-colors ${
-                  roleFilter === 'user' ? 'bg-muted text-foreground' : 'text-muted-foreground hover:text-foreground'
-                }`}
+                className={cn(
+                  'px-2.5 py-1 text-xs font-medium rounded-md transition-colors cursor-pointer select-none',
+                  roleFilter === 'user'
+                    ? 'bg-background text-foreground shadow-2xs font-semibold'
+                    : 'text-muted-foreground hover:text-foreground'
+                )}
               >
                 Users
               </button>
@@ -375,15 +374,25 @@ export const PlatformUsersPage: React.FC = () => {
                       <div className="text-sm text-muted-foreground">{u.phone}</div>
                     </TableCell>
                     <TableCell>
-                      {u.is_super_admin && (
-                        <Badge variant="default" className="bg-primary/20 text-primary hover:bg-primary/30 border-0">
-                          SUPER ADMIN
-                        </Badge>
-                      )}
+                      <div className="flex flex-wrap gap-1.5 items-center">
+                        {u.is_super_admin && (
+                          <Badge variant="role-super-admin">
+                            Super Admin
+                          </Badge>
+                        )}
+                        {((u as any).roles as string[] | undefined)?.map((role) => (
+                          <Badge key={role} variant={getRoleBadgeVariant(role)}>
+                            {formatRole(role)}
+                          </Badge>
+                        ))}
+                        {!(u.is_super_admin || (u as any).roles?.length) && (
+                          <Badge variant="secondary">User</Badge>
+                        )}
+                      </div>
                     </TableCell>
                     <TableCell>
                       {u.is_active ? (
-                        <Badge variant="outline" className="border-green-500/50 text-green-600 bg-green-50/50 dark:bg-green-500/10">
+                        <Badge variant="success">
                           Active
                         </Badge>
                       ) : (
@@ -480,7 +489,7 @@ export const PlatformUsersPage: React.FC = () => {
         <DialogContent className="sm:max-w-[440px]">
           <DialogHeader>
             <DialogTitle className="flex items-center gap-2">
-              <Eye className="h-5 w-5 text-blue-600" />
+              <Eye className="h-5 w-5 text-primary" />
               View As User Session
             </DialogTitle>
             <DialogDescription className="space-y-2 pt-2">
@@ -509,9 +518,9 @@ export const PlatformUsersPage: React.FC = () => {
               Cancel
             </Button>
             <Button
+              variant="default"
               onClick={handleConfirmViewAs}
               disabled={startViewSessionMutation.isPending}
-              className="bg-blue-600 hover:bg-blue-700 text-white"
             >
               {startViewSessionMutation.isPending && (
                 <Loader2 className="mr-2 h-4 w-4 animate-spin" />

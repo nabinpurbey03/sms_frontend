@@ -2,6 +2,7 @@ import React from 'react';
 import { Search, X, Download, UserPlus, Filter } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
+import { cn } from '@/lib/utils';
 import type { MemberRole } from '../types';
 
 interface MemberFiltersToolbarProps {
@@ -38,23 +39,24 @@ export const MemberFiltersToolbar: React.FC<MemberFiltersToolbarProps> = ({
   totalFilteredCount,
 }) => {
   return (
-    <div className="flex flex-col gap-3 sm:gap-4 bg-card p-4 rounded-xl border border-border/60 shadow-xs">
+    <div className="p-3.5 sm:p-4 rounded-xl border border-border/60 bg-card shadow-xs space-y-3">
       {/* Top row: Search input + Actions */}
       <div className="flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-3">
         {/* Search bar */}
         <div className="relative flex-1 max-w-md">
-          <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
+          <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground pointer-events-none" />
           <Input
             value={searchQuery}
             onChange={(e) => onSearchChange(e.target.value)}
             placeholder="Search by name, email, or role..."
-            className="pl-9 pr-8 h-9 text-sm"
+            className="pl-9 pr-8 h-9 text-xs rounded-lg"
           />
           {searchQuery && (
             <button
               type="button"
               onClick={() => onSearchChange('')}
-              className="absolute right-2.5 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground p-0.5"
+              className="absolute right-2.5 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground cursor-pointer p-0.5"
+              aria-label="Clear search"
             >
               <X className="w-3.5 h-3.5" />
             </button>
@@ -62,39 +64,42 @@ export const MemberFiltersToolbar: React.FC<MemberFiltersToolbarProps> = ({
         </div>
 
         {/* Right side actions */}
-        <div className="flex items-center gap-2">
+        <div className="flex items-center gap-2 flex-wrap sm:flex-nowrap">
           {/* Status selector */}
-          <div className="flex items-center border border-border rounded-lg overflow-hidden h-9 bg-muted/40 p-0.5">
+          <div className="flex items-center rounded-lg border border-border/70 p-0.5 bg-muted/40">
             <button
               type="button"
               onClick={() => onStatusChange('ALL')}
-              className={`px-2.5 py-1 text-xs font-medium rounded-md transition-colors ${
+              className={cn(
+                'px-2.5 py-1 text-xs font-medium rounded-md transition-colors cursor-pointer select-none',
                 statusFilter === 'ALL'
-                  ? 'bg-background text-foreground shadow-xs'
+                  ? 'bg-background text-foreground shadow-2xs font-semibold'
                   : 'text-muted-foreground hover:text-foreground'
-              }`}
+              )}
             >
               All
             </button>
             <button
               type="button"
               onClick={() => onStatusChange('ACTIVE')}
-              className={`px-2.5 py-1 text-xs font-medium rounded-md transition-colors ${
+              className={cn(
+                'px-2.5 py-1 text-xs font-medium rounded-md transition-colors cursor-pointer select-none',
                 statusFilter === 'ACTIVE'
-                  ? 'bg-background text-emerald-600 dark:text-emerald-400 shadow-xs'
+                  ? 'bg-background text-foreground shadow-2xs font-semibold'
                   : 'text-muted-foreground hover:text-foreground'
-              }`}
+              )}
             >
               Active
             </button>
             <button
               type="button"
               onClick={() => onStatusChange('INACTIVE')}
-              className={`px-2.5 py-1 text-xs font-medium rounded-md transition-colors ${
+              className={cn(
+                'px-2.5 py-1 text-xs font-medium rounded-md transition-colors cursor-pointer select-none',
                 statusFilter === 'INACTIVE'
-                  ? 'bg-background text-muted-foreground shadow-xs'
+                  ? 'bg-background text-foreground shadow-2xs font-semibold'
                   : 'text-muted-foreground hover:text-foreground'
-              }`}
+              )}
             >
               Inactive
             </button>
@@ -105,7 +110,7 @@ export const MemberFiltersToolbar: React.FC<MemberFiltersToolbarProps> = ({
             variant="outline"
             size="sm"
             onClick={onExportCsv}
-            className="h-9 gap-1.5 text-xs text-muted-foreground hover:text-foreground"
+            className="h-9 gap-1.5 text-xs text-muted-foreground hover:text-foreground cursor-pointer"
             title="Export filtered roster to CSV"
           >
             <Download className="w-3.5 h-3.5" />
@@ -117,7 +122,7 @@ export const MemberFiltersToolbar: React.FC<MemberFiltersToolbarProps> = ({
             <Button
               size="sm"
               onClick={onAddMember}
-              className="h-9 gap-1.5 text-xs font-medium shadow-xs"
+              className="h-9 gap-1.5 text-xs font-medium shadow-xs cursor-pointer"
             >
               <UserPlus className="w-3.5 h-3.5" />
               <span>Add Member</span>
@@ -140,11 +145,12 @@ export const MemberFiltersToolbar: React.FC<MemberFiltersToolbarProps> = ({
                 key={opt.id}
                 type="button"
                 onClick={() => onRoleChange(opt.id)}
-                className={`px-2.5 py-1 text-xs rounded-full font-medium transition-all ${
+                className={cn(
+                  'px-2.5 py-1 text-xs rounded-full font-medium transition-all cursor-pointer select-none',
                   isActive
-                    ? 'bg-primary text-primary-foreground shadow-xs'
+                    ? 'bg-primary text-primary-foreground shadow-xs font-semibold'
                     : 'bg-muted/60 text-muted-foreground hover:bg-muted hover:text-foreground'
-                }`}
+                )}
               >
                 {opt.label}
               </button>
@@ -153,7 +159,7 @@ export const MemberFiltersToolbar: React.FC<MemberFiltersToolbarProps> = ({
         </div>
 
         <div className="text-xs text-muted-foreground">
-          Showing <span className="font-semibold text-foreground">{totalFilteredCount}</span>{' '}
+          Showing <strong className="text-foreground">{totalFilteredCount}</strong>{' '}
           {totalFilteredCount === 1 ? 'member' : 'members'}
         </div>
       </div>
