@@ -101,9 +101,9 @@ export const TopHeader: React.FC<TopHeaderProps> = ({
     [user?.first_name, user?.last_name].filter(Boolean).join(' ') || 'User';
 
   return (
-    <header className="sticky top-0 z-20 flex h-14 items-center justify-between px-3 sm:px-4 md:px-6 border-b border-border/40 bg-card/95 backdrop-blur-md shrink-0 gap-2 sm:gap-4">
-      {/* Left Section: Mobile Trigger & Responsive Breadcrumbs */}
-      <div className="flex items-center gap-2 sm:gap-3 min-w-0 flex-1">
+    <header className="sticky top-0 z-20 flex h-14 md:h-15 items-center justify-between px-3 sm:px-4 md:px-6 border-b border-border/40 bg-card/90 backdrop-blur-md shrink-0 gap-2">
+      {/* Column 1 (Left): Mobile Trigger & Route Breadcrumbs */}
+      <div className="flex items-center gap-1.5 sm:gap-3 min-w-0 flex-1 justify-start">
         <Button
           variant="ghost"
           size="icon"
@@ -116,7 +116,7 @@ export const TopHeader: React.FC<TopHeaderProps> = ({
 
         <nav
           aria-label="Breadcrumb"
-          className="flex items-center gap-1 min-w-0 overflow-hidden"
+          className="hidden sm:flex items-center gap-1 min-w-0 overflow-hidden"
         >
           <ol className="flex items-center min-w-0 flex-nowrap list-none m-0 p-0">
             {breadcrumbs.map((crumb, idx) => {
@@ -128,7 +128,7 @@ export const TopHeader: React.FC<TopHeaderProps> = ({
                 return (
                   <li
                     key={idx}
-                    className="text-sm font-semibold text-foreground flex items-center gap-1.5 truncate min-w-0"
+                    className="text-xs sm:text-sm font-semibold text-foreground flex items-center gap-1.5 truncate min-w-0"
                     aria-current="page"
                   >
                     {Icon && (
@@ -136,7 +136,9 @@ export const TopHeader: React.FC<TopHeaderProps> = ({
                         <Icon className="h-3.5 w-3.5" />
                       </div>
                     )}
-                    <span className="truncate">{crumb.label}</span>
+                    <span className="truncate max-w-[100px] sm:max-w-[140px] md:max-w-[180px]">
+                      {crumb.label}
+                    </span>
                   </li>
                 );
               }
@@ -151,12 +153,12 @@ export const TopHeader: React.FC<TopHeaderProps> = ({
                   {crumb.href ? (
                     <Link
                       to={crumb.href}
-                      className="text-xs font-medium text-muted-foreground hover:text-foreground transition-colors truncate max-w-[120px] sm:max-w-[160px]"
+                      className="text-xs font-medium text-muted-foreground hover:text-foreground transition-colors truncate max-w-[100px] sm:max-w-[140px] md:max-w-[180px]"
                     >
                       {crumb.label}
                     </Link>
                   ) : (
-                    <span className="text-xs font-medium text-muted-foreground px-1.5 py-0.5 rounded bg-muted/60 truncate">
+                    <span className="text-xs font-medium text-muted-foreground px-1.5 py-0.5 rounded bg-muted/60 truncate max-w-[100px] sm:max-w-[140px] md:max-w-[180px]">
                       {crumb.label}
                     </span>
                   )}
@@ -168,8 +170,8 @@ export const TopHeader: React.FC<TopHeaderProps> = ({
         </nav>
       </div>
 
-      {/* Middle Section: Centralized School Portal Switcher */}
-      <div className="hidden md:flex flex-1 items-center justify-center px-4 min-w-0">
+      {/* Column 2 (Center): School Identity */}
+      <div className="flex items-center justify-center shrink-0 px-1 sm:px-2 max-w-[55%] xs:max-w-[50%] sm:max-w-[45%] md:max-w-[40%]">
         <SchoolHeaderBadge
           tenantId={activeTenantId}
           tenantName={activeTenantName ?? null}
@@ -179,18 +181,18 @@ export const TopHeader: React.FC<TopHeaderProps> = ({
         />
       </div>
 
-      {/* Right Section: Command Palette Trigger, Controls & Account Dropdown */}
-      <div className="flex flex-1 min-w-0 items-center justify-end gap-1.5 sm:gap-2 md:gap-3 shrink-0">
-        {/* Desktop Command Palette Trigger */}
+      {/* Column 3 (Right): Controls & Account Dropdown */}
+      <div className="flex items-center justify-end gap-1.5 sm:gap-2 flex-1 min-w-0 shrink-0">
+        {/* Desktop Search Button / Command Palette Trigger */}
         <button
           type="button"
           onClick={onOpenCommandPalette}
-          className="relative hidden lg:flex items-center justify-between w-[220px] xl:w-[280px] h-8 px-3 rounded-full border border-input bg-background/80 hover:bg-accent/50 text-muted-foreground text-xs transition-colors shadow-2xs cursor-pointer mr-0.5"
+          className="relative hidden lg:flex items-center justify-between w-[180px] xl:w-[240px] h-8 px-3 rounded-full border border-input bg-background/80 hover:bg-accent/50 text-muted-foreground text-xs shadow-2xs cursor-pointer transition-colors"
           aria-label="Open command palette"
         >
           <div className="flex items-center gap-2 truncate">
             <Search className="h-3.5 w-3.5 shrink-0" />
-            <span className="truncate">Search pages & actions...</span>
+            <span className="truncate">Search pages...</span>
           </div>
           <kbd className="hidden sm:inline-flex h-5 items-center gap-0.5 rounded border border-border/80 bg-muted px-1.5 font-mono text-[10px] font-medium text-muted-foreground shrink-0">
             <span>⌘</span>K
@@ -202,7 +204,7 @@ export const TopHeader: React.FC<TopHeaderProps> = ({
           variant="ghost"
           size="icon"
           onClick={onOpenCommandPalette}
-          className="lg:hidden h-8 w-8 sm:h-9 sm:w-9 rounded-full text-muted-foreground hover:bg-accent hover:text-foreground cursor-pointer"
+          className="lg:hidden h-8 w-8 sm:h-9 sm:w-9 rounded-full text-muted-foreground hover:bg-accent hover:text-foreground cursor-pointer shrink-0"
           aria-label="Open command palette"
         >
           <Search className="h-4 w-4" />
@@ -214,7 +216,7 @@ export const TopHeader: React.FC<TopHeaderProps> = ({
             <button
               type="button"
               onClick={onToggleCalendarSystem}
-              className="h-8 px-2 sm:px-2.5 rounded-full text-xs font-semibold gap-1.5 border border-input bg-background hover:bg-accent text-foreground cursor-pointer transition-colors shadow-2xs flex items-center shrink-0"
+              className="hidden sm:flex h-8 px-2 sm:px-2.5 rounded-full text-xs font-semibold gap-1.5 border border-input bg-background hover:bg-accent text-foreground cursor-pointer transition-colors shadow-2xs items-center shrink-0"
               aria-label="Toggle Calendar System (AD/BS)"
             >
               <CalendarDays className="h-3.5 w-3.5 text-primary shrink-0" />
@@ -235,7 +237,7 @@ export const TopHeader: React.FC<TopHeaderProps> = ({
               variant="ghost"
               size="icon"
               onClick={onToggleTheme}
-              className="h-8 w-8 sm:h-9 sm:w-9 rounded-full text-muted-foreground hover:bg-accent hover:text-foreground cursor-pointer shrink-0"
+              className="hidden sm:inline-flex h-8 w-8 sm:h-9 sm:w-9 rounded-full text-muted-foreground hover:bg-accent hover:text-foreground cursor-pointer shrink-0"
               aria-label="Toggle appearance"
             >
               {theme === 'dark' ? (
@@ -253,14 +255,14 @@ export const TopHeader: React.FC<TopHeaderProps> = ({
         {/* Notifications Popover */}
         <NotificationPopover />
 
-        {/* Subtle Vertical Divider */}
-        <div className="w-px h-6 bg-border/50 mx-0.5 sm:mx-1 shrink-0" />
+        {/* Subtle Divider */}
+        <div className="hidden sm:block w-px h-6 bg-border/50 mx-0.5 shrink-0" />
 
         {/* User Account Profile Menu */}
         <DropdownMenu>
           <DropdownMenuTrigger asChild>
             <button
-              className="flex items-center justify-center rounded-full hover:ring-2 hover:ring-primary/50 transition-all focus:outline-none focus-visible:ring-2 focus-visible:ring-primary cursor-pointer shrink-0"
+              className="flex items-center justify-center rounded-full ring-1 ring-border hover:ring-2 hover:ring-primary/50 transition-all focus:outline-none focus-visible:ring-2 focus-visible:ring-primary cursor-pointer shrink-0"
               aria-label="User Account Menu"
             >
               <Avatar className="h-8 w-8 sm:h-9 sm:w-9 shrink-0 ring-1 ring-border">
