@@ -2,6 +2,7 @@ import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { academicYearApi } from './api';
 import { toast } from 'sonner';
 import type { PlatformRolloverDTO } from './types';
+import type { TenantAcademicYearRolloverRequest } from './schema';
 
 export const ACADEMIC_YEARS_QUERY_KEY = 'academic_years';
 
@@ -72,6 +73,33 @@ export const usePlatformRollover = () => {
     },
     onError: (err: any) => {
       toast.error(err?.response?.data?.detail || err?.message || 'Failed to perform platform rollover');
+    },
+  });
+};
+
+export const useTenantRollover = () => {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: ({ tenantId, data }: { tenantId: string; data: TenantAcademicYearRolloverRequest }) =>
+      academicYearApi.tenantRollover(tenantId, data),
+    onSuccess: (res, variables) => {
+      const summary = (res as any)?.data?.academic_year_name !== undefined ? (res as any).data : res;
+      toast.success(
+        `Academic session rollover to '${summary?.academic_year_name ?? ''}' successful! Promoted: ${summary?.total_students_promoted ?? 0}, Graduated: ${summary?.total_students_graduated ?? 0}`
+      );
+      queryClient.invalidateQueries({ queryKey: [ACADEMIC_YEARS_QUERY_KEY, variables.tenantId] });
+      queryClient.invalidateQueries({ queryKey: ['classes', variables.tenantId] });
+      queryClient.invalidateQueries({ queryKey: ['students', variables.tenantId] });
+      queryClient.invalidateQueries({ queryKey: ['dashboard', variables.tenantId] });
+      queryClient.invalidateQueries({ queryKey: ['assignments', variables.tenantId] });
+    },
+    onError: (err: any) => {
+      const msg =
+        err?.response?.data?.message ||
+        err?.response?.data?.detail ||
+        err?.message ||
+        'Failed to execute academic rollover';
+      toast.error('Rollover Failed', { description: msg });
     },
   });
 };

@@ -4,6 +4,7 @@ import { usePermission } from '@/auth/usePermission';
 import { useAcademicYears, useSetCurrentAcademicYear, useCloseAcademicYear } from '../hooks';
 import { AcademicYearFormDialog } from '../components/AcademicYearFormDialog';
 import { PlatformRolloverDialog } from '../components/PlatformRolloverDialog';
+import { TenantRolloverDialog } from '../components/TenantRolloverDialog';
 import { TenantRequiredState } from '@/components/common/TenantRequiredState';
 import { ConfirmDialog } from '@/components/common/ConfirmDialog';
 import { Card } from '@/components/ui/card';
@@ -66,6 +67,7 @@ export const AcademicYearsPage: React.FC<AcademicYearsPageProps> = ({
 
   const [isFormOpen, setIsFormOpen] = useState(false);
   const [isRolloverOpen, setIsRolloverOpen] = useState(false);
+  const [isTenantRolloverOpen, setIsTenantRolloverOpen] = useState(false);
   const [isReorderOpen, setIsReorderOpen] = useState(false);
   const [processingId, setProcessingId] = useState<string | null>(null);
 
@@ -129,6 +131,17 @@ export const AcademicYearsPage: React.FC<AcademicYearsPageProps> = ({
                 Platform Rollover
               </Button>
             )}
+            {canManage && effectiveTenantId && (
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={() => setIsTenantRolloverOpen(true)}
+                className="w-full sm:w-auto shrink-0 text-amber-700 dark:text-amber-400 border-amber-500/40 hover:bg-amber-500/10"
+              >
+                <RefreshCw className="w-3.5 h-3.5 mr-1.5" />
+                Rollover Session
+              </Button>
+            )}
             {canManage && (
               <Button
                 onClick={() => setIsFormOpen(true)}
@@ -185,6 +198,17 @@ export const AcademicYearsPage: React.FC<AcademicYearsPageProps> = ({
               >
                 <RefreshCw className="w-3.5 h-3.5 mr-1.5" />
                 Platform Rollover
+              </Button>
+            )}
+            {canManage && effectiveTenantId && (
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={() => setIsTenantRolloverOpen(true)}
+                className="text-amber-700 dark:text-amber-400 border-amber-500/40 hover:bg-amber-500/10"
+              >
+                <RefreshCw className="w-3.5 h-3.5 mr-1.5" />
+                Rollover Session
               </Button>
             )}
             <Button
@@ -309,6 +333,12 @@ export const AcademicYearsPage: React.FC<AcademicYearsPageProps> = ({
         targetTenantName={effectiveTenant?.name}
       />
       <PlatformRolloverDialog open={isRolloverOpen} onOpenChange={setIsRolloverOpen} />
+      <TenantRolloverDialog
+        open={isTenantRolloverOpen}
+        onOpenChange={setIsTenantRolloverOpen}
+        tenantId={effectiveTenantId}
+        tenantName={effectiveTenant?.name}
+      />
       <ClassReorderDialog
         isOpen={isReorderOpen}
         onClose={() => setIsReorderOpen(false)}

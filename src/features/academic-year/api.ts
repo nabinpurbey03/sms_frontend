@@ -6,6 +6,8 @@ import type {
   PlatformRolloverDTO,
   PlatformRolloverSummaryDTO,
 } from './types';
+import type { TenantAcademicYearRolloverRequest, TenantRolloverSummaryResponse } from './schema';
+import type { ApiResponse } from '@/api/types';
 
 export const academicYearApi = {
   getAcademicYears: async (tenantId: string): Promise<AcademicYear[]> => {
@@ -30,5 +32,12 @@ export const academicYearApi = {
 
   platformRollover: async (data: PlatformRolloverDTO): Promise<PlatformRolloverSummaryDTO> => {
     return apiClient.post('/academic/platform/academic-years/rollover', data);
+  },
+
+  tenantRollover: async (
+    tenantId: string,
+    data: TenantAcademicYearRolloverRequest
+  ): Promise<ApiResponse<TenantRolloverSummaryResponse>> => {
+    return apiClient.post(`/academic/tenants/${tenantId}/academic-years/rollover`, data);
   },
 };
