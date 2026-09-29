@@ -44,13 +44,19 @@ export const CommandPalette: React.FC<CommandPaletteProps> = ({
   const [query, setQuery] = useState('');
   const [selectedIndex, setSelectedIndex] = useState(0);
   const inputRef = useRef<HTMLInputElement>(null);
+  const listRef = useRef<HTMLDivElement>(null);
 
-  // Reset query and selection when dialog opens
+  // Reset query, selection, and scroll when dialog opens
   useEffect(() => {
     if (open) {
       setQuery('');
       setSelectedIndex(0);
-      setTimeout(() => inputRef.current?.focus(), 50);
+      setTimeout(() => {
+        inputRef.current?.focus();
+        if (listRef.current) {
+          listRef.current.scrollTop = 0;
+        }
+      }, 50);
     }
   }, [open]);
 
@@ -67,10 +73,22 @@ export const CommandPalette: React.FC<CommandPaletteProps> = ({
     });
   }, [items, query]);
 
-  // Reset selected index when filtered list changes
+  // Reset selected index and scroll position when query or filtered list changes
   useEffect(() => {
     setSelectedIndex(0);
-  }, [filteredItems.length]);
+    if (listRef.current) {
+      listRef.current.scrollTop = 0;
+    }
+  }, [query]);
+
+  // Auto-scroll active item into view when selectedIndex changes
+  useEffect(() => {
+    if (!listRef.current) return;
+    const selectedEl = listRef.current.querySelector<HTMLElement>(`[data-index="${selectedIndex}"]`);
+    if (selectedEl) {
+      selectedEl.scrollIntoView({ block: 'nearest' });
+    }
+  }, [selectedIndex]);
 
   // Keyboard navigation
   const handleKeyDown = (e: React.KeyboardEvent) => {
@@ -82,6 +100,13 @@ export const CommandPalette: React.FC<CommandPaletteProps> = ({
     } else if (e.key === 'ArrowUp') {
       e.preventDefault();
       setSelectedIndex((prev) => (prev - 1 + filteredItems.length) % filteredItems.length);
+    } else if (e.key === 'Tab') {
+      e.preventDefault();
+      setSelectedIndex((prev) =>
+        e.shiftKey
+          ? (prev - 1 + filteredItems.length) % filteredItems.length
+          : (prev + 1) % filteredItems.length
+      );
     } else if (e.key === 'Enter') {
       e.preventDefault();
       const selected = filteredItems[selectedIndex];
@@ -128,7 +153,13 @@ export const CommandPalette: React.FC<CommandPaletteProps> = ({
         </div>
 
         {/* Results List */}
-        <div className="max-h-[360px] overflow-y-auto p-2 space-y-1">
+        <div
+          ref={listRef}
+          id="command-palette-list"
+          role="listbox"
+          aria-label="Search results"
+          className="max-h-[360px] overflow-y-auto p-2 space-y-1 scroll-py-1"
+        >
           {filteredItems.length === 0 ? (
             <div className="py-10 text-center text-sm text-muted-foreground">
               No matching pages or commands found for &ldquo;{query}&rdquo;.
@@ -140,6 +171,8 @@ export const CommandPalette: React.FC<CommandPaletteProps> = ({
               return (
                 <div
                   key={item.id}
+                  id={`command-item-${item.id}`}
+                  data-index={index}
                   onClick={() => handleSelectItem(item)}
                   onMouseEnter={() => setSelectedIndex(index)}
                   className={cn(
@@ -148,8 +181,9 @@ export const CommandPalette: React.FC<CommandPaletteProps> = ({
                       ? 'bg-primary/10 text-primary font-medium'
                       : 'text-foreground hover:bg-muted/50'
                   )}
-                  role="button"
-                  tabIndex={0}
+                  role="option"
+                  aria-selected={isSelected}
+                  tabIndex={-1}
                 >
                   <div className="flex items-center gap-3 min-w-0">
                     <div
