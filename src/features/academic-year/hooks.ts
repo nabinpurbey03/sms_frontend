@@ -83,7 +83,7 @@ export const useTenantRollover = () => {
     mutationFn: ({ tenantId, data }: { tenantId: string; data: TenantAcademicYearRolloverRequest }) =>
       academicYearApi.tenantRollover(tenantId, data),
     onSuccess: (res, variables) => {
-      const summary = (res as any)?.data?.academic_year_name !== undefined ? (res as any).data : res;
+      const summary = res;
       toast.success(
         `Academic session rollover to '${summary?.academic_year_name ?? ''}' successful! Promoted: ${summary?.total_students_promoted ?? 0}, Graduated: ${summary?.total_students_graduated ?? 0}`
       );

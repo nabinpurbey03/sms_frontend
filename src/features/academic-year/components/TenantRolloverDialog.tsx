@@ -82,8 +82,7 @@ export const TenantRolloverDialog: React.FC<TenantRolloverDialogProps> = ({
         tenantId,
         data,
       });
-      const summaryData = (res as any)?.data?.academic_year_name !== undefined ? (res as any).data : (res as any);
-      setSummary(summaryData);
+      setSummary(res);
     } catch {
       // Error handled by mutation onError toast
     }
@@ -93,8 +92,11 @@ export const TenantRolloverDialog: React.FC<TenantRolloverDialogProps> = ({
     <Dialog
       open={open}
       onOpenChange={(val) => {
-        if (!val) handleClose();
-        else onOpenChange(val);
+        if (!val) {
+          if (!rolloverMutation.isPending) handleClose();
+        } else {
+          onOpenChange(val);
+        }
       }}
     >
       <DialogContent className="max-w-lg">

@@ -37,7 +37,7 @@ export const academicYearApi = {
   tenantRollover: async (
     tenantId: string,
     data: TenantAcademicYearRolloverRequest
-  ): Promise<ApiResponse<TenantRolloverSummaryResponse>> => {
+  ): Promise<TenantRolloverSummaryResponse> => {
     return apiClient.post(`/academic/tenants/${tenantId}/academic-years/rollover`, data);
   },
 };

@@ -50,7 +50,8 @@ export const AcademicYearsPage: React.FC<AcademicYearsPageProps> = ({
   const { calendarSystem } = useCalendarPreferenceStore();
 
   const isEmbedded = externalTenantId !== undefined;
-  const internalCanManage = can('MANAGE_TENANT_SETTINGS') || isSuperAdmin;
+  const internalCanManage =
+    can('MANAGE_TENANT_SETTINGS') || can('MANAGE_CLASSES_SUBJECTS') || isSuperAdmin;
   const canManage = externalCanManage ?? internalCanManage;
 
   // For Super Admins when standalone, allow selecting a specific tenant
