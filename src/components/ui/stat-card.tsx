@@ -81,10 +81,19 @@ const StatCard = React.forwardRef<HTMLDivElement, StatCardProps>(
     return (
       <Card
         ref={ref}
+        role={onClick ? 'button' : undefined}
+        tabIndex={onClick ? 0 : undefined}
+        aria-pressed={onClick ? selected : undefined}
         onClick={onClick}
+        onKeyDown={(e) => {
+          if (onClick && (e.key === 'Enter' || e.key === ' ')) {
+            e.preventDefault();
+            onClick();
+          }
+        }}
         className={cn(
           'relative overflow-hidden rounded-xl border border-border/60 bg-card transition-all duration-200 shadow-xs',
-          onClick && 'cursor-pointer hover:shadow-md hover:border-border select-none',
+          onClick && 'cursor-pointer hover:shadow-md hover:border-border select-none focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/40',
           selected && `${currentVariant.selectedRing} shadow-sm`,
           className
         )}
