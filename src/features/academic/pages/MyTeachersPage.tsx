@@ -18,6 +18,8 @@ import {
   School,
   Sparkles,
   ArrowDown,
+  BookOpen,
+  Info,
 } from 'lucide-react';
 import { toast } from 'sonner';
 
@@ -342,21 +344,98 @@ export const MyTeachersPage: React.FC = () => {
                   )}
                 </CardContent>
               </Card>
+
+              {/* Subject Faculty Directory (Read-Only, Disciplined Communication) */}
+              {child.subject_teachers && child.subject_teachers.length > 0 && (
+                <div className="space-y-3 pt-2">
+                  <div className="flex flex-wrap items-center justify-between gap-2 px-1">
+                    <div className="flex items-center gap-2">
+                      <div className="w-7 h-7 rounded-lg bg-primary/10 text-primary flex items-center justify-center shrink-0">
+                        <BookOpen className="w-4 h-4" />
+                      </div>
+                      <div>
+                        <h4 className="text-sm font-bold text-foreground">
+                          Curriculum Faculty & Subject Teachers
+                        </h4>
+                        <p className="text-[11px] text-muted-foreground">
+                          Instructors assigned to {child.student_name}'s subjects for this academic session.
+                        </p>
+                      </div>
+                    </div>
+                    <Badge variant="outline" className="text-xs text-muted-foreground font-medium shrink-0">
+                      {child.subject_teachers.length} {child.subject_teachers.length === 1 ? 'Subject' : 'Subjects'}
+                    </Badge>
+                  </div>
+
+                  {/* Grid of Subject Teachers */}
+                  <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-3">
+                    {child.subject_teachers.map((st) => (
+                      <div
+                        key={st.subject_id}
+                        className="p-3.5 rounded-xl border border-border/70 bg-card hover:border-primary/30 transition-colors shadow-2xs space-y-2"
+                      >
+                        <div className="flex items-start justify-between gap-2">
+                          <div className="min-w-0 flex-1">
+                            <span className="font-bold text-xs text-foreground truncate block">
+                              {st.subject_name}
+                            </span>
+                            {st.subject_code && (
+                              <span className="text-[10px] font-mono text-muted-foreground bg-muted/60 px-1.5 py-0.5 rounded">
+                                {st.subject_code}
+                              </span>
+                            )}
+                          </div>
+                          <Badge variant="outline" className="text-[9px] px-1.5 py-0 border-border text-muted-foreground shrink-0">
+                            Subject
+                          </Badge>
+                        </div>
+
+                        <div className="flex items-center gap-2 pt-1 border-t border-border/40">
+                          <div className="w-6 h-6 rounded-full bg-muted flex items-center justify-center text-[10px] font-bold text-muted-foreground shrink-0">
+                            {st.name ? st.name.slice(0, 2).toUpperCase() : '—'}
+                          </div>
+                          <div className="min-w-0 flex-1">
+                            <p className="text-xs font-semibold text-foreground truncate">
+                              {st.name || 'Teacher Not Assigned'}
+                            </p>
+                            <p className="text-[10px] text-muted-foreground">
+                              {st.name ? 'Course Instructor' : 'Pending Allocation'}
+                            </p>
+                          </div>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+
+                  {/* Subject Consultation Protocol Note */}
+                  <div className="flex items-start gap-2.5 p-3 rounded-xl bg-primary/5 border border-primary/20 text-xs text-muted-foreground">
+                    <Info className="w-4 h-4 text-primary shrink-0 mt-0.5" />
+                    <p className="text-[11px] leading-relaxed">
+                      To arrange a consultation with a subject teacher or discuss subject-specific academic performance, please coordinate through the Class Teacher (<strong className="text-foreground">{classTeacher?.name || 'Class Proctor'}</strong>) or contact the school academic office.
+                    </p>
+                  </div>
+                </div>
+              )}
             </div>
           );
         })}
       </div>
 
-      {/* Communication Guidance Notice */}
-      <Card className="p-4 bg-muted/30 border-border/50 text-xs text-muted-foreground flex items-start gap-3">
-        <Clock className="w-4 h-4 text-primary shrink-0 mt-0.5" />
-        <div className="space-y-0.5">
-          <p className="font-semibold text-foreground">
-            Teacher Consultation & Communication Notice
-          </p>
-          <p>
-            The Class Teacher is your dedicated point of contact for daily attendance, academic progress, behavioral concerns, and general guidance. For school fee receipts or admissions, please contact the main administrative office.
-          </p>
+      {/* Communication Guidance & School Office Protocol */}
+      <Card className="p-4 sm:p-5 bg-muted/30 border-border/60 text-xs text-muted-foreground space-y-3">
+        <div className="flex items-start gap-3">
+          <Clock className="w-4 h-4 text-primary shrink-0 mt-0.5" />
+          <div className="space-y-1.5">
+            <p className="font-bold text-sm text-foreground">
+              Official Communication & Escalation Protocol
+            </p>
+            <p className="leading-relaxed">
+              <strong>Class Teacher:</strong> Your dedicated point of contact for daily attendance, homework clarification, academic progress, behavioral concerns, and general student well-being.
+            </p>
+            <p className="leading-relaxed">
+              <strong>School Administration:</strong> For fee invoices/receipts, bus transportation routes, official leave applications, transfer certificates, or admissions, please contact the main administrative office directly.
+            </p>
+          </div>
         </div>
       </Card>
     </div>
