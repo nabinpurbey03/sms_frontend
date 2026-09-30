@@ -16,9 +16,10 @@ import type { LoginFormData } from '@/features/auth/schema';
 import { AuthContext } from './useAuth';
 
 const ROLE_HIERARCHY: Record<string, number> = {
-  SUPER_ADMIN: 5,
-  ADMIN: 4,
-  OFFICE_ADMIN: 3,
+  SUPER_ADMIN: 6,
+  ADMIN: 5,
+  OFFICE_ADMIN: 4,
+  ACCOUNTANT: 3,
   TEACHER: 2,
   PARENT: 1,
 };
