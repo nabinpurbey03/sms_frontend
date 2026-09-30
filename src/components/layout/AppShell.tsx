@@ -127,7 +127,7 @@ export const AppShell: React.FC = () => {
       });
 
     // Academic Calendar quick action
-    if (activeTenantId) {
+    if (activeTenantId && activeRole !== 'ACCOUNTANT') {
       items.push({
         id: '/academic-calendar',
         label: 'Academic Calendar',

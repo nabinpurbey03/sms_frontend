@@ -62,6 +62,14 @@ export const getNavItems = (ctx: NavPermissionsContext): NavItem[] => [
     category: 'Overview',
   },
   {
+    label: 'Dashboard',
+    href: '/finance',
+    icon: LayoutDashboard,
+    description: 'Financial performance, fee collections, and cash flow intelligence.',
+    show: ctx.activeRole === 'ACCOUNTANT',
+    category: 'Overview',
+  },
+  {
     label: 'Tenant Management',
     href: '/tenants',
     icon: Building2,
@@ -110,11 +118,11 @@ export const getNavItems = (ctx: NavPermissionsContext): NavItem[] => [
     category: 'Administration',
   },
   {
-    label: 'Finance Overview',
+    label: 'Finance Dashboard',
     href: '/finance',
     icon: WalletCards,
     description: 'Fee collection summary, cash flow, and dues.',
-    show: ctx.can('VIEW_FINANCE'),
+    show: ctx.can('VIEW_FINANCE') && ctx.activeRole !== 'ACCOUNTANT',
     category: 'Finance',
   },
   {
@@ -256,6 +264,9 @@ export const getNavItems = (ctx: NavPermissionsContext): NavItem[] => [
 ];
 
 export const isNavItemActive = (currentPath: string, navHref: string): boolean => {
+  if (navHref === '/dashboard' || navHref === '/finance') {
+    return currentPath === navHref;
+  }
   return currentPath === navHref || currentPath.startsWith(`${navHref}/`);
 };
 
@@ -266,8 +277,15 @@ export interface BreadcrumbItem {
 }
 
 export const getBreadcrumbs = (pathname: string, navItems: NavItem[]): BreadcrumbItem[] => {
-  const active = navItems.find((n) => isNavItemActive(pathname, n.href));
-  if (!active) return [{ label: 'Dashboard', href: '/dashboard' }];
+  const visibleItems = navItems.filter((n) => n.show);
+  const active =
+    visibleItems.find((n) => n.href === pathname) ||
+    visibleItems.find((n) => isNavItemActive(pathname, n.href));
+
+  if (!active) {
+    const defaultDash = visibleItems.find((n) => n.label === 'Dashboard');
+    return [{ label: 'Dashboard', href: defaultDash ? defaultDash.href : '/dashboard' }];
+  }
 
   const crumbs: BreadcrumbItem[] = [
     { label: active.category },

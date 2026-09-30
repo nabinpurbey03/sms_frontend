@@ -74,6 +74,8 @@ export const DesktopSidebar: React.FC<DesktopSidebarProps> = ({
     ? `${user.first_name || ''} ${user.last_name || ''}`.trim() || 'User'
     : 'Guest';
 
+  const homeHref = activeRole === 'ACCOUNTANT' ? '/finance' : '/dashboard';
+
   return (
     <aside
       className={`hidden lg:flex shrink-0 flex-col justify-between bg-card h-screen sticky top-0 z-30 shadow-xs transition-all duration-300 ${
@@ -88,7 +90,7 @@ export const DesktopSidebar: React.FC<DesktopSidebarProps> = ({
         }`}
       >
         <Link
-          to="/dashboard"
+          to={homeHref}
           className={`flex items-center focus:outline-none min-w-0 ${isCollapsed ? 'shrink-0' : 'gap-2'}`}
           title="Go to Dashboard"
         >
