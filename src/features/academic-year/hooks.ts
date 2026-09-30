@@ -113,3 +113,4 @@ export const useTenantRollover = () => {
   });
 };
 
+export * from './hooks/useCurrentAcademicYear';
