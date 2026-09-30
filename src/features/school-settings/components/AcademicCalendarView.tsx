@@ -22,7 +22,7 @@ import {
   Filter,
   ArrowUpDown,
 } from 'lucide-react';
-import { useAcademicYears } from '@/features/academic-year/hooks';
+import { useCurrentAcademicYear } from '@/features/academic-year/hooks/useCurrentAcademicYear';
 import { useCalendarEvents, useDeleteCalendarEvent } from '../hooks';
 import { CalendarEventDialog } from './CalendarEventDialog';
 import { AcademicCalendarGrid } from './AcademicCalendarGrid';
@@ -40,20 +40,11 @@ export const AcademicCalendarView: React.FC<AcademicCalendarViewProps> = ({
   canManage,
 }) => {
   const { calendarSystem, setCalendarSystem } = useCalendarPreferenceStore();
-  const { data: years = [], isLoading: isLoadingYears } = useAcademicYears(tenantId);
+  const { currentYear, currentYearId, isLoading: isLoadingYears } = useCurrentAcademicYear(tenantId);
   const deleteMutation = useDeleteCalendarEvent();
 
-  // Selected academic year (default to current or first)
-  const currentYear = useMemo(() => {
-    return years.find((y) => y.is_current) || years[0];
-  }, [years]);
-
-  const [selectedYearId, setSelectedYearId] = useState<string>('');
-  const activeYearId = selectedYearId || currentYear?.id || '';
-
-  const activeYear = useMemo(() => {
-    return years.find((y) => y.id === activeYearId) || currentYear;
-  }, [years, activeYearId, currentYear]);
+  const activeYearId = currentYearId || '';
+  const activeYear = currentYear;
 
   // View mode: 'list' | 'calendar'
   const [viewMode, setViewMode] = useState<'list' | 'calendar'>('list');
@@ -231,24 +222,19 @@ export const AcademicCalendarView: React.FC<AcademicCalendarViewProps> = ({
             </div>
 
             <div className="flex flex-wrap items-center gap-3">
-              {/* Academic Year Switcher */}
-              <div className="flex items-center gap-2">
-                <label htmlFor="calendar-year" className="text-xs font-medium text-muted-foreground whitespace-nowrap">
-                  Academic Session:
-                </label>
-                <Select value={activeYearId} onValueChange={(val) => setSelectedYearId(val)}>
-                  <SelectTrigger id="calendar-year" className="w-[200px] h-9 text-sm font-medium">
-                    <SelectValue placeholder="Select session" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {years.map((y) => (
-                      <SelectItem key={y.id} value={y.id}>
-                        {y.name} {y.is_current ? '(Current Active)' : ''}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-              </div>
+              {/* Academic Session - Locked to Current Year */}
+              {activeYear && (
+                <div className="flex items-center gap-2 px-3 py-1.5 rounded-xl border border-border/70 bg-muted/30 text-xs">
+                  <CalendarDays className="w-4 h-4 text-primary shrink-0" />
+                  <div className="flex flex-col">
+                    <span className="font-bold text-foreground leading-tight">{activeYear.name}</span>
+                    <span className="text-[10px] text-muted-foreground font-medium">Current Academic Session</span>
+                  </div>
+                  <Badge variant="outline" className="text-[10px] px-1.5 py-0 border-primary/30 text-primary font-medium ml-1">
+                    Current
+                  </Badge>
+                </div>
+              )}
 
               {canManage && (
                 <Button size="sm" onClick={handleOpenAdd} disabled={!activeYearId}>

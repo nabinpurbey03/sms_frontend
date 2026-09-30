@@ -7,20 +7,13 @@ import {
   useAbsentStudents,
 } from '../hooks';
 import { useAllClassesWithDetails } from '@/features/academic/hooks';
-import { useAcademicYears } from '@/features/academic-year/hooks';
+import { useCurrentAcademicYear } from '@/features/academic-year/hooks/useCurrentAcademicYear';
 import { exportSchoolAttendanceCsv } from '../utils/exportAttendanceCsv';
 import { Button } from '@/components/ui/button';
 import { Card, CardHeader, CardTitle, CardContent } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Input } from '@/components/ui/input';
 import { StatCard } from '@/components/ui/stat-card';
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from '@/components/ui/select';
 import { NepaliDatePicker } from '@/components/ui/nepali-date-picker';
 import {
   Table,
@@ -108,26 +101,10 @@ export const AttendanceReportsPage: React.FC = () => {
   const todayStr = useMemo(() => formatDateStr(new Date()), []);
   const initialRange = useMemo(() => getPresetDates('30d'), []);
 
-  // Academic years for session scoping
-  const { data: academicYears = [] } = useAcademicYears(hasAccess ? activeTenantId : null);
-  const [selectedAcademicYearId, setSelectedAcademicYearId] = useState<string>('');
-
-  React.useEffect(() => {
-    if (academicYears.length > 0 && !selectedAcademicYearId) {
-      const currentYear = academicYears.find((y) => y.is_current) || academicYears[0];
-      if (currentYear) {
-        setSelectedAcademicYearId(currentYear.id);
-      }
-    }
-  }, [academicYears, selectedAcademicYearId]);
-
-  const activeYear = useMemo(() => {
-    return (
-      academicYears.find((y) => y.id === selectedAcademicYearId) ||
-      academicYears.find((y) => y.is_current) ||
-      null
-    );
-  }, [academicYears, selectedAcademicYearId]);
+  // Academic year for session scoping (locked to current active session)
+  const { currentYear, currentYearId } = useCurrentAcademicYear(hasAccess ? activeTenantId : null);
+  const selectedAcademicYearId = currentYearId || '';
+  const activeYear = currentYear;
 
   const [activePreset, setActivePreset] = useState<'today' | '7d' | '30d' | 'mtd' | 'academic_year' | 'custom'>('30d');
   const [fromDate, setFromDate] = useState<string>(initialRange.from);
@@ -234,9 +211,9 @@ export const AttendanceReportsPage: React.FC = () => {
   const handleSelectPreset = (preset: 'today' | '7d' | '30d' | 'mtd' | 'academic_year') => {
     setActivePreset(preset);
     if (preset === 'academic_year') {
-      if (activeYear) {
-        setFromDate(activeYear.start_date);
-        setToDate(activeYear.end_date < todayStr ? activeYear.end_date : todayStr);
+      if (currentYear) {
+        setFromDate(currentYear.start_date);
+        setToDate(currentYear.end_date < todayStr ? currentYear.end_date : todayStr);
       }
       return;
     }
@@ -430,35 +407,14 @@ export const AttendanceReportsPage: React.FC = () => {
 
           {/* Date Range Inputs, Session Switcher & Actions */}
           <div className="flex items-center gap-3 flex-wrap justify-between xl:justify-end">
-            {academicYears.length > 0 && (
-              <div className="flex items-center gap-1.5">
-                <span className="text-xs text-muted-foreground font-medium whitespace-nowrap">
-                  Session:
-                </span>
-                <Select
-                  value={selectedAcademicYearId}
-                  onValueChange={(newId) => {
-                    setSelectedAcademicYearId(newId);
-                    if (activePreset === 'academic_year') {
-                      const yr = academicYears.find((y) => y.id === newId);
-                      if (yr) {
-                        setFromDate(yr.start_date);
-                        setToDate(yr.end_date < todayStr ? yr.end_date : todayStr);
-                      }
-                    }
-                  }}
-                >
-                  <SelectTrigger id="academic-session-select" className="h-8 w-auto min-w-[140px] text-xs font-medium">
-                    <SelectValue placeholder="Select session" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {academicYears.map((ay) => (
-                      <SelectItem key={ay.id} value={ay.id} className="text-xs">
-                        {ay.name} {ay.is_current ? '(Current)' : ''}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
+            {currentYear && (
+              <div className="flex items-center gap-2 px-2.5 py-1 rounded-lg border border-border/60 bg-muted/30 text-xs">
+                <CalendarDays className="w-3.5 h-3.5 text-primary shrink-0" />
+                <span className="text-muted-foreground font-medium">Session:</span>
+                <span className="font-semibold text-foreground">{currentYear.name}</span>
+                <Badge variant="outline" className="text-[10px] px-1.5 py-0 border-primary/30 text-primary font-medium">
+                  Current
+                </Badge>
               </div>
             )}
             <div className="flex items-center gap-2 flex-wrap sm:flex-nowrap">
