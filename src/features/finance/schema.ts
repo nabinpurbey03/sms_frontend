@@ -1,0 +1,103 @@
+import { z } from 'zod';
+
+export const feeStructureFormSchema = z.object({
+  class_id: z.string().min(1, 'Please select a class'),
+  name: z
+    .string()
+    .trim()
+    .min(2, 'Fee head name must be at least 2 characters')
+    .max(100, 'Fee head name cannot exceed 100 characters'),
+  fee_category: z.enum([
+    'TUITION',
+    'ADMISSION',
+    'EXAM',
+    'TRANSPORT',
+    'HOSTEL',
+    'LAB',
+    'LIBRARY',
+    'MISC',
+  ]),
+  frequency: z.enum(['ONE_TIME', 'MONTHLY', 'TERMWISE', 'YEARLY']),
+  amount: z.coerce
+    .number({ message: 'Amount is required' })
+    .positive('Fee amount must be greater than zero'),
+  description: z.string().max(255).optional().or(z.literal('')),
+});
+
+export type FeeStructureFormValues = z.infer<typeof feeStructureFormSchema>;
+
+export const studentDiscountSchema = z.object({
+  student_id: z.string().min(1, 'Please select a student'),
+  discount_percent: z.coerce
+    .number({ message: 'Discount percentage is required' })
+    .min(0, 'Discount cannot be negative')
+    .max(100, 'Discount cannot exceed 100%'),
+  reason: z
+    .string()
+    .max(100, 'Reason cannot exceed 100 characters')
+    .optional()
+    .or(z.literal('')),
+});
+
+export type StudentDiscountFormValues = z.infer<typeof studentDiscountSchema>;
+
+export const batchBillGenerateSchema = z.object({
+  class_id: z.string().min(1, 'Please select a target class'),
+  section_id: z.string().optional().or(z.literal('')),
+  billing_month: z.string().min(1, 'Please specify the billing month / cycle'),
+  fee_structure_ids: z
+    .array(z.string())
+    .min(1, 'Select at least one fee head to invoice'),
+  due_date: z.string().min(1, 'Due date is required'),
+  notes: z.string().max(255).optional().or(z.literal('')),
+});
+
+export type BatchBillGenerateFormValues = z.infer<typeof batchBillGenerateSchema>;
+
+export const singleBillItemSchema = z.object({
+  fee_name: z.string().trim().min(1, 'Fee item name is required'),
+  amount: z.coerce.number().positive('Amount must be greater than zero'),
+  fee_structure_id: z.string().optional(),
+});
+
+export const singleBillGenerateSchema = z.object({
+  student_id: z.string().min(1, 'Please select a student'),
+  billing_month: z.string().optional().or(z.literal('')),
+  bill_title: z.string().min(2, 'Bill title is required'),
+  fee_items: z.array(singleBillItemSchema).min(1, 'At least one fee item is required'),
+  discount_percent: z.coerce
+    .number()
+    .min(0)
+    .max(100)
+    .optional()
+    .nullable(),
+  due_date: z.string().min(1, 'Due date is required'),
+  notes: z.string().max(255).optional().or(z.literal('')),
+});
+
+export type SingleBillGenerateFormValues = z.infer<typeof singleBillGenerateSchema>;
+
+export const paymentCollectSchema = z.object({
+  bill_id: z.string().min(1, 'Bill reference is required'),
+  amount_paid: z.coerce
+    .number({ message: 'Payment amount is required' })
+    .positive('Payment amount must be greater than zero'),
+  payment_method: z.enum([
+    'CASH',
+    'ESEWA',
+    'KHALTI',
+    'BANK_TRANSFER',
+    'CHEQUE',
+    'POS_CARD',
+    'OTHER',
+  ]),
+  transaction_reference: z
+    .string()
+    .max(100)
+    .optional()
+    .or(z.literal('')),
+  payment_date: z.string().optional().or(z.literal('')),
+  remarks: z.string().max(255).optional().or(z.literal('')),
+});
+
+export type PaymentCollectFormValues = z.infer<typeof paymentCollectSchema>;
