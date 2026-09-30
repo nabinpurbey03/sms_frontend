@@ -74,8 +74,7 @@ export const ClassProgressionNavigator: React.FC<ClassProgressionNavigatorProps>
   const isFirstStep = currentIndex <= 0;
   const isFinalStep =
     currentIndex >= 0 && currentIndex === sortedClasses.length - 1;
-  const stepNumber =
-    currentClass?.sequence_order ?? (currentIndex >= 0 ? currentIndex + 1 : 1);
+  const stepNumber = currentIndex >= 0 ? currentIndex + 1 : 1;
   const totalSteps = sortedClasses.length;
 
   const nextButton = (
@@ -150,7 +149,7 @@ export const ClassProgressionNavigator: React.FC<ClassProgressionNavigatorProps>
           {sortedClasses.map((cls, idx) => {
             const isCurrent = cls.id === currentClassId;
             const isFinal = idx === sortedClasses.length - 1;
-            const step = cls.sequence_order ?? idx + 1;
+            const step = idx + 1;
 
             return (
               <DropdownMenuItem
