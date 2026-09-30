@@ -74,7 +74,6 @@ export const ClassProgressionNavigator: React.FC<ClassProgressionNavigatorProps>
   const isFirstStep = currentIndex <= 0;
   const isFinalStep =
     currentIndex >= 0 && currentIndex === sortedClasses.length - 1;
-  const stepNumber = currentIndex >= 0 ? currentIndex + 1 : 1;
   const totalSteps = sortedClasses.length;
 
   const nextButton = (
@@ -117,63 +116,45 @@ export const ClassProgressionNavigator: React.FC<ClassProgressionNavigatorProps>
           <Button
             variant="ghost"
             size="sm"
-            className="h-8 px-2 gap-1.5 text-xs text-foreground hover:bg-accent/60 cursor-pointer font-normal"
+            className="h-8 px-2.5 gap-1.5 text-xs text-foreground hover:bg-accent/60 cursor-pointer font-normal"
             aria-label="Academic Progression Chronology"
           >
             <GitCommit className="w-3.5 h-3.5 text-primary shrink-0" />
-            <Badge
-              variant="outline"
-              className="text-[10px] px-1.5 py-0 font-bold border-primary/30 text-primary"
-            >
-              Step #{stepNumber}
-            </Badge>
-            <span className="font-bold text-xs truncate max-w-[120px]">
+            <span className="font-bold text-xs truncate max-w-[140px]">
               {currentClass?.name ?? 'Select Grade'}
             </span>
             <ChevronDown className="w-3.5 h-3.5 text-muted-foreground" />
           </Button>
         </DropdownMenuTrigger>
-        <DropdownMenuContent align="center" className="w-64 max-h-80 overflow-y-auto">
+        <DropdownMenuContent align="center" className="w-60 max-h-80 overflow-y-auto">
           <DropdownMenuLabel className="font-normal px-2.5 py-1.5">
             <div className="font-semibold text-xs text-foreground flex items-center justify-between">
-              <span>Academic Progression Chronology</span>
+              <span>Academic Progression</span>
               <span className="text-[10px] font-normal text-muted-foreground">
                 {totalSteps} {totalSteps === 1 ? 'Grade' : 'Grades'}
               </span>
             </div>
             <p className="text-[11px] text-muted-foreground mt-0.5">
-              Promotion order: Step #N → Step #N+1
+              Annual promotion sequence
             </p>
           </DropdownMenuLabel>
           <DropdownMenuSeparator />
           {sortedClasses.map((cls, idx) => {
             const isCurrent = cls.id === currentClassId;
             const isFinal = idx === sortedClasses.length - 1;
-            const step = idx + 1;
 
             return (
               <DropdownMenuItem
                 key={cls.id}
                 onClick={() => onSelectClass(cls.id)}
                 className={cn(
-                  'flex items-center gap-2 cursor-pointer py-1.5 px-2 text-xs',
+                  'flex items-center gap-2 cursor-pointer py-1.5 px-2.5 text-xs',
                   isCurrent && 'bg-primary/10 font-bold text-primary focus:bg-primary/15'
                 )}
               >
-                <Badge
-                  variant="outline"
-                  className={cn(
-                    'text-[10px] px-1.5 py-0 shrink-0 font-medium',
-                    isCurrent
-                      ? 'border-primary/40 text-primary font-bold bg-primary/10'
-                      : 'border-border text-muted-foreground'
-                  )}
-                >
-                  Step #{step}
-                </Badge>
                 <span
                   className={cn(
-                    'truncate text-xs',
+                    'truncate text-xs flex-1',
                     isCurrent ? 'font-bold text-primary' : 'text-foreground font-medium'
                   )}
                 >
