@@ -49,6 +49,7 @@ export interface NavPermissionsContext {
   isParent: boolean;
   can: (permission: PermissionKey) => boolean;
   activeTenantId: string | null;
+  activeRole?: string | null;
 }
 
 export const getNavItems = (ctx: NavPermissionsContext): NavItem[] => [
@@ -57,7 +58,7 @@ export const getNavItems = (ctx: NavPermissionsContext): NavItem[] => [
     href: '/dashboard',
     icon: LayoutDashboard,
     description: 'Overview of your school activities and metrics.',
-    show: true,
+    show: ctx.activeRole !== 'ACCOUNTANT',
     category: 'Overview',
   },
   {

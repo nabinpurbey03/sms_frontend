@@ -99,8 +99,8 @@ export const AppShell: React.FC = () => {
     : 'U';
 
   const navItems = useMemo(
-    () => getNavItems({ isSuperAdmin, isTeacher, isParent, can, activeTenantId }),
-    [isSuperAdmin, isTeacher, isParent, can, activeTenantId]
+    () => getNavItems({ isSuperAdmin, isTeacher, isParent, can, activeTenantId, activeRole }),
+    [isSuperAdmin, isTeacher, isParent, can, activeTenantId, activeRole]
   );
 
   const breadcrumbs = useMemo(

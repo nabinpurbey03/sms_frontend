@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useMemo } from 'react';
-import { Link } from '@tanstack/react-router';
+import { Link, Navigate } from '@tanstack/react-router';
 import {
   Users,
   BookOpen,
@@ -56,9 +56,14 @@ import { formatDateRange } from '@/features/school-settings/utils/nepaliDate';
 import { getLocalTodayDate } from '@/features/attendance/utils/attendanceStatus';
 
 export const DashboardPage: React.FC = () => {
-  const { calendarSystem } = useCalendarPreferenceStore();
   const { user, activeRole, activeTenantId } = useAuth();
   const { can, isSuperAdmin, isTeacher, isParent } = usePermission();
+  const { calendarSystem } = useCalendarPreferenceStore();
+
+  // Accountants are restricted to the Finance domain
+  if (activeRole === 'ACCOUNTANT') {
+    return <Navigate to="/finance" replace />;
+  }
 
   const isTeacherOnly = activeRole === 'TEACHER' && !can('MANAGE_TENANT_SETTINGS') && !isSuperAdmin;
 

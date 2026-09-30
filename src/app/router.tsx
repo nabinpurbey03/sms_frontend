@@ -49,6 +49,27 @@ import { CollectPaymentPage } from '@/features/finance/pages/CollectPaymentPage'
 import { FeeStructuresPage } from '@/features/finance/pages/FeeStructuresPage';
 import { TransactionsPage } from '@/features/finance/pages/TransactionsPage';
 import { StudentLedgerPage } from '@/features/finance/pages/StudentLedgerPage';
+import { useAuth } from '@/auth/useAuth';
+
+const IndexRedirect: React.FC = () => {
+  const { activeRole } = useAuth();
+  if (activeRole === 'ACCOUNTANT') {
+    return <Navigate to="/finance" replace />;
+  }
+  return <Navigate to="/dashboard" replace />;
+};
+
+const DisallowedRoleGuard: React.FC<{
+  disallowedRoles: string[];
+  redirectTo?: string;
+  children: React.ReactNode;
+}> = ({ disallowedRoles, redirectTo = '/finance', children }) => {
+  const { activeRole } = useAuth();
+  if (activeRole && disallowedRoles.includes(activeRole)) {
+    return <Navigate to={redirectTo as any} replace />;
+  }
+  return <>{children}</>;
+};
 
 // Root Route
 const rootRoute = createRootRoute({
@@ -60,11 +81,11 @@ const rootRoute = createRootRoute({
   ),
 });
 
-// Index Route -> redirects to /dashboard
+// Index Route -> redirects to /dashboard (or /finance for accountants)
 const indexRoute = createRoute({
   getParentRoute: () => rootRoute,
   path: '/',
-  component: () => <Navigate to="/dashboard" replace />,
+  component: IndexRedirect,
 });
 
 // Login Route
@@ -106,115 +127,191 @@ const dashboardRoute = createRoute({
 const classesRoute = createRoute({
   getParentRoute: () => protectedLayoutRoute,
   path: '/academic/classes',
-  component: ClassesPage,
+  component: () => (
+    <DisallowedRoleGuard disallowedRoles={['ACCOUNTANT']}>
+      <ClassesPage />
+    </DisallowedRoleGuard>
+  ),
 });
 
 const classDetailRoute = createRoute({
   getParentRoute: () => protectedLayoutRoute,
   path: '/academic/classes/$classId',
-  component: ClassDetailPage,
+  component: () => (
+    <DisallowedRoleGuard disallowedRoles={['ACCOUNTANT']}>
+      <ClassDetailPage />
+    </DisallowedRoleGuard>
+  ),
 });
 
 const studentsRoute = createRoute({
   getParentRoute: () => protectedLayoutRoute,
   path: '/academic/students',
-  component: StudentsPage,
+  component: () => (
+    <DisallowedRoleGuard disallowedRoles={['ACCOUNTANT']}>
+      <StudentsPage />
+    </DisallowedRoleGuard>
+  ),
 });
 
 const alumniRoute = createRoute({
   getParentRoute: () => protectedLayoutRoute,
   path: '/academic/alumni',
-  component: AlumniPage,
+  component: () => (
+    <DisallowedRoleGuard disallowedRoles={['ACCOUNTANT']}>
+      <AlumniPage />
+    </DisallowedRoleGuard>
+  ),
 });
 
 const subjectsRoute = createRoute({
   getParentRoute: () => protectedLayoutRoute,
   path: '/academic/subjects',
-  component: SubjectsPage,
+  component: () => (
+    <DisallowedRoleGuard disallowedRoles={['ACCOUNTANT']}>
+      <SubjectsPage />
+    </DisallowedRoleGuard>
+  ),
 });
 
 const assignmentsRoute = createRoute({
   getParentRoute: () => protectedLayoutRoute,
   path: '/academic/assignments',
-  component: TeacherAssignmentsPage,
+  component: () => (
+    <DisallowedRoleGuard disallowedRoles={['ACCOUNTANT']}>
+      <TeacherAssignmentsPage />
+    </DisallowedRoleGuard>
+  ),
 });
 
 const myAssignmentsRoute = createRoute({
   getParentRoute: () => protectedLayoutRoute,
   path: '/academic/my-assignments',
-  component: MyAssignmentsPage,
+  component: () => (
+    <DisallowedRoleGuard disallowedRoles={['ACCOUNTANT']}>
+      <MyAssignmentsPage />
+    </DisallowedRoleGuard>
+  ),
 });
 
 const parentLinksRoute = createRoute({
   getParentRoute: () => protectedLayoutRoute,
   path: '/academic/parent-links',
-  component: TeacherParentDirectoryPage,
+  component: () => (
+    <DisallowedRoleGuard disallowedRoles={['ACCOUNTANT']}>
+      <TeacherParentDirectoryPage />
+    </DisallowedRoleGuard>
+  ),
 });
 
 const parentDirectoryRoute = createRoute({
   getParentRoute: () => protectedLayoutRoute,
   path: '/academic/parent-directory',
-  component: TeacherParentDirectoryPage,
+  component: () => (
+    <DisallowedRoleGuard disallowedRoles={['ACCOUNTANT']}>
+      <TeacherParentDirectoryPage />
+    </DisallowedRoleGuard>
+  ),
 });
 
 const myTeachersRoute = createRoute({
   getParentRoute: () => protectedLayoutRoute,
   path: '/academic/my-teachers',
-  component: MyTeachersPage,
+  component: () => (
+    <DisallowedRoleGuard disallowedRoles={['ACCOUNTANT']}>
+      <MyTeachersPage />
+    </DisallowedRoleGuard>
+  ),
 });
 
 const myChildrenRoute = createRoute({
   getParentRoute: () => protectedLayoutRoute,
   path: '/academic/my-children',
-  component: MyChildrenPage,
+  component: () => (
+    <DisallowedRoleGuard disallowedRoles={['ACCOUNTANT']}>
+      <MyChildrenPage />
+    </DisallowedRoleGuard>
+  ),
 });
 
 const reportCardsRoute = createRoute({
   getParentRoute: () => protectedLayoutRoute,
   path: '/academic/report-cards',
-  component: ParentReportCardsPage,
+  component: () => (
+    <DisallowedRoleGuard disallowedRoles={['ACCOUNTANT']}>
+      <ParentReportCardsPage />
+    </DisallowedRoleGuard>
+  ),
 });
 
 const academicAnalyticsRoute = createRoute({
   getParentRoute: () => protectedLayoutRoute,
   path: '/academic/analytics',
-  component: AcademicAnalyticsPage,
+  component: () => (
+    <DisallowedRoleGuard disallowedRoles={['ACCOUNTANT']}>
+      <AcademicAnalyticsPage />
+    </DisallowedRoleGuard>
+  ),
 });
 
 const attendanceMarkRoute = createRoute({
   getParentRoute: () => protectedLayoutRoute,
   path: '/attendance/mark',
-  component: MarkAttendancePage,
+  component: () => (
+    <DisallowedRoleGuard disallowedRoles={['ACCOUNTANT']}>
+      <MarkAttendancePage />
+    </DisallowedRoleGuard>
+  ),
 });
 
 const attendanceReportsRoute = createRoute({
   getParentRoute: () => protectedLayoutRoute,
   path: '/attendance/reports',
-  component: AttendanceReportsPage,
+  component: () => (
+    <DisallowedRoleGuard disallowedRoles={['ACCOUNTANT']}>
+      <AttendanceReportsPage />
+    </DisallowedRoleGuard>
+  ),
 });
 
 const membersRoute = createRoute({
   getParentRoute: () => protectedLayoutRoute,
   path: '/members',
-  component: MembersPage,
+  component: () => (
+    <DisallowedRoleGuard disallowedRoles={['ACCOUNTANT']}>
+      <MembersPage />
+    </DisallowedRoleGuard>
+  ),
 });
 
 const tenantsRoute = createRoute({
   getParentRoute: () => protectedLayoutRoute,
   path: '/tenants',
-  component: TenantsPage,
+  component: () => (
+    <DisallowedRoleGuard disallowedRoles={['ACCOUNTANT']}>
+      <TenantsPage />
+    </DisallowedRoleGuard>
+  ),
 });
 
 const tenantDetailRoute = createRoute({
   getParentRoute: () => protectedLayoutRoute,
   path: '/tenants/$tenantId',
-  component: TenantAnalyticsPage,
+  component: () => (
+    <DisallowedRoleGuard disallowedRoles={['ACCOUNTANT']}>
+      <TenantAnalyticsPage />
+    </DisallowedRoleGuard>
+  ),
 });
 
 const tenantOnboardRoute = createRoute({
   getParentRoute: () => protectedLayoutRoute,
   path: '/tenants/onboard',
-  component: TenantOnboardPage,
+  component: () => (
+    <DisallowedRoleGuard disallowedRoles={['ACCOUNTANT']}>
+      <TenantOnboardPage />
+    </DisallowedRoleGuard>
+  ),
 });
 
 const academicYearsRoute = createRoute({
@@ -226,43 +323,71 @@ const academicYearsRoute = createRoute({
 const schoolSettingsRoute = createRoute({
   getParentRoute: () => protectedLayoutRoute,
   path: '/school-settings',
-  component: SchoolSettingsPage,
+  component: () => (
+    <DisallowedRoleGuard disallowedRoles={['ACCOUNTANT']}>
+      <SchoolSettingsPage />
+    </DisallowedRoleGuard>
+  ),
 });
 
 const academicCalendarRoute = createRoute({
   getParentRoute: () => protectedLayoutRoute,
   path: '/academic-calendar',
-  component: AcademicCalendarPage,
+  component: () => (
+    <DisallowedRoleGuard disallowedRoles={['ACCOUNTANT']}>
+      <AcademicCalendarPage />
+    </DisallowedRoleGuard>
+  ),
 });
 
 const examsRoute = createRoute({
   getParentRoute: () => protectedLayoutRoute,
   path: '/examination/exams',
-  component: ExamsListPage,
+  component: () => (
+    <DisallowedRoleGuard disallowedRoles={['ACCOUNTANT']}>
+      <ExamsListPage />
+    </DisallowedRoleGuard>
+  ),
 });
 
 const createExamRoute = createRoute({
   getParentRoute: () => protectedLayoutRoute,
   path: '/examination/exams/create',
-  component: CreateExamPage,
+  component: () => (
+    <DisallowedRoleGuard disallowedRoles={['ACCOUNTANT']}>
+      <CreateExamPage />
+    </DisallowedRoleGuard>
+  ),
 });
 
 const examReviewRoute = createRoute({
   getParentRoute: () => protectedLayoutRoute,
   path: '/examination/exams/$examId/review',
-  component: ExamReviewPage,
+  component: () => (
+    <DisallowedRoleGuard disallowedRoles={['ACCOUNTANT']}>
+      <ExamReviewPage />
+    </DisallowedRoleGuard>
+  ),
 });
 
 const scoreEntryRoute = createRoute({
   getParentRoute: () => protectedLayoutRoute,
   path: '/examination/exams/$examId/grade/$examSubjectId',
-  component: ScoreEntryPage,
+  component: () => (
+    <DisallowedRoleGuard disallowedRoles={['ACCOUNTANT']}>
+      <ScoreEntryPage />
+    </DisallowedRoleGuard>
+  ),
 });
 
 const scoreEntryQueryRoute = createRoute({
   getParentRoute: () => protectedLayoutRoute,
   path: '/examination/scores',
-  component: ScoreEntryPage,
+  component: () => (
+    <DisallowedRoleGuard disallowedRoles={['ACCOUNTANT']}>
+      <ScoreEntryPage />
+    </DisallowedRoleGuard>
+  ),
 });
 
 const platformUsersRoute = createRoute({
