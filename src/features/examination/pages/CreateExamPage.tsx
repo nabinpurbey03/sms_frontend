@@ -8,6 +8,9 @@ import {
   BookOpen,
   Loader2,
   ShieldAlert,
+  CalendarDays,
+  Lock,
+  AlertTriangle,
 } from 'lucide-react';
 import { useAuth } from '@/auth/useAuth';
 import { usePermission } from '@/auth/usePermission';
@@ -20,7 +23,7 @@ import {
   useCreateExam,
   useAddExamSubject,
 } from '@/features/examination/hooks';
-import { useSelectedAcademicYear } from '@/features/academic-year/hooks/useSelectedAcademicYear';
+import { useCurrentAcademicYear } from '@/features/academic-year/hooks/useCurrentAcademicYear';
 import {
   Card,
   CardHeader,
@@ -31,6 +34,7 @@ import {
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
+import { Badge } from '@/components/ui/badge';
 import { NepaliDatePicker } from '@/components/ui/nepali-date-picker';
 import { Checkbox } from '@/components/ui/checkbox';
 import {
@@ -61,8 +65,8 @@ export const CreateExamPage: React.FC = () => {
   // Form states
   const [selectedClassIds, setSelectedClassIds] = useState<string[]>([]);
   const [examName, setExamName] = useState<string>('');
-  const { years, selectedYearId } = useSelectedAcademicYear();
-  const [academicTerm, setAcademicTerm] = useState<string>(selectedYearId || '');
+  const { currentYear, currentYearId, isLoading: isYearLoading } =
+    useCurrentAcademicYear(activeTenantId);
   const [startDate, setStartDate] = useState<string>('');
   const [endDate, setEndDate] = useState<string>('');
   const [isSubmitting, setIsSubmitting] = useState<boolean>(false);
@@ -71,13 +75,6 @@ export const CreateExamPage: React.FC = () => {
   const [overrides, setOverrides] = useState<
     Record<string, Record<string, Partial<SubjectConfigItem>>>
   >({});
-
-  // Update academic term if selectedYearId loads after mount
-  React.useEffect(() => {
-    if (selectedYearId && !academicTerm) {
-      setAcademicTerm(selectedYearId);
-    }
-  }, [selectedYearId, academicTerm]);
 
   // Data Queries
   const { data: detailedClasses = [], isLoading: classesLoading } =
@@ -222,6 +219,13 @@ export const CreateExamPage: React.FC = () => {
       return;
     }
 
+    if (!currentYearId) {
+      toast.error('Validation Error', {
+        description: 'No active academic year found. Cannot create examinations without an active academic year.',
+      });
+      return;
+    }
+
     if (selectedClassIds.length === 0) {
       toast.error('Validation Error', {
         description: 'Please select at least one class for the examination.',
@@ -288,7 +292,8 @@ export const CreateExamPage: React.FC = () => {
             name: trimmedName,
             class_ids: [classId], // Frontend sends array per schema, backend actually takes class_id, let's fix backend payload to pass class_id
             class_id: classId,
-            academic_term: academicTerm.trim() || undefined,
+            academic_term: currentYearId || undefined,
+            academic_year_id: currentYearId || undefined,
             start_date: startDate || undefined,
             end_date: endDate || undefined,
           } as any, // Cast to any to handle schema misalignment if necessary
@@ -448,25 +453,43 @@ export const CreateExamPage: React.FC = () => {
               />
             </div>
 
-            {/* Academic Year */}
+            {/* Academic Year - Strictly Locked to Current Session */}
             <div className="space-y-1.5">
-              <Label htmlFor="academic-term" className="text-sm font-semibold">
-                Academic Year
+              <Label className="text-sm font-semibold flex items-center justify-between">
+                <span>Academic Year</span>
+                <span className="text-xs text-muted-foreground font-normal">Active Session</span>
               </Label>
-              <select
-                id="academic-term"
-                value={academicTerm}
-                onChange={(e) => setAcademicTerm(e.target.value)}
-                disabled={isSubmitting}
-                className="flex h-9 w-full rounded-md border border-input bg-transparent px-3 py-1 text-sm shadow-xs transition-colors focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring disabled:cursor-not-allowed disabled:opacity-50"
-              >
-                <option value="">Select Academic Year</option>
-                {years.map((y) => (
-                  <option key={y.id} value={y.id}>
-                    {y.name} {y.is_current ? '(Current)' : ''}
-                  </option>
-                ))}
-              </select>
+              {currentYear ? (
+                <div className="flex items-center justify-between p-3 rounded-xl border border-border/80 bg-muted/30">
+                  <div className="flex items-center gap-2.5 min-w-0">
+                    <div className="p-2 rounded-lg bg-primary/10 text-primary border border-primary/20 shrink-0">
+                      <CalendarDays className="w-4 h-4" />
+                    </div>
+                    <div className="min-w-0">
+                      <div className="flex items-center gap-2">
+                        <span className="font-bold text-sm text-foreground truncate">{currentYear.name}</span>
+                        <Badge variant="outline" className="text-[10px] px-1.5 py-0 border-primary/30 bg-primary/5 text-primary font-semibold">
+                          Current
+                        </Badge>
+                      </div>
+                      {(currentYear.start_date && currentYear.end_date) && (
+                        <p className="text-[11px] text-muted-foreground mt-0.5 truncate">
+                          {currentYear.start_date} – {currentYear.end_date}
+                        </p>
+                      )}
+                    </div>
+                  </div>
+                  <div className="flex items-center gap-1.5 text-xs text-muted-foreground bg-background/80 px-2 py-1 rounded-md border border-border/60 shrink-0">
+                    <Lock className="w-3 h-3 text-muted-foreground" />
+                    <span className="text-[11px] font-medium hidden sm:inline">Locked to current year</span>
+                  </div>
+                </div>
+              ) : (
+                <div className="p-3 rounded-xl border border-amber-500/30 bg-amber-500/10 text-amber-700 dark:text-amber-400 text-xs flex items-center gap-2">
+                  <AlertTriangle className="w-4 h-4 shrink-0" />
+                  <span>No active academic year found for this school. Please set a current academic year in Academic Settings before creating exams.</span>
+                </div>
+              )}
             </div>
 
             {/* Start and End Dates */}
@@ -567,7 +590,13 @@ export const CreateExamPage: React.FC = () => {
         </Button>
         <Button
           type="submit"
-          disabled={isSubmitting || selectedClassIds.length === 0 || !examName.trim()}
+          disabled={
+            isSubmitting ||
+            !currentYearId ||
+            isYearLoading ||
+            selectedClassIds.length === 0 ||
+            !examName.trim()
+          }
         >
           {isSubmitting ? (
             <>
