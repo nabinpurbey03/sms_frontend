@@ -6,7 +6,7 @@ import {
   useAllClassesWithDetails,
   useDeleteAssignment,
 } from '../hooks';
-import { useSelectedAcademicYear } from '@/features/academic-year/hooks/useSelectedAcademicYear';
+import { useCurrentAcademicYear } from '@/features/academic-year/hooks/useCurrentAcademicYear';
 import { AssignTeacherDialog } from '../components/AssignTeacherDialog';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
@@ -40,11 +40,11 @@ export const TeacherAssignmentsPage: React.FC = () => {
   const { can } = usePermission();
   const canAssign = can('ASSIGN_TEACHERS');
 
-  const { selectedYear, selectedYearId } = useSelectedAcademicYear();
-  const isReadOnly = selectedYear?.is_closed || !selectedYear?.is_current;
+  const { currentYear, currentYearId } = useCurrentAcademicYear(activeTenantId);
+  const isReadOnly = currentYear?.is_closed ?? false;
 
-  const { data: assignments = [], isLoading, isError, refetch } = useAssignments(activeTenantId, { academic_year_id: selectedYearId });
-  const { data: classes = [] } = useAllClassesWithDetails(activeTenantId, selectedYearId);
+  const { data: assignments = [], isLoading, isError, refetch } = useAssignments(activeTenantId, { academic_year_id: currentYearId });
+  const { data: classes = [] } = useAllClassesWithDetails(activeTenantId, currentYearId);
   const deleteAssignmentMutation = useDeleteAssignment();
 
   // Dialog State

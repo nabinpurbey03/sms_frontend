@@ -14,7 +14,7 @@ import { StudentEnrollGlobalDialog } from '../components/StudentEnrollGlobalDial
 import { BulkStudentUploadDialog } from '../components/BulkStudentUploadDialog';
 import { StudentDeleteDialog } from '../components/StudentDeleteDialog';
 import { ParentStudentLinkDialog } from '@/features/members/components/ParentStudentLinkDialog';
-import { useSelectedAcademicYear } from '@/features/academic-year/hooks/useSelectedAcademicYear';
+import { useCurrentAcademicYear } from '@/features/academic-year/hooks/useCurrentAcademicYear';
 import { StudentEnrollmentHistoryDialog } from '../components/StudentEnrollmentHistoryDialog';
 import {
   Users,
@@ -83,7 +83,7 @@ export const StudentsPage: React.FC = () => {
   const [linkingStudent, setLinkingStudent] = useState<EnrichedStudent | null>(null);
   const [historyStudent, setHistoryStudent] = useState<EnrichedStudent | null>(null);
 
-  const { selectedYearId } = useSelectedAcademicYear();
+  const { currentYearId } = useCurrentAcademicYear(activeTenantId);
 
   // Queries & Mutations
   const {
@@ -91,7 +91,7 @@ export const StudentsPage: React.FC = () => {
     isLoading,
     isError,
     refetch,
-  } = useAllClassesWithDetails(activeTenantId, selectedYearId);
+  } = useAllClassesWithDetails(activeTenantId, currentYearId);
 
   const { data: graduatedData } = useGraduatedStudents(activeTenantId, { limit: 1 });
 
@@ -271,7 +271,7 @@ export const StudentsPage: React.FC = () => {
       classId,
       sectionId,
       data,
-      academicYearId: selectedYearId,
+      academicYearId: currentYearId,
     });
   };
 
@@ -283,7 +283,7 @@ export const StudentsPage: React.FC = () => {
       classId,
       sectionId,
       file,
-      academicYearId: selectedYearId,
+      academicYearId: currentYearId,
     });
   };
 
