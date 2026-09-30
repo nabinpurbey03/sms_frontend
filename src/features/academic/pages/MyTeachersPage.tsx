@@ -25,7 +25,7 @@ import { toast } from 'sonner';
 
 export const MyTeachersPage: React.FC = () => {
   const { activeTenantId } = useAuth();
-  const { data: childrenTeachers = [], isLoading, isError, refetch } = useMyChildrenTeachers(activeTenantId);
+  const { data: childrenTeachers = [], isLoading, isError, error, refetch } = useMyChildrenTeachers(activeTenantId);
 
   const [copiedKey, setCopiedKey] = useState<string | null>(null);
 
@@ -68,7 +68,7 @@ export const MyTeachersPage: React.FC = () => {
           <div className="space-y-1">
             <h3 className="text-lg font-bold">Failed to load class teacher information</h3>
             <p className="text-sm text-muted-foreground">
-              An error occurred while fetching class teacher information for your children.
+              {(error as any)?.response?.data?.message || (error as Error)?.message || "An error occurred while fetching class teacher information for your children."}
             </p>
           </div>
           <Button onClick={() => refetch()} variant="outline" size="sm">
