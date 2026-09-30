@@ -18,6 +18,7 @@ import {
   Trash2,
   AlertCircle,
   AlertTriangle,
+  Wallet,
 } from 'lucide-react';
 import type { TenantMember, MemberRole } from '../types';
 
@@ -48,6 +49,12 @@ const ALL_ROLES: Array<{
     label: 'Office Admin',
     desc: 'Academic operations, class & student enrollment',
     icon: Shield,
+  },
+  {
+    id: 'ACCOUNTANT',
+    label: 'Accountant',
+    desc: 'Manages school finance, fee structures, bills, and payments (Max 1 per school)',
+    icon: Wallet,
   },
   {
     id: 'PARENT',

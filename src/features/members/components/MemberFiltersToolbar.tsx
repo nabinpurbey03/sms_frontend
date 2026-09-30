@@ -22,6 +22,7 @@ const ROLE_OPTIONS: Array<{ id: MemberRole | 'ALL'; label: string }> = [
   { id: 'ALL', label: 'All Roles' },
   { id: 'TEACHER', label: 'Teachers' },
   { id: 'OFFICE_ADMIN', label: 'Office Staff' },
+  { id: 'ACCOUNTANT', label: 'Accountant' },
   { id: 'PARENT', label: 'Parents' },
   { id: 'ADMIN', label: 'Admins' },
 ];

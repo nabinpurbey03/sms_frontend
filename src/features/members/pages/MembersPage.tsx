@@ -16,8 +16,9 @@ import { MemberAddDialog } from '../components/MemberAddDialog';
 import { MemberRoleDialog } from '../components/MemberRoleDialog';
 import { MemberDetailDrawer } from '../components/MemberDetailDrawer';
 import { MemberDeleteDialog } from '../components/MemberDeleteDialog';
-import { Building2 } from 'lucide-react';
+import { Building2, Wallet } from 'lucide-react';
 import { Button } from '@/components/ui/button';
+import { Badge } from '@/components/ui/badge';
 import { Link } from '@tanstack/react-router';
 import { toast } from 'sonner';
 import type { TenantMember, MemberRole, TenantMemberCreateDTO } from '../types';
@@ -60,6 +61,10 @@ export const MembersPage: React.FC = () => {
   const canManageMembers =
     isSuperAdmin || activeRole === 'ADMIN' || activeRole === 'OFFICE_ADMIN';
   const canGrantRoles = isSuperAdmin || activeRole === 'ADMIN';
+
+  const currentAccountant = useMemo(() => {
+    return allMembers.find((m) => m.roles.includes('ACCOUNTANT') && m.is_active);
+  }, [allMembers]);
 
   // Filtered members by search query and active status
   const filteredMembers = useMemo(() => {
@@ -200,6 +205,48 @@ export const MembersPage: React.FC = () => {
         onSelectRole={(role) => setSelectedRole(role)}
         isLoading={isLoading}
       />
+
+      {/* Accountant Governance Banner for School Principals */}
+      {canGrantRoles && (
+        <div className="p-3.5 sm:p-4 rounded-xl border border-teal-500/20 bg-teal-500/5 flex flex-col sm:flex-row sm:items-center justify-between gap-3 shadow-2xs">
+          <div className="flex items-center gap-3">
+            <div className="p-2.5 rounded-lg bg-teal-500/10 text-teal-700 dark:text-teal-300 border border-teal-500/20 shrink-0">
+              <Wallet className="w-5 h-5" />
+            </div>
+            <div>
+              <div className="flex items-center gap-2">
+                <span className="text-xs font-bold text-foreground">School Finance Governance</span>
+                <Badge variant="outline" className="text-[10px] text-teal-700 dark:text-teal-300 border-teal-500/30">
+                  Max 1 Active Accountant
+                </Badge>
+              </div>
+              <p className="text-[11px] text-muted-foreground mt-0.5">
+                {currentAccountant ? (
+                  <>
+                    Appointed Accountant:{' '}
+                    <span className="font-semibold text-foreground">
+                      {currentAccountant.first_name} {currentAccountant.last_name}
+                    </span>{' '}
+                    ({currentAccountant.email})
+                  </>
+                ) : (
+                  'No official accountant appointed yet. Appoint an accountant to manage fee collections and billing.'
+                )}
+              </p>
+            </div>
+          </div>
+          {!currentAccountant && (
+            <Button
+              size="sm"
+              onClick={() => setIsAddOpen(true)}
+              className="text-xs gap-1.5 shrink-0 bg-teal-600 hover:bg-teal-700 text-white cursor-pointer"
+            >
+              <Wallet className="w-3.5 h-3.5" />
+              Appoint Accountant
+            </Button>
+          )}
+        </div>
+      )}
 
       {/* Filters & Actions Toolbar */}
       <MemberFiltersToolbar

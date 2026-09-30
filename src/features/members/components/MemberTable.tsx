@@ -11,6 +11,7 @@ import {
   HeartHandshake,
   Shield,
   ShieldCheck,
+  Wallet,
 } from 'lucide-react';
 import {
   Table,
@@ -72,6 +73,13 @@ const ROLE_BADGE_CONFIG: Record<
     text: 'text-amber-700 dark:text-amber-300',
     border: 'border-amber-500/25',
     icon: HeartHandshake,
+  },
+  ACCOUNTANT: {
+    label: 'Accountant',
+    bg: 'bg-teal-500/10',
+    text: 'text-teal-700 dark:text-teal-300',
+    border: 'border-teal-500/25',
+    icon: Wallet,
   },
   SUPER_ADMIN: {
     label: 'Super Admin',

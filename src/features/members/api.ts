@@ -19,6 +19,7 @@ const ENDPOINT_BY_ROLE: Record<MemberRole, string> = {
   PARENT: 'parent',
   ADMIN: 'admin/assign',
   SUPER_ADMIN: 'admin/assign',
+  ACCOUNTANT: 'accountant',
 };
 
 export const membersApi = {

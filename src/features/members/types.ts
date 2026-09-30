@@ -1,4 +1,4 @@
-export type MemberRole = 'ADMIN' | 'OFFICE_ADMIN' | 'TEACHER' | 'PARENT' | 'SUPER_ADMIN';
+export type MemberRole = 'ADMIN' | 'OFFICE_ADMIN' | 'ACCOUNTANT' | 'TEACHER' | 'PARENT' | 'SUPER_ADMIN';
 
 export interface TenantMember {
   user_id: string;
@@ -25,7 +25,7 @@ export interface RegisteredUserSearchResult {
 export interface AssignMemberPayload {
   phone?: string;
   user_id?: string;
-  role: 'ADMIN' | 'OFFICE_ADMIN' | 'TEACHER' | 'PARENT';
+  role: 'ADMIN' | 'OFFICE_ADMIN' | 'ACCOUNTANT' | 'TEACHER' | 'PARENT';
 }
 
 export interface ParentStudentLinkPayload {
@@ -44,7 +44,7 @@ export interface TenantMemberCreateDTO {
   password?: string;
   phone?: string;
   user_id?: string;
-  role: 'ADMIN' | 'OFFICE_ADMIN' | 'TEACHER' | 'PARENT';
+  role: 'ADMIN' | 'OFFICE_ADMIN' | 'ACCOUNTANT' | 'TEACHER' | 'PARENT';
 }
 
 export interface TenantRoleAssignDTO {

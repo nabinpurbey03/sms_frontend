@@ -22,6 +22,7 @@ import {
   AlertCircle,
   RefreshCw,
   UserPlus,
+  Wallet,
 } from 'lucide-react';
 import { toast } from 'sonner';
 import { useAuth } from '@/auth/useAuth';
@@ -158,6 +159,8 @@ export const MemberAddDialog: React.FC<MemberAddDialogProps> = ({
 
   const targetRoleLabel = isOfficeAdmin
     ? 'Teacher'
+    : role === 'ACCOUNTANT'
+    ? 'Accountant'
     : role === 'OFFICE_ADMIN'
     ? 'Office Admin'
     : 'Teacher';
@@ -339,12 +342,12 @@ export const MemberAddDialog: React.FC<MemberAddDialogProps> = ({
                   </p>
                 </div>
               ) : (
-                /* Admin: Can add Teacher and Office Admin */
+                /* Admin: Can add Teacher, Office Admin, or Accountant */
                 <div className="space-y-2">
                   <Label className="text-xs font-semibold text-foreground">
                     Select Role to Assign in School <span className="text-destructive">*</span>
                   </Label>
-                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5">
+                  <div className="grid grid-cols-1 sm:grid-cols-3 gap-2.5">
                     {/* Teacher Option */}
                     <div
                       onClick={() => setRole('TEACHER')}
@@ -366,7 +369,7 @@ export const MemberAddDialog: React.FC<MemberAddDialogProps> = ({
                             )}
                           </div>
                           <p className="text-[11px] text-muted-foreground line-clamp-2 mt-0.5">
-                            Instructs classes, marks attendance, grades subjects.
+                            Instructs classes and grading.
                           </p>
                         </div>
                       </div>
@@ -393,7 +396,34 @@ export const MemberAddDialog: React.FC<MemberAddDialogProps> = ({
                             )}
                           </div>
                           <p className="text-[11px] text-muted-foreground line-clamp-2 mt-0.5">
-                            Manages school operations, classes, and rosters.
+                            School operations & roster.
+                          </p>
+                        </div>
+                      </div>
+                    </div>
+
+                    {/* Accountant Option */}
+                    <div
+                      onClick={() => setRole('ACCOUNTANT')}
+                      className={`p-3 rounded-xl border cursor-pointer transition-all ${
+                        role === 'ACCOUNTANT'
+                          ? 'border-teal-500 bg-teal-500/10 shadow-xs ring-1 ring-teal-500'
+                          : 'border-border/70 hover:border-border hover:bg-muted/30'
+                      }`}
+                    >
+                      <div className="flex items-start gap-2.5">
+                        <div className="p-2 rounded-lg shrink-0 text-teal-600 dark:text-teal-400 border border-teal-500/30 bg-teal-500/10">
+                          <Wallet className="w-4 h-4" />
+                        </div>
+                        <div className="min-w-0 flex-1">
+                          <div className="flex items-center justify-between gap-1">
+                            <span className="text-xs font-bold text-foreground">Accountant</span>
+                            {role === 'ACCOUNTANT' && (
+                              <CheckCircle2 className="w-3.5 h-3.5 text-teal-600 dark:text-teal-400 shrink-0" />
+                            )}
+                          </div>
+                          <p className="text-[11px] text-muted-foreground line-clamp-2 mt-0.5">
+                            Fees & billing (Max 1).
                           </p>
                         </div>
                       </div>
