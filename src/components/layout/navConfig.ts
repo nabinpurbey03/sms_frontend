@@ -15,6 +15,11 @@ import {
   GraduationCap,
   Baby,
   Award,
+  WalletCards,
+  Coins,
+  FileText,
+  CreditCard,
+  Receipt,
   type LucideIcon,
 } from 'lucide-react';
 import type { PermissionKey } from '@/config/permissions';
@@ -22,6 +27,7 @@ import type { PermissionKey } from '@/config/permissions';
 export type NavCategory =
   | 'Overview'
   | 'Administration'
+  | 'Finance'
   | 'Academics'
   | 'Attendance'
   | 'Examinations'
@@ -101,6 +107,46 @@ export const getNavItems = (ctx: NavPermissionsContext): NavItem[] => [
     description: 'Connect parents to their children.',
     show: ctx.can('LINK_PARENTS'),
     category: 'Administration',
+  },
+  {
+    label: 'Finance Overview',
+    href: '/finance',
+    icon: WalletCards,
+    description: 'Fee collection summary, cash flow, and dues.',
+    show: ctx.can('VIEW_FINANCE'),
+    category: 'Finance',
+  },
+  {
+    label: 'Fee Structures',
+    href: '/finance/structures',
+    icon: Coins,
+    description: 'Configure class-wise monthly tuition and annual fees.',
+    show: ctx.can('VIEW_FINANCE'),
+    category: 'Finance',
+  },
+  {
+    label: 'Bills & Invoices',
+    href: '/finance/bills',
+    icon: FileText,
+    description: 'Generate, track, and manage student fee bills.',
+    show: ctx.can('VIEW_FINANCE'),
+    category: 'Finance',
+  },
+  {
+    label: 'Collect Payment',
+    href: '/finance/collect',
+    icon: CreditCard,
+    description: 'Collect fee payments and issue official receipts.',
+    show: ctx.can('VIEW_FINANCE'),
+    category: 'Finance',
+  },
+  {
+    label: 'Payment Transactions',
+    href: '/finance/transactions',
+    icon: Receipt,
+    description: 'View payment history and print duplicate receipts.',
+    show: ctx.can('VIEW_FINANCE'),
+    category: 'Finance',
   },
   {
     label: 'Classes & Sections',

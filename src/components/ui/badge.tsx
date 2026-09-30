@@ -30,6 +30,8 @@ const badgeVariants = cva(
           'border-blue-500/30 bg-blue-500/15 text-blue-700 dark:text-blue-300',
         'role-teacher':
           'border-emerald-500/30 bg-emerald-500/15 text-emerald-700 dark:text-emerald-300',
+        'role-accountant':
+          'border-teal-500/30 bg-teal-500/15 text-teal-700 dark:text-teal-300',
         'role-parent':
           'border-amber-500/30 bg-amber-500/15 text-amber-700 dark:text-amber-300',
       },

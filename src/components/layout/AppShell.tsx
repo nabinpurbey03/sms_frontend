@@ -21,6 +21,7 @@ export const formatRole = (role: string | null | undefined): string => {
   if (role === 'ADMIN') return 'Principal';
   if (role === 'SUPER_ADMIN') return 'Super Admin';
   if (role === 'OFFICE_ADMIN') return 'Office Admin';
+  if (role === 'ACCOUNTANT') return 'Accountant';
   return role.charAt(0).toUpperCase() + role.slice(1).toLowerCase();
 };
 
@@ -32,6 +33,8 @@ export const getRoleBadgeVariant = (role: string | null): BadgeProps['variant'] 
       return 'default';
     case 'OFFICE_ADMIN':
       return 'info';
+    case 'ACCOUNTANT':
+      return 'role-accountant';
     case 'TEACHER':
       return 'success';
     case 'PARENT':
