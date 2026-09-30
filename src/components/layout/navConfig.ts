@@ -118,46 +118,6 @@ export const getNavItems = (ctx: NavPermissionsContext): NavItem[] => [
     category: 'Administration',
   },
   {
-    label: 'Finance Dashboard',
-    href: '/finance',
-    icon: WalletCards,
-    description: 'Fee collection summary, cash flow, and dues.',
-    show: ctx.can('VIEW_FINANCE') && ctx.activeRole !== 'ACCOUNTANT',
-    category: 'Finance',
-  },
-  {
-    label: 'Fee Structures',
-    href: '/finance/structures',
-    icon: Coins,
-    description: 'Configure class-wise monthly tuition and annual fees.',
-    show: ctx.can('VIEW_FINANCE'),
-    category: 'Finance',
-  },
-  {
-    label: 'Bills & Invoices',
-    href: '/finance/bills',
-    icon: FileText,
-    description: 'Generate, track, and manage student fee bills.',
-    show: ctx.can('VIEW_FINANCE'),
-    category: 'Finance',
-  },
-  {
-    label: 'Collect Payment',
-    href: '/finance/collect',
-    icon: CreditCard,
-    description: 'Collect fee payments and issue official receipts.',
-    show: ctx.can('VIEW_FINANCE'),
-    category: 'Finance',
-  },
-  {
-    label: 'Payment Transactions',
-    href: '/finance/transactions',
-    icon: Receipt,
-    description: 'View payment history and print duplicate receipts.',
-    show: ctx.can('VIEW_FINANCE'),
-    category: 'Finance',
-  },
-  {
     label: 'Classes & Sections',
     href: '/academic/classes',
     icon: BookOpen,
@@ -263,7 +223,76 @@ export const getNavItems = (ctx: NavPermissionsContext): NavItem[] => [
     show: ctx.isParent,
     category: 'Parent Portal',
   },
+  {
+    label: 'Finance Dashboard',
+    href: '/finance',
+    icon: WalletCards,
+    description: 'Fee collection summary, cash flow, and dues.',
+    show: ctx.can('VIEW_FINANCE') && ctx.activeRole !== 'ACCOUNTANT',
+    category: 'Finance',
+  },
+  {
+    label: 'Fee Structures',
+    href: '/finance/structures',
+    icon: Coins,
+    description: 'Configure class-wise monthly tuition and annual fees.',
+    show: ctx.can('VIEW_FINANCE'),
+    category: 'Finance',
+  },
+  {
+    label: 'Bills & Invoices',
+    href: '/finance/bills',
+    icon: FileText,
+    description: 'Generate, track, and manage student fee bills.',
+    show: ctx.can('VIEW_FINANCE'),
+    category: 'Finance',
+  },
+  {
+    label: 'Collect Payment',
+    href: '/finance/collect',
+    icon: CreditCard,
+    description: 'Collect fee payments and issue official receipts.',
+    show: ctx.can('VIEW_FINANCE'),
+    category: 'Finance',
+  },
+  {
+    label: 'Payment Transactions',
+    href: '/finance/transactions',
+    icon: Receipt,
+    description: 'View payment history and print duplicate receipts.',
+    show: ctx.can('VIEW_FINANCE'),
+    category: 'Finance',
+  },
 ];
+
+export const NAV_CATEGORY_ORDER: Record<NavCategory, number> = {
+  Overview: 10,
+  Administration: 20,
+  Academics: 30,
+  Attendance: 40,
+  Examinations: 50,
+  'Teacher Desk': 60,
+  'Parent Portal': 70,
+  Finance: 80,
+};
+
+export const groupNavItemsByCategory = (navItems: NavItem[]): Record<string, NavItem[]> => {
+  const visible = navItems.filter((item) => item.show);
+  const groups = visible.reduce<Record<string, NavItem[]>>((acc, item) => {
+    const cat = item.category || 'General';
+    if (!acc[cat]) acc[cat] = [];
+    acc[cat].push(item);
+    return acc;
+  }, {});
+
+  const sortedEntries = Object.entries(groups).sort(([catA], [catB]) => {
+    const orderA = NAV_CATEGORY_ORDER[catA as NavCategory] ?? 99;
+    const orderB = NAV_CATEGORY_ORDER[catB as NavCategory] ?? 99;
+    return orderA - orderB;
+  });
+
+  return Object.fromEntries(sortedEntries);
+};
 
 export const isNavItemActive = (currentPath: string, navHref: string): boolean => {
   if (navHref === '/dashboard' || navHref === '/finance') {

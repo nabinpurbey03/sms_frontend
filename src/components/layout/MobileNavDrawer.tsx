@@ -11,7 +11,7 @@ import {
 import { Button } from '@/components/ui/button';
 import { Badge, type BadgeProps } from '@/components/ui/badge';
 import { BRAND_LOGO_URL } from '@/config/env';
-import { type NavItem, isNavItemActive } from './navConfig';
+import { type NavItem, isNavItemActive, groupNavItemsByCategory } from './navConfig';
 
 export interface MobileNavDrawerProps {
   open: boolean;
@@ -65,19 +65,9 @@ export const MobileNavDrawer: React.FC<MobileNavDrawerProps> = ({
     };
   }, [open, onClose]);
 
-  const visibleNavItems = React.useMemo(
-    () => navItems.filter((item) => item.show),
-    [navItems]
-  );
-
   const groupedNavItems = React.useMemo(() => {
-    return visibleNavItems.reduce((acc, item) => {
-      const cat = item.category || 'General';
-      if (!acc[cat]) acc[cat] = [];
-      acc[cat].push(item);
-      return acc;
-    }, {} as Record<string, NavItem[]>);
-  }, [visibleNavItems]);
+    return groupNavItemsByCategory(navItems);
+  }, [navItems]);
 
   if (!open) return null;
 
