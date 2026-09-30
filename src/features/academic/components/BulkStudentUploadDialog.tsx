@@ -17,6 +17,7 @@ import {
   AlertCircle,
   X,
   Users,
+  Loader2,
 } from 'lucide-react';
 import { toast } from 'sonner';
 import type { ClassWithDetails, StudentCreateDTO } from '../types';
@@ -249,24 +250,28 @@ export const BulkStudentUploadDialog: React.FC<BulkStudentUploadDialogProps> = (
 
   return (
     <Dialog open={isOpen} onOpenChange={(open) => !open && onClose()}>
-      <DialogContent className="sm:max-w-xl max-h-[90vh] overflow-y-auto">
-        <DialogHeader>
-          <div className="flex items-center gap-2.5">
-            <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-primary/10 text-primary shrink-0">
-              <FileSpreadsheet className="h-5 w-5" />
+      <DialogContent className="sm:max-w-xl w-full p-0 gap-0 overflow-hidden flex flex-col max-h-[85vh] sm:max-h-[90vh] shadow-2xl rounded-2xl border border-border/80 bg-background">
+        {/* Header - Fixed & Sticky at Top */}
+        <div className="shrink-0 p-5 sm:p-6 border-b border-border/70 bg-muted/20">
+          <DialogHeader className="space-y-1 pr-8">
+            <div className="flex items-center gap-2.5">
+              <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-primary/10 text-primary border border-primary/20 shrink-0">
+                <FileSpreadsheet className="h-5 w-5" />
+              </div>
+              <div className="min-w-0">
+                <DialogTitle className="text-lg sm:text-xl font-bold text-foreground">
+                  Bulk Student Upload
+                </DialogTitle>
+                <DialogDescription className="text-xs text-muted-foreground">
+                  Import cohorts of up to 1,000 students via CSV or Excel into an academic section.
+                </DialogDescription>
+              </div>
             </div>
-            <div>
-              <DialogTitle className="text-lg font-bold text-foreground">
-                Bulk Student Upload
-              </DialogTitle>
-              <DialogDescription className="text-xs text-muted-foreground">
-                Import cohorts of up to 1,000 students via CSV or Excel into an academic section.
-              </DialogDescription>
-            </div>
-          </div>
-        </DialogHeader>
+          </DialogHeader>
+        </div>
 
-        <div className="space-y-4 pt-1">
+        {/* Content Body - Smooth Scrollable Area */}
+        <div className="flex-1 overflow-y-auto overscroll-contain p-5 sm:p-6 space-y-4 min-h-0">
           {/* Target Class & Section Selectors */}
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 p-3.5 rounded-xl bg-muted/30 border border-border/60">
             <div className="space-y-1.5">
@@ -277,7 +282,7 @@ export const BulkStudentUploadDialog: React.FC<BulkStudentUploadDialogProps> = (
                 value={effectiveClassId}
                 onChange={(e) => handleClassChange(e.target.value)}
                 disabled={isLoading}
-                className="w-full h-9 rounded-lg border border-input bg-background px-3 text-xs focus:outline-none focus:ring-1 focus:ring-primary"
+                className="w-full h-9 rounded-lg border border-input bg-background px-3 text-xs focus:outline-none focus:ring-1 focus:ring-primary cursor-pointer"
               >
                 {classes.map((cls) => (
                   <option key={cls.id} value={cls.id}>
@@ -295,7 +300,7 @@ export const BulkStudentUploadDialog: React.FC<BulkStudentUploadDialogProps> = (
                 value={effectiveSectionId}
                 onChange={(e) => setSelectedSectionId(e.target.value)}
                 disabled={isLoading || sections.length === 0}
-                className="w-full h-9 rounded-lg border border-input bg-background px-3 text-xs focus:outline-none focus:ring-1 focus:ring-primary"
+                className="w-full h-9 rounded-lg border border-input bg-background px-3 text-xs focus:outline-none focus:ring-1 focus:ring-primary cursor-pointer"
               >
                 {sections.length === 0 ? (
                   <option value="">No sections available</option>
@@ -308,6 +313,13 @@ export const BulkStudentUploadDialog: React.FC<BulkStudentUploadDialogProps> = (
                 )}
               </select>
             </div>
+
+            {sections.length === 0 && (
+              <div className="col-span-1 sm:col-span-2 text-[11px] text-amber-600 dark:text-amber-400 font-medium bg-amber-500/10 border border-amber-500/20 p-2.5 rounded-lg flex items-center gap-1.5">
+                <AlertCircle className="w-3.5 h-3.5 shrink-0" />
+                <span>This class currently has no sections. Please create a section first before enrolling students.</span>
+              </div>
+            )}
           </div>
 
           {/* Download Template Action */}
@@ -315,7 +327,7 @@ export const BulkStudentUploadDialog: React.FC<BulkStudentUploadDialogProps> = (
             <div className="space-y-0.5">
               <span className="font-bold text-foreground">Download Sample Template</span>
               <p className="text-[11px] text-muted-foreground">
-                Formatted with `first_name`, `middle_name`, and `last_name` headers.
+                Formatted with <code className="font-mono text-[10px] bg-primary/10 px-1 py-0.5 rounded">first_name</code>, <code className="font-mono text-[10px] bg-primary/10 px-1 py-0.5 rounded">middle_name</code>, and <code className="font-mono text-[10px] bg-primary/10 px-1 py-0.5 rounded">last_name</code> headers.
               </p>
             </div>
             <Button
@@ -323,7 +335,7 @@ export const BulkStudentUploadDialog: React.FC<BulkStudentUploadDialogProps> = (
               variant="outline"
               size="sm"
               onClick={handleDownloadTemplate}
-              className="gap-1.5 text-xs h-8 shadow-2xs font-semibold"
+              className="gap-1.5 text-xs h-8 shadow-2xs font-semibold cursor-pointer shrink-0"
             >
               <Download className="w-3.5 h-3.5" />
               Download CSV
@@ -333,27 +345,35 @@ export const BulkStudentUploadDialog: React.FC<BulkStudentUploadDialogProps> = (
           {/* Upload Area */}
           <div className="space-y-2">
             <Label className="text-xs font-semibold text-foreground">
-              Upload CSV File
+              Upload CSV or Excel File
             </Label>
             <input
               type="file"
               ref={fileInputRef}
-              accept=".csv,.xlsx"
+              accept=".csv,.xlsx,.xls"
               onChange={handleFileChange}
               className="hidden"
             />
 
             {!selectedFile ? (
               <div
+                role="button"
+                tabIndex={0}
                 onClick={() => fileInputRef.current?.click()}
-                className="rounded-2xl border-2 border-dashed border-border/80 hover:border-primary/60 bg-muted/20 hover:bg-muted/40 p-6 flex flex-col items-center justify-center text-center cursor-pointer transition-colors space-y-2"
+                onKeyDown={(e) => {
+                  if (e.key === 'Enter' || e.key === ' ') {
+                    e.preventDefault();
+                    fileInputRef.current?.click();
+                  }
+                }}
+                className="rounded-2xl border-2 border-dashed border-border/80 hover:border-primary/60 bg-muted/20 hover:bg-muted/40 p-6 flex flex-col items-center justify-center text-center cursor-pointer transition-colors space-y-2 focus:outline-none focus:ring-2 focus:ring-primary/40"
               >
                 <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-primary/10 text-primary shadow-xs">
                   <UploadCloud className="h-5 w-5" />
                 </div>
                 <div className="space-y-0.5">
                   <p className="text-xs font-bold text-foreground">
-                    Click to browse or drop CSV file here
+                    Click to browse or drop file here
                   </p>
                   <p className="text-[11px] text-muted-foreground">
                     Accepts .csv or .xlsx format (Max 5MB / 1,000 rows)
@@ -379,7 +399,7 @@ export const BulkStudentUploadDialog: React.FC<BulkStudentUploadDialogProps> = (
                     variant="ghost"
                     size="sm"
                     onClick={handleReset}
-                    className="h-8 text-xs text-muted-foreground hover:text-destructive"
+                    className="h-8 text-xs text-muted-foreground hover:text-destructive cursor-pointer shrink-0"
                   >
                     <X className="w-3.5 h-3.5 mr-1" />
                     Remove
@@ -389,7 +409,7 @@ export const BulkStudentUploadDialog: React.FC<BulkStudentUploadDialogProps> = (
                 {/* Validation Status */}
                 {isExcel ? (
                   <div className="p-3 rounded-xl bg-primary/10 border border-primary/20 text-xs text-primary flex items-center gap-2">
-                    <CheckCircle2 className="w-4 h-4 shrink-0" />
+                    <CheckCircle2 className="w-4 h-4 shrink-0 text-primary" />
                     <span>
                       Excel workbook ready to enroll into{' '}
                       <strong>{effectiveClass?.name} - Section {effectiveSection?.name}</strong>.
@@ -398,7 +418,7 @@ export const BulkStudentUploadDialog: React.FC<BulkStudentUploadDialogProps> = (
                   </div>
                 ) : parsedStudents.length > 0 ? (
                   <div className="p-3 rounded-xl bg-emerald-500/10 border border-emerald-500/20 text-xs text-emerald-700 dark:text-emerald-400 flex items-center gap-2">
-                    <CheckCircle2 className="w-4 h-4 shrink-0" />
+                    <CheckCircle2 className="w-4 h-4 shrink-0 text-emerald-600 dark:text-emerald-400" />
                     <span>
                       Ready to enroll <strong>{parsedStudents.length}</strong> student(s) into{' '}
                       <strong>{effectiveClass?.name} - Section {effectiveSection?.name}</strong>.
@@ -451,13 +471,14 @@ export const BulkStudentUploadDialog: React.FC<BulkStudentUploadDialogProps> = (
           </div>
         </div>
 
-        <DialogFooter className="gap-2 sm:gap-0 pt-2">
+        {/* Footer - Pinned & Sticky at Bottom */}
+        <div className="shrink-0 px-5 sm:px-6 py-4 border-t border-border/70 bg-card/90 backdrop-blur-xs flex flex-row items-center justify-end gap-3 mt-auto">
           <Button
             type="button"
             variant="outline"
             onClick={onClose}
             disabled={isLoading}
-            className="text-xs"
+            className="text-xs h-9 cursor-pointer"
           >
             Cancel
           </Button>
@@ -465,16 +486,27 @@ export const BulkStudentUploadDialog: React.FC<BulkStudentUploadDialogProps> = (
             type="button"
             onClick={handleUploadSubmit}
             disabled={!canSubmit}
-            className="text-xs gap-1.5"
+            className="text-xs h-9 gap-1.5 cursor-pointer shadow-xs font-semibold"
           >
-            <Users className="w-3.5 h-3.5" />
-            {isLoading
-              ? 'Enrolling Students...'
-              : isExcel
-              ? 'Import Students from Excel'
-              : `Enroll ${parsedStudents.length} Student(s)`}
+            {isLoading ? (
+              <>
+                <Loader2 className="w-3.5 h-3.5 animate-spin" />
+                <span>Enrolling Students...</span>
+              </>
+            ) : (
+              <>
+                <Users className="w-3.5 h-3.5" />
+                <span>
+                  {isExcel
+                    ? 'Import Students from Excel'
+                    : parsedStudents.length > 0
+                    ? `Enroll ${parsedStudents.length} Student(s)`
+                    : 'Enroll Students'}
+                </span>
+              </>
+            )}
           </Button>
-        </DialogFooter>
+        </div>
       </DialogContent>
     </Dialog>
   );
