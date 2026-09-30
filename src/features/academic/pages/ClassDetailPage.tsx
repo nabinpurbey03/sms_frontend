@@ -64,6 +64,7 @@ import { useAuth } from '@/auth/useAuth';
 import { usePermission } from '@/auth/usePermission';
 import { useDailyAttendanceStatus } from '@/features/attendance/hooks';
 import {
+  useClasses,
   useCreateSubject,
   useDeleteSubject,
   useDeleteSection,
@@ -73,6 +74,7 @@ import {
   useClassWithDetails,
   useMyTeacherAssignments,
 } from '../hooks';
+import { ClassProgressionNavigator } from '../components/ClassProgressionNavigator';
 import { TeacherAssignmentBoard } from '../components/TeacherAssignmentBoard';
 import { StudentAddDialog } from '../components/StudentAddDialog';
 import { SectionAddDialog } from '../components/SectionAddDialog';
@@ -98,9 +100,18 @@ export const ClassDetailPage: React.FC = () => {
   const { user, activeTenantId: tenantId, activeRole } = useAuth();
   const { isSuperAdmin, can } = usePermission();
   const { data: cls, isLoading, isError, error, refetch } = useClassWithDetails(tenantId, classId);
+  const { data: allClasses = [] } = useClasses(tenantId);
 
   const handleBack = () => {
     navigate({ to: '/academic/classes' });
+  };
+
+  const handleNavigateToClass = (targetClassId: string) => {
+    if (targetClassId === classId) return;
+    navigate({
+      to: '/academic/classes/$classId',
+      params: { classId: targetClassId },
+    });
   };
 
   const queryClient = useQueryClient();
@@ -118,6 +129,10 @@ export const ClassDetailPage: React.FC = () => {
     tenantId,
     { enabled: isTeacherOnly }
   );
+
+  const assignedClassIds = useMemo(() => {
+    return new Set(myAssignments.map((a) => a.class_id).filter(Boolean) as string[]);
+  }, [myAssignments]);
 
   const [activeTab, setActiveTab] = useState<'roster' | 'subjects' | 'assignments' | 'expansion' | 'notices'>('roster');
   const [selectedSectionId, setSelectedSectionId] = useState<string>('');
@@ -439,6 +454,13 @@ export const ClassDetailPage: React.FC = () => {
               </div>
             )}
           </div>
+          <ClassProgressionNavigator
+            classes={allClasses}
+            currentClassId={classId}
+            onSelectClass={handleNavigateToClass}
+            isTeacherOnly={isTeacherOnly}
+            assignedClassIds={assignedClassIds}
+          />
         </div>
 
         {isClassTeacherForThisClass && (
