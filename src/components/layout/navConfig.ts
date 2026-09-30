@@ -194,7 +194,9 @@ export const getNavItems = (ctx: NavPermissionsContext): NavItem[] => [
     href: '/academic/analytics',
     icon: TrendingUp,
     description: 'Student retention, progression, and cohort analytics.',
-    show: ctx.isSuperAdmin || ctx.can('MANAGE_TENANT_SETTINGS') || ctx.can('VIEW_TENANT_SETTINGS'),
+    show:
+      (ctx.isSuperAdmin || ctx.can('MANAGE_TENANT_SETTINGS') || ctx.can('VIEW_TENANT_SETTINGS')) &&
+      ctx.activeRole !== 'ACCOUNTANT',
     category: 'Academics',
   },
   {
