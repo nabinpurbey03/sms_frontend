@@ -43,6 +43,12 @@ import { SchoolSettingsPage } from '@/features/school-settings/pages/SchoolSetti
 import { AcademicCalendarPage } from '@/features/school-settings/pages/AcademicCalendarPage';
 import { PlatformUsersPage } from '@/features/platform-users/pages/PlatformUsersPage';
 import { AuditLogsPage } from '@/features/audit-log/pages/AuditLogsPage';
+import { FinanceDashboardPage } from '@/features/finance/pages/FinanceDashboardPage';
+import { BillsPage } from '@/features/finance/pages/BillsPage';
+import { CollectPaymentPage } from '@/features/finance/pages/CollectPaymentPage';
+import { FeeStructuresPage } from '@/features/finance/pages/FeeStructuresPage';
+import { TransactionsPage } from '@/features/finance/pages/TransactionsPage';
+import { StudentLedgerPage } from '@/features/finance/pages/StudentLedgerPage';
 
 // Root Route
 const rootRoute = createRootRoute({
@@ -271,6 +277,42 @@ const auditLogsRoute = createRoute({
   component: AuditLogsPage,
 });
 
+const financeDashboardRoute = createRoute({
+  getParentRoute: () => protectedLayoutRoute,
+  path: '/finance',
+  component: FinanceDashboardPage,
+});
+
+const financeBillsRoute = createRoute({
+  getParentRoute: () => protectedLayoutRoute,
+  path: '/finance/bills',
+  component: BillsPage,
+});
+
+const financeCollectRoute = createRoute({
+  getParentRoute: () => protectedLayoutRoute,
+  path: '/finance/collect',
+  component: CollectPaymentPage,
+});
+
+const financeStructuresRoute = createRoute({
+  getParentRoute: () => protectedLayoutRoute,
+  path: '/finance/structures',
+  component: FeeStructuresPage,
+});
+
+const financeTransactionsRoute = createRoute({
+  getParentRoute: () => protectedLayoutRoute,
+  path: '/finance/transactions',
+  component: TransactionsPage,
+});
+
+const financeLedgerRoute = createRoute({
+  getParentRoute: () => protectedLayoutRoute,
+  path: '/finance/ledger/$studentId',
+  component: StudentLedgerPage,
+});
+
 // Build Route Tree
 const routeTree = rootRoute.addChildren([
   indexRoute,
@@ -308,6 +350,12 @@ const routeTree = rootRoute.addChildren([
     scoreEntryRoute,
     scoreEntryQueryRoute,
     auditLogsRoute,
+    financeDashboardRoute,
+    financeBillsRoute,
+    financeCollectRoute,
+    financeStructuresRoute,
+    financeTransactionsRoute,
+    financeLedgerRoute,
   ]),
 ]);
 
