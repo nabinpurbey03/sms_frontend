@@ -29,6 +29,7 @@ A production-grade, domain-aligned **React 19 Single Page Application (SPA)** fo
   - ["View As" Support Sessions & Client-Side Guardrails](#view-as-support-sessions--client-side-guardrails)
   - [Multi-Role Active Persona Switching](#multi-role-active-persona-switching)
   - [Multi-Tenant Header & Path Resolution](#multi-tenant-header--path-resolution)
+  - [Academic Year Scoping & Operational Locking Policy](#academic-year-scoping--operational-locking-policy)
 - [🛠 Tech Stack](#-tech-stack)
 - [📁 Project Structure](#-project-structure)
 - [🚀 Getting Started](#-getting-started)
@@ -411,6 +412,38 @@ Users with multiple responsibilities in a school (such as a Teacher who also has
 To support multi-tenancy seamlessly across all backend modules:
 - The Axios client attaches the active school ID via the `X-Tenant-ID: <uuid>` header on all requests.
 - Endpoints requiring tenant path parameters (e.g. `/academic/tenants/{tenant_id}/...`) interpolate `activeTenantId` directly from `useTenantStore`.
+
+---
+
+### Academic Year Scoping & Operational Locking Policy
+
+SSUP strictly separates **retrospective reporting** from **active operational workflows**:
+
+```
+┌─────────────────────────────────────────────────────────────┐
+│           Retrospective Surfaces (Multi-Year)               │
+│   Dashboard & Academic Analytics Pages                      │
+│   - Multi-year dropdown selectors enabled                   │
+│   - Allows inspecting historical trends, KPIs & retention   │
+└──────────────────────────────┬──────────────────────────────┘
+                               │
+                               ▼
+┌─────────────────────────────────────────────────────────────┐
+│           Operational Workflows (Strictly Locked)           │
+│   Exams, Attendance, Calendar, Students, Assignments        │
+│   - Bound strictly to useCurrentAcademicYear (is_current)   │
+│   - Multi-year switchers eliminated; replaced with <Lock /> │
+│   - Guaranteed zero accidental mutation of past years       │
+└─────────────────────────────────────────────────────────────┘
+```
+
+1. **Retrospective Surfaces (Dashboard & Academic Analytics)**:
+   - Administrators and teachers can freely switch academic years via the year selector on the Dashboard ([`DashboardPage.tsx`](file:///E:/SSUP/frontend/src/features/dashboard/pages/DashboardPage.tsx)) and Academic Analytics ([`AcademicAnalyticsPage.tsx`](file:///E:/SSUP/frontend/src/features/academic/pages/AcademicAnalyticsPage.tsx)) to inspect past KPIs, attendance patterns, and student retention trends.
+2. **Operational Surfaces (Strictly Locked to Current Session)**:
+   - **Exam Creation ([`CreateExamPage.tsx`](file:///E:/SSUP/frontend/src/features/examination/pages/CreateExamPage.tsx))**: The academic session is read-only, displaying a locked current-session identity card with `<Lock />`. Exam creation payloads are hard-bound to `currentYearId`.
+   - **Attendance Reports ([`AttendanceReportsPage.tsx`](file:///E:/SSUP/frontend/src/features/attendance/pages/AttendanceReportsPage.tsx))**: Bound to the active academic session with a locked indicator (`Session: 2026/2027 (Current)`).
+   - **Academic Calendar ([`AcademicCalendarView.tsx`](file:///E:/SSUP/frontend/src/features/school-settings/components/AcademicCalendarView.tsx))**: Bound strictly to the current active session.
+   - **Student Enrollment ([`StudentsPage.tsx`](file:///E:/SSUP/frontend/src/features/academic/pages/StudentsPage.tsx))** & **Teacher Duties ([`TeacherAssignmentsPage.tsx`](file:///E:/SSUP/frontend/src/features/academic/pages/TeacherAssignmentsPage.tsx))**: Consume [`useCurrentAcademicYear`](file:///E:/SSUP/frontend/src/features/academic-year/hooks/useCurrentAcademicYear.ts) directly, preventing historical dashboard selections from polluting active rosters.
 
 ---
 
