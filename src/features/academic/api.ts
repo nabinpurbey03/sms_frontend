@@ -184,8 +184,13 @@ export const academicApi = {
   // Subjects
   // ==========================================
   getSubjects: async (tenantId: string, classId: string, academicYearId?: string | null): Promise<AcademicSubject[]> => {
-    const res = await apiClient.get(`/academic/tenants/${tenantId}/classes/${classId}/subjects`, { params: { academic_year_id: academicYearId || undefined } }) as any;
-    return res.meta ? res.data : res;
+    try {
+      const res = await apiClient.get(`/academic/tenants/${tenantId}/classes/${classId}/subjects`, { params: { academic_year_id: academicYearId || undefined } }) as any;
+      return res.meta ? res.data : res;
+    } catch (err) {
+      console.warn(`Failed to fetch subjects for class ${classId}:`, err);
+      return [];
+    }
   },
 
   createSubject: async (
