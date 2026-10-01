@@ -64,7 +64,7 @@ export const ClassFeeStructurePage: React.FC = () => {
   const [activeTab, setActiveTab] = useState<'students' | 'structures'>('students');
   const [selectedSectionId, setSelectedSectionId] = useState<string>(''); // '' = All Sections
   const [studentSearchQuery, setStudentSearchQuery] = useState('');
-  const [rosterFilter, setRosterFilter] = useState<'ALL' | 'TRANSPORT' | 'SCHOLARSHIP' | 'STANDARD'>('ALL');
+  const [rosterFilter, setRosterFilter] = useState<'ALL' | 'TRANSPORT' | 'STANDARD'>('ALL');
   const [savingStudentId, setSavingStudentId] = useState<string | null>(null);
 
   // Queries
@@ -180,11 +180,9 @@ export const ClassFeeStructurePage: React.FC = () => {
       // 2. Roster Filter
       const discount = discountsByStudentId.get(student.id);
       const isTransport = Boolean(discount?.is_transport_applicable);
-      const hasScholarship = Number(discount?.discount_percent || 0) > 0;
 
       if (rosterFilter === 'TRANSPORT') return isTransport;
-      if (rosterFilter === 'SCHOLARSHIP') return hasScholarship;
-      if (rosterFilter === 'STANDARD') return !isTransport && !hasScholarship;
+      if (rosterFilter === 'STANDARD') return !isTransport;
       return true; // 'ALL'
     });
   }, [sectionStudents, studentSearchQuery, rosterFilter, discountsByStudentId]);
@@ -199,15 +197,10 @@ export const ClassFeeStructurePage: React.FC = () => {
     return classDiscounts.filter((d) => Boolean(d.is_transport_applicable)).length;
   }, [classDiscounts]);
 
-  const scholarshipUsersCount = useMemo(() => {
-    return classDiscounts.filter((d) => Number(d.discount_percent || 0) > 0).length;
-  }, [classDiscounts]);
-
-  // Save student discount & transport status
+  // Save student transport status
   const handleSaveStudentFeeProfile = async (
     studentId: string,
     isTransport: boolean,
-    discountPercent: number,
     transportFee?: number | null,
     reason?: string
   ) => {
@@ -217,7 +210,6 @@ export const ClassFeeStructurePage: React.FC = () => {
         student_id: studentId,
         is_transport_applicable: isTransport,
         transport_fee: transportFee,
-        discount_percent: discountPercent,
         reason,
       });
     } finally {
@@ -371,10 +363,6 @@ export const ClassFeeStructurePage: React.FC = () => {
           <Bus className="w-3.5 h-3.5" />
           <span>{transportUsersCount} Transport Users</span>
         </div>
-        <div className="inline-flex items-center gap-2 px-3 py-1.5 rounded-xl text-xs font-semibold bg-purple-500/10 text-purple-700 dark:text-purple-300 border border-purple-500/20 shadow-2xs">
-          <Percent className="w-3.5 h-3.5" />
-          <span>{scholarshipUsersCount} Scholarships</span>
-        </div>
       </div>
 
       {/* Main Tabs Switcher */}
@@ -396,7 +384,7 @@ export const ClassFeeStructurePage: React.FC = () => {
           )}
         >
           <Users className="w-3.5 h-3.5 text-primary" />
-          <span>Student Fee Profiles & Concessions</span>
+          <span>Student Fee Profiles & Transport</span>
           <Badge variant="secondary" className="text-[10px] px-1.5 py-0 font-bold ml-1">
             {allStudents.length}
           </Badge>
@@ -487,17 +475,6 @@ export const ClassFeeStructurePage: React.FC = () => {
               </button>
               <button
                 type="button"
-                onClick={() => setRosterFilter('SCHOLARSHIP')}
-                className={`px-2.5 py-0.5 rounded-md font-medium transition-colors cursor-pointer ${
-                  rosterFilter === 'SCHOLARSHIP'
-                    ? 'bg-blue-600 text-white shadow-2xs font-bold'
-                    : 'text-muted-foreground hover:text-foreground'
-                }`}
-              >
-                Scholarship ({scholarshipUsersCount})
-              </button>
-              <button
-                type="button"
                 onClick={() => setRosterFilter('STANDARD')}
                 className={`px-2.5 py-0.5 rounded-md font-medium transition-colors cursor-pointer ${
                   rosterFilter === 'STANDARD'
@@ -553,8 +530,7 @@ export const ClassFeeStructurePage: React.FC = () => {
                 <TableHeader className="bg-muted/50">
                   <TableRow>
                     <TableHead className="font-semibold text-xs min-w-[200px]">Student Details</TableHead>
-                    <TableHead className="font-semibold text-xs min-w-[140px]">Transportation</TableHead>
-                    <TableHead className="font-semibold text-xs min-w-[240px]">Scholarship / Concession</TableHead>
+                    <TableHead className="font-semibold text-xs min-w-[180px]">Transportation</TableHead>
                     <TableHead className="font-semibold text-xs min-w-[160px]">Est. Net Monthly Fee</TableHead>
                     <TableHead className="font-semibold text-xs text-right min-w-[100px]">Action</TableHead>
                   </TableRow>

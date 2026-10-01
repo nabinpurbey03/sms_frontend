@@ -60,26 +60,28 @@ export interface FeeStructureUpdateDTO {
   is_active?: boolean;
 }
 
-export interface StudentDiscount {
+export interface StudentTransportProfile {
   id: string;
   tenant_id: string;
   academic_year_id: string;
   student_id: string;
   student_name?: string;
-  discount_percent: number | string;
   is_transport_applicable?: boolean;
   transport_fee?: number | string | null;
   reason?: string | null;
   is_active: boolean;
 }
 
-export interface StudentDiscountCreateDTO {
+export type StudentDiscount = StudentTransportProfile;
+
+export interface StudentTransportCreateDTO {
   student_id: string;
-  discount_percent: number;
   is_transport_applicable?: boolean;
   transport_fee?: number | null;
   reason?: string;
 }
+
+export type StudentDiscountCreateDTO = StudentTransportCreateDTO;
 
 export interface FeeItemInputDTO {
   fee_name: string;
@@ -101,7 +103,6 @@ export interface SingleBillGenerateDTO {
   billing_month?: string;
   bill_title?: string;
   fee_items: FeeItemInputDTO[];
-  discount_percent?: number;
   due_date: string;
   notes?: string;
 }
@@ -127,8 +128,6 @@ export interface FeeBill {
   issue_date: string;
   due_date: string;
   subtotal_amount: number | string;
-  discount_percent: number | string;
-  discount_amount: number | string;
   previous_due_amount: number | string;
   total_payable: number | string;
   paid_amount: number | string;
@@ -190,8 +189,6 @@ export interface ReceiptDocument {
   bill_number: string;
   items: FeeBillItem[];
   subtotal_amount: number | string;
-  discount_percent: number | string;
-  discount_amount: number | string;
   previous_due_amount: number | string;
   total_payable: number | string;
   amount_paid: number | string;
@@ -210,7 +207,6 @@ export interface StudentLedgerResponse {
   total_billed: number | string;
   total_paid: number | string;
   total_due: number | string;
-  discount_percent: number | string;
   bills: FeeBill[];
   payments: FeePayment[];
 }

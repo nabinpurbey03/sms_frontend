@@ -5,7 +5,6 @@ import { useCurrentAcademicYear } from '@/features/academic-year/hooks/useCurren
 import {
   useFinanceDashboardSummary,
   useCreateFeeStructure,
-  useSetStudentDiscount,
   useBatchGenerateBills,
 } from '../hooks';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
@@ -39,7 +38,6 @@ import {
   ShieldAlert,
 } from 'lucide-react';
 import { FeeStructureDialog } from '../components/FeeStructureDialog';
-import { StudentDiscountDialog } from '../components/StudentDiscountDialog';
 import { BatchBillGenerateDialog } from '../components/BatchBillGenerateDialog';
 import { PrintableReceiptModal } from '../components/PrintableReceiptModal';
 
@@ -76,7 +74,6 @@ export const FinanceDashboardPage: React.FC = () => {
 
   // Dialog States
   const [isFeeStructureOpen, setIsFeeStructureOpen] = useState(false);
-  const [isDiscountOpen, setIsDiscountOpen] = useState(false);
   const [isBatchOpen, setIsBatchOpen] = useState(false);
   const [selectedReceiptPaymentId, setSelectedReceiptPaymentId] = useState<string | null>(null);
 
@@ -85,7 +82,6 @@ export const FinanceDashboardPage: React.FC = () => {
 
   // Mutations
   const createFeeStructureMutation = useCreateFeeStructure(activeTenantId);
-  const setDiscountMutation = useSetStudentDiscount(activeTenantId);
   const batchBillMutation = useBatchGenerateBills(activeTenantId);
 
   // Core Financial Metrics
@@ -204,16 +200,6 @@ export const FinanceDashboardPage: React.FC = () => {
           >
             <Plus className="w-3.5 h-3.5" />
             Fee Head
-          </Button>
-
-          <Button
-            size="sm"
-            variant="outline"
-            onClick={() => setIsDiscountOpen(true)}
-            className="gap-1.5 text-xs font-medium shadow-2xs cursor-pointer hover:bg-accent"
-          >
-            <Percent className="w-3.5 h-3.5" />
-            Concessions
           </Button>
         </div>
       </div>
@@ -579,7 +565,7 @@ export const FinanceDashboardPage: React.FC = () => {
                 Bills & Invoices
               </h3>
               <p className="text-xs text-muted-foreground mt-1">
-                Generate monthly class invoices, track payment status, issue discounts, and filter dues.
+                Generate monthly class invoices, track payment status, manage transportation, and filter dues.
               </p>
             </div>
             <div className="mt-3 pt-2.5 border-t border-border/40 flex items-center text-xs font-semibold text-blue-600 dark:text-blue-400 group-hover:translate-x-1 transition-transform">
@@ -773,15 +759,6 @@ export const FinanceDashboardPage: React.FC = () => {
         onClose={() => setIsFeeStructureOpen(false)}
         onSubmit={async (data) => createFeeStructureMutation.mutateAsync(data)}
         isLoading={createFeeStructureMutation.isPending}
-        tenantId={activeTenantId}
-      />
-
-      {/* Student Discount Dialog */}
-      <StudentDiscountDialog
-        isOpen={isDiscountOpen}
-        onClose={() => setIsDiscountOpen(false)}
-        onSubmit={async (data) => setDiscountMutation.mutateAsync(data)}
-        isLoading={setDiscountMutation.isPending}
         tenantId={activeTenantId}
       />
 

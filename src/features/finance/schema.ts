@@ -26,13 +26,8 @@ export const feeStructureFormSchema = z.object({
 
 export type FeeStructureFormValues = z.infer<typeof feeStructureFormSchema>;
 
-export const studentDiscountSchema = z.object({
+export const studentTransportSchema = z.object({
   student_id: z.string().min(1, 'Please select a student'),
-  discount_percent: z.coerce
-    .number()
-    .min(0, 'Discount cannot be negative')
-    .max(100, 'Discount cannot exceed 100%')
-    .default(0),
   is_transport_applicable: z.boolean().default(false),
   transport_fee: z.coerce
     .number()
@@ -46,8 +41,11 @@ export const studentDiscountSchema = z.object({
     .or(z.literal('')),
 });
 
-export type StudentDiscountFormValues = z.infer<typeof studentDiscountSchema>;
-export type StudentDiscountInputValues = z.input<typeof studentDiscountSchema>;
+export const studentDiscountSchema = studentTransportSchema;
+export type StudentTransportFormValues = z.infer<typeof studentTransportSchema>;
+export type StudentTransportInputValues = z.input<typeof studentTransportSchema>;
+export type StudentDiscountFormValues = StudentTransportFormValues;
+export type StudentDiscountInputValues = StudentTransportInputValues;
 
 export const batchBillGenerateSchema = z.object({
   class_id: z.string().min(1, 'Please select a target class'),
@@ -73,12 +71,6 @@ export const singleBillGenerateSchema = z.object({
   billing_month: z.string().optional().or(z.literal('')),
   bill_title: z.string().min(2, 'Bill title is required'),
   fee_items: z.array(singleBillItemSchema).min(1, 'At least one fee item is required'),
-  discount_percent: z
-    .number()
-    .min(0)
-    .max(100)
-    .optional()
-    .nullable(),
   due_date: z.string().min(1, 'Due date is required'),
   notes: z.string().max(255).optional().or(z.literal('')),
 });

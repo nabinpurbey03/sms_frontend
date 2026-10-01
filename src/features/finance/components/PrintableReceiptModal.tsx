@@ -195,12 +195,6 @@ export const PrintableReceiptModal: React.FC<PrintableReceiptModalProps> = ({
                     <span className="text-zinc-600">Subtotal:</span>
                     <span className="font-mono">NPR {Number(receipt.subtotal_amount).toFixed(2)}</span>
                   </div>
-                  {Number(receipt.discount_amount) > 0 && (
-                    <div className="flex justify-between py-0.5 text-emerald-700 font-medium">
-                      <span>Concession ({Number(receipt.discount_percent)}%):</span>
-                      <span className="font-mono">- NPR {Number(receipt.discount_amount).toFixed(2)}</span>
-                    </div>
-                  )}
                   {Number(receipt.previous_due_amount) > 0 && (
                     <div className="flex justify-between py-0.5 text-zinc-700">
                       <span>Previous Session Dues:</span>

@@ -6,12 +6,10 @@ import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import {
   Bus,
-  Percent,
   Check,
   CheckCircle2,
   Loader2,
   User,
-  Sparkles,
 } from 'lucide-react';
 import type { AcademicStudent } from '@/features/academic/types';
 import type { StudentDiscount } from '../types';
@@ -24,7 +22,6 @@ export interface StudentFeeProfileRowProps {
   onSave: (
     studentId: string,
     isTransport: boolean,
-    discountPercent: number,
     transportFee?: number | null,
     reason?: string
   ) => Promise<void>;
@@ -45,13 +42,10 @@ export const StudentFeeProfileRow: React.FC<StudentFeeProfileRowProps> = ({
 }) => {
   const initialTransport = discount?.is_transport_applicable ?? false;
   const initialTransportFee = discount?.transport_fee != null ? Number(discount.transport_fee) : null;
-  const initialPercent = Number(discount?.discount_percent ?? 0);
   const initialReason = discount?.reason ?? '';
 
   const [isTransport, setIsTransport] = useState<boolean>(initialTransport);
   const [customTransportFee, setCustomTransportFee] = useState<number | null>(initialTransportFee);
-  const [hasScholarship, setHasScholarship] = useState<boolean>(initialPercent > 0);
-  const [discountPercent, setDiscountPercent] = useState<number>(initialPercent);
   const [reason, setReason] = useState<string>(initialReason);
   const [justSaved, setJustSaved] = useState<boolean>(false);
 
@@ -59,13 +53,10 @@ export const StudentFeeProfileRow: React.FC<StudentFeeProfileRowProps> = ({
   useEffect(() => {
     const nextTransport = discount?.is_transport_applicable ?? false;
     const nextTransportFee = discount?.transport_fee != null ? Number(discount.transport_fee) : null;
-    const nextPercent = Number(discount?.discount_percent ?? 0);
     const nextReason = discount?.reason ?? '';
 
     setIsTransport(nextTransport);
     setCustomTransportFee(nextTransportFee);
-    setHasScholarship(nextPercent > 0);
-    setDiscountPercent(nextPercent);
     setReason(nextReason);
   }, [discount]);
 
@@ -74,16 +65,14 @@ export const StudentFeeProfileRow: React.FC<StudentFeeProfileRowProps> = ({
     .join(' ');
 
   // Calculate dirty status
-  const effectivePercent = hasScholarship ? discountPercent : 0;
   const effectiveCustomTransport = isTransport ? customTransportFee : null;
   const isDirty = useMemo(() => {
     return (
       isTransport !== initialTransport ||
       effectiveCustomTransport !== initialTransportFee ||
-      effectivePercent !== initialPercent ||
       reason.trim() !== initialReason.trim()
     );
-  }, [isTransport, initialTransport, effectiveCustomTransport, initialTransportFee, effectivePercent, initialPercent, reason, initialReason]);
+  }, [isTransport, initialTransport, effectiveCustomTransport, initialTransportFee, reason, initialReason]);
 
   // Real-time calculated transport rate for this student
   const studentTransportRate = useMemo(() => {
@@ -93,11 +82,8 @@ export const StudentFeeProfileRow: React.FC<StudentFeeProfileRowProps> = ({
 
   // Real-time calculated net monthly fee preview
   const netFee = useMemo(() => {
-    const applicableDiscount = hasScholarship ? Math.min(100, Math.max(0, discountPercent)) : 0;
-    const gross = baseTuition + studentTransportRate;
-    const calculated = gross * (1 - applicableDiscount / 100);
-    return Math.max(0, calculated);
-  }, [baseTuition, studentTransportRate, hasScholarship, discountPercent]);
+    return baseTuition + studentTransportRate;
+  }, [baseTuition, studentTransportRate]);
 
   const handleTransportToggle = (checked: boolean) => {
     setIsTransport(checked);
@@ -108,24 +94,11 @@ export const StudentFeeProfileRow: React.FC<StudentFeeProfileRowProps> = ({
     }
   };
 
-  const handlePresetClick = (percent: number) => {
-    setHasScholarship(true);
-    setDiscountPercent(percent);
-  };
-
-  const handleScholarshipToggle = (checked: boolean) => {
-    setHasScholarship(checked);
-    if (checked && discountPercent === 0) {
-      setDiscountPercent(25); // Default to 25% if previously zero
-    }
-  };
-
   const handleSave = async () => {
     try {
       await onSave(
         student.id,
         isTransport,
-        hasScholarship ? Math.min(100, Math.max(0, discountPercent)) : 0,
         isTransport ? customTransportFee : null,
         reason.trim() || undefined
       );
@@ -173,9 +146,9 @@ export const StudentFeeProfileRow: React.FC<StudentFeeProfileRowProps> = ({
         </div>
       </TableCell>
 
-      {/* Transportation Checkbox, Custom Fee Input & Badge */}
+      {/* Transportation Checkbox, Custom Fee Input & Route Info */}
       <TableCell className="py-3">
-        <div className="space-y-2 max-w-xs">
+        <div className="space-y-2 max-w-sm">
           <div className="flex items-center gap-2">
             <label className="flex items-center gap-2 cursor-pointer select-none">
               <Checkbox
@@ -183,7 +156,7 @@ export const StudentFeeProfileRow: React.FC<StudentFeeProfileRowProps> = ({
                 onCheckedChange={(checked) => handleTransportToggle(Boolean(checked))}
                 className="data-[state=checked]:bg-emerald-600 data-[state=checked]:border-emerald-600"
               />
-              <span className="text-xs font-semibold text-foreground">Transport</span>
+              <span className="text-xs font-semibold text-foreground">Transport Applicable</span>
             </label>
 
             {isTransport && (
@@ -194,100 +167,37 @@ export const StudentFeeProfileRow: React.FC<StudentFeeProfileRowProps> = ({
             )}
           </div>
 
-          {isTransport && (
-            <div className="flex items-center gap-1.5 pl-6">
-              <span className="text-[10px] text-muted-foreground font-mono">NPR</span>
+          {isTransport ? (
+            <div className="space-y-1.5 pl-6">
+              <div className="flex items-center gap-1.5">
+                <span className="text-[10px] text-muted-foreground font-mono">NPR</span>
+                <Input
+                  type="number"
+                  min="0"
+                  step="50"
+                  placeholder={transportFee > 0 ? String(transportFee) : '0'}
+                  value={customTransportFee ?? ''}
+                  onChange={(e) => {
+                    const val = e.target.value === '' ? null : Math.max(0, Number(e.target.value));
+                    setCustomTransportFee(val);
+                  }}
+                  className="h-7 w-28 text-xs font-mono px-2"
+                />
+                <span className="text-[10px] text-muted-foreground">/ month</span>
+              </div>
               <Input
-                type="number"
-                min="0"
-                step="50"
-                placeholder={transportFee > 0 ? String(transportFee) : '0'}
-                value={customTransportFee ?? ''}
-                onChange={(e) => {
-                  const val = e.target.value === '' ? null : Math.max(0, Number(e.target.value));
-                  setCustomTransportFee(val);
-                }}
-                className="h-7 w-28 text-xs font-mono px-2"
+                type="text"
+                placeholder="Route / Stop details (optional)"
+                value={reason}
+                onChange={(e) => setReason(e.target.value)}
+                className="h-6 text-[11px] placeholder:text-[11px] text-muted-foreground max-w-xs"
               />
-              <span className="text-[10px] text-muted-foreground">/ month</span>
             </div>
-          )}
-
-          {!isTransport && (
+          ) : (
             <div className="pl-6">
               <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[11px] font-medium bg-muted text-muted-foreground border border-border/50">
                 No Transport
               </span>
-            </div>
-          )}
-        </div>
-      </TableCell>
-
-      {/* Scholarship / Concession Toggle & Percent Input */}
-      <TableCell className="py-3">
-        <div className="space-y-2 max-w-xs">
-          <div className="flex items-center gap-2">
-            <label className="flex items-center gap-2 cursor-pointer select-none">
-              <Checkbox
-                checked={hasScholarship}
-                onCheckedChange={(checked) => handleScholarshipToggle(Boolean(checked))}
-                className="data-[state=checked]:bg-blue-600 data-[state=checked]:border-blue-600"
-              />
-              <span className="text-xs font-semibold text-foreground">Scholarship</span>
-            </label>
-
-            {hasScholarship && (
-              <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-bold bg-blue-500/10 text-blue-700 dark:text-blue-300 border border-blue-500/20">
-                <Percent className="w-2.5 h-2.5" />
-                {discountPercent}% Concession
-              </span>
-            )}
-          </div>
-
-          {hasScholarship && (
-            <div className="space-y-1.5 pt-0.5">
-              <div className="flex items-center gap-2">
-                <div className="relative w-24">
-                  <Input
-                    type="number"
-                    min="0"
-                    max="100"
-                    value={discountPercent}
-                    onChange={(e) => setDiscountPercent(Number(e.target.value))}
-                    className="h-7 text-xs font-mono pr-6"
-                  />
-                  <span className="absolute right-2 top-1.5 text-xs text-muted-foreground pointer-events-none">
-                    %
-                  </span>
-                </div>
-
-                {/* Preset quick buttons */}
-                <div className="flex items-center gap-1">
-                  {[10, 25, 50, 100].map((preset) => (
-                    <button
-                      key={preset}
-                      type="button"
-                      onClick={() => handlePresetClick(preset)}
-                      className={`px-1.5 py-0.5 text-[10px] font-semibold rounded border transition-colors cursor-pointer ${
-                        discountPercent === preset
-                          ? 'bg-blue-600 text-white border-blue-600'
-                          : 'bg-muted/80 hover:bg-muted border-border text-muted-foreground'
-                      }`}
-                    >
-                      {preset}%
-                    </button>
-                  ))}
-                </div>
-              </div>
-
-              {/* Optional Reason */}
-              <Input
-                type="text"
-                placeholder="Reason (e.g. Merit, Sibling, Staff)"
-                value={reason}
-                onChange={(e) => setReason(e.target.value)}
-                className="h-6 text-[11px] placeholder:text-[11px] text-muted-foreground"
-              />
             </div>
           )}
         </div>
@@ -301,19 +211,11 @@ export const StudentFeeProfileRow: React.FC<StudentFeeProfileRowProps> = ({
           </div>
           <div className="text-[10px] text-muted-foreground flex items-center gap-1 flex-wrap">
             <span>Base: NPR {baseTuition.toLocaleString()}</span>
-            {isTransport && transportFee > 0 && (
+            {isTransport && studentTransportRate > 0 && (
               <>
                 <span>+</span>
                 <span className="text-emerald-600 dark:text-emerald-400 font-medium">
-                  Bus: NPR {transportFee.toLocaleString()}
-                </span>
-              </>
-            )}
-            {hasScholarship && discountPercent > 0 && (
-              <>
-                <span>-</span>
-                <span className="text-blue-600 dark:text-blue-400 font-medium">
-                  {discountPercent}%
+                  Bus: NPR {studentTransportRate.toLocaleString()}
                 </span>
               </>
             )}

@@ -38,7 +38,6 @@ export const StudentLedgerPage: React.FC = () => {
   const totalBilled = Number(ledger?.total_billed || 0);
   const totalPaid = Number(ledger?.total_paid || 0);
   const totalDue = Number(ledger?.total_due || 0);
-  const discountPercent = Number(ledger?.discount_percent || 0);
 
   return (
     <div className="space-y-6 pb-12">
@@ -88,15 +87,6 @@ export const StudentLedgerPage: React.FC = () => {
               <p className="text-xs text-muted-foreground">
                 Student ID: <span className="font-mono">{ledger.student_id}</span>
               </p>
-            </div>
-
-            <div className="flex items-center gap-2">
-              {discountPercent > 0 && (
-                <div className="px-3 py-1.5 rounded-lg bg-emerald-500/10 border border-emerald-500/20 text-xs font-semibold text-emerald-700 dark:text-emerald-400 flex items-center gap-1.5">
-                  <Percent className="w-3.5 h-3.5" />
-                  <span>{discountPercent}% Active Concession</span>
-                </div>
-              )}
             </div>
           </div>
 
@@ -170,7 +160,6 @@ export const StudentLedgerPage: React.FC = () => {
                         <th className="py-2.5 px-3">Issue Date</th>
                         <th className="py-2.5 px-3">Due Date</th>
                         <th className="py-2.5 px-3 text-right">Subtotal</th>
-                        <th className="py-2.5 px-3 text-right">Discount</th>
                         <th className="py-2.5 px-3 text-right">Payable</th>
                         <th className="py-2.5 px-3 text-right">Paid</th>
                         <th className="py-2.5 px-3 text-right">Balance Due</th>
@@ -189,9 +178,6 @@ export const StudentLedgerPage: React.FC = () => {
                             <td className="py-2.5 px-3 text-muted-foreground">{b.due_date}</td>
                             <td className="py-2.5 px-3 text-right font-mono">
                               {Number(b.subtotal_amount).toFixed(2)}
-                            </td>
-                            <td className="py-2.5 px-3 text-right font-mono text-emerald-600">
-                              {Number(b.discount_amount) > 0 ? `-${Number(b.discount_amount).toFixed(2)}` : '—'}
                             </td>
                             <td className="py-2.5 px-3 text-right font-mono font-semibold">
                               {Number(b.total_payable).toFixed(2)}

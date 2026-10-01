@@ -35,6 +35,7 @@ import {
   Bus,
   Percent,
   ArrowRight,
+  Users,
 } from 'lucide-react';
 import type { FeeStructure, StudentDiscount } from '../types';
 
@@ -136,13 +137,9 @@ export const FeeStructuresPage: React.FC = () => {
     return feeStructures.filter((f) => f.is_active).length;
   }, [feeStructures]);
 
-  const studentsWithScholarshipCount = useMemo(() => {
-    const activeScholarships = discounts.filter(
-      (d) => d.is_active && Number(d.discount_percent || 0) > 0
-    );
-    const studentIds = new Set(activeScholarships.map((d) => d.student_id));
-    return studentIds.size;
-  }, [discounts]);
+  const totalStudentsCount = useMemo(() => {
+    return sortedClasses.reduce((sum, cls) => sum + ((cls.students || []).length), 0);
+  }, [sortedClasses]);
 
   const transportUsersCount = useMemo(() => {
     const activeTransport = discounts.filter(
@@ -261,12 +258,12 @@ export const FeeStructuresPage: React.FC = () => {
               loading={isLoadingStructures}
             />
             <StatCard
-              title="Students with Scholarship"
-              value={studentsWithScholarshipCount}
-              icon={Percent}
-              description="Active fee concessions"
+              title="Total Enrolled Students"
+              value={totalStudentsCount}
+              icon={Users}
+              description="Students across all classes"
               variant="amber"
-              loading={isLoadingDiscounts}
+              loading={isLoadingClasses}
             />
             <StatCard
               title="Students using Transportation"
@@ -345,7 +342,7 @@ export const FeeStructuresPage: React.FC = () => {
                       <TableHead className="py-3 px-4 text-center">Students</TableHead>
                       <TableHead className="py-3 px-4 text-center">Fee Heads</TableHead>
                       <TableHead className="py-3 px-4 text-right">Monthly Base Tuition</TableHead>
-                      <TableHead className="py-3 px-4 text-center">Concessions</TableHead>
+                      <TableHead className="py-3 px-4 text-center">Transportation</TableHead>
                       <TableHead className="py-3 px-4 text-right">Actions</TableHead>
                     </TableRow>
                   </TableHeader>
@@ -357,7 +354,6 @@ export const FeeStructuresPage: React.FC = () => {
                         .reduce((sum, f) => sum + (Number(f.amount) || 0), 0);
                       const classDiscounts = (discountsByClassId.get(cls.id) || []).filter((d) => d.is_active);
                       const transportCount = classDiscounts.filter((d) => Boolean(d.is_transport_applicable)).length;
-                      const scholarshipCount = classDiscounts.filter((d) => Number(d.discount_percent || 0) > 0).length;
                       const studentCount = (cls.students || []).length;
                       const sections = cls.sections || [];
 
@@ -424,25 +420,16 @@ export const FeeStructuresPage: React.FC = () => {
                             NPR {monthlyTuition.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
                           </TableCell>
 
-                          {/* Concessions */}
+                          {/* Transportation */}
                           <TableCell className="py-3 px-4 text-center">
-                            <div className="flex items-center justify-center gap-1.5 flex-wrap">
-                              {transportCount > 0 && (
-                                <span className="inline-flex items-center gap-1 px-1.5 py-0.5 rounded text-[10px] font-medium bg-sky-500/10 text-sky-700 dark:text-sky-300 border border-sky-500/20">
-                                  <Bus className="w-3 h-3" />
-                                  {transportCount}
-                                </span>
-                              )}
-                              {scholarshipCount > 0 && (
-                                <span className="inline-flex items-center gap-1 px-1.5 py-0.5 rounded text-[10px] font-medium bg-amber-500/10 text-amber-700 dark:text-amber-300 border border-amber-500/20">
-                                  <Percent className="w-3 h-3" />
-                                  {scholarshipCount}
-                                </span>
-                              )}
-                              {transportCount === 0 && scholarshipCount === 0 && (
-                                <span className="text-muted-foreground/60">—</span>
-                              )}
-                            </div>
+                            {transportCount > 0 ? (
+                              <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-medium bg-emerald-500/10 text-emerald-700 dark:text-emerald-300 border border-emerald-500/20">
+                                <Bus className="w-3 h-3" />
+                                {transportCount} {transportCount === 1 ? 'user' : 'users'}
+                              </span>
+                            ) : (
+                              <span className="text-muted-foreground/60">—</span>
+                            )}
                           </TableCell>
 
                           {/* Actions */}

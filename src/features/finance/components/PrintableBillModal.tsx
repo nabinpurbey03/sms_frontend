@@ -174,12 +174,6 @@ export const PrintableBillModal: React.FC<PrintableBillModalProps> = ({
                     <span className="text-zinc-600">Subtotal:</span>
                     <span className="font-mono">NPR {Number(bill.subtotal_amount).toFixed(2)}</span>
                   </div>
-                  {Number(bill.discount_amount) > 0 && (
-                    <div className="flex justify-between py-0.5 text-emerald-700 font-medium">
-                      <span>Concession ({Number(bill.discount_percent)}%):</span>
-                      <span className="font-mono">- NPR {Number(bill.discount_amount).toFixed(2)}</span>
-                    </div>
-                  )}
                   {Number(bill.previous_due_amount) > 0 && (
                     <div className="flex justify-between py-0.5 text-zinc-700">
                       <span>Previous Session Dues:</span>
