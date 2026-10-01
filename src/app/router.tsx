@@ -50,6 +50,7 @@ import { FeeStructuresPage } from '@/features/finance/pages/FeeStructuresPage';
 import { ClassFeeStructurePage } from '@/features/finance/pages/ClassFeeStructurePage';
 import { TransactionsPage } from '@/features/finance/pages/TransactionsPage';
 import { StudentLedgerPage } from '@/features/finance/pages/StudentLedgerPage';
+import { ParentFeeStatusPage } from '@/features/finance/pages/ParentFeeStatusPage';
 import { useAuth } from '@/auth/useAuth';
 
 const IndexRedirect: React.FC = () => {
@@ -403,10 +404,24 @@ const auditLogsRoute = createRoute({
   component: AuditLogsPage,
 });
 
+const FinanceRoleDispatcher: React.FC = () => {
+  const { activeRole } = useAuth();
+  if (activeRole === 'PARENT') {
+    return <Navigate to="/finance/my-children-fees" replace />;
+  }
+  return <FinanceDashboardPage />;
+};
+
 const financeDashboardRoute = createRoute({
   getParentRoute: () => protectedLayoutRoute,
   path: '/finance',
-  component: FinanceDashboardPage,
+  component: FinanceRoleDispatcher,
+});
+
+const parentChildrenFeesRoute = createRoute({
+  getParentRoute: () => protectedLayoutRoute,
+  path: '/finance/my-children-fees',
+  component: ParentFeeStatusPage,
 });
 
 const financeBillsRoute = createRoute({
@@ -483,6 +498,7 @@ const routeTree = rootRoute.addChildren([
     scoreEntryQueryRoute,
     auditLogsRoute,
     financeDashboardRoute,
+    parentChildrenFeesRoute,
     financeBillsRoute,
     financeCollectRoute,
     financeStructuresRoute,

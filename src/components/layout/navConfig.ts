@@ -224,11 +224,19 @@ export const getNavItems = (ctx: NavPermissionsContext): NavItem[] => [
     category: 'Parent Portal',
   },
   {
+    label: "My Children's Fees",
+    href: '/finance/my-children-fees',
+    icon: Coins,
+    description: "View children's fee balances and invoices.",
+    show: ctx.isParent,
+    category: 'Parent Portal',
+  },
+  {
     label: 'Finance Dashboard',
     href: '/finance',
     icon: WalletCards,
     description: 'Fee collection summary, cash flow, and dues.',
-    show: ctx.can('VIEW_FINANCE') && ctx.activeRole !== 'ACCOUNTANT',
+    show: ctx.can('VIEW_FINANCE') && ctx.activeRole !== 'ACCOUNTANT' && !ctx.isParent,
     category: 'Finance',
   },
   {
@@ -236,7 +244,7 @@ export const getNavItems = (ctx: NavPermissionsContext): NavItem[] => [
     href: '/finance/structures',
     icon: Coins,
     description: 'Configure class-wise monthly tuition and annual fees.',
-    show: ctx.can('VIEW_FINANCE'),
+    show: ctx.can('VIEW_FINANCE') && !ctx.isParent,
     category: 'Finance',
   },
   {
@@ -244,7 +252,7 @@ export const getNavItems = (ctx: NavPermissionsContext): NavItem[] => [
     href: '/finance/bills',
     icon: FileText,
     description: 'Generate, track, and manage student fee bills.',
-    show: ctx.can('VIEW_FINANCE'),
+    show: ctx.can('VIEW_FINANCE') && !ctx.isParent,
     category: 'Finance',
   },
   {
@@ -252,7 +260,7 @@ export const getNavItems = (ctx: NavPermissionsContext): NavItem[] => [
     href: '/finance/collect',
     icon: CreditCard,
     description: 'Collect fee payments and issue official receipts.',
-    show: ctx.can('VIEW_FINANCE'),
+    show: ctx.can('VIEW_FINANCE') && !ctx.isParent,
     category: 'Finance',
   },
   {
@@ -260,7 +268,7 @@ export const getNavItems = (ctx: NavPermissionsContext): NavItem[] => [
     href: '/finance/transactions',
     icon: Receipt,
     description: 'View payment history and print duplicate receipts.',
-    show: ctx.can('VIEW_FINANCE'),
+    show: ctx.can('VIEW_FINANCE') && !ctx.isParent,
     category: 'Finance',
   },
 ];
