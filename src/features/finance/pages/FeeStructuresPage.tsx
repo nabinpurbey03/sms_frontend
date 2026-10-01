@@ -3,8 +3,8 @@ import { useNavigate } from '@tanstack/react-router';
 import { useAuth } from '@/auth/useAuth';
 import { usePermission } from '@/auth/usePermission';
 import { useCurrentAcademicYear } from '@/features/academic-year/hooks/useCurrentAcademicYear';
-import { useAllClassesWithDetails } from '@/features/academic/hooks';
 import {
+  useFinanceClassesWithRoster,
   useFeeStructures,
   useStudentDiscounts,
   useCreateFeeStructure,
@@ -58,7 +58,7 @@ export const FeeStructuresPage: React.FC = () => {
     isLoading: isLoadingClasses,
     isError: isClassesError,
     refetch: refetchClasses,
-  } = useAllClassesWithDetails(effectiveTenantId);
+  } = useFinanceClassesWithRoster(effectiveTenantId, currentYear?.id);
 
   const {
     data: feeStructures = [],

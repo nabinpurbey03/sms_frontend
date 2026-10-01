@@ -12,6 +12,9 @@ import type {
   FeePaymentFilters,
 } from './types';
 
+import { academicApi } from '@/features/academic/api';
+import type { ClassWithDetails } from '@/features/academic/types';
+
 export const FINANCE_DASHBOARD_KEY = 'finance_dashboard';
 export const FEE_STRUCTURES_KEY = 'fee_structures';
 export const STUDENT_DISCOUNTS_KEY = 'student_discounts';
@@ -23,6 +26,81 @@ export const RECEIPT_KEY = 'finance_receipt';
 export const STUDENT_LEDGER_KEY = 'student_ledger';
 
 // --- Query Hooks ---
+
+/**
+ * Hook to aggregate classes with their sections and students specifically for
+ * finance (Fee Structures, Billing Roster) without querying curriculum subjects.
+ * Follows principle of least privilege, data minimization, and eliminates unnecessary API overhead.
+ */
+export const useFinanceClassesWithRoster = (tenantId: string | null, academicYearId?: string | null) => {
+  return useQuery({
+    queryKey: ['finance_classes_with_roster', tenantId, academicYearId],
+    queryFn: async (): Promise<ClassWithDetails[]> => {
+      if (!tenantId) return [];
+      const classes = await academicApi.getClasses(tenantId, academicYearId);
+
+      const detailed = await Promise.all(
+        classes.map(async (cls) => {
+          const [sections, students] = await Promise.all([
+            academicApi.getSections(tenantId, cls.id, academicYearId),
+            academicApi.getStudents(tenantId, cls.id, academicYearId),
+          ]);
+
+          const sectionsWithCounts = sections.map((sec) => ({
+            ...sec,
+            student_count: students.filter((s) => s.section_id === sec.id && s.status === 'ACTIVE').length,
+          }));
+
+          return {
+            ...cls,
+            sections: sectionsWithCounts,
+            students,
+            subjects: [],
+          };
+        })
+      );
+
+      return detailed;
+    },
+    enabled: !!tenantId,
+    staleTime: 1000 * 30,
+  });
+};
+
+/**
+ * Hook to fetch a single class with sections and students for finance class fee management
+ * without querying curriculum subjects.
+ */
+export const useFinanceClassRoster = (tenantId: string | null, classId: string | null, academicYearId?: string | null) => {
+  return useQuery<ClassWithDetails | null>({
+    queryKey: ['finance_class_roster', tenantId, classId, academicYearId],
+    queryFn: async () => {
+      if (!tenantId || !classId) return null;
+      const [classes, sections, students] = await Promise.all([
+        academicApi.getClasses(tenantId, academicYearId),
+        academicApi.getSections(tenantId, classId, academicYearId),
+        academicApi.getStudents(tenantId, classId, academicYearId),
+      ]);
+
+      const cls = classes.find((c) => c.id === classId);
+      if (!cls) return null;
+
+      const sectionsWithCounts = sections.map((sec) => ({
+        ...sec,
+        student_count: students.filter((s) => s.section_id === sec.id && s.status === 'ACTIVE').length,
+      }));
+
+      return {
+        ...cls,
+        sections: sectionsWithCounts,
+        students,
+        subjects: [],
+      };
+    },
+    enabled: !!tenantId && !!classId,
+    staleTime: 1000 * 30,
+  });
+};
 
 export const useFinanceDashboardSummary = (tenantId: string | null) => {
   return useQuery({

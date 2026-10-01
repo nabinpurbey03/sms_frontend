@@ -2,12 +2,10 @@ import React, { useState, useMemo } from 'react';
 import { useNavigate, useParams } from '@tanstack/react-router';
 import { useAuth } from '@/auth/useAuth';
 import { usePermission } from '@/auth/usePermission';
-import {
-  useClassWithDetails,
-  useClasses,
-} from '@/features/academic/hooks';
+import { useClasses } from '@/features/academic/hooks';
 import { useCurrentAcademicYear } from '@/features/academic-year/hooks/useCurrentAcademicYear';
 import {
+  useFinanceClassRoster,
   useFeeStructures,
   useStudentDiscounts,
   useCreateFeeStructure,
@@ -70,16 +68,17 @@ export const ClassFeeStructurePage: React.FC = () => {
   const [savingStudentId, setSavingStudentId] = useState<string | null>(null);
 
   // Queries
+  const { currentYear } = useCurrentAcademicYear(tenantId);
+
   const {
     data: cls,
     isLoading: isClassLoading,
     isError: isClassError,
     error: classError,
     refetch: refetchClass,
-  } = useClassWithDetails(tenantId, classId);
+  } = useFinanceClassRoster(tenantId, classId, currentYear?.id);
 
   const { data: allClasses = [] } = useClasses(tenantId);
-  const { currentYear } = useCurrentAcademicYear(tenantId);
 
   const {
     data: feeStructures = [],
