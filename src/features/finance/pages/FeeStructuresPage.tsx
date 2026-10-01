@@ -4,9 +4,7 @@ import { useAuth } from '@/auth/useAuth';
 import { usePermission } from '@/auth/usePermission';
 import { useCurrentAcademicYear } from '@/features/academic-year/hooks/useCurrentAcademicYear';
 import {
-  useFinanceClassesWithRoster,
-  useFeeStructures,
-  useStudentTransports,
+  useFinanceClassOverview,
   useCreateFeeStructure,
 } from '../hooks';
 import { StatCard } from '@/components/ui/stat-card';
@@ -33,11 +31,9 @@ import {
   Lock,
   School,
   Bus,
-  Percent,
   ArrowRight,
   Users,
 } from 'lucide-react';
-import type { FeeStructure, StudentTransportProfile } from '../types';
 
 export const FeeStructuresPage: React.FC = () => {
   const { activeTenantId } = useAuth();
@@ -61,95 +57,43 @@ export const FeeStructuresPage: React.FC = () => {
   const [isFeeStructureOpen, setIsFeeStructureOpen] = useState(false);
   const [selectedClassIdForAdd, setSelectedClassIdForAdd] = useState<string>('');
 
-  // Queries
+  // Single Aggregated Class Overview Query (Replaces N+1 waterfall)
   const {
-    data: classesWithDetails = [],
-    isLoading: isLoadingClasses,
-    isError: isClassesError,
-    refetch: refetchClasses,
-  } = useFinanceClassesWithRoster(effectiveTenantId, currentYear?.id);
-
-  const {
-    data: feeStructures = [],
-    isLoading: isLoadingStructures,
-  } = useFeeStructures(effectiveTenantId);
-
-  const {
-    data: transports = [],
-    isLoading: isLoadingTransports,
-  } = useStudentTransports(effectiveTenantId);
+    data: classOverview = [],
+    isLoading,
+    isError,
+    refetch,
+  } = useFinanceClassOverview(effectiveTenantId);
 
   // Mutations
   const createStructureMutation = useCreateFeeStructure(effectiveTenantId);
 
-  // Sort classes by sequence_order ascending
-  const sortedClasses = useMemo(() => {
-    return [...classesWithDetails].sort((a, b) => {
-      const seqA = a.sequence_order ?? 0;
-      const seqB = b.sequence_order ?? 0;
-      if (seqA !== seqB) return seqA - seqB;
-      return a.name.localeCompare(b.name);
-    });
-  }, [classesWithDetails]);
-
-  // Pre-index fee structures by class_id
-  const feeStructuresByClassId = useMemo(() => {
-    const map = new Map<string, FeeStructure[]>();
-    for (const f of feeStructures) {
-      if (f.class_id) {
-        const list = map.get(f.class_id) || [];
-        list.push(f);
-        map.set(f.class_id, list);
-      }
-    }
-    return map;
-  }, [feeStructures]);
-
-  // Pre-index student transport profiles by class_id
-  const transportsByClassId = useMemo(() => {
-    const map = new Map<string, StudentTransportProfile[]>();
-    for (const cls of classesWithDetails) {
-      const studentIds = new Set((cls.students || []).map((s) => s.id));
-      if (studentIds.size > 0) {
-        const classTrans = transports.filter((d) => studentIds.has(d.student_id));
-        map.set(cls.id, classTrans);
-      } else {
-        map.set(cls.id, []);
-      }
-    }
-    return map;
-  }, [classesWithDetails, transports]);
-
   // Filtered Classes based on search query
   const filteredClasses = useMemo(() => {
-    if (!searchQuery.trim()) return sortedClasses;
+    if (!searchQuery.trim()) return classOverview;
     const q = searchQuery.toLowerCase();
-    return sortedClasses.filter((c) => {
+    return classOverview.filter((c) => {
       return (
-        c.name.toLowerCase().includes(q) ||
-        (c.sections && c.sections.some((s) => s.name.toLowerCase().includes(q)))
+        c.class_name.toLowerCase().includes(q) ||
+        (c.sections && c.sections.some((s) => s.section_name.toLowerCase().includes(q)))
       );
     });
-  }, [sortedClasses, searchQuery]);
+  }, [classOverview, searchQuery]);
 
-  // KPI Computations
-  const activeFeeStructuresCount = useMemo(() => {
-    return feeStructures.filter((f) => f.is_active).length;
-  }, [feeStructures]);
-
-  const totalStudentsCount = useMemo(() => {
-    return sortedClasses.reduce((sum, cls) => sum + ((cls.students || []).length), 0);
-  }, [sortedClasses]);
-
-  const transportUsersCount = useMemo(() => {
-    const activeTransport = transports.filter(
-      (d) => d.is_active && Boolean(d.is_transport_applicable)
-    );
-    const studentIds = new Set(activeTransport.map((d) => d.student_id));
-    return studentIds.size;
-  }, [transports]);
-
-  const isLoading = isLoadingClasses || isLoadingStructures || isLoadingTransports;
+  // KPI Computations from aggregated single-query overview
+  const totalClasses = classOverview.length;
+  const totalFeeHeads = useMemo(
+    () => classOverview.reduce((sum, c) => sum + (c.fee_heads_count || 0), 0),
+    [classOverview]
+  );
+  const totalStudents = useMemo(
+    () => classOverview.reduce((sum, c) => sum + (c.students_count || 0), 0),
+    [classOverview]
+  );
+  const totalTransportUsers = useMemo(
+    () => classOverview.reduce((sum, c) => sum + (c.transport_users_count || 0), 0),
+    [classOverview]
+  );
 
   if (!effectiveTenantId && !isSuperAdmin) {
     return <TenantRequiredState featureName="class fee structures" />;
@@ -243,35 +187,35 @@ export const FeeStructuresPage: React.FC = () => {
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
             <StatCard
               title="Total Classes"
-              value={sortedClasses.length}
+              value={totalClasses}
               icon={School}
               description="Configured academic levels"
               variant="default"
-              loading={isLoadingClasses}
+              loading={isLoading}
             />
             <StatCard
               title="Total Fee Heads Configured"
-              value={activeFeeStructuresCount}
+              value={totalFeeHeads}
               icon={Coins}
               description="Active billing heads"
               variant="blue"
-              loading={isLoadingStructures}
+              loading={isLoading}
             />
             <StatCard
               title="Total Enrolled Students"
-              value={totalStudentsCount}
+              value={totalStudents}
               icon={Users}
               description="Students across all classes"
               variant="amber"
-              loading={isLoadingClasses}
+              loading={isLoading}
             />
             <StatCard
               title="Students using Transportation"
-              value={transportUsersCount}
+              value={totalTransportUsers}
               icon={Bus}
               description="Active bus & route users"
               variant="emerald"
-              loading={isLoadingTransports}
+              loading={isLoading}
             />
           </div>
 
@@ -281,15 +225,15 @@ export const FeeStructuresPage: React.FC = () => {
             onSearchChange={setSearchQuery}
             searchPlaceholder="Search classes by name or section..."
             showingCount={filteredClasses.length}
-            totalCount={sortedClasses.length}
-            unitLabel={sortedClasses.length === 1 ? 'class' : 'classes'}
+            totalCount={totalClasses}
+            unitLabel={totalClasses === 1 ? 'class' : 'classes'}
           />
 
           {/* Error Alert */}
-          {isClassesError && (
+          {isError && (
             <div className="p-4 rounded-xl border border-destructive/30 bg-destructive/10 text-destructive text-xs flex items-center justify-between">
               <span>Failed to load class fee structures from server.</span>
-              <Button variant="outline" size="sm" onClick={() => refetchClasses()} className="h-7 text-xs">
+              <Button variant="outline" size="sm" onClick={() => refetch()} className="h-7 text-xs">
                 Retry
               </Button>
             </div>
@@ -348,22 +292,16 @@ export const FeeStructuresPage: React.FC = () => {
                   </TableHeader>
                   <TableBody className="divide-y divide-border/40 text-xs">
                     {filteredClasses.map((cls) => {
-                      const activeStructures = (feeStructuresByClassId.get(cls.id) || []).filter((f) => f.is_active);
-                      const monthlyTuition = activeStructures
-                        .filter((f) => f.frequency === 'MONTHLY')
-                        .reduce((sum, f) => sum + (Number(f.amount) || 0), 0);
-                      const classTransports = (transportsByClassId.get(cls.id) || []).filter((d) => d.is_active);
-                      const transportCount = classTransports.filter((d) => Boolean(d.is_transport_applicable)).length;
-                      const studentCount = (cls.students || []).length;
+                      const monthlyTuition = Number(cls.monthly_tuition_total) || 0;
                       const sections = cls.sections || [];
 
                       return (
                         <TableRow
-                          key={cls.id}
+                          key={cls.class_id}
                           onClick={() =>
                             navigate({
                               to: '/finance/structures/$classId',
-                              params: { classId: cls.id },
+                              params: { classId: cls.class_id },
                             })
                           }
                           className="hover:bg-muted/40 cursor-pointer transition-colors group"
@@ -372,7 +310,7 @@ export const FeeStructuresPage: React.FC = () => {
                           <TableCell className="py-3 px-4">
                             <div className="flex items-center gap-2">
                               <span className="font-bold text-sm text-foreground group-hover:text-primary transition-colors">
-                                {cls.name}
+                                {cls.class_name}
                               </span>
                               {cls.sequence_order !== undefined && (
                                 <Badge variant="secondary" className="text-[10px] py-0 px-1.5 font-normal">
@@ -388,10 +326,10 @@ export const FeeStructuresPage: React.FC = () => {
                               <div className="flex flex-wrap gap-1">
                                 {sections.map((sec) => (
                                   <span
-                                    key={sec.id}
+                                    key={sec.section_id}
                                     className="inline-block px-1.5 py-0.5 rounded bg-muted text-[11px] font-medium text-foreground"
                                   >
-                                    {sec.name}
+                                    {sec.section_name} ({sec.students_count})
                                   </span>
                                 ))}
                               </div>
@@ -402,16 +340,16 @@ export const FeeStructuresPage: React.FC = () => {
 
                           {/* Students Count */}
                           <TableCell className="py-3 px-4 text-center font-medium text-foreground">
-                            {studentCount}
+                            {cls.students_count}
                           </TableCell>
 
                           {/* Fee Heads Count */}
                           <TableCell className="py-3 px-4 text-center">
                             <Badge
-                              variant={activeStructures.length > 0 ? 'outline' : 'secondary'}
+                              variant={cls.fee_heads_count > 0 ? 'outline' : 'secondary'}
                               className="text-[10px] font-medium"
                             >
-                              {activeStructures.length} {activeStructures.length === 1 ? 'Head' : 'Heads'}
+                              {cls.fee_heads_count} {cls.fee_heads_count === 1 ? 'Head' : 'Heads'}
                             </Badge>
                           </TableCell>
 
@@ -422,10 +360,10 @@ export const FeeStructuresPage: React.FC = () => {
 
                           {/* Transportation */}
                           <TableCell className="py-3 px-4 text-center">
-                            {transportCount > 0 ? (
+                            {cls.transport_users_count > 0 ? (
                               <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-medium bg-emerald-500/10 text-emerald-700 dark:text-emerald-300 border border-emerald-500/20">
                                 <Bus className="w-3 h-3" />
-                                {transportCount} {transportCount === 1 ? 'user' : 'users'}
+                                {cls.transport_users_count} {cls.transport_users_count === 1 ? 'user' : 'users'}
                               </span>
                             ) : (
                               <span className="text-muted-foreground/60">—</span>
@@ -440,7 +378,7 @@ export const FeeStructuresPage: React.FC = () => {
                                 variant="ghost"
                                 onClick={(e) => {
                                   e.stopPropagation();
-                                  setSelectedClassIdForAdd(cls.id);
+                                  setSelectedClassIdForAdd(cls.class_id);
                                   setIsFeeStructureOpen(true);
                                 }}
                                 className="h-7 text-xs px-2 gap-1 text-muted-foreground hover:text-foreground cursor-pointer"
@@ -456,7 +394,7 @@ export const FeeStructuresPage: React.FC = () => {
                                   e.stopPropagation();
                                   navigate({
                                     to: '/finance/structures/$classId',
-                                    params: { classId: cls.id },
+                                    params: { classId: cls.class_id },
                                   });
                                 }}
                                 className="h-7 text-xs px-2.5 gap-1 group-hover:border-primary/50 cursor-pointer"
@@ -485,6 +423,7 @@ export const FeeStructuresPage: React.FC = () => {
             defaultClassId={selectedClassIdForAdd || undefined}
             onSubmit={async (data) => {
               await createStructureMutation.mutateAsync(data);
+              refetch();
             }}
             isLoading={createStructureMutation.isPending}
             tenantId={effectiveTenantId}

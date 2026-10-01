@@ -222,3 +222,31 @@ export interface FeePaymentFilters {
   page?: number;
   page_size?: number;
 }
+
+export interface FinanceClassSection {
+  section_id: string;
+  section_name: string;
+  students_count: number;
+}
+
+export interface FinanceClassOverview {
+  class_id: string;
+  class_name: string;
+  sequence_order: number;
+  sections: FinanceClassSection[];
+  students_count: number;
+  fee_heads_count: number;
+  monthly_tuition_total: number | string;
+  transport_users_count: number;
+}
+
+export interface ParentChildFeeSummary {
+  student_id: string;
+  student_name: string;
+  class_name: string;
+  section_name?: string | null;
+  total_payable: number | string;
+  total_paid: number | string;
+  outstanding_due: number | string;
+  bills: FeeBill[];
+}

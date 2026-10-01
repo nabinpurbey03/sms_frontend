@@ -24,44 +24,31 @@ export const BILL_KEY = 'finance_bill';
 export const PAYMENTS_KEY = 'finance_payments';
 export const RECEIPT_KEY = 'finance_receipt';
 export const STUDENT_LEDGER_KEY = 'student_ledger';
+export const FINANCE_CLASS_OVERVIEW_KEY = 'finance_class_overview';
+export const PARENT_CHILDREN_FEES_KEY = 'parent_children_fees';
 
 // --- Query Hooks ---
 
 /**
- * Hook to aggregate classes with their sections and students specifically for
- * finance (Fee Structures, Billing Roster) without querying curriculum subjects.
- * Follows principle of least privilege, data minimization, and eliminates unnecessary API overhead.
+ * Hook to fetch aggregated class finance overview in a single call,
+ * completely eliminating N+1 API cascades across classes, sections, and students.
  */
-export const useFinanceClassesWithRoster = (tenantId: string | null, academicYearId?: string | null) => {
+export const useFinanceClassOverview = (tenantId: string | null) => {
   return useQuery({
-    queryKey: ['finance_classes_with_roster', tenantId, academicYearId],
-    queryFn: async (): Promise<ClassWithDetails[]> => {
-      if (!tenantId) return [];
-      const classes = await academicApi.getClasses(tenantId, academicYearId);
+    queryKey: [FINANCE_CLASS_OVERVIEW_KEY, tenantId],
+    queryFn: () => financeApi.getClassOverview(tenantId!),
+    enabled: !!tenantId,
+    staleTime: 1000 * 30,
+  });
+};
 
-      const detailed = await Promise.all(
-        classes.map(async (cls) => {
-          const [sections, students] = await Promise.all([
-            academicApi.getSections(tenantId, cls.id, academicYearId),
-            academicApi.getStudents(tenantId, cls.id, academicYearId),
-          ]);
-
-          const sectionsWithCounts = sections.map((sec) => ({
-            ...sec,
-            student_count: students.filter((s) => s.section_id === sec.id && s.status === 'ACTIVE').length,
-          }));
-
-          return {
-            ...cls,
-            sections: sectionsWithCounts,
-            students,
-            subjects: [],
-          };
-        })
-      );
-
-      return detailed;
-    },
+/**
+ * Hook for parent read-only fee portal: fetches children's billing and dues summary.
+ */
+export const useParentChildrenFees = (tenantId: string | null) => {
+  return useQuery({
+    queryKey: [PARENT_CHILDREN_FEES_KEY, tenantId],
+    queryFn: () => financeApi.getParentChildrenFees(tenantId!),
     enabled: !!tenantId,
     staleTime: 1000 * 30,
   });

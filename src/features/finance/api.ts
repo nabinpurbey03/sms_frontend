@@ -16,6 +16,8 @@ import type {
   ReceiptDocument,
   StudentLedgerResponse,
   FinanceDashboardSummary,
+  FinanceClassOverview,
+  ParentChildFeeSummary,
 } from './types';
 
 export interface PaginatedResult<T> {
@@ -146,5 +148,13 @@ export const financeApi = {
     studentId: string
   ): Promise<StudentLedgerResponse> => {
     return apiClient.get(`/finance/tenants/${tenantId}/students/${studentId}/ledger`);
+  },
+
+  getClassOverview: async (tenantId: string): Promise<FinanceClassOverview[]> => {
+    return apiClient.get(`/finance/tenants/${tenantId}/class-overview`);
+  },
+
+  getParentChildrenFees: async (tenantId: string): Promise<ParentChildFeeSummary[]> => {
+    return apiClient.get(`/finance/tenants/${tenantId}/parents/me/children-fees`);
   },
 };
