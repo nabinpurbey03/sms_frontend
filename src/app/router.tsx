@@ -47,6 +47,7 @@ import { FinanceDashboardPage } from '@/features/finance/pages/FinanceDashboardP
 import { BillsPage } from '@/features/finance/pages/BillsPage';
 import { CollectPaymentPage } from '@/features/finance/pages/CollectPaymentPage';
 import { FeeStructuresPage } from '@/features/finance/pages/FeeStructuresPage';
+import { ClassFeeStructurePage } from '@/features/finance/pages/ClassFeeStructurePage';
 import { TransactionsPage } from '@/features/finance/pages/TransactionsPage';
 import { StudentLedgerPage } from '@/features/finance/pages/StudentLedgerPage';
 import { useAuth } from '@/auth/useAuth';
@@ -426,6 +427,12 @@ const financeStructuresRoute = createRoute({
   component: FeeStructuresPage,
 });
 
+const financeClassStructureRoute = createRoute({
+  getParentRoute: () => protectedLayoutRoute,
+  path: '/finance/structures/$classId',
+  component: ClassFeeStructurePage,
+});
+
 const financeTransactionsRoute = createRoute({
   getParentRoute: () => protectedLayoutRoute,
   path: '/finance/transactions',
@@ -479,6 +486,7 @@ const routeTree = rootRoute.addChildren([
     financeBillsRoute,
     financeCollectRoute,
     financeStructuresRoute,
+    financeClassStructureRoute,
     financeTransactionsRoute,
     financeLedgerRoute,
   ]),

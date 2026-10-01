@@ -67,6 +67,7 @@ export interface StudentDiscount {
   student_id: string;
   student_name?: string;
   discount_percent: number | string;
+  is_transport_applicable?: boolean;
   reason?: string | null;
   is_active: boolean;
 }
@@ -74,6 +75,7 @@ export interface StudentDiscount {
 export interface StudentDiscountCreateDTO {
   student_id: string;
   discount_percent: number;
+  is_transport_applicable?: boolean;
   reason?: string;
 }
 

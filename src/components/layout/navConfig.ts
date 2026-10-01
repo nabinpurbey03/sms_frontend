@@ -325,6 +325,11 @@ export const getBreadcrumbs = (pathname: string, navItems: NavItem[]): Breadcrum
 
   if (pathname.includes('/classes/') && pathname.includes('/sections')) {
     crumbs.push({ label: 'Sections' });
+  } else if (
+    pathname.includes('/finance/structures/') &&
+    pathname.trim().replace(/\/+$/, '') !== '/finance/structures'
+  ) {
+    crumbs.push({ label: 'Class Fee Structure' });
   } else if (pathname.includes('/create')) {
     crumbs.push({ label: 'Create New' });
   } else if (pathname.includes('/edit')) {

@@ -28,10 +28,12 @@ export type FeeStructureFormValues = z.infer<typeof feeStructureFormSchema>;
 
 export const studentDiscountSchema = z.object({
   student_id: z.string().min(1, 'Please select a student'),
-  discount_percent: z
-    .number({ message: 'Discount percentage is required' })
+  discount_percent: z.coerce
+    .number()
     .min(0, 'Discount cannot be negative')
-    .max(100, 'Discount cannot exceed 100%'),
+    .max(100, 'Discount cannot exceed 100%')
+    .default(0),
+  is_transport_applicable: z.boolean().default(false),
   reason: z
     .string()
     .max(100, 'Reason cannot exceed 100 characters')
@@ -40,6 +42,7 @@ export const studentDiscountSchema = z.object({
 });
 
 export type StudentDiscountFormValues = z.infer<typeof studentDiscountSchema>;
+export type StudentDiscountInputValues = z.input<typeof studentDiscountSchema>;
 
 export const batchBillGenerateSchema = z.object({
   class_id: z.string().min(1, 'Please select a target class'),

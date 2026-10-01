@@ -13,7 +13,11 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Percent, Loader2 } from 'lucide-react';
-import { studentDiscountSchema, type StudentDiscountFormValues } from '../schema';
+import {
+  studentDiscountSchema,
+  type StudentDiscountFormValues,
+  type StudentDiscountInputValues,
+} from '../schema';
 import type { StudentDiscount } from '../types';
 import { useClasses, useClassStudents } from '@/features/academic/hooks';
 
@@ -50,11 +54,12 @@ export const StudentDiscountDialog: React.FC<StudentDiscountDialogProps> = ({
     reset,
     setValue,
     formState: { errors },
-  } = useForm<StudentDiscountFormValues>({
+  } = useForm<StudentDiscountInputValues, any, StudentDiscountFormValues>({
     resolver: zodResolver(studentDiscountSchema),
     defaultValues: {
       student_id: '',
       discount_percent: 0,
+      is_transport_applicable: false,
       reason: '',
     },
   });
@@ -64,12 +69,14 @@ export const StudentDiscountDialog: React.FC<StudentDiscountDialogProps> = ({
       reset({
         student_id: initialData.student_id,
         discount_percent: Number(initialData.discount_percent),
+        is_transport_applicable: Boolean(initialData.is_transport_applicable),
         reason: initialData.reason || '',
       });
     } else {
       reset({
         student_id: '',
         discount_percent: 0,
+        is_transport_applicable: false,
         reason: '',
       });
     }
