@@ -18,7 +18,14 @@ import { EmptyState } from '@/components/common/EmptyState';
 import { TenantRequiredState } from '@/components/common/TenantRequiredState';
 import { SchoolSearchSelect } from '@/features/academic-year/components/SchoolSearchSelect';
 import { useTenant } from '@/features/tenants/hooks';
-import { ClassFeeCard } from '../components/ClassFeeCard';
+import {
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
+} from '@/components/ui/table';
 import { FeeStructureDialog } from '../components/FeeStructureDialog';
 import {
   Coins,
@@ -27,6 +34,7 @@ import {
   School,
   Bus,
   Percent,
+  ArrowRight,
 } from 'lucide-react';
 import type { FeeStructure, StudentDiscount } from '../types';
 
@@ -290,20 +298,13 @@ export const FeeStructuresPage: React.FC = () => {
             </div>
           )}
 
-          {/* Classes Grid */}
+          {/* Classes Table (Minimalist Architecture) */}
           {isLoading ? (
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-              {[...Array(6)].map((_, i) => (
-                <div
-                  key={i}
-                  className="h-56 rounded-xl border border-border/60 bg-muted/20 animate-pulse p-5 space-y-4"
-                >
-                  <div className="h-6 w-1/3 bg-muted rounded" />
-                  <div className="h-4 w-2/3 bg-muted/60 rounded" />
-                  <div className="h-10 bg-muted/40 rounded-lg" />
-                </div>
+            <Card className="border border-border/60 shadow-xs overflow-hidden rounded-xl bg-card p-6 space-y-3">
+              {[...Array(5)].map((_, i) => (
+                <div key={i} className="h-10 rounded-lg bg-muted/30 animate-pulse" />
               ))}
-            </div>
+            </Card>
           ) : filteredClasses.length === 0 ? (
             <EmptyState
               icon={Coins}
@@ -334,26 +335,157 @@ export const FeeStructuresPage: React.FC = () => {
               }
             />
           ) : (
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-              {filteredClasses.map((cls) => (
-                <ClassFeeCard
-                  key={cls.id}
-                  cls={cls}
-                  feeStructures={feeStructuresByClassId.get(cls.id) || []}
-                  discounts={discountsByClassId.get(cls.id) || []}
-                  onManageFee={(classId) =>
-                    navigate({
-                      to: '/finance/structures/$classId',
-                      params: { classId },
-                    })
-                  }
-                  onAddFeeHead={(classId) => {
-                    setSelectedClassIdForAdd(classId);
-                    setIsFeeStructureOpen(true);
-                  }}
-                />
-              ))}
-            </div>
+            <Card className="border border-border/60 shadow-xs overflow-hidden rounded-xl bg-card">
+              <div className="overflow-x-auto">
+                <Table>
+                  <TableHeader className="bg-muted/40 text-[11px] uppercase tracking-wider text-muted-foreground font-semibold">
+                    <TableRow>
+                      <TableHead className="py-3 px-4">Class / Level</TableHead>
+                      <TableHead className="py-3 px-4">Sections</TableHead>
+                      <TableHead className="py-3 px-4 text-center">Students</TableHead>
+                      <TableHead className="py-3 px-4 text-center">Fee Heads</TableHead>
+                      <TableHead className="py-3 px-4 text-right">Monthly Base Tuition</TableHead>
+                      <TableHead className="py-3 px-4 text-center">Concessions</TableHead>
+                      <TableHead className="py-3 px-4 text-right">Actions</TableHead>
+                    </TableRow>
+                  </TableHeader>
+                  <TableBody className="divide-y divide-border/40 text-xs">
+                    {filteredClasses.map((cls) => {
+                      const activeStructures = (feeStructuresByClassId.get(cls.id) || []).filter((f) => f.is_active);
+                      const monthlyTuition = activeStructures
+                        .filter((f) => f.frequency === 'MONTHLY')
+                        .reduce((sum, f) => sum + (Number(f.amount) || 0), 0);
+                      const classDiscounts = (discountsByClassId.get(cls.id) || []).filter((d) => d.is_active);
+                      const transportCount = classDiscounts.filter((d) => Boolean(d.is_transport_applicable)).length;
+                      const scholarshipCount = classDiscounts.filter((d) => Number(d.discount_percent || 0) > 0).length;
+                      const studentCount = (cls.students || []).length;
+                      const sections = cls.sections || [];
+
+                      return (
+                        <TableRow
+                          key={cls.id}
+                          onClick={() =>
+                            navigate({
+                              to: '/finance/structures/$classId',
+                              params: { classId: cls.id },
+                            })
+                          }
+                          className="hover:bg-muted/40 cursor-pointer transition-colors group"
+                        >
+                          {/* Class / Level */}
+                          <TableCell className="py-3 px-4">
+                            <div className="flex items-center gap-2">
+                              <span className="font-bold text-sm text-foreground group-hover:text-primary transition-colors">
+                                {cls.name}
+                              </span>
+                              {cls.sequence_order !== undefined && (
+                                <Badge variant="secondary" className="text-[10px] py-0 px-1.5 font-normal">
+                                  Grade {cls.sequence_order}
+                                </Badge>
+                              )}
+                            </div>
+                          </TableCell>
+
+                          {/* Sections */}
+                          <TableCell className="py-3 px-4 text-muted-foreground">
+                            {sections.length > 0 ? (
+                              <div className="flex flex-wrap gap-1">
+                                {sections.map((sec) => (
+                                  <span
+                                    key={sec.id}
+                                    className="inline-block px-1.5 py-0.5 rounded bg-muted text-[11px] font-medium text-foreground"
+                                  >
+                                    {sec.name}
+                                  </span>
+                                ))}
+                              </div>
+                            ) : (
+                              <span className="text-muted-foreground/60 italic">—</span>
+                            )}
+                          </TableCell>
+
+                          {/* Students Count */}
+                          <TableCell className="py-3 px-4 text-center font-medium text-foreground">
+                            {studentCount}
+                          </TableCell>
+
+                          {/* Fee Heads Count */}
+                          <TableCell className="py-3 px-4 text-center">
+                            <Badge
+                              variant={activeStructures.length > 0 ? 'outline' : 'secondary'}
+                              className="text-[10px] font-medium"
+                            >
+                              {activeStructures.length} {activeStructures.length === 1 ? 'Head' : 'Heads'}
+                            </Badge>
+                          </TableCell>
+
+                          {/* Monthly Base Tuition */}
+                          <TableCell className="py-3 px-4 text-right font-mono font-bold text-foreground">
+                            NPR {monthlyTuition.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+                          </TableCell>
+
+                          {/* Concessions */}
+                          <TableCell className="py-3 px-4 text-center">
+                            <div className="flex items-center justify-center gap-1.5 flex-wrap">
+                              {transportCount > 0 && (
+                                <span className="inline-flex items-center gap-1 px-1.5 py-0.5 rounded text-[10px] font-medium bg-sky-500/10 text-sky-700 dark:text-sky-300 border border-sky-500/20">
+                                  <Bus className="w-3 h-3" />
+                                  {transportCount}
+                                </span>
+                              )}
+                              {scholarshipCount > 0 && (
+                                <span className="inline-flex items-center gap-1 px-1.5 py-0.5 rounded text-[10px] font-medium bg-amber-500/10 text-amber-700 dark:text-amber-300 border border-amber-500/20">
+                                  <Percent className="w-3 h-3" />
+                                  {scholarshipCount}
+                                </span>
+                              )}
+                              {transportCount === 0 && scholarshipCount === 0 && (
+                                <span className="text-muted-foreground/60">—</span>
+                              )}
+                            </div>
+                          </TableCell>
+
+                          {/* Actions */}
+                          <TableCell className="py-3 px-4 text-right" onClick={(e) => e.stopPropagation()}>
+                            <div className="flex items-center justify-end gap-1.5">
+                              <Button
+                                size="sm"
+                                variant="ghost"
+                                onClick={(e) => {
+                                  e.stopPropagation();
+                                  setSelectedClassIdForAdd(cls.id);
+                                  setIsFeeStructureOpen(true);
+                                }}
+                                className="h-7 text-xs px-2 gap-1 text-muted-foreground hover:text-foreground cursor-pointer"
+                              >
+                                <Plus className="w-3.5 h-3.5" />
+                                <span>Fee Head</span>
+                              </Button>
+
+                              <Button
+                                size="sm"
+                                variant="outline"
+                                onClick={(e) => {
+                                  e.stopPropagation();
+                                  navigate({
+                                    to: '/finance/structures/$classId',
+                                    params: { classId: cls.id },
+                                  });
+                                }}
+                                className="h-7 text-xs px-2.5 gap-1 group-hover:border-primary/50 cursor-pointer"
+                              >
+                                <span>Manage</span>
+                                <ArrowRight className="w-3 h-3 transition-transform group-hover:translate-x-0.5" />
+                              </Button>
+                            </div>
+                          </TableCell>
+                        </TableRow>
+                      );
+                    })}
+                  </TableBody>
+                </Table>
+              </div>
+            </Card>
           )}
 
           {/* Fee Structure Dialog */}
