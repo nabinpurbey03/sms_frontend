@@ -34,6 +34,11 @@ export const studentDiscountSchema = z.object({
     .max(100, 'Discount cannot exceed 100%')
     .default(0),
   is_transport_applicable: z.boolean().default(false),
+  transport_fee: z.coerce
+    .number()
+    .min(0, 'Transport fee cannot be negative')
+    .optional()
+    .nullable(),
   reason: z
     .string()
     .max(100, 'Reason cannot exceed 100 characters')

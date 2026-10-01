@@ -25,6 +25,7 @@ export interface StudentFeeProfileRowProps {
     studentId: string,
     isTransport: boolean,
     discountPercent: number,
+    transportFee?: number | null,
     reason?: string
   ) => Promise<void>;
   isSaving: boolean;
@@ -43,10 +44,12 @@ export const StudentFeeProfileRow: React.FC<StudentFeeProfileRowProps> = ({
   rollNumber,
 }) => {
   const initialTransport = discount?.is_transport_applicable ?? false;
+  const initialTransportFee = discount?.transport_fee != null ? Number(discount.transport_fee) : null;
   const initialPercent = Number(discount?.discount_percent ?? 0);
   const initialReason = discount?.reason ?? '';
 
   const [isTransport, setIsTransport] = useState<boolean>(initialTransport);
+  const [customTransportFee, setCustomTransportFee] = useState<number | null>(initialTransportFee);
   const [hasScholarship, setHasScholarship] = useState<boolean>(initialPercent > 0);
   const [discountPercent, setDiscountPercent] = useState<number>(initialPercent);
   const [reason, setReason] = useState<string>(initialReason);
@@ -55,10 +58,12 @@ export const StudentFeeProfileRow: React.FC<StudentFeeProfileRowProps> = ({
   // Sync state if discount prop changes from parent
   useEffect(() => {
     const nextTransport = discount?.is_transport_applicable ?? false;
+    const nextTransportFee = discount?.transport_fee != null ? Number(discount.transport_fee) : null;
     const nextPercent = Number(discount?.discount_percent ?? 0);
     const nextReason = discount?.reason ?? '';
 
     setIsTransport(nextTransport);
+    setCustomTransportFee(nextTransportFee);
     setHasScholarship(nextPercent > 0);
     setDiscountPercent(nextPercent);
     setReason(nextReason);
@@ -70,21 +75,38 @@ export const StudentFeeProfileRow: React.FC<StudentFeeProfileRowProps> = ({
 
   // Calculate dirty status
   const effectivePercent = hasScholarship ? discountPercent : 0;
+  const effectiveCustomTransport = isTransport ? customTransportFee : null;
   const isDirty = useMemo(() => {
     return (
       isTransport !== initialTransport ||
+      effectiveCustomTransport !== initialTransportFee ||
       effectivePercent !== initialPercent ||
       reason.trim() !== initialReason.trim()
     );
-  }, [isTransport, initialTransport, effectivePercent, initialPercent, reason, initialReason]);
+  }, [isTransport, initialTransport, effectiveCustomTransport, initialTransportFee, effectivePercent, initialPercent, reason, initialReason]);
+
+  // Real-time calculated transport rate for this student
+  const studentTransportRate = useMemo(() => {
+    if (!isTransport) return 0;
+    return customTransportFee != null && customTransportFee >= 0 ? customTransportFee : transportFee;
+  }, [isTransport, customTransportFee, transportFee]);
 
   // Real-time calculated net monthly fee preview
   const netFee = useMemo(() => {
     const applicableDiscount = hasScholarship ? Math.min(100, Math.max(0, discountPercent)) : 0;
-    const gross = baseTuition + (isTransport ? transportFee : 0);
+    const gross = baseTuition + studentTransportRate;
     const calculated = gross * (1 - applicableDiscount / 100);
     return Math.max(0, calculated);
-  }, [baseTuition, transportFee, isTransport, hasScholarship, discountPercent]);
+  }, [baseTuition, studentTransportRate, hasScholarship, discountPercent]);
+
+  const handleTransportToggle = (checked: boolean) => {
+    setIsTransport(checked);
+    if (!checked) {
+      setCustomTransportFee(null);
+    } else if (customTransportFee == null && transportFee > 0) {
+      setCustomTransportFee(transportFee);
+    }
+  };
 
   const handlePresetClick = (percent: number) => {
     setHasScholarship(true);
@@ -104,6 +126,7 @@ export const StudentFeeProfileRow: React.FC<StudentFeeProfileRowProps> = ({
         student.id,
         isTransport,
         hasScholarship ? Math.min(100, Math.max(0, discountPercent)) : 0,
+        isTransport ? customTransportFee : null,
         reason.trim() || undefined
       );
       setJustSaved(true);
@@ -150,29 +173,53 @@ export const StudentFeeProfileRow: React.FC<StudentFeeProfileRowProps> = ({
         </div>
       </TableCell>
 
-      {/* Transportation Checkbox & Badge */}
+      {/* Transportation Checkbox, Custom Fee Input & Badge */}
       <TableCell className="py-3">
-        <div className="space-y-1.5">
-          <label className="flex items-center gap-2 cursor-pointer select-none">
-            <Checkbox
-              checked={isTransport}
-              onCheckedChange={(checked) => setIsTransport(Boolean(checked))}
-              className="data-[state=checked]:bg-emerald-600 data-[state=checked]:border-emerald-600"
-            />
-            <span className="text-xs font-semibold text-foreground">Transport</span>
-          </label>
-          <div>
-            {isTransport ? (
-              <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[11px] font-semibold bg-emerald-500/10 text-emerald-700 dark:text-emerald-300 border border-emerald-500/20">
-                <Bus className="w-3 h-3" />
-                Transport (Active)
-              </span>
-            ) : (
-              <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[11px] font-medium bg-muted text-muted-foreground border border-border/50">
-                No Transport
+        <div className="space-y-2 max-w-xs">
+          <div className="flex items-center gap-2">
+            <label className="flex items-center gap-2 cursor-pointer select-none">
+              <Checkbox
+                checked={isTransport}
+                onCheckedChange={(checked) => handleTransportToggle(Boolean(checked))}
+                className="data-[state=checked]:bg-emerald-600 data-[state=checked]:border-emerald-600"
+              />
+              <span className="text-xs font-semibold text-foreground">Transport</span>
+            </label>
+
+            {isTransport && (
+              <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-bold bg-emerald-500/10 text-emerald-700 dark:text-emerald-300 border border-emerald-500/20">
+                <Bus className="w-2.5 h-2.5" />
+                NPR {studentTransportRate.toLocaleString('en-US')}/mo
               </span>
             )}
           </div>
+
+          {isTransport && (
+            <div className="flex items-center gap-1.5 pl-6">
+              <span className="text-[10px] text-muted-foreground font-mono">NPR</span>
+              <Input
+                type="number"
+                min="0"
+                step="50"
+                placeholder={transportFee > 0 ? String(transportFee) : '0'}
+                value={customTransportFee ?? ''}
+                onChange={(e) => {
+                  const val = e.target.value === '' ? null : Math.max(0, Number(e.target.value));
+                  setCustomTransportFee(val);
+                }}
+                className="h-7 w-28 text-xs font-mono px-2"
+              />
+              <span className="text-[10px] text-muted-foreground">/ month</span>
+            </div>
+          )}
+
+          {!isTransport && (
+            <div className="pl-6">
+              <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[11px] font-medium bg-muted text-muted-foreground border border-border/50">
+                No Transport
+              </span>
+            </div>
+          )}
         </div>
       </TableCell>
 

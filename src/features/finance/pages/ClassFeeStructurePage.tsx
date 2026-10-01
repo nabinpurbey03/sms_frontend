@@ -208,6 +208,7 @@ export const ClassFeeStructurePage: React.FC = () => {
     studentId: string,
     isTransport: boolean,
     discountPercent: number,
+    transportFee?: number | null,
     reason?: string
   ) => {
     setSavingStudentId(studentId);
@@ -215,6 +216,7 @@ export const ClassFeeStructurePage: React.FC = () => {
       await setDiscountMutation.mutateAsync({
         student_id: studentId,
         is_transport_applicable: isTransport,
+        transport_fee: transportFee,
         discount_percent: discountPercent,
         reason,
       });
