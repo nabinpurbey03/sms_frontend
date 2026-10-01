@@ -4,7 +4,7 @@ import { financeApi } from './api';
 import type {
   FeeStructureCreateDTO,
   FeeStructureUpdateDTO,
-  StudentDiscountCreateDTO,
+  StudentTransportCreateDTO,
   BatchBillGenerateDTO,
   SingleBillGenerateDTO,
   FeeBillFilters,
@@ -17,8 +17,8 @@ import type { ClassWithDetails } from '@/features/academic/types';
 
 export const FINANCE_DASHBOARD_KEY = 'finance_dashboard';
 export const FEE_STRUCTURES_KEY = 'fee_structures';
-export const STUDENT_DISCOUNTS_KEY = 'student_discounts';
-export const STUDENT_DISCOUNT_KEY = 'student_discount';
+export const STUDENT_TRANSPORTS_KEY = 'student-transports';
+export const STUDENT_TRANSPORT_KEY = 'student-transport';
 export const BILLS_KEY = 'finance_bills';
 export const BILL_KEY = 'finance_bill';
 export const PAYMENTS_KEY = 'finance_payments';
@@ -122,18 +122,18 @@ export const useFeeStructures = (
   });
 };
 
-export const useStudentDiscounts = (tenantId: string | null) => {
+export const useStudentTransports = (tenantId: string | null) => {
   return useQuery({
-    queryKey: [STUDENT_DISCOUNTS_KEY, tenantId],
-    queryFn: () => financeApi.listStudentDiscounts(tenantId!),
+    queryKey: [STUDENT_TRANSPORTS_KEY, tenantId],
+    queryFn: () => financeApi.listStudentTransports(tenantId!),
     enabled: !!tenantId,
   });
 };
 
-export const useStudentDiscount = (tenantId: string | null, studentId: string | null) => {
+export const useStudentTransport = (tenantId: string | null, studentId: string | null) => {
   return useQuery({
-    queryKey: [STUDENT_DISCOUNT_KEY, tenantId, studentId],
-    queryFn: () => financeApi.getStudentDiscount(tenantId!, studentId!),
+    queryKey: [STUDENT_TRANSPORT_KEY, tenantId, studentId],
+    queryFn: () => financeApi.getStudentTransport(tenantId!, studentId!),
     enabled: !!tenantId && !!studentId,
   });
 };
@@ -249,19 +249,19 @@ export const useDeleteFeeStructure = (tenantId: string | null) => {
   });
 };
 
-export const useSetStudentDiscount = (tenantId: string | null) => {
+export const useSetStudentTransport = (tenantId: string | null) => {
   const queryClient = useQueryClient();
   return useMutation({
-    mutationFn: (data: StudentDiscountCreateDTO) =>
-      financeApi.setStudentDiscount(tenantId!, data),
+    mutationFn: (data: StudentTransportCreateDTO) =>
+      financeApi.setStudentTransport(tenantId!, data),
     onSuccess: () => {
-      toast.success('Student discount updated');
-      queryClient.invalidateQueries({ queryKey: [STUDENT_DISCOUNTS_KEY, tenantId] });
-      queryClient.invalidateQueries({ queryKey: [STUDENT_DISCOUNT_KEY, tenantId] });
+      toast.success('Student transport profile updated');
+      queryClient.invalidateQueries({ queryKey: [STUDENT_TRANSPORTS_KEY, tenantId] });
+      queryClient.invalidateQueries({ queryKey: [STUDENT_TRANSPORT_KEY, tenantId] });
       queryClient.invalidateQueries({ queryKey: [STUDENT_LEDGER_KEY, tenantId] });
     },
     onError: (err: any) => {
-      toast.error(err.response?.data?.message || err.message || 'Failed to save student discount');
+      toast.error(err.response?.data?.message || err.message || 'Failed to save student transport profile');
     },
   });
 };

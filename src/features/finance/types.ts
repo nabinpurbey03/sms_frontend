@@ -6,26 +6,15 @@ export type FeeCategory =
   | 'HOSTEL'
   | 'LAB'
   | 'LIBRARY'
+  | 'MANAGEMENT'
+  | 'ACTIVITY'
   | 'MISC';
 
 export type FeeFrequency = 'ONE_TIME' | 'MONTHLY' | 'TERMWISE' | 'YEARLY';
 
-export type BillStatus =
-  | 'DRAFT'
-  | 'ISSUED'
-  | 'PARTIAL'
-  | 'PAID'
-  | 'OVERDUE'
-  | 'CANCELLED';
+export type BillStatus = 'UNPAID' | 'PARTIAL' | 'PAID' | 'CANCELLED';
 
-export type PaymentMethod =
-  | 'CASH'
-  | 'ESEWA'
-  | 'KHALTI'
-  | 'BANK_TRANSFER'
-  | 'CHEQUE'
-  | 'POS_CARD'
-  | 'OTHER';
+export type PaymentMethod = 'CASH' | 'BANK_TRANSFER' | 'CHEQUE' | 'OTHER';
 
 export interface FeeStructure {
   id: string;
@@ -72,16 +61,12 @@ export interface StudentTransportProfile {
   is_active: boolean;
 }
 
-export type StudentDiscount = StudentTransportProfile;
-
 export interface StudentTransportCreateDTO {
   student_id: string;
   is_transport_applicable?: boolean;
   transport_fee?: number | null;
   reason?: string;
 }
-
-export type StudentDiscountCreateDTO = StudentTransportCreateDTO;
 
 export interface FeeItemInputDTO {
   fee_name: string;

@@ -166,10 +166,7 @@ export const PaymentCollectDialog: React.FC<PaymentCollectDialogProps> = ({
                 className="w-full h-9 rounded-md border border-input bg-background px-3 py-1 text-xs shadow-xs focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring"
               >
                 <option value="CASH">Cash</option>
-                <option value="ESEWA">eSewa</option>
-                <option value="KHALTI">Khalti</option>
                 <option value="BANK_TRANSFER">Bank Transfer / ConnectIPS</option>
-                <option value="POS_CARD">Card / POS</option>
                 <option value="CHEQUE">Cheque</option>
                 <option value="OTHER">Other</option>
               </select>

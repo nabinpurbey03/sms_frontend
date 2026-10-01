@@ -73,12 +73,11 @@ export const BillsPage: React.FC = () => {
         return <Badge variant="success">PAID</Badge>;
       case 'PARTIAL':
         return <Badge variant="warning">PARTIAL</Badge>;
-      case 'OVERDUE':
-        return <Badge variant="destructive">OVERDUE</Badge>;
       case 'CANCELLED':
         return <Badge variant="secondary">CANCELLED</Badge>;
+      case 'UNPAID':
       default:
-        return <Badge variant="outline">ISSUED</Badge>;
+        return <Badge variant="outline">UNPAID</Badge>;
     }
   };
 
@@ -162,10 +161,9 @@ export const BillsPage: React.FC = () => {
             className="h-9 rounded-md border border-input bg-background px-3 py-1 text-xs shadow-xs focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring w-full md:w-36"
           >
             <option value="">All Statuses</option>
-            <option value="ISSUED">Issued (Unpaid)</option>
+            <option value="UNPAID">Unpaid</option>
             <option value="PARTIAL">Partially Paid</option>
             <option value="PAID">Fully Paid</option>
-            <option value="OVERDUE">Overdue</option>
             <option value="CANCELLED">Cancelled</option>
           </select>
         </div>

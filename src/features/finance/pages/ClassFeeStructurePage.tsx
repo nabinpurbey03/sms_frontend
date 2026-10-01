@@ -7,11 +7,11 @@ import { useCurrentAcademicYear } from '@/features/academic-year/hooks/useCurren
 import {
   useFinanceClassRoster,
   useFeeStructures,
-  useStudentDiscounts,
+  useStudentTransports,
   useCreateFeeStructure,
   useUpdateFeeStructure,
   useDeleteFeeStructure,
-  useSetStudentDiscount,
+  useSetStudentTransport,
 } from '../hooks';
 import { ClassProgressionNavigator } from '@/features/academic/components/ClassProgressionNavigator';
 import { StudentFeeProfileRow } from '../components/StudentFeeProfileRow';
@@ -47,7 +47,7 @@ import {
   Layers,
   GraduationCap,
 } from 'lucide-react';
-import type { FeeStructure, StudentDiscount } from '../types';
+import type { FeeStructure, StudentTransportProfile } from '../types';
 import type { FeeStructureFormValues } from '../schema';
 
 export const ClassFeeStructurePage: React.FC = () => {
@@ -86,15 +86,15 @@ export const ClassFeeStructurePage: React.FC = () => {
   } = useFeeStructures(tenantId, { class_id: classId });
 
   const {
-    data: studentDiscounts = [],
-    isLoading: isDiscountsLoading,
-  } = useStudentDiscounts(tenantId);
+    data: studentTransports = [],
+    isLoading: isTransportsLoading,
+  } = useStudentTransports(tenantId);
 
   // Mutations
   const createFeeMutation = useCreateFeeStructure(tenantId);
   const updateFeeMutation = useUpdateFeeStructure(tenantId);
   const deleteFeeMutation = useDeleteFeeStructure(tenantId);
-  const setDiscountMutation = useSetStudentDiscount(tenantId);
+  const setTransportMutation = useSetStudentTransport(tenantId);
 
   const handleBack = () => {
     navigate({ to: '/finance/structures' });
@@ -108,16 +108,16 @@ export const ClassFeeStructurePage: React.FC = () => {
     });
   };
 
-  // Pre-index student discounts by student_id
-  const discountsByStudentId = useMemo(() => {
-    const map = new Map<string, StudentDiscount>();
-    for (const d of studentDiscounts) {
+  // Pre-index student transport profiles by student_id
+  const transportsByStudentId = useMemo(() => {
+    const map = new Map<string, StudentTransportProfile>();
+    for (const d of studentTransports) {
       if (d.student_id && d.is_active) {
         map.set(d.student_id, d);
       }
     }
     return map;
-  }, [studentDiscounts]);
+  }, [studentTransports]);
 
   // Filter fee structures active for this class
   const classFees = useMemo(() => {
@@ -178,24 +178,24 @@ export const ClassFeeStructurePage: React.FC = () => {
       }
 
       // 2. Roster Filter
-      const discount = discountsByStudentId.get(student.id);
-      const isTransport = Boolean(discount?.is_transport_applicable);
+      const transportProfile = transportsByStudentId.get(student.id);
+      const isTransport = Boolean(transportProfile?.is_transport_applicable);
 
       if (rosterFilter === 'TRANSPORT') return isTransport;
       if (rosterFilter === 'STANDARD') return !isTransport;
       return true; // 'ALL'
     });
-  }, [sectionStudents, studentSearchQuery, rosterFilter, discountsByStudentId]);
+  }, [sectionStudents, studentSearchQuery, rosterFilter, transportsByStudentId]);
 
   // Quick Metrics for this class
-  const classDiscounts = useMemo(() => {
+  const classTransports = useMemo(() => {
     const studentIds = new Set(allStudents.map((s) => s.id));
-    return studentDiscounts.filter((d) => d.is_active && studentIds.has(d.student_id));
-  }, [allStudents, studentDiscounts]);
+    return studentTransports.filter((d) => d.is_active && studentIds.has(d.student_id));
+  }, [allStudents, studentTransports]);
 
   const transportUsersCount = useMemo(() => {
-    return classDiscounts.filter((d) => Boolean(d.is_transport_applicable)).length;
-  }, [classDiscounts]);
+    return classTransports.filter((d) => Boolean(d.is_transport_applicable)).length;
+  }, [classTransports]);
 
   // Save student transport status
   const handleSaveStudentFeeProfile = async (
@@ -206,7 +206,7 @@ export const ClassFeeStructurePage: React.FC = () => {
   ) => {
     setSavingStudentId(studentId);
     try {
-      await setDiscountMutation.mutateAsync({
+      await setTransportMutation.mutateAsync({
         student_id: studentId,
         is_transport_applicable: isTransport,
         transport_fee: transportFee,
@@ -254,7 +254,7 @@ export const ClassFeeStructurePage: React.FC = () => {
   }
 
   // 2. Loading state guard
-  if (isClassLoading || isFeesLoading || isDiscountsLoading) {
+  if (isClassLoading || isFeesLoading || isTransportsLoading) {
     return (
       <div className="flex flex-col items-center justify-center min-h-[60vh] text-center p-6 space-y-4">
         <Loader2 className="w-8 h-8 animate-spin text-primary" />
@@ -537,14 +537,14 @@ export const ClassFeeStructurePage: React.FC = () => {
                 </TableHeader>
                 <TableBody>
                   {filteredStudents.map((student, idx) => {
-                    const discount = discountsByStudentId.get(student.id);
+                    const transportProfile = transportsByStudentId.get(student.id);
                     const sec = sections.find((s) => s.id === student.section_id);
 
                     return (
                       <StudentFeeProfileRow
                         key={student.id}
                         student={student}
-                        discount={discount}
+                        transportProfile={transportProfile}
                         baseTuition={baseTuition}
                         transportFee={transportFee}
                         onSave={handleSaveStudentFeeProfile}

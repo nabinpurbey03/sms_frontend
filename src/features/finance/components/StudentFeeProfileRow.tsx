@@ -12,11 +12,11 @@ import {
   User,
 } from 'lucide-react';
 import type { AcademicStudent } from '@/features/academic/types';
-import type { StudentDiscount } from '../types';
+import type { StudentTransportProfile } from '../types';
 
 export interface StudentFeeProfileRowProps {
   student: AcademicStudent;
-  discount?: StudentDiscount | null;
+  transportProfile?: StudentTransportProfile | null;
   baseTuition: number;
   transportFee: number;
   onSave: (
@@ -32,7 +32,7 @@ export interface StudentFeeProfileRowProps {
 
 export const StudentFeeProfileRow: React.FC<StudentFeeProfileRowProps> = ({
   student,
-  discount,
+  transportProfile,
   baseTuition,
   transportFee,
   onSave,
@@ -40,25 +40,25 @@ export const StudentFeeProfileRow: React.FC<StudentFeeProfileRowProps> = ({
   sectionName,
   rollNumber,
 }) => {
-  const initialTransport = discount?.is_transport_applicable ?? false;
-  const initialTransportFee = discount?.transport_fee != null ? Number(discount.transport_fee) : null;
-  const initialReason = discount?.reason ?? '';
+  const initialTransport = transportProfile?.is_transport_applicable ?? false;
+  const initialTransportFee = transportProfile?.transport_fee != null ? Number(transportProfile.transport_fee) : null;
+  const initialReason = transportProfile?.reason ?? '';
 
   const [isTransport, setIsTransport] = useState<boolean>(initialTransport);
   const [customTransportFee, setCustomTransportFee] = useState<number | null>(initialTransportFee);
   const [reason, setReason] = useState<string>(initialReason);
   const [justSaved, setJustSaved] = useState<boolean>(false);
 
-  // Sync state if discount prop changes from parent
+  // Sync state if transportProfile prop changes from parent
   useEffect(() => {
-    const nextTransport = discount?.is_transport_applicable ?? false;
-    const nextTransportFee = discount?.transport_fee != null ? Number(discount.transport_fee) : null;
-    const nextReason = discount?.reason ?? '';
+    const nextTransport = transportProfile?.is_transport_applicable ?? false;
+    const nextTransportFee = transportProfile?.transport_fee != null ? Number(transportProfile.transport_fee) : null;
+    const nextReason = transportProfile?.reason ?? '';
 
     setIsTransport(nextTransport);
     setCustomTransportFee(nextTransportFee);
     setReason(nextReason);
-  }, [discount]);
+  }, [transportProfile]);
 
   const fullName = [student.first_name, student.middle_name, student.last_name]
     .filter(Boolean)

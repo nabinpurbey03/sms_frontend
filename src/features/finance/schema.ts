@@ -15,6 +15,8 @@ export const feeStructureFormSchema = z.object({
     'HOSTEL',
     'LAB',
     'LIBRARY',
+    'MANAGEMENT',
+    'ACTIVITY',
     'MISC',
   ]),
   frequency: z.enum(['ONE_TIME', 'MONTHLY', 'TERMWISE', 'YEARLY']),
@@ -41,11 +43,8 @@ export const studentTransportSchema = z.object({
     .or(z.literal('')),
 });
 
-export const studentDiscountSchema = studentTransportSchema;
 export type StudentTransportFormValues = z.infer<typeof studentTransportSchema>;
 export type StudentTransportInputValues = z.input<typeof studentTransportSchema>;
-export type StudentDiscountFormValues = StudentTransportFormValues;
-export type StudentDiscountInputValues = StudentTransportInputValues;
 
 export const batchBillGenerateSchema = z.object({
   class_id: z.string().min(1, 'Please select a target class'),
@@ -84,11 +83,8 @@ export const paymentCollectSchema = z.object({
     .positive('Payment amount must be greater than zero'),
   payment_method: z.enum([
     'CASH',
-    'ESEWA',
-    'KHALTI',
     'BANK_TRANSFER',
     'CHEQUE',
-    'POS_CARD',
     'OTHER',
   ]),
   transaction_reference: z

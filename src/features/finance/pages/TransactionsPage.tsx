@@ -84,10 +84,7 @@ export const TransactionsPage: React.FC = () => {
         >
           <option value="">All Payment Modes</option>
           <option value="CASH">Cash</option>
-          <option value="ESEWA">eSewa</option>
-          <option value="KHALTI">Khalti</option>
           <option value="BANK_TRANSFER">Bank Transfer</option>
-          <option value="POS_CARD">Card / POS</option>
           <option value="CHEQUE">Cheque</option>
           <option value="OTHER">Other</option>
         </select>

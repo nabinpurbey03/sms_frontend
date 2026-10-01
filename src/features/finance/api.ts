@@ -3,8 +3,8 @@ import type {
   FeeStructure,
   FeeStructureCreateDTO,
   FeeStructureUpdateDTO,
-  StudentDiscount,
-  StudentDiscountCreateDTO,
+  StudentTransportProfile,
+  StudentTransportCreateDTO,
   BatchBillGenerateDTO,
   BatchBillGenerateResponseDTO,
   SingleBillGenerateDTO,
@@ -59,22 +59,22 @@ export const financeApi = {
     return apiClient.delete(`/finance/tenants/${tenantId}/fee-structures/${structureId}`);
   },
 
-  setStudentDiscount: async (
+  setStudentTransport: async (
     tenantId: string,
-    data: StudentDiscountCreateDTO
-  ): Promise<StudentDiscount> => {
-    return apiClient.post(`/finance/tenants/${tenantId}/discounts`, data);
+    data: StudentTransportCreateDTO
+  ): Promise<StudentTransportProfile> => {
+    return apiClient.post(`/finance/tenants/${tenantId}/transport-profiles`, data);
   },
 
-  listStudentDiscounts: async (tenantId: string): Promise<StudentDiscount[]> => {
-    return apiClient.get(`/finance/tenants/${tenantId}/discounts`);
+  listStudentTransports: async (tenantId: string): Promise<StudentTransportProfile[]> => {
+    return apiClient.get(`/finance/tenants/${tenantId}/transport-profiles`);
   },
 
-  getStudentDiscount: async (
+  getStudentTransport: async (
     tenantId: string,
     studentId: string
-  ): Promise<StudentDiscount | null> => {
-    return apiClient.get(`/finance/tenants/${tenantId}/students/${studentId}/discount`);
+  ): Promise<StudentTransportProfile | null> => {
+    return apiClient.get(`/finance/tenants/${tenantId}/students/${studentId}/transport`);
   },
 
   generateBatchBills: async (

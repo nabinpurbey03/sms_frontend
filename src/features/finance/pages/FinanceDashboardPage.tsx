@@ -52,16 +52,11 @@ const getPaymentMethodBadgeClass = (method: string): string => {
   switch (method?.toUpperCase()) {
     case 'CASH':
       return 'bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border-emerald-500/20';
-    case 'ESEWA':
-      return 'bg-green-500/10 text-green-600 dark:text-green-400 border-green-500/20';
-    case 'KHALTI':
-      return 'bg-purple-500/10 text-purple-600 dark:text-purple-400 border-purple-500/20';
     case 'BANK_TRANSFER':
       return 'bg-blue-500/10 text-blue-600 dark:text-blue-400 border-blue-500/20';
     case 'CHEQUE':
       return 'bg-amber-500/10 text-amber-600 dark:text-amber-400 border-amber-500/20';
-    case 'POS_CARD':
-      return 'bg-cyan-500/10 text-cyan-600 dark:text-cyan-400 border-cyan-500/20';
+    case 'OTHER':
     default:
       return 'bg-muted text-muted-foreground border-border/60';
   }

@@ -6,7 +6,7 @@ import { useCurrentAcademicYear } from '@/features/academic-year/hooks/useCurren
 import {
   useFinanceClassesWithRoster,
   useFeeStructures,
-  useStudentDiscounts,
+  useStudentTransports,
   useCreateFeeStructure,
 } from '../hooks';
 import { StatCard } from '@/components/ui/stat-card';
@@ -37,7 +37,7 @@ import {
   ArrowRight,
   Users,
 } from 'lucide-react';
-import type { FeeStructure, StudentDiscount } from '../types';
+import type { FeeStructure, StudentTransportProfile } from '../types';
 
 export const FeeStructuresPage: React.FC = () => {
   const { activeTenantId } = useAuth();
@@ -75,9 +75,9 @@ export const FeeStructuresPage: React.FC = () => {
   } = useFeeStructures(effectiveTenantId);
 
   const {
-    data: discounts = [],
-    isLoading: isLoadingDiscounts,
-  } = useStudentDiscounts(effectiveTenantId);
+    data: transports = [],
+    isLoading: isLoadingTransports,
+  } = useStudentTransports(effectiveTenantId);
 
   // Mutations
   const createStructureMutation = useCreateFeeStructure(effectiveTenantId);
@@ -105,20 +105,20 @@ export const FeeStructuresPage: React.FC = () => {
     return map;
   }, [feeStructures]);
 
-  // Pre-index student discounts by class_id
-  const discountsByClassId = useMemo(() => {
-    const map = new Map<string, StudentDiscount[]>();
+  // Pre-index student transport profiles by class_id
+  const transportsByClassId = useMemo(() => {
+    const map = new Map<string, StudentTransportProfile[]>();
     for (const cls of classesWithDetails) {
       const studentIds = new Set((cls.students || []).map((s) => s.id));
       if (studentIds.size > 0) {
-        const classDisc = discounts.filter((d) => studentIds.has(d.student_id));
-        map.set(cls.id, classDisc);
+        const classTrans = transports.filter((d) => studentIds.has(d.student_id));
+        map.set(cls.id, classTrans);
       } else {
         map.set(cls.id, []);
       }
     }
     return map;
-  }, [classesWithDetails, discounts]);
+  }, [classesWithDetails, transports]);
 
   // Filtered Classes based on search query
   const filteredClasses = useMemo(() => {
@@ -142,14 +142,14 @@ export const FeeStructuresPage: React.FC = () => {
   }, [sortedClasses]);
 
   const transportUsersCount = useMemo(() => {
-    const activeTransport = discounts.filter(
+    const activeTransport = transports.filter(
       (d) => d.is_active && Boolean(d.is_transport_applicable)
     );
     const studentIds = new Set(activeTransport.map((d) => d.student_id));
     return studentIds.size;
-  }, [discounts]);
+  }, [transports]);
 
-  const isLoading = isLoadingClasses || isLoadingStructures || isLoadingDiscounts;
+  const isLoading = isLoadingClasses || isLoadingStructures || isLoadingTransports;
 
   if (!effectiveTenantId && !isSuperAdmin) {
     return <TenantRequiredState featureName="class fee structures" />;
@@ -271,7 +271,7 @@ export const FeeStructuresPage: React.FC = () => {
               icon={Bus}
               description="Active bus & route users"
               variant="emerald"
-              loading={isLoadingDiscounts}
+              loading={isLoadingTransports}
             />
           </div>
 
@@ -352,8 +352,8 @@ export const FeeStructuresPage: React.FC = () => {
                       const monthlyTuition = activeStructures
                         .filter((f) => f.frequency === 'MONTHLY')
                         .reduce((sum, f) => sum + (Number(f.amount) || 0), 0);
-                      const classDiscounts = (discountsByClassId.get(cls.id) || []).filter((d) => d.is_active);
-                      const transportCount = classDiscounts.filter((d) => Boolean(d.is_transport_applicable)).length;
+                      const classTransports = (transportsByClassId.get(cls.id) || []).filter((d) => d.is_active);
+                      const transportCount = classTransports.filter((d) => Boolean(d.is_transport_applicable)).length;
                       const studentCount = (cls.students || []).length;
                       const sections = cls.sections || [];
 
