@@ -24,6 +24,7 @@ interface FeeStructureDialogProps {
   isLoading: boolean;
   tenantId: string | null;
   initialData?: FeeStructure | null;
+  defaultClassId?: string;
 }
 
 export const FeeStructureDialog: React.FC<FeeStructureDialogProps> = ({
@@ -33,6 +34,7 @@ export const FeeStructureDialog: React.FC<FeeStructureDialogProps> = ({
   isLoading,
   tenantId,
   initialData,
+  defaultClassId,
 }) => {
   const { data: classesData, isLoading: isLoadingClasses } = useClasses(tenantId);
   const classes = classesData || [];
@@ -46,7 +48,7 @@ export const FeeStructureDialog: React.FC<FeeStructureDialogProps> = ({
   } = useForm<FeeStructureFormValues>({
     resolver: zodResolver(feeStructureFormSchema),
     defaultValues: {
-      class_id: '',
+      class_id: defaultClassId || '',
       name: '',
       fee_category: 'TUITION',
       frequency: 'MONTHLY',
@@ -67,7 +69,7 @@ export const FeeStructureDialog: React.FC<FeeStructureDialogProps> = ({
       });
     } else {
       reset({
-        class_id: classes.length > 0 ? classes[0].id : '',
+        class_id: defaultClassId || (classes.length > 0 ? classes[0].id : ''),
         name: '',
         fee_category: 'TUITION',
         frequency: 'MONTHLY',
@@ -75,7 +77,7 @@ export const FeeStructureDialog: React.FC<FeeStructureDialogProps> = ({
         description: '',
       });
     }
-  }, [initialData, reset, classes]);
+  }, [initialData, defaultClassId, reset, classes]);
 
   const onFormSubmit = async (values: FeeStructureFormValues) => {
     try {

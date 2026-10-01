@@ -1,392 +1,377 @@
-import React, { useState } from 'react';
+import React, { useState, useMemo } from 'react';
+import { useNavigate } from '@tanstack/react-router';
 import { useAuth } from '@/auth/useAuth';
+import { usePermission } from '@/auth/usePermission';
 import { useCurrentAcademicYear } from '@/features/academic-year/hooks/useCurrentAcademicYear';
-import { useClasses } from '@/features/academic/hooks';
+import { useAllClassesWithDetails } from '@/features/academic/hooks';
 import {
   useFeeStructures,
-  useCreateFeeStructure,
-  useUpdateFeeStructure,
-  useDeleteFeeStructure,
   useStudentDiscounts,
-  useSetStudentDiscount,
+  useCreateFeeStructure,
 } from '../hooks';
-import { Card } from '@/components/ui/card';
+import { StatCard } from '@/components/ui/stat-card';
 import { Button } from '@/components/ui/button';
+import { Card } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
+import { FilterToolbar } from '@/components/common/FilterToolbar';
+import { EmptyState } from '@/components/common/EmptyState';
+import { TenantRequiredState } from '@/components/common/TenantRequiredState';
+import { SchoolSearchSelect } from '@/features/academic-year/components/SchoolSearchSelect';
+import { useTenant } from '@/features/tenants/hooks';
+import { ClassFeeCard } from '../components/ClassFeeCard';
+import { FeeStructureDialog } from '../components/FeeStructureDialog';
 import {
   Coins,
   Plus,
-  Percent,
   Lock,
-  Loader2,
-  Edit2,
-  Trash2,
-  Layers,
-  CheckCircle2,
+  School,
+  Bus,
+  Percent,
 } from 'lucide-react';
 import type { FeeStructure, StudentDiscount } from '../types';
-import { FeeStructureDialog } from '../components/FeeStructureDialog';
-import { StudentDiscountDialog } from '../components/StudentDiscountDialog';
 
 export const FeeStructuresPage: React.FC = () => {
   const { activeTenantId } = useAuth();
-  const { currentYear } = useCurrentAcademicYear(activeTenantId);
-  const { data: classesData } = useClasses(activeTenantId);
-  const classes = classesData || [];
+  const { isSuperAdmin } = usePermission();
+  const navigate = useNavigate();
 
-  // Filter State
-  const [selectedClassId, setSelectedClassId] = useState<string>('');
-  const [selectedFrequency, setSelectedFrequency] = useState<string>('');
-  const [activeTab, setActiveTab] = useState<'structures' | 'discounts'>('structures');
+  const [pageTenantId, setPageTenantId] = useState<string | null>(activeTenantId);
+
+  React.useEffect(() => {
+    setPageTenantId(activeTenantId);
+  }, [activeTenantId]);
+
+  const effectiveTenantId = pageTenantId || activeTenantId;
+  const { data: effectiveTenant } = useTenant(effectiveTenantId);
+  const { currentYear } = useCurrentAcademicYear(effectiveTenantId);
+
+  // Search Filter State
+  const [searchQuery, setSearchQuery] = useState('');
+
+  // Dialog State
+  const [isFeeStructureOpen, setIsFeeStructureOpen] = useState(false);
+  const [selectedClassIdForAdd, setSelectedClassIdForAdd] = useState<string>('');
 
   // Queries
-  const { data: feeStructuresData, isLoading: isLoadingStructures } = useFeeStructures(
-    activeTenantId,
-    {
-      class_id: selectedClassId || undefined,
-      frequency: selectedFrequency || undefined,
-    }
-  );
-  const feeStructures = feeStructuresData || [];
+  const {
+    data: classesWithDetails = [],
+    isLoading: isLoadingClasses,
+    isError: isClassesError,
+    refetch: refetchClasses,
+  } = useAllClassesWithDetails(effectiveTenantId);
 
-  const { data: discountsData, isLoading: isLoadingDiscounts } = useStudentDiscounts(activeTenantId);
-  const discounts = discountsData || [];
+  const {
+    data: feeStructures = [],
+    isLoading: isLoadingStructures,
+  } = useFeeStructures(effectiveTenantId);
 
-  // Dialog States
-  const [isFeeStructureOpen, setIsFeeStructureOpen] = useState(false);
-  const [editingStructure, setEditingStructure] = useState<FeeStructure | null>(null);
-
-  const [isDiscountOpen, setIsDiscountOpen] = useState(false);
-  const [editingDiscount, setEditingDiscount] = useState<StudentDiscount | null>(null);
+  const {
+    data: discounts = [],
+    isLoading: isLoadingDiscounts,
+  } = useStudentDiscounts(effectiveTenantId);
 
   // Mutations
-  const createStructureMutation = useCreateFeeStructure(activeTenantId);
-  const updateStructureMutation = useUpdateFeeStructure(activeTenantId);
-  const deleteStructureMutation = useDeleteFeeStructure(activeTenantId);
-  const setDiscountMutation = useSetStudentDiscount(activeTenantId);
+  const createStructureMutation = useCreateFeeStructure(effectiveTenantId);
 
-  const handleEditStructure = (structure: FeeStructure) => {
-    setEditingStructure(structure);
-    setIsFeeStructureOpen(true);
-  };
+  // Sort classes by sequence_order ascending
+  const sortedClasses = useMemo(() => {
+    return [...classesWithDetails].sort((a, b) => {
+      const seqA = a.sequence_order ?? 0;
+      const seqB = b.sequence_order ?? 0;
+      if (seqA !== seqB) return seqA - seqB;
+      return a.name.localeCompare(b.name);
+    });
+  }, [classesWithDetails]);
 
-  const handleDeleteStructure = async (structure: FeeStructure) => {
-    if (confirm(`Deactivate fee head "${structure.name}"?`)) {
-      await deleteStructureMutation.mutateAsync(structure.id);
+  // Pre-index fee structures by class_id
+  const feeStructuresByClassId = useMemo(() => {
+    const map = new Map<string, FeeStructure[]>();
+    for (const f of feeStructures) {
+      if (f.class_id) {
+        const list = map.get(f.class_id) || [];
+        list.push(f);
+        map.set(f.class_id, list);
+      }
     }
-  };
+    return map;
+  }, [feeStructures]);
+
+  // Pre-index student discounts by class_id
+  const discountsByClassId = useMemo(() => {
+    const map = new Map<string, StudentDiscount[]>();
+    for (const cls of classesWithDetails) {
+      const studentIds = new Set((cls.students || []).map((s) => s.id));
+      if (studentIds.size > 0) {
+        const classDisc = discounts.filter((d) => studentIds.has(d.student_id));
+        map.set(cls.id, classDisc);
+      } else {
+        map.set(cls.id, []);
+      }
+    }
+    return map;
+  }, [classesWithDetails, discounts]);
+
+  // Filtered Classes based on search query
+  const filteredClasses = useMemo(() => {
+    if (!searchQuery.trim()) return sortedClasses;
+    const q = searchQuery.toLowerCase();
+    return sortedClasses.filter((c) => {
+      return (
+        c.name.toLowerCase().includes(q) ||
+        (c.sections && c.sections.some((s) => s.name.toLowerCase().includes(q)))
+      );
+    });
+  }, [sortedClasses, searchQuery]);
+
+  // KPI Computations
+  const activeFeeStructuresCount = useMemo(() => {
+    return feeStructures.filter((f) => f.is_active).length;
+  }, [feeStructures]);
+
+  const studentsWithScholarshipCount = useMemo(() => {
+    const activeScholarships = discounts.filter(
+      (d) => d.is_active && Number(d.discount_percent || 0) > 0
+    );
+    const studentIds = new Set(activeScholarships.map((d) => d.student_id));
+    return studentIds.size;
+  }, [discounts]);
+
+  const transportUsersCount = useMemo(() => {
+    const activeTransport = discounts.filter(
+      (d) => d.is_active && Boolean(d.is_transport_applicable)
+    );
+    const studentIds = new Set(activeTransport.map((d) => d.student_id));
+    return studentIds.size;
+  }, [discounts]);
+
+  const isLoading = isLoadingClasses || isLoadingStructures || isLoadingDiscounts;
+
+  if (!effectiveTenantId && !isSuperAdmin) {
+    return <TenantRequiredState featureName="class fee structures" />;
+  }
 
   return (
     <div className="space-y-6 pb-12">
-      {/* Header */}
-      <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 border-b border-border/40 pb-5">
-        <div>
-          <h1 className="text-xl sm:text-2xl font-bold tracking-tight text-foreground flex items-center gap-2">
-            <Coins className="w-6 h-6 text-primary" />
-            Class Fee Structures & Concessions
-          </h1>
-          <p className="text-xs sm:text-sm text-muted-foreground mt-0.5">
-            Configure monthly tuition, annual school management fees, and student discount rates.
-          </p>
-        </div>
-
-        <div className="flex flex-wrap items-center gap-2.5">
-          <div className="flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-primary/10 border border-primary/20 text-xs font-semibold text-primary">
-            <Lock className="w-3.5 h-3.5 text-primary" />
-            <span>Session: {currentYear?.name || 'Active Session'} (Locked)</span>
+      {/* Super Admin Tenant Selector */}
+      {isSuperAdmin && (
+        <Card className="p-3.5 sm:p-4 rounded-2xl border border-primary/20 bg-primary/[0.03] dark:bg-primary/[0.06] shadow-xs flex flex-col sm:flex-row sm:items-center justify-between gap-3.5 transition-all">
+          <div className="flex items-center gap-3 min-w-0">
+            <div className="w-10 h-10 rounded-xl bg-primary/10 border border-primary/20 flex items-center justify-center text-primary shrink-0">
+              <School className="w-5 h-5" />
+            </div>
+            <div className="min-w-0">
+              <div className="flex items-center gap-2">
+                <span className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">
+                  School Scope
+                </span>
+                <Badge variant="outline" className="text-[10px] py-0 px-1.5 border-primary/30 text-primary font-medium">
+                  Super Admin
+                </Badge>
+              </div>
+              <p className="text-sm font-medium text-foreground truncate mt-0.5">
+                {effectiveTenant ? (
+                  <span className="flex items-center gap-1.5">
+                    <span className="font-semibold text-foreground">{effectiveTenant.name}</span>
+                    {effectiveTenant.domain_name && (
+                      <span className="text-xs text-muted-foreground font-normal">
+                        ({effectiveTenant.domain_name})
+                      </span>
+                    )}
+                  </span>
+                ) : (
+                  <span className="text-muted-foreground text-xs">
+                    Select a school to view its fee structures
+                  </span>
+                )}
+              </p>
+            </div>
           </div>
+          <div className="flex items-center gap-2 shrink-0">
+            <SchoolSearchSelect
+              selectedTenantId={effectiveTenantId || ''}
+              onSelectTenant={(id) => setPageTenantId(id || null)}
+              className="w-full sm:w-80"
+            />
+          </div>
+        </Card>
+      )}
 
-          <Button
-            size="sm"
-            onClick={() => {
-              setEditingStructure(null);
-              setIsFeeStructureOpen(true);
-            }}
-            className="gap-1.5 text-xs shadow-xs cursor-pointer"
-          >
-            <Plus className="w-3.5 h-3.5" />
-            Add Fee Head
-          </Button>
-
-          <Button
-            size="sm"
-            variant="outline"
-            onClick={() => {
-              setEditingDiscount(null);
-              setIsDiscountOpen(true);
-            }}
-            className="gap-1.5 text-xs cursor-pointer"
-          >
-            <Percent className="w-3.5 h-3.5" />
-            Assign Concession
-          </Button>
+      {!effectiveTenantId && isSuperAdmin ? (
+        <div className="text-center py-12 text-muted-foreground text-xs">
+          Please select a school from the dropdown above to view fee structures.
         </div>
-      </div>
-
-      {/* Tabs */}
-      <div className="flex items-center gap-2 border-b border-border/60 pb-2">
-        <button
-          type="button"
-          onClick={() => setActiveTab('structures')}
-          className={`flex items-center gap-2 px-3 py-1.5 text-xs font-semibold rounded-lg transition-colors cursor-pointer ${
-            activeTab === 'structures'
-              ? 'bg-primary/10 text-primary border border-primary/20'
-              : 'text-muted-foreground hover:bg-muted'
-          }`}
-        >
-          <Coins className="w-4 h-4" />
-          <span>Class Fee Heads ({feeStructures.length})</span>
-        </button>
-
-        <button
-          type="button"
-          onClick={() => setActiveTab('discounts')}
-          className={`flex items-center gap-2 px-3 py-1.5 text-xs font-semibold rounded-lg transition-colors cursor-pointer ${
-            activeTab === 'discounts'
-              ? 'bg-primary/10 text-primary border border-primary/20'
-              : 'text-muted-foreground hover:bg-muted'
-          }`}
-        >
-          <Percent className="w-4 h-4" />
-          <span>Student Concessions & Discounts ({discounts.length})</span>
-        </button>
-      </div>
-
-      {activeTab === 'structures' && (
-        <div className="space-y-4">
-          {/* Filters */}
-          <div className="flex flex-wrap items-center gap-3 p-3 rounded-xl border bg-card text-xs">
-            <div className="flex items-center gap-2">
-              <span className="font-semibold text-muted-foreground">Class:</span>
-              <select
-                value={selectedClassId}
-                onChange={(e) => setSelectedClassId(e.target.value)}
-                className="h-8 rounded-md border border-input bg-background px-2.5 text-xs shadow-xs focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring"
-              >
-                <option value="">All Classes</option>
-                {classes.map((c) => (
-                  <option key={c.id} value={c.id}>
-                    {c.name}
-                  </option>
-                ))}
-              </select>
+      ) : (
+        <>
+          {/* Header */}
+          <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 border-b border-border/40 pb-5">
+            <div>
+              <h1 className="text-xl sm:text-2xl font-bold tracking-tight text-foreground flex items-center gap-2">
+                <Coins className="w-6 h-6 text-primary" />
+                Class Fee Structures
+              </h1>
+              <p className="text-xs sm:text-sm text-muted-foreground mt-0.5">
+                Configure class tuition, transport, fee heads, and student-level concessions.
+              </p>
             </div>
 
-            <div className="flex items-center gap-2">
-              <span className="font-semibold text-muted-foreground">Frequency:</span>
-              <select
-                value={selectedFrequency}
-                onChange={(e) => setSelectedFrequency(e.target.value)}
-                className="h-8 rounded-md border border-input bg-background px-2.5 text-xs shadow-xs focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring"
+            <div className="flex flex-wrap items-center gap-2.5">
+              <div className="flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-primary/10 border border-primary/20 text-xs font-semibold text-primary">
+                <Lock className="w-3.5 h-3.5 text-primary" />
+                <span>Session: {currentYear?.name || 'Active Session'} (Locked)</span>
+              </div>
+
+              <Button
+                size="sm"
+                onClick={() => {
+                  setSelectedClassIdForAdd('');
+                  setIsFeeStructureOpen(true);
+                }}
+                className="gap-1.5 text-xs shadow-xs cursor-pointer"
               >
-                <option value="">All Frequencies</option>
-                <option value="MONTHLY">Monthly</option>
-                <option value="YEARLY">Yearly (Annual)</option>
-                <option value="TERMWISE">Term-wise</option>
-                <option value="ONE_TIME">One Time</option>
-              </select>
+                <Plus className="w-3.5 h-3.5" />
+                <span>Add Fee Head</span>
+              </Button>
             </div>
           </div>
 
-          {/* Structures Table */}
-          {isLoadingStructures ? (
-            <div className="p-12 text-center text-xs text-muted-foreground border rounded-xl bg-card">
-              <Loader2 className="w-5 h-5 animate-spin mx-auto text-primary mb-2" />
-              Loading fee structures...
-            </div>
-          ) : feeStructures.length === 0 ? (
-            <div className="p-12 text-center text-xs text-muted-foreground border border-dashed rounded-xl bg-card space-y-2">
-              <Coins className="w-8 h-8 mx-auto text-muted-foreground/50" />
-              <p className="font-semibold text-foreground">No fee structures defined yet</p>
-              <p className="text-[11px] text-muted-foreground">
-                Click "Add Fee Head" to define monthly tuition, annual management fees, or lab charges for classes.
-              </p>
-            </div>
-          ) : (
-            <div className="border border-border/60 rounded-xl overflow-hidden bg-card shadow-2xs">
-              <div className="overflow-x-auto">
-                <table className="w-full text-xs text-left">
-                  <thead className="bg-muted/50 border-b border-border/60 text-muted-foreground font-semibold">
-                    <tr>
-                      <th className="py-2.5 px-4">Class</th>
-                      <th className="py-2.5 px-4">Fee Head Name</th>
-                      <th className="py-2.5 px-4">Category</th>
-                      <th className="py-2.5 px-4">Billing Frequency</th>
-                      <th className="py-2.5 px-4 text-right">Standard Amount</th>
-                      <th className="py-2.5 px-4 text-center">Status</th>
-                      <th className="py-2.5 px-4 text-right">Actions</th>
-                    </tr>
-                  </thead>
-                  <tbody className="divide-y divide-border/40">
-                    {feeStructures.map((f) => (
-                      <tr key={f.id} className="hover:bg-muted/30 transition-colors">
-                        <td className="py-2.5 px-4 font-semibold text-foreground">{f.class_name}</td>
-                        <td className="py-2.5 px-4">
-                          <span className="font-medium text-foreground block">{f.name}</span>
-                          {f.description && (
-                            <span className="text-[11px] text-muted-foreground">{f.description}</span>
-                          )}
-                        </td>
-                        <td className="py-2.5 px-4">
-                          <Badge variant="outline" className="text-[10px] uppercase font-mono">
-                            {f.fee_category}
-                          </Badge>
-                        </td>
-                        <td className="py-2.5 px-4">
-                          <Badge
-                            variant={f.frequency === 'MONTHLY' ? 'default' : 'secondary'}
-                            className="text-[10px] uppercase font-mono"
-                          >
-                            {f.frequency}
-                          </Badge>
-                        </td>
-                        <td className="py-2.5 px-4 text-right font-mono font-bold text-foreground">
-                          NPR {Number(f.amount).toFixed(2)}
-                        </td>
-                        <td className="py-2.5 px-4 text-center">
-                          {f.is_active ? (
-                            <Badge variant="success">ACTIVE</Badge>
-                          ) : (
-                            <Badge variant="secondary">INACTIVE</Badge>
-                          )}
-                        </td>
-                        <td className="py-2.5 px-4 text-right">
-                          <div className="flex items-center justify-end gap-1">
-                            <Button
-                              variant="ghost"
-                              size="sm"
-                              onClick={() => handleEditStructure(f)}
-                              className="h-7 w-7 p-0 cursor-pointer"
-                              title="Edit Fee Head"
-                            >
-                              <Edit2 className="w-3.5 h-3.5" />
-                            </Button>
-                            {f.is_active && (
-                              <Button
-                                variant="ghost"
-                                size="sm"
-                                onClick={() => handleDeleteStructure(f)}
-                                className="h-7 w-7 p-0 text-destructive hover:text-destructive cursor-pointer"
-                                title="Deactivate Fee Head"
-                              >
-                                <Trash2 className="w-3.5 h-3.5" />
-                              </Button>
-                            )}
-                          </div>
-                        </td>
-                      </tr>
-                    ))}
-                  </tbody>
-                </table>
-              </div>
+          {/* Top KPI Stats Cards Grid (4 columns) */}
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+            <StatCard
+              title="Total Classes"
+              value={sortedClasses.length}
+              icon={School}
+              description="Configured academic levels"
+              variant="default"
+              loading={isLoadingClasses}
+            />
+            <StatCard
+              title="Total Fee Heads Configured"
+              value={activeFeeStructuresCount}
+              icon={Coins}
+              description="Active billing heads"
+              variant="blue"
+              loading={isLoadingStructures}
+            />
+            <StatCard
+              title="Students with Scholarship"
+              value={studentsWithScholarshipCount}
+              icon={Percent}
+              description="Active fee concessions"
+              variant="amber"
+              loading={isLoadingDiscounts}
+            />
+            <StatCard
+              title="Students using Transportation"
+              value={transportUsersCount}
+              icon={Bus}
+              description="Active bus & route users"
+              variant="emerald"
+              loading={isLoadingDiscounts}
+            />
+          </div>
+
+          {/* Search Filter Bar */}
+          <FilterToolbar
+            searchQuery={searchQuery}
+            onSearchChange={setSearchQuery}
+            searchPlaceholder="Search classes by name or section..."
+            showingCount={filteredClasses.length}
+            totalCount={sortedClasses.length}
+            unitLabel={sortedClasses.length === 1 ? 'class' : 'classes'}
+          />
+
+          {/* Error Alert */}
+          {isClassesError && (
+            <div className="p-4 rounded-xl border border-destructive/30 bg-destructive/10 text-destructive text-xs flex items-center justify-between">
+              <span>Failed to load class fee structures from server.</span>
+              <Button variant="outline" size="sm" onClick={() => refetchClasses()} className="h-7 text-xs">
+                Retry
+              </Button>
             </div>
           )}
-        </div>
-      )}
 
-      {activeTab === 'discounts' && (
-        <div className="space-y-4">
-          {isLoadingDiscounts ? (
-            <div className="p-12 text-center text-xs text-muted-foreground border rounded-xl bg-card">
-              <Loader2 className="w-5 h-5 animate-spin mx-auto text-primary mb-2" />
-              Loading student discounts...
+          {/* Classes Grid */}
+          {isLoading ? (
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+              {[...Array(6)].map((_, i) => (
+                <div
+                  key={i}
+                  className="h-56 rounded-xl border border-border/60 bg-muted/20 animate-pulse p-5 space-y-4"
+                >
+                  <div className="h-6 w-1/3 bg-muted rounded" />
+                  <div className="h-4 w-2/3 bg-muted/60 rounded" />
+                  <div className="h-10 bg-muted/40 rounded-lg" />
+                </div>
+              ))}
             </div>
-          ) : discounts.length === 0 ? (
-            <div className="p-12 text-center text-xs text-muted-foreground border border-dashed rounded-xl bg-card space-y-2">
-              <Percent className="w-8 h-8 mx-auto text-muted-foreground/50" />
-              <p className="font-semibold text-foreground">No student concessions configured</p>
-              <p className="text-[11px] text-muted-foreground">
-                Click "Assign Concession" to set scholarship or discount percentages for students.
-              </p>
-            </div>
+          ) : filteredClasses.length === 0 ? (
+            <EmptyState
+              icon={Coins}
+              title={searchQuery ? 'No Classes Found' : 'No Classes Configured'}
+              description={
+                searchQuery
+                  ? `No classes match your search "${searchQuery}". Try a different keyword.`
+                  : 'No academic classes have been set up yet. Configure your classes in the Academic module first.'
+              }
+              action={
+                searchQuery ? (
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={() => setSearchQuery('')}
+                    className="text-xs"
+                  >
+                    Clear Filter
+                  </Button>
+                ) : (
+                  <Button
+                    onClick={() => navigate({ to: '/academic/classes' })}
+                    className="text-xs gap-1.5"
+                  >
+                    Go to Classes & Sections
+                  </Button>
+                )
+              }
+            />
           ) : (
-            <div className="border border-border/60 rounded-xl overflow-hidden bg-card shadow-2xs">
-              <div className="overflow-x-auto">
-                <table className="w-full text-xs text-left">
-                  <thead className="bg-muted/50 border-b border-border/60 text-muted-foreground font-semibold">
-                    <tr>
-                      <th className="py-2.5 px-4">Student</th>
-                      <th className="py-2.5 px-4">Concession %</th>
-                      <th className="py-2.5 px-4">Reason / Category</th>
-                      <th className="py-2.5 px-4 text-center">Status</th>
-                      <th className="py-2.5 px-4 text-right">Actions</th>
-                    </tr>
-                  </thead>
-                  <tbody className="divide-y divide-border/40">
-                    {discounts.map((d) => (
-                      <tr key={d.id} className="hover:bg-muted/30 transition-colors">
-                        <td className="py-2.5 px-4 font-semibold text-foreground">
-                          {d.student_name || 'Student'}
-                        </td>
-                        <td className="py-2.5 px-4 font-mono font-bold text-emerald-600 text-sm">
-                          {Number(d.discount_percent)}%
-                        </td>
-                        <td className="py-2.5 px-4 text-muted-foreground">{d.reason || 'General Scholarship'}</td>
-                        <td className="py-2.5 px-4 text-center">
-                          {d.is_active ? (
-                            <Badge variant="success">ACTIVE</Badge>
-                          ) : (
-                            <Badge variant="secondary">INACTIVE</Badge>
-                          )}
-                        </td>
-                        <td className="py-2.5 px-4 text-right">
-                          <Button
-                            variant="ghost"
-                            size="sm"
-                            onClick={() => {
-                              setEditingDiscount(d);
-                              setIsDiscountOpen(true);
-                            }}
-                            className="h-7 text-xs gap-1 cursor-pointer"
-                          >
-                            <Edit2 className="w-3 h-3" />
-                            Edit
-                          </Button>
-                        </td>
-                      </tr>
-                    ))}
-                  </tbody>
-                </table>
-              </div>
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+              {filteredClasses.map((cls) => (
+                <ClassFeeCard
+                  key={cls.id}
+                  cls={cls}
+                  feeStructures={feeStructuresByClassId.get(cls.id) || []}
+                  discounts={discountsByClassId.get(cls.id) || []}
+                  onManageFee={(classId) =>
+                    navigate({
+                      to: '/finance/structures/$classId',
+                      params: { classId },
+                    })
+                  }
+                  onAddFeeHead={(classId) => {
+                    setSelectedClassIdForAdd(classId);
+                    setIsFeeStructureOpen(true);
+                  }}
+                />
+              ))}
             </div>
           )}
-        </div>
+
+          {/* Fee Structure Dialog */}
+          <FeeStructureDialog
+            isOpen={isFeeStructureOpen}
+            onClose={() => {
+              setIsFeeStructureOpen(false);
+              setSelectedClassIdForAdd('');
+            }}
+            defaultClassId={selectedClassIdForAdd || undefined}
+            onSubmit={async (data) => {
+              await createStructureMutation.mutateAsync(data);
+            }}
+            isLoading={createStructureMutation.isPending}
+            tenantId={effectiveTenantId}
+          />
+        </>
       )}
-
-      {/* Fee Structure Dialog */}
-      <FeeStructureDialog
-        isOpen={isFeeStructureOpen}
-        onClose={() => {
-          setIsFeeStructureOpen(false);
-          setEditingStructure(null);
-        }}
-        initialData={editingStructure}
-        onSubmit={async (data) => {
-          if (editingStructure) {
-            await updateStructureMutation.mutateAsync({
-              structureId: editingStructure.id,
-              data,
-            });
-          } else {
-            await createStructureMutation.mutateAsync(data);
-          }
-        }}
-        isLoading={createStructureMutation.isPending || updateStructureMutation.isPending}
-        tenantId={activeTenantId}
-      />
-
-      {/* Student Discount Dialog */}
-      <StudentDiscountDialog
-        isOpen={isDiscountOpen}
-        onClose={() => {
-          setIsDiscountOpen(false);
-          setEditingDiscount(null);
-        }}
-        initialData={editingDiscount}
-        onSubmit={async (data) => setDiscountMutation.mutateAsync(data)}
-        isLoading={setDiscountMutation.isPending}
-        tenantId={activeTenantId}
-      />
     </div>
   );
 };
