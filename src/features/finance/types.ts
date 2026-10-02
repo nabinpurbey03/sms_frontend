@@ -240,6 +240,11 @@ export interface FeePaymentCreateDTO {
   transaction_reference?: string;
   payment_date?: string;
   remarks?: string;
+  apply_waterfall?: boolean;
+  discount_type?: 'NONE' | 'PERCENT' | 'FIXED' | string;
+  discount_rate?: number;
+  discount_amount?: number;
+  allow_excess_to_wallet?: boolean;
 }
 
 export interface FeePayment {

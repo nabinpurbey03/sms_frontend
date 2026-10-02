@@ -13,9 +13,23 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Badge } from '@/components/ui/badge';
-import { CreditCard, Loader2 } from 'lucide-react';
-import { paymentCollectSchema, type PaymentCollectFormValues } from '../schema';
-import type { FeeBill, FeePayment } from '../types';
+import {
+  CreditCard,
+  Loader2,
+  Layers,
+  Wallet,
+  Percent,
+  Info,
+  ArrowDownRight,
+} from 'lucide-react';
+import { useAuth } from '@/auth/useAuth';
+import { useStudentDuesBreakdown } from '../hooks';
+import {
+  paymentCollectSchema,
+  type PaymentCollectFormValues,
+  type PaymentCollectInputValues,
+} from '../schema';
+import type { FeeBill, FeePayment, StudentDuesBreakdown } from '../types';
 
 interface PaymentCollectDialogProps {
   isOpen: boolean;
@@ -23,6 +37,8 @@ interface PaymentCollectDialogProps {
   onSubmit: (data: PaymentCollectFormValues) => Promise<FeePayment | any>;
   isLoading: boolean;
   bill: FeeBill | null;
+  tenantId?: string | null;
+  duesBreakdown?: StudentDuesBreakdown | null;
   onPaymentSuccess?: (payment: FeePayment) => void;
 }
 
@@ -32,8 +48,20 @@ export const PaymentCollectDialog: React.FC<PaymentCollectDialogProps> = ({
   onSubmit,
   isLoading,
   bill,
+  tenantId,
+  duesBreakdown,
   onPaymentSuccess,
 }) => {
+  const { activeTenantId } = useAuth();
+  const effectiveTenantId = tenantId || bill?.tenant_id || activeTenantId || null;
+  const studentId = bill?.student_id || null;
+
+  const { data: fetchedBreakdown, isLoading: isBreakdownLoading } = useStudentDuesBreakdown(
+    effectiveTenantId,
+    studentId
+  );
+  const breakdown = duesBreakdown ?? fetchedBreakdown;
+
   const {
     register,
     handleSubmit,
@@ -41,7 +69,7 @@ export const PaymentCollectDialog: React.FC<PaymentCollectDialogProps> = ({
     setValue,
     watch,
     formState: { errors },
-  } = useForm<PaymentCollectFormValues>({
+  } = useForm<PaymentCollectInputValues, any, PaymentCollectFormValues>({
     resolver: zodResolver(paymentCollectSchema),
     defaultValues: {
       bill_id: '',
@@ -49,28 +77,101 @@ export const PaymentCollectDialog: React.FC<PaymentCollectDialogProps> = ({
       payment_method: 'CASH',
       transaction_reference: '',
       remarks: '',
+      discount_type: 'NONE',
+      discount_rate: undefined,
+      discount_amount: undefined,
+      allow_excess_to_wallet: true,
     },
   });
 
   const dueAmount = bill ? Number(bill.due_amount) : 0;
+  const discountType = watch('discount_type') || 'NONE';
+  const discountRate = watch('discount_rate');
+  const discountAmount = watch('discount_amount');
   const watchedAmount = watch('amount_paid') || 0;
-  const remainingAfterPayment = Math.max(0, dueAmount - watchedAmount);
+
+  // Dues Breakdown calculations
+  const pastAyDue = Number(breakdown?.past_academic_years_due || 0);
+  const pastQuartersDue = Number(breakdown?.past_quarters_due || 0);
+  const currentQuarterDue = Number(breakdown?.current_quarter_due || dueAmount);
+  const totalOutstandingDue = Number(
+    breakdown?.total_due ?? (dueAmount + pastAyDue + pastQuartersDue)
+  );
+  const advanceWalletBalance = Number(breakdown?.advance_wallet_balance || 0);
+  const hasPastDues = pastAyDue > 0 || pastQuartersDue > 0;
+
+  // Dynamic Discount & Live Net Payable
+  let liveDiscountAmt = 0;
+  if (discountType === 'PERCENT') {
+    const rate = Number(discountRate) || 0;
+    liveDiscountAmt = Math.min(
+      dueAmount,
+      Math.round(dueAmount * (rate / 100) * 100) / 100
+    );
+  } else if (discountType === 'FIXED') {
+    const fixed = Number(discountAmount) || 0;
+    liveDiscountAmt = Math.min(dueAmount, Math.max(0, fixed));
+  }
+  const netPayable = Math.max(0, dueAmount - liveDiscountAmt);
+  const remainingAfterPayment = Math.max(0, netPayable - watchedAmount);
 
   useEffect(() => {
     if (bill) {
+      const initialDue = Number(bill.due_amount);
       reset({
         bill_id: bill.id,
-        amount_paid: dueAmount,
+        amount_paid: initialDue,
         payment_method: 'CASH',
         transaction_reference: '',
         remarks: '',
+        discount_type: 'NONE',
+        discount_rate: undefined,
+        discount_amount: undefined,
+        allow_excess_to_wallet: true,
       });
     }
-  }, [bill, dueAmount, reset]);
+  }, [bill, reset]);
+
+  const handleDiscountModeChange = (mode: 'NONE' | 'PERCENT' | 'FIXED') => {
+    setValue('discount_type', mode);
+    if (mode === 'NONE') {
+      setValue('discount_rate', undefined);
+      setValue('discount_amount', undefined);
+      setValue('amount_paid', dueAmount, { shouldValidate: true });
+    } else if (mode === 'PERCENT') {
+      setValue('discount_amount', undefined);
+      const rate = Number(watch('discount_rate')) || 0;
+      const dAmt = Math.min(dueAmount, Math.round(dueAmount * (rate / 100) * 100) / 100);
+      setValue('amount_paid', Math.max(0, dueAmount - dAmt), { shouldValidate: true });
+    } else if (mode === 'FIXED') {
+      setValue('discount_rate', undefined);
+      const fixed = Number(watch('discount_amount')) || 0;
+      const dAmt = Math.min(dueAmount, Math.max(0, fixed));
+      setValue('amount_paid', Math.max(0, dueAmount - dAmt), { shouldValidate: true });
+    }
+  };
 
   const onFormSubmit = async (values: PaymentCollectFormValues) => {
     try {
-      const payment = await onSubmit(values);
+      const payload: PaymentCollectFormValues = {
+        bill_id: bill!.id,
+        amount_paid: Number(values.amount_paid),
+        payment_method: values.payment_method,
+        transaction_reference: values.transaction_reference?.trim() || '',
+        payment_date: values.payment_date || undefined,
+        remarks: values.remarks?.trim() || '',
+        discount_type: discountType,
+        discount_rate: discountType === 'PERCENT' ? Number(values.discount_rate || 0) : undefined,
+        discount_amount:
+          discountType === 'FIXED'
+            ? Number(values.discount_amount || 0)
+            : discountType === 'PERCENT'
+            ? liveDiscountAmt
+            : undefined,
+        allow_excess_to_wallet: true,
+      };
+
+      const payment = await onSubmit(payload);
       onClose();
       if (payment && onPaymentSuccess) {
         onPaymentSuccess(payment);
@@ -84,7 +185,7 @@ export const PaymentCollectDialog: React.FC<PaymentCollectDialogProps> = ({
 
   return (
     <Dialog open={isOpen} onOpenChange={(open) => !open && onClose()}>
-      <DialogContent className="sm:max-w-md">
+      <DialogContent className="sm:max-w-lg max-h-[92vh] overflow-y-auto">
         <form onSubmit={handleSubmit(onFormSubmit)} className="space-y-4">
           <DialogHeader>
             <div className="w-10 h-10 rounded-xl bg-primary/10 text-primary flex items-center justify-center mb-1">
@@ -108,7 +209,7 @@ export const PaymentCollectDialog: React.FC<PaymentCollectDialogProps> = ({
               <span>{bill.bill_title}</span>
               <span className="font-mono">{bill.bill_number}</span>
             </div>
-            <div className="pt-2 border-t flex justify-between items-center text-xs">
+            <div className="pt-2 border-t border-border/60 flex justify-between items-center text-xs">
               <div>
                 <span className="text-muted-foreground">Total Payable: </span>
                 <span className="font-mono font-medium">NPR {Number(bill.total_payable).toFixed(2)}</span>
@@ -120,6 +221,237 @@ export const PaymentCollectDialog: React.FC<PaymentCollectDialogProps> = ({
             </div>
           </div>
 
+          {/* Waterfall Dues Breakdown UI Card */}
+          {isBreakdownLoading ? (
+            <div className="p-3 rounded-lg border border-dashed text-xs text-muted-foreground flex items-center gap-2">
+              <Loader2 className="w-3.5 h-3.5 animate-spin text-primary" />
+              <span>Checking student dues history...</span>
+            </div>
+          ) : hasPastDues ? (
+            <div className="rounded-xl border border-amber-300/80 bg-amber-50/50 dark:bg-amber-950/20 dark:border-amber-800/60 p-3.5 space-y-2.5">
+              <div className="flex items-center justify-between">
+                <div className="flex items-center gap-1.5 font-semibold text-xs text-amber-950 dark:text-amber-200">
+                  <Layers className="w-3.5 h-3.5 text-amber-600 dark:text-amber-400" />
+                  <span>Dues Waterfall Breakdown</span>
+                </div>
+                <Badge
+                  variant="outline"
+                  className="text-[10px] bg-amber-100/70 text-amber-900 dark:bg-amber-900/40 dark:text-amber-300 border-amber-300/80 font-medium"
+                >
+                  Waterfall Allocation
+                </Badge>
+              </div>
+
+              {/* Waterfall Tag */}
+              <div className="text-[11px] text-amber-900 dark:text-amber-300 bg-amber-100/60 dark:bg-amber-900/30 px-2.5 py-1 rounded-md border border-amber-200/80 dark:border-amber-800/40 flex items-center gap-1.5">
+                <Info className="w-3.5 h-3.5 shrink-0 text-amber-700 dark:text-amber-400" />
+                <span>Payments automatically settle oldest past dues first.</span>
+              </div>
+
+              <div className="grid grid-cols-2 gap-2 text-xs pt-1">
+                <div className="p-2 rounded-md bg-background/90 border border-border/60">
+                  <span className="text-[10px] text-muted-foreground block font-medium">Past AY Arrears</span>
+                  <span
+                    className={`font-mono font-bold ${
+                      pastAyDue > 0 ? 'text-destructive' : 'text-foreground'
+                    }`}
+                  >
+                    NPR {pastAyDue.toFixed(2)}
+                  </span>
+                </div>
+                <div className="p-2 rounded-md bg-background/90 border border-border/60">
+                  <span className="text-[10px] text-muted-foreground block font-medium">Past Quarters Due</span>
+                  <span
+                    className={`font-mono font-bold ${
+                      pastQuartersDue > 0 ? 'text-amber-600 dark:text-amber-400' : 'text-foreground'
+                    }`}
+                  >
+                    NPR {pastQuartersDue.toFixed(2)}
+                  </span>
+                </div>
+                <div className="p-2 rounded-md bg-background/90 border border-border/60">
+                  <span className="text-[10px] text-muted-foreground block font-medium">Current Quarter Bill</span>
+                  <span className="font-mono font-bold text-foreground">
+                    NPR {currentQuarterDue.toFixed(2)}
+                  </span>
+                </div>
+                <div className="p-2 rounded-md bg-primary/10 border border-primary/20">
+                  <span className="text-[10px] text-primary block font-medium">Total Outstanding Due</span>
+                  <span className="font-mono font-bold text-primary">
+                    NPR {totalOutstandingDue.toFixed(2)}
+                  </span>
+                </div>
+              </div>
+
+              {advanceWalletBalance > 0 && (
+                <div className="text-[11px] text-emerald-800 dark:text-emerald-300 bg-emerald-50/80 dark:bg-emerald-950/40 px-2.5 py-1 rounded-md border border-emerald-200 dark:border-emerald-800/50 flex items-center justify-between">
+                  <span className="flex items-center gap-1.5 font-medium">
+                    <Wallet className="w-3.5 h-3.5 text-emerald-600 dark:text-emerald-400" />
+                    <span>Advance Wallet Balance Available:</span>
+                  </span>
+                  <span className="font-mono font-bold">NPR {advanceWalletBalance.toFixed(2)}</span>
+                </div>
+              )}
+            </div>
+          ) : advanceWalletBalance > 0 ? (
+            <div className="text-[11px] text-emerald-800 dark:text-emerald-300 bg-emerald-50/80 dark:bg-emerald-950/40 px-3 py-1.5 rounded-md border border-emerald-200 dark:border-emerald-800/50 flex items-center justify-between">
+              <span className="flex items-center gap-1.5 font-medium">
+                <Wallet className="w-3.5 h-3.5 text-emerald-600 dark:text-emerald-400" />
+                <span>Student Advance Wallet Credit:</span>
+              </span>
+              <span className="font-mono font-bold">NPR {advanceWalletBalance.toFixed(2)}</span>
+            </div>
+          ) : null}
+
+          {/* Dynamic Discount Controls */}
+          <div className="p-3 rounded-lg border border-border/70 bg-card space-y-3">
+            <div className="space-y-1.5">
+              <Label className="text-xs font-semibold text-foreground">Discount Mode</Label>
+              <div className="grid grid-cols-3 gap-1.5 p-1 bg-muted/60 rounded-lg border border-border/60">
+                <button
+                  type="button"
+                  onClick={() => handleDiscountModeChange('NONE')}
+                  className={`text-xs py-1.5 px-3 rounded-md font-medium transition-all text-center cursor-pointer ${
+                    discountType === 'NONE'
+                      ? 'bg-background text-foreground shadow-xs border border-border/40 font-bold'
+                      : 'text-muted-foreground hover:text-foreground'
+                  }`}
+                >
+                  None
+                </button>
+                <button
+                  type="button"
+                  onClick={() => handleDiscountModeChange('PERCENT')}
+                  className={`text-xs py-1.5 px-3 rounded-md font-medium transition-all flex items-center justify-center gap-1 cursor-pointer ${
+                    discountType === 'PERCENT'
+                      ? 'bg-background text-foreground shadow-xs border border-border/40 font-bold text-primary'
+                      : 'text-muted-foreground hover:text-foreground'
+                  }`}
+                >
+                  <Percent className="w-3 h-3" />
+                  <span>% Percent</span>
+                </button>
+                <button
+                  type="button"
+                  onClick={() => handleDiscountModeChange('FIXED')}
+                  className={`text-xs py-1.5 px-3 rounded-md font-medium transition-all flex items-center justify-center gap-1 cursor-pointer ${
+                    discountType === 'FIXED'
+                      ? 'bg-background text-foreground shadow-xs border border-border/40 font-bold text-primary'
+                      : 'text-muted-foreground hover:text-foreground'
+                  }`}
+                >
+                  <span>Fixed NPR</span>
+                </button>
+              </div>
+            </div>
+
+            {/* Percent Input */}
+            {discountType === 'PERCENT' && (
+              <div className="space-y-1.5 animate-in fade-in duration-150">
+                <Label htmlFor="discount_rate" className="text-xs font-semibold flex items-center justify-between">
+                  <span>Discount Percentage (%)</span>
+                  <span className="text-[10px] text-muted-foreground font-normal">0% - 100%</span>
+                </Label>
+                <div className="relative">
+                  <Input
+                    id="discount_rate"
+                    type="number"
+                    step="0.1"
+                    min="0"
+                    max="100"
+                    placeholder="e.g. 10"
+                    className="text-xs h-9 pr-7 font-mono font-medium"
+                    {...register('discount_rate', {
+                      valueAsNumber: true,
+                      onChange: (e) => {
+                        const val = Number(e.target.value) || 0;
+                        const dAmt = Math.min(
+                          dueAmount,
+                          Math.round(dueAmount * (val / 100) * 100) / 100
+                        );
+                        setValue('amount_paid', Math.max(0, dueAmount - dAmt), {
+                          shouldValidate: true,
+                        });
+                      },
+                    })}
+                  />
+                  <span className="absolute right-2.5 top-1/2 -translate-y-1/2 text-xs font-bold text-muted-foreground pointer-events-none">
+                    %
+                  </span>
+                </div>
+                {errors.discount_rate && (
+                  <p className="text-destructive text-[11px] font-medium">{errors.discount_rate.message}</p>
+                )}
+              </div>
+            )}
+
+            {/* Fixed NPR Input */}
+            {discountType === 'FIXED' && (
+              <div className="space-y-1.5 animate-in fade-in duration-150">
+                <Label htmlFor="discount_amount" className="text-xs font-semibold flex items-center justify-between">
+                  <span>Fixed Discount Amount (NPR)</span>
+                  <span className="text-[10px] text-muted-foreground font-normal">
+                    Max NPR {dueAmount.toFixed(2)}
+                  </span>
+                </Label>
+                <div className="relative">
+                  <span className="absolute left-2.5 top-1/2 -translate-y-1/2 text-[11px] font-bold text-muted-foreground pointer-events-none">
+                    NPR
+                  </span>
+                  <Input
+                    id="discount_amount"
+                    type="number"
+                    step="0.01"
+                    min="0"
+                    max={dueAmount}
+                    placeholder="0.00"
+                    className="text-xs h-9 pl-11 font-mono font-medium"
+                    {...register('discount_amount', {
+                      valueAsNumber: true,
+                      onChange: (e) => {
+                        const val = Number(e.target.value) || 0;
+                        const dAmt = Math.min(dueAmount, Math.max(0, val));
+                        setValue('amount_paid', Math.max(0, dueAmount - dAmt), {
+                          shouldValidate: true,
+                        });
+                      },
+                    })}
+                  />
+                </div>
+                {errors.discount_amount && (
+                  <p className="text-destructive text-[11px] font-medium">
+                    {errors.discount_amount.message}
+                  </p>
+                )}
+              </div>
+            )}
+
+            {/* Live Net Payable Bar (when discount active) */}
+            {discountType !== 'NONE' && (
+              <div className="p-2.5 rounded-lg border border-border/60 bg-muted/20 text-xs space-y-1.5 animate-in fade-in duration-150">
+                <div className="flex justify-between text-muted-foreground text-[11px]">
+                  <span>Bill Balance Due:</span>
+                  <span className="font-mono">NPR {dueAmount.toFixed(2)}</span>
+                </div>
+                <div className="flex justify-between text-emerald-600 dark:text-emerald-400 text-[11px] font-medium">
+                  <span>
+                    Discount ({discountType === 'PERCENT' ? `${discountRate || 0}%` : 'Fixed NPR'}):
+                  </span>
+                  <span className="font-mono">-NPR {liveDiscountAmt.toFixed(2)}</span>
+                </div>
+                <div className="flex justify-between pt-1 border-t border-border/50 font-bold text-foreground">
+                  <span className="flex items-center gap-1">
+                    <ArrowDownRight className="w-3.5 h-3.5 text-primary" />
+                    <span>Net Payable:</span>
+                  </span>
+                  <span className="font-mono text-primary text-sm font-bold">
+                    NPR {netPayable.toFixed(2)}
+                  </span>
+                </div>
+              </div>
+            )}
+          </div>
+
           <div className="space-y-3.5">
             {/* Amount to Pay */}
             <div className="space-y-1.5">
@@ -129,10 +461,12 @@ export const PaymentCollectDialog: React.FC<PaymentCollectDialogProps> = ({
                 </Label>
                 <button
                   type="button"
-                  onClick={() => setValue('amount_paid', dueAmount, { shouldValidate: true })}
+                  onClick={() => setValue('amount_paid', netPayable, { shouldValidate: true })}
                   className="text-[11px] text-primary hover:underline font-medium cursor-pointer"
                 >
-                  Pay Full Balance
+                  {discountType !== 'NONE'
+                    ? `Pay Net Due (NPR ${netPayable.toFixed(2)})`
+                    : 'Pay Full Balance'}
                 </button>
               </div>
               <Input
@@ -140,7 +474,6 @@ export const PaymentCollectDialog: React.FC<PaymentCollectDialogProps> = ({
                 type="number"
                 step="0.01"
                 min="0.01"
-                max={dueAmount}
                 placeholder="0.00"
                 className="text-sm font-mono font-bold h-10"
                 {...register('amount_paid', { valueAsNumber: true })}
@@ -148,10 +481,29 @@ export const PaymentCollectDialog: React.FC<PaymentCollectDialogProps> = ({
               {errors.amount_paid && (
                 <p className="text-destructive text-[11px] font-medium">{errors.amount_paid.message}</p>
               )}
-              {watchedAmount > 0 && watchedAmount < dueAmount && (
-                <p className="text-[11px] text-amber-600 font-medium">
+
+              {/* Partial Payment Notice */}
+              {watchedAmount > 0 && watchedAmount < netPayable && (
+                <p className="text-[11px] text-amber-600 dark:text-amber-400 font-medium">
                   Partial payment: NPR {remainingAfterPayment.toFixed(2)} will remain due.
                 </p>
+              )}
+
+              {/* Overpayment / Advance Wallet Alert */}
+              {watchedAmount > netPayable && (
+                <div className="p-3 rounded-lg border border-blue-200 dark:border-blue-800 bg-blue-50/90 dark:bg-blue-950/40 text-blue-900 dark:text-blue-100 flex items-start gap-2.5 text-xs animate-in fade-in duration-150 shadow-2xs">
+                  <Wallet className="w-4 h-4 text-blue-600 dark:text-blue-400 shrink-0 mt-0.5" />
+                  <div className="space-y-0.5">
+                    <span className="font-semibold text-blue-950 dark:text-blue-50">Advance Wallet Deposit</span>
+                    <p className="text-[11px] text-blue-800 dark:text-blue-200 leading-relaxed">
+                      Excess of{' '}
+                      <span className="font-mono font-bold text-blue-950 dark:text-blue-100">
+                        NPR {(watchedAmount - netPayable).toFixed(2)}
+                      </span>{' '}
+                      will be deposited into student's advance wallet and deducted automatically from the next quarter's invoice.
+                    </p>
+                  </div>
+                </div>
               )}
             </div>
 

@@ -181,6 +181,12 @@ export const paymentCollectSchema = z.object({
     .or(z.literal('')),
   payment_date: z.string().optional().or(z.literal('')),
   remarks: z.string().max(255).optional().or(z.literal('')),
+  discount_type: z.enum(['NONE', 'PERCENT', 'FIXED']).default('NONE'),
+  discount_rate: z.number().min(0).max(100).optional(),
+  discount_amount: z.number().min(0).optional(),
+  allow_excess_to_wallet: z.boolean().default(true),
 });
 
 export type PaymentCollectFormValues = z.infer<typeof paymentCollectSchema>;
+export type PaymentCollectInputValues = z.input<typeof paymentCollectSchema>;
+
