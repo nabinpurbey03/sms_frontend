@@ -3,6 +3,10 @@ import type {
   FeeStructure,
   FeeStructureCreateDTO,
   FeeStructureUpdateDTO,
+  StudentFeeAssignment,
+  StudentFeeAssignmentCreateDTO,
+  BulkStudentFeeAssignmentDTO,
+  BulkStudentFeeAssignmentResponse,
   StudentTransportProfile,
   StudentTransportCreateDTO,
   BatchBillGenerateDTO,
@@ -18,6 +22,9 @@ import type {
   FinanceDashboardSummary,
   FinanceClassOverview,
   ParentChildFeeSummary,
+  QuarterlyWindowStatus,
+  StudentWallet,
+  StudentDuesBreakdown,
 } from './types';
 
 export interface PaginatedResult<T> {
@@ -37,9 +44,34 @@ export const financeApi = {
 
   listFeeStructures: async (
     tenantId: string,
-    params?: { class_id?: string; frequency?: string; is_active?: boolean }
+    params?: { class_id?: string; fee_level?: string; frequency?: string; is_active?: boolean }
   ): Promise<FeeStructure[]> => {
     return apiClient.get(`/finance/tenants/${tenantId}/fee-structures`, { params });
+  },
+
+  listStudentFeeAssignments: async (
+    tenantId: string,
+    params?: { student_id?: string; class_id?: string }
+  ): Promise<StudentFeeAssignment[]> => {
+    return apiClient.get(`/finance/tenants/${tenantId}/student-fees`, { params });
+  },
+
+  assignStudentFee: async (
+    tenantId: string,
+    data: StudentFeeAssignmentCreateDTO
+  ): Promise<StudentFeeAssignment> => {
+    return apiClient.post(`/finance/tenants/${tenantId}/student-fees`, data);
+  },
+
+  bulkAssignStudentFees: async (
+    tenantId: string,
+    data: BulkStudentFeeAssignmentDTO
+  ): Promise<BulkStudentFeeAssignmentResponse> => {
+    return apiClient.post(`/finance/tenants/${tenantId}/student-fees/bulk`, data);
+  },
+
+  removeStudentFee: async (tenantId: string, assignmentId: string): Promise<boolean> => {
+    return apiClient.delete(`/finance/tenants/${tenantId}/student-fees/${assignmentId}`);
   },
 
   createFeeStructure: async (
@@ -156,5 +188,31 @@ export const financeApi = {
 
   getParentChildrenFees: async (tenantId: string): Promise<ParentChildFeeSummary[]> => {
     return apiClient.get(`/finance/tenants/${tenantId}/parents/me/children-fees`);
+  },
+
+  getQuarterWindowStatus: async (
+    tenantId: string,
+    quarter: string
+  ): Promise<QuarterlyWindowStatus> => {
+    return apiClient.get(`/finance/tenants/${tenantId}/quarter-window-status`, {
+      params: { quarter },
+    });
+  },
+
+  getStudentWallet: async (
+    tenantId: string,
+    studentId: string
+  ): Promise<StudentWallet> => {
+    return apiClient.get(`/finance/tenants/${tenantId}/students/${studentId}/wallet`);
+  },
+
+  getStudentDuesBreakdown: async (
+    tenantId: string,
+    studentId: string,
+    asOfDate?: string
+  ): Promise<StudentDuesBreakdown> => {
+    return apiClient.get(`/finance/tenants/${tenantId}/students/${studentId}/dues-breakdown`, {
+      params: asOfDate ? { as_of_date: asOfDate } : undefined,
+    });
   },
 };

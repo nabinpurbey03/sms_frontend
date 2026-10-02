@@ -4,11 +4,16 @@ export type FeeCategory =
   | 'EXAM'
   | 'TRANSPORT'
   | 'HOSTEL'
+  | 'CANTEEN'
+  | 'COACHING'
   | 'LAB'
   | 'LIBRARY'
   | 'MANAGEMENT'
   | 'ACTIVITY'
+  | 'SCHOLARSHIP'
   | 'MISC';
+
+export type FeeLevel = 'SCHOOL' | 'CLASS' | 'STUDENT';
 
 export type FeeFrequency = 'ONE_TIME' | 'MONTHLY' | 'TERMWISE' | 'YEARLY';
 
@@ -20,8 +25,9 @@ export interface FeeStructure {
   id: string;
   tenant_id: string;
   academic_year_id: string;
-  class_id: string;
-  class_name?: string;
+  fee_level: FeeLevel;
+  class_id?: string | null;
+  class_name?: string | null;
   name: string;
   fee_category: FeeCategory;
   frequency: FeeFrequency;
@@ -32,7 +38,8 @@ export interface FeeStructure {
 }
 
 export interface FeeStructureCreateDTO {
-  class_id: string;
+  fee_level?: FeeLevel;
+  class_id?: string | null;
   name: string;
   fee_category: FeeCategory;
   frequency: FeeFrequency;
@@ -41,12 +48,56 @@ export interface FeeStructureCreateDTO {
 }
 
 export interface FeeStructureUpdateDTO {
+  fee_level?: FeeLevel;
+  class_id?: string | null;
   name?: string;
   fee_category?: FeeCategory;
   frequency?: FeeFrequency;
   amount?: number;
   description?: string;
   is_active?: boolean;
+}
+
+export interface StudentFeeAssignment {
+  id: string;
+  tenant_id: string;
+  academic_year_id: string;
+  student_id: string;
+  student_name?: string | null;
+  class_name?: string | null;
+  fee_structure_id?: string | null;
+  fee_name: string;
+  fee_category: FeeCategory;
+  frequency: FeeFrequency;
+  amount: number | string;
+  notes?: string | null;
+  is_active: boolean;
+  created_at: string;
+}
+
+export interface StudentFeeAssignmentCreateDTO {
+  student_id: string;
+  fee_structure_id?: string | null;
+  fee_name: string;
+  fee_category: FeeCategory;
+  frequency: FeeFrequency;
+  amount: number;
+  notes?: string | null;
+}
+
+export interface BulkStudentFeeAssignmentDTO {
+  student_ids: string[];
+  fee_structure_id?: string | null;
+  fee_name: string;
+  fee_category: FeeCategory;
+  frequency: FeeFrequency;
+  amount: number;
+  notes?: string | null;
+}
+
+export interface BulkStudentFeeAssignmentResponse {
+  assigned_count: number;
+  assignments: StudentFeeAssignment[];
 }
 
 export interface StudentTransportProfile {
@@ -78,9 +129,14 @@ export interface BatchBillGenerateDTO {
   class_id: string;
   section_id?: string;
   billing_month?: string;
+  quarter?: 'Q1' | 'Q2' | 'Q3' | 'Q4' | string;
   fee_structure_ids: string[];
   due_date: string;
   notes?: string;
+  override_30_day_window?: boolean;
+  override_reason?: string;
+  ad_hoc_fee_name?: string;
+  ad_hoc_fee_amount?: number;
 }
 
 export interface SingleBillGenerateDTO {
@@ -110,10 +166,12 @@ export interface FeeBill {
   academic_year_id: string;
   bill_title: string;
   billing_month?: string | null;
+  quarter?: string | null;
   issue_date: string;
   due_date: string;
   subtotal_amount: number | string;
   previous_due_amount: number | string;
+  advance_applied_amount?: number | string;
   total_payable: number | string;
   paid_amount: number | string;
   due_amount: number | string;
@@ -127,6 +185,52 @@ export interface BatchBillGenerateResponseDTO {
   generated_count: number;
   total_amount: number | string;
   bills: FeeBill[];
+}
+
+export interface QuarterlyWindowStatus {
+  quarter: string;
+  quarter_name: string;
+  start_date: string;
+  end_date: string;
+  window_open_date: string;
+  days_until_window_open: number;
+  is_window_open: boolean;
+  can_generate: boolean;
+}
+
+export interface StudentWallet {
+  student_id: string;
+  academic_year_id: string;
+  advance_balance: number | string;
+}
+
+export interface FeeBillSummaryItem {
+  id: string;
+  bill_number: string;
+  bill_title: string;
+  quarter?: string | null;
+  academic_year_name: string;
+  is_past_academic_year: boolean;
+  is_past_quarter: boolean;
+  total_payable: number | string;
+  paid_amount: number | string;
+  due_amount: number | string;
+  status: string;
+  issue_date: string;
+  due_date: string;
+}
+
+export interface StudentDuesBreakdown {
+  student_id: string;
+  student_name: string;
+  class_name?: string | null;
+  past_academic_years_due: number | string;
+  past_quarters_due: number | string;
+  current_quarter_due: number | string;
+  total_due: number | string;
+  advance_wallet_balance: number | string;
+  net_payable: number | string;
+  unpaid_bills: FeeBillSummaryItem[];
 }
 
 export interface FeePaymentCreateDTO {
@@ -148,6 +252,11 @@ export interface FeePayment {
   student_name?: string;
   academic_year_id: string;
   amount_paid: number | string;
+  discount_type?: string;
+  discount_rate?: number;
+  discount_amount?: number;
+  excess_amount?: number;
+  advance_wallet_balance_after?: number;
   payment_method: PaymentMethod;
   transaction_reference?: string | null;
   payment_date: string;

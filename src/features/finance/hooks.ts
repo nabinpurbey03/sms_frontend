@@ -4,6 +4,8 @@ import { financeApi } from './api';
 import type {
   FeeStructureCreateDTO,
   FeeStructureUpdateDTO,
+  StudentFeeAssignmentCreateDTO,
+  BulkStudentFeeAssignmentDTO,
   StudentTransportCreateDTO,
   BatchBillGenerateDTO,
   SingleBillGenerateDTO,
@@ -19,6 +21,7 @@ export const FINANCE_DASHBOARD_KEY = 'finance_dashboard';
 export const FEE_STRUCTURES_KEY = 'fee_structures';
 export const STUDENT_TRANSPORTS_KEY = 'student-transports';
 export const STUDENT_TRANSPORT_KEY = 'student-transport';
+export const STUDENT_FEES_KEY = 'student_fees';
 export const BILLS_KEY = 'finance_bills';
 export const BILL_KEY = 'finance_bill';
 export const PAYMENTS_KEY = 'finance_payments';
@@ -26,6 +29,9 @@ export const RECEIPT_KEY = 'finance_receipt';
 export const STUDENT_LEDGER_KEY = 'student_ledger';
 export const FINANCE_CLASS_OVERVIEW_KEY = 'finance_class_overview';
 export const PARENT_CHILDREN_FEES_KEY = 'parent_children_fees';
+export const QUARTER_WINDOW_STATUS_KEY = 'quarter_window_status';
+export const STUDENT_WALLET_KEY = 'student_wallet';
+export const STUDENT_DUES_BREAKDOWN_KEY = 'student_dues_breakdown';
 
 // --- Query Hooks ---
 
@@ -100,11 +106,22 @@ export const useFinanceDashboardSummary = (tenantId: string | null) => {
 
 export const useFeeStructures = (
   tenantId: string | null,
-  params?: { class_id?: string; frequency?: string; is_active?: boolean }
+  params?: { class_id?: string; fee_level?: string; frequency?: string; is_active?: boolean }
 ) => {
   return useQuery({
-    queryKey: [FEE_STRUCTURES_KEY, tenantId, params?.class_id, params?.frequency, params?.is_active],
+    queryKey: [FEE_STRUCTURES_KEY, tenantId, params?.class_id, params?.fee_level, params?.frequency, params?.is_active],
     queryFn: () => financeApi.listFeeStructures(tenantId!, params),
+    enabled: !!tenantId,
+  });
+};
+
+export const useStudentFeeAssignments = (
+  tenantId: string | null,
+  params?: { student_id?: string; class_id?: string }
+) => {
+  return useQuery({
+    queryKey: [STUDENT_FEES_KEY, tenantId, params?.student_id, params?.class_id],
+    queryFn: () => financeApi.listStudentFeeAssignments(tenantId!, params),
     enabled: !!tenantId,
   });
 };
@@ -183,6 +200,34 @@ export const useStudentLedger = (tenantId: string | null, studentId: string | nu
   });
 };
 
+export const useQuarterWindowStatus = (tenantId: string | null, quarter: string | null) => {
+  return useQuery({
+    queryKey: [QUARTER_WINDOW_STATUS_KEY, tenantId, quarter],
+    queryFn: () => financeApi.getQuarterWindowStatus(tenantId!, quarter!),
+    enabled: !!tenantId && !!quarter,
+  });
+};
+
+export const useStudentWallet = (tenantId: string | null, studentId: string | null) => {
+  return useQuery({
+    queryKey: [STUDENT_WALLET_KEY, tenantId, studentId],
+    queryFn: () => financeApi.getStudentWallet(tenantId!, studentId!),
+    enabled: !!tenantId && !!studentId,
+  });
+};
+
+export const useStudentDuesBreakdown = (
+  tenantId: string | null,
+  studentId: string | null,
+  asOfDate?: string
+) => {
+  return useQuery({
+    queryKey: [STUDENT_DUES_BREAKDOWN_KEY, tenantId, studentId, asOfDate],
+    queryFn: () => financeApi.getStudentDuesBreakdown(tenantId!, studentId!, asOfDate),
+    enabled: !!tenantId && !!studentId,
+  });
+};
+
 // --- Mutation Hooks ---
 
 export const useCreateFeeStructure = (tenantId: string | null) => {
@@ -249,6 +294,54 @@ export const useSetStudentTransport = (tenantId: string | null) => {
     },
     onError: (err: any) => {
       toast.error(err.response?.data?.message || err.message || 'Failed to save student transport profile');
+    },
+  });
+};
+
+export const useAssignStudentFee = (tenantId: string | null) => {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: (data: StudentFeeAssignmentCreateDTO) =>
+      financeApi.assignStudentFee(tenantId!, data),
+    onSuccess: () => {
+      toast.success('Student fee assigned successfully');
+      queryClient.invalidateQueries({ queryKey: [STUDENT_FEES_KEY, tenantId] });
+      queryClient.invalidateQueries({ queryKey: [STUDENT_LEDGER_KEY, tenantId] });
+    },
+    onError: (err: any) => {
+      toast.error(err.response?.data?.message || err.message || 'Failed to assign student fee');
+    },
+  });
+};
+
+export const useBulkAssignStudentFees = (tenantId: string | null) => {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: (data: BulkStudentFeeAssignmentDTO) =>
+      financeApi.bulkAssignStudentFees(tenantId!, data),
+    onSuccess: (res) => {
+      toast.success(`Successfully assigned facility to ${res.assigned_count} students!`);
+      queryClient.invalidateQueries({ queryKey: [STUDENT_FEES_KEY, tenantId] });
+      queryClient.invalidateQueries({ queryKey: [STUDENT_LEDGER_KEY, tenantId] });
+    },
+    onError: (err: any) => {
+      toast.error(err.response?.data?.message || err.message || 'Failed to bulk assign facility');
+    },
+  });
+};
+
+export const useRemoveStudentFee = (tenantId: string | null) => {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: (assignmentId: string) =>
+      financeApi.removeStudentFee(tenantId!, assignmentId),
+    onSuccess: () => {
+      toast.success('Student fee removed successfully');
+      queryClient.invalidateQueries({ queryKey: [STUDENT_FEES_KEY, tenantId] });
+      queryClient.invalidateQueries({ queryKey: [STUDENT_LEDGER_KEY, tenantId] });
+    },
+    onError: (err: any) => {
+      toast.error(err.response?.data?.message || err.message || 'Failed to remove student fee');
     },
   });
 };

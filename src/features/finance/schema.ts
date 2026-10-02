@@ -1,32 +1,113 @@
 import { z } from 'zod';
 
-export const feeStructureFormSchema = z.object({
-  class_id: z.string().min(1, 'Please select a class'),
-  name: z
+export const feeStructureFormSchema = z
+  .object({
+    fee_level: z.enum(['SCHOOL', 'CLASS', 'STUDENT']),
+    class_id: z.string().optional().or(z.literal('')),
+    name: z
+      .string()
+      .trim()
+      .min(2, 'Fee head name must be at least 2 characters')
+      .max(100, 'Fee head name cannot exceed 100 characters'),
+    fee_category: z.enum([
+      'TUITION',
+      'ADMISSION',
+      'EXAM',
+      'TRANSPORT',
+      'HOSTEL',
+      'CANTEEN',
+      'COACHING',
+      'LAB',
+      'LIBRARY',
+      'MANAGEMENT',
+      'ACTIVITY',
+      'SCHOLARSHIP',
+      'MISC',
+    ]),
+    frequency: z.enum(['ONE_TIME', 'MONTHLY', 'TERMWISE', 'YEARLY']),
+    amount: z
+      .number({ message: 'Amount is required' })
+      .positive('Fee amount must be greater than zero'),
+    description: z.string().max(255).optional().or(z.literal('')),
+  })
+  .refine(
+    (data) => {
+      if (data.fee_level === 'CLASS') {
+        return Boolean(data.class_id && data.class_id.trim().length > 0);
+      }
+      return true;
+    },
+    {
+      message: 'Please select a class for class-level fee structures',
+      path: ['class_id'],
+    }
+  );
+
+export type FeeStructureFormValues = z.infer<typeof feeStructureFormSchema>;
+
+export const studentFeeAssignmentSchema = z.object({
+  student_id: z.string().min(1, 'Please select a student'),
+  fee_structure_id: z.string().optional().nullable(),
+  fee_name: z
     .string()
     .trim()
-    .min(2, 'Fee head name must be at least 2 characters')
-    .max(100, 'Fee head name cannot exceed 100 characters'),
+    .min(1, 'Fee head name is required')
+    .max(100, 'Name cannot exceed 100 characters'),
   fee_category: z.enum([
     'TUITION',
     'ADMISSION',
     'EXAM',
     'TRANSPORT',
     'HOSTEL',
+    'CANTEEN',
+    'COACHING',
     'LAB',
     'LIBRARY',
     'MANAGEMENT',
     'ACTIVITY',
+    'SCHOLARSHIP',
     'MISC',
   ]),
   frequency: z.enum(['ONE_TIME', 'MONTHLY', 'TERMWISE', 'YEARLY']),
   amount: z
     .number({ message: 'Amount is required' })
     .positive('Fee amount must be greater than zero'),
-  description: z.string().max(255).optional().or(z.literal('')),
+  notes: z.string().max(200).optional().or(z.literal('')),
 });
 
-export type FeeStructureFormValues = z.infer<typeof feeStructureFormSchema>;
+export type StudentFeeAssignmentFormValues = z.infer<typeof studentFeeAssignmentSchema>;
+
+export const bulkStudentFeeAssignmentSchema = z.object({
+  student_ids: z.array(z.string()).min(1, 'Please select at least one student'),
+  fee_structure_id: z.string().optional().nullable(),
+  fee_name: z
+    .string()
+    .trim()
+    .min(1, 'Fee name is required')
+    .max(100, 'Name cannot exceed 100 characters'),
+  fee_category: z.enum([
+    'TUITION',
+    'ADMISSION',
+    'EXAM',
+    'TRANSPORT',
+    'HOSTEL',
+    'CANTEEN',
+    'COACHING',
+    'LAB',
+    'LIBRARY',
+    'MANAGEMENT',
+    'ACTIVITY',
+    'SCHOLARSHIP',
+    'MISC',
+  ]),
+  frequency: z.enum(['ONE_TIME', 'MONTHLY', 'TERMWISE', 'YEARLY']),
+  amount: z
+    .number({ message: 'Amount is required' })
+    .positive('Amount must be greater than zero'),
+  notes: z.string().max(200).optional().or(z.literal('')),
+});
+
+export type BulkStudentFeeAssignmentFormValues = z.infer<typeof bulkStudentFeeAssignmentSchema>;
 
 export const studentTransportSchema = z.object({
   student_id: z.string().min(1, 'Please select a student'),
@@ -49,15 +130,21 @@ export type StudentTransportInputValues = z.input<typeof studentTransportSchema>
 export const batchBillGenerateSchema = z.object({
   class_id: z.string().min(1, 'Please select a target class'),
   section_id: z.string().optional().or(z.literal('')),
-  billing_month: z.string().min(1, 'Please specify the billing month / cycle'),
+  billing_month: z.string().optional().or(z.literal('')),
+  quarter: z.enum(['Q1', 'Q2', 'Q3', 'Q4']).default('Q1'),
   fee_structure_ids: z
     .array(z.string())
     .min(1, 'Select at least one fee head to invoice'),
   due_date: z.string().min(1, 'Due date is required'),
   notes: z.string().max(255).optional().or(z.literal('')),
+  override_30_day_window: z.boolean().default(false),
+  override_reason: z.string().optional(),
+  ad_hoc_fee_name: z.string().optional(),
+  ad_hoc_fee_amount: z.number().min(0).optional(),
 });
 
 export type BatchBillGenerateFormValues = z.infer<typeof batchBillGenerateSchema>;
+export type BatchBillGenerateInputValues = z.input<typeof batchBillGenerateSchema>;
 
 export const singleBillItemSchema = z.object({
   fee_name: z.string().trim().min(1, 'Fee item name is required'),
