@@ -314,21 +314,40 @@ export const BatchBillingPage: React.FC = () => {
         </div>
 
         <div className="flex items-center gap-2.5">
-          <div className="flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-primary/10 border border-primary/20 text-xs font-semibold text-primary">
+          <div className="hidden sm:flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-primary/10 border border-primary/20 text-xs font-semibold text-primary">
             <Lock className="w-3.5 h-3.5 text-primary" />
-            <span>Session: {isLoadingYear ? 'Loading...' : currentYear?.name || 'Active Session'} (Locked)</span>
+            <span>Session: {isLoadingYear ? 'Loading...' : currentYear?.name || 'Active Session'}</span>
           </div>
 
           <Link to="/finance/bills">
-            <Button variant="outline" size="sm" className="text-xs gap-1.5">
-              <FileText className="w-3.5 h-3.5" />
-              View Invoices
+            <Button type="button" variant="outline" size="sm" className="text-xs">
+              Cancel
             </Button>
           </Link>
+
+          <Button
+            type="submit"
+            form="batch-billing-form"
+            size="sm"
+            disabled={batchBillMutation.isPending || isWindowBlocked || filteredStudents.length === 0}
+            className="text-xs font-bold gap-1.5 shadow-xs"
+          >
+            {batchBillMutation.isPending ? (
+              <>
+                <Loader2 className="w-3.5 h-3.5 animate-spin" />
+                Generating...
+              </>
+            ) : (
+              <>
+                <Sparkles className="w-3.5 h-3.5" />
+                Generate Invoices
+              </>
+            )}
+          </Button>
         </div>
       </div>
 
-      <form onSubmit={handleSubmit(onFormSubmit)} className="space-y-6">
+      <form id="batch-billing-form" onSubmit={handleSubmit(onFormSubmit)} className="space-y-6">
         <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 items-start">
           {/* ======================================================== */}
           {/* LEFT COLUMN: CONFIGURATION CONTROLS (7 COLS)              */}
@@ -696,7 +715,7 @@ export const BatchBillingPage: React.FC = () => {
           {/* ======================================================== */}
           {/* RIGHT COLUMN: COHORT PREVIEW & AUDIT SUMMARY (5 COLS)     */}
           {/* ======================================================== */}
-          <div className="lg:col-span-5 space-y-6">
+          <div className="lg:col-span-5 space-y-6 lg:sticky lg:top-6 self-start">
             {/* Live Financial Impact Summary */}
             <Card className="border-primary/30 bg-primary/5 shadow-xs overflow-hidden">
               <div className="p-4 sm:p-5 border-b border-primary/20 space-y-1">
@@ -762,6 +781,60 @@ export const BatchBillingPage: React.FC = () => {
                     <li>Individual student facility fees (hostel, bus) are auto-calculated for 3 months.</li>
                     <li>Advance credits in student wallets will automatically reduce net payable.</li>
                   </ul>
+                </div>
+
+                {/* Primary Batch Generation Action */}
+                <div className="pt-3 border-t border-primary/20 space-y-3">
+                  {isWindowBlocked && (
+                    <div className="p-3 rounded-lg bg-amber-500/10 border border-amber-500/30 text-amber-800 dark:text-amber-300 text-xs flex items-start gap-2">
+                      <Lock className="w-4 h-4 shrink-0 mt-0.5 text-amber-600 dark:text-amber-400" />
+                      <div className="space-y-0.5">
+                        <span className="font-bold block">Quarter Window Restricted</span>
+                        <span>{watchedQuarter} billing is closed until 30 days before quarter end. Check admin override to proceed.</span>
+                      </div>
+                    </div>
+                  )}
+
+                  {filteredStudents.length === 0 && !isLoadingStudents && (
+                    <div className="p-3 rounded-lg bg-muted text-muted-foreground text-xs flex items-center gap-2">
+                      <AlertTriangle className="w-4 h-4 shrink-0 text-amber-500" />
+                      <span>Please select a class with enrolled students to generate invoices.</span>
+                    </div>
+                  )}
+
+                  <Button
+                    type="submit"
+                    form="batch-billing-form"
+                    disabled={batchBillMutation.isPending || isWindowBlocked || filteredStudents.length === 0}
+                    className="w-full gap-2 h-11 text-xs sm:text-sm font-bold shadow-md cursor-pointer"
+                  >
+                    {batchBillMutation.isPending ? (
+                      <>
+                        <Loader2 className="w-4 h-4 animate-spin" />
+                        Generating Invoices...
+                      </>
+                    ) : isWindowBlocked ? (
+                      <>
+                        <Lock className="w-4 h-4" />
+                        Window Locked (Needs Override)
+                      </>
+                    ) : (
+                      <>
+                        <Sparkles className="w-4 h-4" />
+                        Generate {filteredStudents.length} Invoices for {watchedQuarter}
+                      </>
+                    )}
+                  </Button>
+
+                  <div className="flex items-center justify-between text-[11px] text-muted-foreground px-1">
+                    <span>Target: {selectedClass?.name || 'Class'}</span>
+                    <Link
+                      to="/finance/bills"
+                      className="hover:text-foreground underline underline-offset-2 transition-colors"
+                    >
+                      Cancel & Return
+                    </Link>
+                  </div>
                 </div>
               </div>
             </Card>
@@ -845,58 +918,6 @@ export const BatchBillingPage: React.FC = () => {
                 )}
               </CardContent>
             </Card>
-          </div>
-        </div>
-
-        {/* ======================================================== */}
-        {/* STICKY BOTTOM GENERATION BAR                             */}
-        {/* ======================================================== */}
-        <div className="sticky bottom-4 z-20 rounded-2xl bg-card/95 backdrop-blur-md border border-border/80 p-4 shadow-xl shadow-black/5 mt-8">
-          <div className="flex flex-col sm:flex-row items-center justify-between gap-4">
-            <div className="flex items-center gap-3 text-xs">
-              <div className="w-8 h-8 rounded-lg bg-primary/10 text-primary flex items-center justify-center shrink-0">
-                <Receipt className="w-4 h-4" />
-              </div>
-              <div>
-                <span className="font-bold text-foreground block">
-                  Batch: {selectedClass?.name || 'Class'} • {watchedQuarter} Cycle
-                </span>
-                <span className="text-muted-foreground text-[11px]">
-                  {filteredStudents.length} students selected • ~{formatCurrency(estimatedClassTotal)} estimated total
-                </span>
-              </div>
-            </div>
-
-            <div className="flex items-center gap-3 w-full sm:w-auto">
-              <Link to="/finance/bills">
-                <Button type="button" variant="outline" size="sm" className="text-xs">
-                  Cancel
-                </Button>
-              </Link>
-
-              <Button
-                type="submit"
-                disabled={batchBillMutation.isPending || isWindowBlocked || filteredStudents.length === 0}
-                className="gap-2 text-xs font-bold px-6 shadow-xs cursor-pointer w-full sm:w-auto"
-              >
-                {batchBillMutation.isPending ? (
-                  <>
-                    <Loader2 className="w-4 h-4 animate-spin" />
-                    Generating Invoices...
-                  </>
-                ) : isWindowBlocked ? (
-                  <>
-                    <Lock className="w-4 h-4" />
-                    Window Locked (Needs Override)
-                  </>
-                ) : (
-                  <>
-                    <Sparkles className="w-4 h-4" />
-                    Generate {filteredStudents.length} Invoices for {watchedQuarter}
-                  </>
-                )}
-              </Button>
-            </div>
           </div>
         </div>
       </form>
