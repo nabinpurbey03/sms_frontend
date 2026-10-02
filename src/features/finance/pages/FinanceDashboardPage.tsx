@@ -38,7 +38,6 @@ import {
   ShieldAlert,
 } from 'lucide-react';
 import { FeeStructureDialog } from '../components/FeeStructureDialog';
-import { BatchBillGenerateDialog } from '../components/BatchBillGenerateDialog';
 import { PrintableReceiptModal } from '../components/PrintableReceiptModal';
 
 const formatCurrency = (amount: number | string): string => {
@@ -69,7 +68,6 @@ export const FinanceDashboardPage: React.FC = () => {
 
   // Dialog States
   const [isFeeStructureOpen, setIsFeeStructureOpen] = useState(false);
-  const [isBatchOpen, setIsBatchOpen] = useState(false);
   const [selectedReceiptPaymentId, setSelectedReceiptPaymentId] = useState<string | null>(null);
 
   // Local Search for recent payments
@@ -177,15 +175,16 @@ export const FinanceDashboardPage: React.FC = () => {
             </Button>
           </Link>
 
-          <Button
-            size="sm"
-            variant="outline"
-            onClick={() => setIsBatchOpen(true)}
-            className="gap-1.5 text-xs font-medium shadow-2xs cursor-pointer hover:bg-accent"
-          >
-            <Sparkles className="w-3.5 h-3.5 text-primary" />
-            Batch Invoicing
-          </Button>
+          <Link to="/finance/batch-billing">
+            <Button
+              size="sm"
+              variant="outline"
+              className="gap-1.5 text-xs font-medium shadow-2xs cursor-pointer hover:bg-accent"
+            >
+              <Sparkles className="w-3.5 h-3.5 text-primary" />
+              Batch Invoicing
+            </Button>
+          </Link>
 
           <Button
             size="sm"
@@ -754,15 +753,6 @@ export const FinanceDashboardPage: React.FC = () => {
         onClose={() => setIsFeeStructureOpen(false)}
         onSubmit={async (data) => createFeeStructureMutation.mutateAsync(data)}
         isLoading={createFeeStructureMutation.isPending}
-        tenantId={activeTenantId}
-      />
-
-      {/* Batch Bill Invoicing Dialog */}
-      <BatchBillGenerateDialog
-        isOpen={isBatchOpen}
-        onClose={() => setIsBatchOpen(false)}
-        onSubmit={async (data) => batchBillMutation.mutateAsync(data)}
-        isLoading={batchBillMutation.isPending}
         tenantId={activeTenantId}
       />
 

@@ -27,7 +27,6 @@ import {
   Filter,
 } from 'lucide-react';
 import type { FeeBill, BillStatus, FeePayment } from '../types';
-import { BatchBillGenerateDialog } from '../components/BatchBillGenerateDialog';
 import { PaymentCollectDialog } from '../components/PaymentCollectDialog';
 import { PrintableBillModal } from '../components/PrintableBillModal';
 import { PrintableReceiptModal } from '../components/PrintableReceiptModal';
@@ -57,7 +56,6 @@ export const BillsPage: React.FC = () => {
   const meta = billsData?.meta;
 
   // Dialog States
-  const [isBatchOpen, setIsBatchOpen] = useState(false);
   const [activeCollectBill, setActiveCollectBill] = useState<FeeBill | null>(null);
   const [activePrintBillId, setActivePrintBillId] = useState<string | null>(null);
   const [generatedReceiptPaymentId, setGeneratedReceiptPaymentId] = useState<string | null>(null);
@@ -108,12 +106,14 @@ export const BillsPage: React.FC = () => {
           </div>
 
           <Button
+            asChild
             size="sm"
-            onClick={() => setIsBatchOpen(true)}
             className="gap-1.5 text-xs shadow-xs cursor-pointer"
           >
-            <Sparkles className="w-3.5 h-3.5" />
-            Batch Invoicing
+            <Link to="/finance/batch-billing">
+              <Sparkles className="w-3.5 h-3.5" />
+              Batch Invoicing
+            </Link>
           </Button>
         </div>
       </div>
@@ -320,15 +320,6 @@ export const BillsPage: React.FC = () => {
           )}
         </div>
       )}
-
-      {/* Batch Bill Dialog */}
-      <BatchBillGenerateDialog
-        isOpen={isBatchOpen}
-        onClose={() => setIsBatchOpen(false)}
-        onSubmit={async (data) => batchBillMutation.mutateAsync(data)}
-        isLoading={batchBillMutation.isPending}
-        tenantId={activeTenantId}
-      />
 
       {/* Payment Collect Dialog */}
       <PaymentCollectDialog

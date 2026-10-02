@@ -51,6 +51,7 @@ import { ClassFeeStructurePage } from '@/features/finance/pages/ClassFeeStructur
 import { TransactionsPage } from '@/features/finance/pages/TransactionsPage';
 import { StudentLedgerPage } from '@/features/finance/pages/StudentLedgerPage';
 import { ParentFeeStatusPage } from '@/features/finance/pages/ParentFeeStatusPage';
+import { BatchBillingPage } from '@/features/finance/pages/BatchBillingPage';
 import { useAuth } from '@/auth/useAuth';
 
 const IndexRedirect: React.FC = () => {
@@ -430,6 +431,18 @@ const financeBillsRoute = createRoute({
   component: BillsPage,
 });
 
+const financeBatchBillingRoute = createRoute({
+  getParentRoute: () => protectedLayoutRoute,
+  path: '/finance/batch-billing',
+  component: BatchBillingPage,
+});
+
+const financeGenerateRoute = createRoute({
+  getParentRoute: () => protectedLayoutRoute,
+  path: '/finance/generate',
+  component: BatchBillingPage,
+});
+
 const financeCollectRoute = createRoute({
   getParentRoute: () => protectedLayoutRoute,
   path: '/finance/collect',
@@ -500,6 +513,8 @@ const routeTree = rootRoute.addChildren([
     financeDashboardRoute,
     parentChildrenFeesRoute,
     financeBillsRoute,
+    financeBatchBillingRoute,
+    financeGenerateRoute,
     financeCollectRoute,
     financeStructuresRoute,
     financeClassStructureRoute,
