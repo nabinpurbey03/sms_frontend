@@ -20,7 +20,6 @@ import {
   FileText,
   CreditCard,
   Receipt,
-  Sparkles,
   type LucideIcon,
 } from 'lucide-react';
 import type { PermissionKey } from '@/config/permissions';
@@ -253,14 +252,6 @@ export const getNavItems = (ctx: NavPermissionsContext): NavItem[] => [
     href: '/finance/bills',
     icon: FileText,
     description: 'Generate, track, and manage student fee bills.',
-    show: ctx.can('VIEW_FINANCE') && !ctx.isParent,
-    category: 'Finance',
-  },
-  {
-    label: 'Batch Invoicing',
-    href: '/finance/batch-billing',
-    icon: Sparkles,
-    description: 'Quarterly batch invoicing engine with window guard.',
     show: ctx.can('VIEW_FINANCE') && !ctx.isParent,
     category: 'Finance',
   },
