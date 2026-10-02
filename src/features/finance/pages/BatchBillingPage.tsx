@@ -287,7 +287,7 @@ export const BatchBillingPage: React.FC = () => {
   const isWindowBlocked = windowStatus && !windowStatus.is_window_open && !watchedOverride;
 
   return (
-    <div className="space-y-6 pb-24 max-w-7xl mx-auto">
+    <div className="space-y-6 pb-8 max-w-7xl mx-auto">
       {/* 1. Header & Navigation */}
       <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 border-b border-border/50 pb-5">
         <div>
@@ -851,8 +851,8 @@ export const BatchBillingPage: React.FC = () => {
         {/* ======================================================== */}
         {/* STICKY BOTTOM GENERATION BAR                             */}
         {/* ======================================================== */}
-        <div className="fixed bottom-0 left-0 right-0 z-30 bg-background/95 backdrop-blur-md border-t border-border/60 py-3.5 px-4 sm:px-8 shadow-lg">
-          <div className="max-w-7xl mx-auto flex flex-col sm:flex-row items-center justify-between gap-4">
+        <div className="sticky bottom-4 z-20 rounded-2xl bg-card/95 backdrop-blur-md border border-border/80 p-4 shadow-xl shadow-black/5 mt-8">
+          <div className="flex flex-col sm:flex-row items-center justify-between gap-4">
             <div className="flex items-center gap-3 text-xs">
               <div className="w-8 h-8 rounded-lg bg-primary/10 text-primary flex items-center justify-center shrink-0">
                 <Receipt className="w-4 h-4" />
