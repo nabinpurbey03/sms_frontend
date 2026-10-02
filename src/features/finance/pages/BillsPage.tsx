@@ -30,9 +30,12 @@ import type { FeeBill, BillStatus, FeePayment } from '../types';
 import { PaymentCollectDialog } from '../components/PaymentCollectDialog';
 import { PrintableBillModal } from '../components/PrintableBillModal';
 import { PrintableReceiptModal } from '../components/PrintableReceiptModal';
+import { useCalendarPreferenceStore } from '@/stores/calendarPreferenceStore';
+import { formatDualDate } from '@/features/school-settings/utils/nepaliDate';
 
 export const BillsPage: React.FC = () => {
   const { activeTenantId } = useAuth();
+  const { calendarSystem } = useCalendarPreferenceStore();
   const { currentYear } = useCurrentAcademicYear(activeTenantId);
   const { data: classesData } = useClasses(activeTenantId);
   const classes = classesData || [];
@@ -233,7 +236,9 @@ export const BillsPage: React.FC = () => {
                           <span className="block text-[10px] text-muted-foreground">{b.billing_month}</span>
                         )}
                       </td>
-                      <td className="py-2.5 px-3 text-muted-foreground">{b.due_date}</td>
+                      <td className="py-2.5 px-3 text-muted-foreground whitespace-nowrap">
+                        {formatDualDate(b.due_date, calendarSystem)}
+                      </td>
                       <td className="py-2.5 px-3 text-right font-mono font-medium">
                         {Number(b.total_payable).toFixed(2)}
                       </td>

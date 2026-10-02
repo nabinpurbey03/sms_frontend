@@ -10,6 +10,8 @@ import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Printer, X, Loader2, FileText } from 'lucide-react';
 import { useBill } from '../hooks';
+import { useCalendarPreferenceStore } from '@/stores/calendarPreferenceStore';
+import { formatDualDate } from '@/features/school-settings/utils/nepaliDate';
 
 interface PrintableBillModalProps {
   isOpen: boolean;
@@ -26,6 +28,7 @@ export const PrintableBillModal: React.FC<PrintableBillModalProps> = ({
   billId,
   schoolName = 'School Portal',
 }) => {
+  const { calendarSystem } = useCalendarPreferenceStore();
   const { data: bill, isLoading } = useBill(tenantId, billId);
 
   const handlePrint = () => {
@@ -122,11 +125,11 @@ export const PrintableBillModal: React.FC<PrintableBillModalProps> = ({
                 <div className="space-y-1 text-right">
                   <div>
                     <span className="text-zinc-500">Issue Date: </span>
-                    <span>{bill.issue_date}</span>
+                    <span>{formatDualDate(bill.issue_date, calendarSystem)}</span>
                   </div>
                   <div>
                     <span className="text-zinc-500">Payment Due Date: </span>
-                    <span className="font-bold text-red-600">{bill.due_date}</span>
+                    <span className="font-bold text-red-600">{formatDualDate(bill.due_date, calendarSystem)}</span>
                   </div>
                   <div>
                     <span className="text-zinc-500">Status: </span>

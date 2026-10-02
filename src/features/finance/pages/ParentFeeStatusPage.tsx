@@ -24,9 +24,12 @@ import {
   CheckCircle2,
 } from 'lucide-react';
 import type { FeeBill } from '../types';
+import { useCalendarPreferenceStore } from '@/stores/calendarPreferenceStore';
+import { formatDualDate } from '@/features/school-settings/utils/nepaliDate';
 
 export const ParentFeeStatusPage: React.FC = () => {
   const { activeTenantId } = useAuth();
+  const { calendarSystem } = useCalendarPreferenceStore();
   const {
     data: childrenFees = [],
     isLoading,
@@ -259,8 +262,8 @@ export const ParentFeeStatusPage: React.FC = () => {
                                   </div>
                                 </TableCell>
                                 <TableCell className="py-2.5 px-3 text-muted-foreground flex items-center gap-1 mt-1 sm:mt-0">
-                                  <Calendar className="w-3 h-3 text-muted-foreground/70" />
-                                  <span>{bill.due_date}</span>
+                                  <Calendar className="w-3 h-3 text-muted-foreground/70 shrink-0" />
+                                  <span className="whitespace-nowrap">{formatDualDate(bill.due_date, calendarSystem)}</span>
                                 </TableCell>
                                 <TableCell className="py-2.5 px-3 text-right font-mono font-medium text-foreground">
                                   NPR {bPayable.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}

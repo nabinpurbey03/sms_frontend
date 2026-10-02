@@ -6,6 +6,9 @@ import { useCurrentAcademicYear } from '@/features/academic-year/hooks/useCurren
 import {
   useFinanceClassOverview,
   useCreateFeeStructure,
+  useUpdateFeeStructure,
+  useDeleteFeeStructure,
+  useFeeStructures,
 } from '../hooks';
 import { StatCard } from '@/components/ui/stat-card';
 import { Button } from '@/components/ui/button';
@@ -25,6 +28,8 @@ import {
   TableRow,
 } from '@/components/ui/table';
 import { FeeStructureDialog } from '../components/FeeStructureDialog';
+import { SchoolFeeHeadsTable } from '../components/SchoolFeeHeadsTable';
+import { StudentLevelFeesTab } from '../components/StudentLevelFeesTab';
 import {
   Coins,
   Plus,
@@ -33,7 +38,11 @@ import {
   Bus,
   ArrowRight,
   Users,
+  GraduationCap,
+  Sparkles,
 } from 'lucide-react';
+import type { FeeStructure } from '../types';
+import type { FeeStructureFormValues } from '../schema';
 
 export const FeeStructuresPage: React.FC = () => {
   const { activeTenantId } = useAuth();
@@ -50,23 +59,36 @@ export const FeeStructuresPage: React.FC = () => {
   const { data: effectiveTenant } = useTenant(effectiveTenantId);
   const { currentYear } = useCurrentAcademicYear(effectiveTenantId);
 
-  // Search Filter State
+  // Tab State: 'school' | 'class' | 'student'
+  const [activeTab, setActiveTab] = useState<'school' | 'class' | 'student'>('class');
+
+  // Search Filter State for Classes
   const [searchQuery, setSearchQuery] = useState('');
 
   // Dialog State
   const [isFeeStructureOpen, setIsFeeStructureOpen] = useState(false);
+  const [editingFeeStructure, setEditingFeeStructure] = useState<FeeStructure | null>(null);
   const [selectedClassIdForAdd, setSelectedClassIdForAdd] = useState<string>('');
 
-  // Single Aggregated Class Overview Query (Replaces N+1 waterfall)
+  // Single Aggregated Class Overview Query
   const {
     data: classOverview = [],
-    isLoading,
+    isLoading: isLoadingOverview,
     isError,
     refetch,
   } = useFinanceClassOverview(effectiveTenantId);
 
+  // Query School-Level Fee Structures
+  const {
+    data: schoolFees = [],
+    isLoading: isLoadingSchoolFees,
+    refetch: refetchSchoolFees,
+  } = useFeeStructures(effectiveTenantId, { fee_level: 'SCHOOL' });
+
   // Mutations
   const createStructureMutation = useCreateFeeStructure(effectiveTenantId);
+  const updateStructureMutation = useUpdateFeeStructure(effectiveTenantId);
+  const deleteStructureMutation = useDeleteFeeStructure(effectiveTenantId);
 
   // Filtered Classes based on search query
   const filteredClasses = useMemo(() => {
@@ -80,9 +102,9 @@ export const FeeStructuresPage: React.FC = () => {
     });
   }, [classOverview, searchQuery]);
 
-  // KPI Computations from aggregated single-query overview
+  // KPI Computations
   const totalClasses = classOverview.length;
-  const totalFeeHeads = useMemo(
+  const totalClassFeeHeads = useMemo(
     () => classOverview.reduce((sum, c) => sum + (c.fee_heads_count || 0), 0),
     [classOverview]
   );
@@ -95,8 +117,44 @@ export const FeeStructuresPage: React.FC = () => {
     [classOverview]
   );
 
+  const handleSaveFeeStructure = async (values: FeeStructureFormValues) => {
+    if (editingFeeStructure) {
+      await updateStructureMutation.mutateAsync({
+        structureId: editingFeeStructure.id,
+        data: {
+          fee_level: values.fee_level,
+          class_id: values.class_id || null,
+          name: values.name,
+          fee_category: values.fee_category,
+          frequency: values.frequency,
+          amount: values.amount,
+          description: values.description,
+        },
+      });
+    } else {
+      await createStructureMutation.mutateAsync({
+        fee_level: values.fee_level,
+        class_id: values.class_id || null,
+        name: values.name,
+        fee_category: values.fee_category,
+        frequency: values.frequency,
+        amount: values.amount,
+        description: values.description,
+      });
+    }
+    refetch();
+    refetchSchoolFees();
+    setEditingFeeStructure(null);
+  };
+
+  const handleDeleteFeeStructure = async (structureId: string) => {
+    await deleteStructureMutation.mutateAsync(structureId);
+    refetch();
+    refetchSchoolFees();
+  };
+
   if (!effectiveTenantId && !isSuperAdmin) {
-    return <TenantRequiredState featureName="class fee structures" />;
+    return <TenantRequiredState featureName="fee structures" />;
   }
 
   return (
@@ -156,10 +214,10 @@ export const FeeStructuresPage: React.FC = () => {
             <div>
               <h1 className="text-xl sm:text-2xl font-bold tracking-tight text-foreground flex items-center gap-2">
                 <Coins className="w-6 h-6 text-primary" />
-                Class Fee Structures
+                Fee Structures &amp; Schedules
               </h1>
               <p className="text-xs sm:text-sm text-muted-foreground mt-0.5">
-                Configure class tuition, transport, fee heads, and student-level concessions.
+                Configure fee heads at 3 levels: School-Wide, Class-Specific, and Individual Student Facilities.
               </p>
             </div>
 
@@ -172,6 +230,7 @@ export const FeeStructuresPage: React.FC = () => {
               <Button
                 size="sm"
                 onClick={() => {
+                  setEditingFeeStructure(null);
                   setSelectedClassIdForAdd('');
                   setIsFeeStructureOpen(true);
                 }}
@@ -186,231 +245,304 @@ export const FeeStructuresPage: React.FC = () => {
           {/* Top KPI Stats Cards Grid (4 columns) */}
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
             <StatCard
-              title="Total Classes"
-              value={totalClasses}
+              title="School-Wide Fee Heads"
+              value={schoolFees.length}
               icon={School}
-              description="Configured academic levels"
-              variant="default"
-              loading={isLoading}
+              description="Applies to every student"
+              variant="blue"
+              loading={isLoadingSchoolFees}
             />
             <StatCard
-              title="Total Fee Heads Configured"
-              value={totalFeeHeads}
-              icon={Coins}
-              description="Active billing heads"
-              variant="blue"
-              loading={isLoading}
+              title="Class Fee Heads"
+              value={totalClassFeeHeads}
+              icon={GraduationCap}
+              description="Across all class grades"
+              variant="default"
+              loading={isLoadingOverview}
             />
             <StatCard
               title="Total Enrolled Students"
               value={totalStudents}
               icon={Users}
-              description="Students across all classes"
+              description="Across all classes"
               variant="amber"
-              loading={isLoading}
+              loading={isLoadingOverview}
             />
             <StatCard
-              title="Students using Transportation"
+              title="Transport Facility Users"
               value={totalTransportUsers}
               icon={Bus}
-              description="Active bus & route users"
+              description="Active route & bus users"
               variant="emerald"
-              loading={isLoading}
+              loading={isLoadingOverview}
             />
           </div>
 
-          {/* Search Filter Bar */}
-          <FilterToolbar
-            searchQuery={searchQuery}
-            onSearchChange={setSearchQuery}
-            searchPlaceholder="Search classes by name or section..."
-            showingCount={filteredClasses.length}
-            totalCount={totalClasses}
-            unitLabel={totalClasses === 1 ? 'class' : 'classes'}
-          />
+          {/* 3-Level Tab Switcher */}
+          <div className="flex items-center gap-1.5 p-1 bg-muted/50 rounded-xl border border-border/60 max-w-full overflow-x-auto">
+            <button
+              type="button"
+              onClick={() => setActiveTab('school')}
+              className={`flex items-center gap-2 px-4 py-2 rounded-lg text-xs font-semibold transition-all cursor-pointer whitespace-nowrap ${
+                activeTab === 'school'
+                  ? 'bg-card text-foreground shadow-xs font-bold'
+                  : 'text-muted-foreground hover:text-foreground hover:bg-card/50'
+              }`}
+            >
+              <School className="w-3.5 h-3.5 text-blue-500" />
+              <span>1. School Level Fees</span>
+              <Badge variant="secondary" className="text-[10px] px-1.5 py-0 font-bold ml-0.5">
+                {schoolFees.length}
+              </Badge>
+            </button>
 
-          {/* Error Alert */}
-          {isError && (
-            <div className="p-4 rounded-xl border border-destructive/30 bg-destructive/10 text-destructive text-xs flex items-center justify-between">
-              <span>Failed to load class fee structures from server.</span>
-              <Button variant="outline" size="sm" onClick={() => refetch()} className="h-7 text-xs">
-                Retry
-              </Button>
+            <button
+              type="button"
+              onClick={() => setActiveTab('class')}
+              className={`flex items-center gap-2 px-4 py-2 rounded-lg text-xs font-semibold transition-all cursor-pointer whitespace-nowrap ${
+                activeTab === 'class'
+                  ? 'bg-card text-foreground shadow-xs font-bold'
+                  : 'text-muted-foreground hover:text-foreground hover:bg-card/50'
+              }`}
+            >
+              <GraduationCap className="w-3.5 h-3.5 text-primary" />
+              <span>2. Class Level Fees</span>
+              <Badge variant="secondary" className="text-[10px] px-1.5 py-0 font-bold ml-0.5">
+                {totalClasses} Classes
+              </Badge>
+            </button>
+
+            <button
+              type="button"
+              onClick={() => setActiveTab('student')}
+              className={`flex items-center gap-2 px-4 py-2 rounded-lg text-xs font-semibold transition-all cursor-pointer whitespace-nowrap ${
+                activeTab === 'student'
+                  ? 'bg-card text-foreground shadow-xs font-bold'
+                  : 'text-muted-foreground hover:text-foreground hover:bg-card/50'
+              }`}
+            >
+              <Sparkles className="w-3.5 h-3.5 text-purple-500" />
+              <span>3. Student Level Fees</span>
+              <Badge variant="secondary" className="text-[10px] px-1.5 py-0 font-bold ml-0.5">
+                {totalStudents} Students
+              </Badge>
+            </button>
+          </div>
+
+          {/* Tab 1 Content: School Level Fees */}
+          {activeTab === 'school' && (
+            <SchoolFeeHeadsTable
+              feeStructures={schoolFees}
+              onAddFeeHead={() => {
+                setEditingFeeStructure(null);
+                setSelectedClassIdForAdd('');
+                setIsFeeStructureOpen(true);
+              }}
+              onEditFeeHead={(fee) => {
+                setEditingFeeStructure(fee);
+                setIsFeeStructureOpen(true);
+              }}
+              onDeleteFeeHead={handleDeleteFeeStructure}
+              isDeleting={deleteStructureMutation.isPending}
+            />
+          )}
+
+          {/* Tab 2 Content: Class Level Fees */}
+          {activeTab === 'class' && (
+            <div className="space-y-4">
+              {/* Search Filter Bar */}
+              <FilterToolbar
+                searchQuery={searchQuery}
+                onSearchChange={setSearchQuery}
+                searchPlaceholder="Search classes by name or section..."
+                showingCount={filteredClasses.length}
+                totalCount={totalClasses}
+                unitLabel={totalClasses === 1 ? 'class' : 'classes'}
+              />
+
+              {/* Error Alert */}
+              {isError && (
+                <div className="p-4 rounded-xl border border-destructive/30 bg-destructive/10 text-destructive text-xs flex items-center justify-between">
+                  <span>Failed to load class fee structures from server.</span>
+                  <Button variant="outline" size="sm" onClick={() => refetch()} className="h-7 text-xs">
+                    Retry
+                  </Button>
+                </div>
+              )}
+
+              {/* Classes Table */}
+              {isLoadingOverview ? (
+                <Card className="border border-border/60 shadow-xs overflow-hidden rounded-xl bg-card p-6 space-y-3">
+                  {[...Array(5)].map((_, i) => (
+                    <div key={i} className="h-10 rounded-lg bg-muted/30 animate-pulse" />
+                  ))}
+                </Card>
+              ) : filteredClasses.length === 0 ? (
+                <EmptyState
+                  icon={Coins}
+                  title={searchQuery ? 'No Classes Found' : 'No Classes Configured'}
+                  description={
+                    searchQuery
+                      ? `No classes match your search "${searchQuery}". Try a different keyword.`
+                      : 'No academic classes have been set up yet. Configure your classes in the Academic module first.'
+                  }
+                  action={
+                    searchQuery ? (
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        onClick={() => setSearchQuery('')}
+                        className="text-xs"
+                      >
+                        Clear Filter
+                      </Button>
+                    ) : (
+                      <Button
+                        onClick={() => navigate({ to: '/academic/classes' })}
+                        className="text-xs gap-1.5"
+                      >
+                        Go to Classes &amp; Sections
+                      </Button>
+                    )
+                  }
+                />
+              ) : (
+                <Card className="border border-border/60 shadow-xs overflow-hidden rounded-xl bg-card">
+                  <div className="overflow-x-auto">
+                    <Table>
+                      <TableHeader className="bg-muted/40 text-[11px] uppercase tracking-wider text-muted-foreground font-semibold">
+                        <TableRow>
+                          <TableHead className="py-3 px-4">Class / Level</TableHead>
+                          <TableHead className="py-3 px-4">Sections</TableHead>
+                          <TableHead className="py-3 px-4 text-center">Students</TableHead>
+                          <TableHead className="py-3 px-4 text-center">Fee Heads</TableHead>
+                          <TableHead className="py-3 px-4 text-right">Monthly Base Tuition</TableHead>
+                          <TableHead className="py-3 px-4 text-center">Transportation</TableHead>
+                          <TableHead className="py-3 px-4 text-right">Actions</TableHead>
+                        </TableRow>
+                      </TableHeader>
+                      <TableBody className="divide-y divide-border/40 text-xs">
+                        {filteredClasses.map((cls) => {
+                          const monthlyTuition = Number(cls.monthly_tuition_total) || 0;
+                          const sections = cls.sections || [];
+
+                          return (
+                            <TableRow
+                              key={cls.class_id}
+                              onClick={() =>
+                                navigate({
+                                  to: '/finance/structures/$classId',
+                                  params: { classId: cls.class_id },
+                                })
+                              }
+                              className="hover:bg-muted/40 cursor-pointer transition-colors group"
+                            >
+                              <TableCell className="py-3 px-4">
+                                <div className="flex items-center gap-2">
+                                  <span className="font-bold text-sm text-foreground group-hover:text-primary transition-colors">
+                                    {cls.class_name}
+                                  </span>
+                                  {cls.sequence_order !== undefined && (
+                                    <Badge variant="secondary" className="text-[10px] py-0 px-1.5 font-normal">
+                                      Grade {cls.sequence_order}
+                                    </Badge>
+                                  )}
+                                </div>
+                              </TableCell>
+
+                              <TableCell className="py-3 px-4 text-muted-foreground">
+                                {sections.length > 0 ? (
+                                  <div className="flex flex-wrap gap-1">
+                                    {sections.map((sec) => (
+                                      <span
+                                        key={sec.section_id}
+                                        className="inline-block px-1.5 py-0.5 rounded bg-muted text-[11px] font-medium text-foreground"
+                                      >
+                                        {sec.section_name} ({sec.students_count})
+                                      </span>
+                                    ))}
+                                  </div>
+                                ) : (
+                                  <span className="text-muted-foreground/60 italic">—</span>
+                                )}
+                              </TableCell>
+
+                              <TableCell className="py-3 px-4 text-center font-medium text-foreground">
+                                {cls.students_count}
+                              </TableCell>
+
+                              <TableCell className="py-3 px-4 text-center">
+                                <Badge
+                                  variant={cls.fee_heads_count > 0 ? 'outline' : 'secondary'}
+                                  className="text-[10px] font-medium"
+                                >
+                                  {cls.fee_heads_count} {cls.fee_heads_count === 1 ? 'Head' : 'Heads'}
+                                </Badge>
+                              </TableCell>
+
+                              <TableCell className="py-3 px-4 text-right font-mono font-bold text-foreground">
+                                NPR {monthlyTuition.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+                              </TableCell>
+
+                              <TableCell className="py-3 px-4 text-center">
+                                {cls.transport_users_count > 0 ? (
+                                  <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-medium bg-emerald-500/10 text-emerald-700 dark:text-emerald-300 border border-emerald-500/20">
+                                    <Bus className="w-3 h-3" />
+                                    {cls.transport_users_count} {cls.transport_users_count === 1 ? 'user' : 'users'}
+                                  </span>
+                                ) : (
+                                  <span className="text-muted-foreground/60">—</span>
+                                )}
+                              </TableCell>
+
+                              <TableCell className="py-3 px-4 text-right" onClick={(e) => e.stopPropagation()}>
+                                <div className="flex items-center justify-end gap-1.5">
+                                  <Button
+                                    size="sm"
+                                    variant="ghost"
+                                    onClick={(e) => {
+                                      e.stopPropagation();
+                                      setSelectedClassIdForAdd(cls.class_id);
+                                      setEditingFeeStructure(null);
+                                      setIsFeeStructureOpen(true);
+                                    }}
+                                    className="h-7 text-xs px-2 gap-1 text-muted-foreground hover:text-foreground cursor-pointer"
+                                  >
+                                    <Plus className="w-3.5 h-3.5" />
+                                    <span>Fee Head</span>
+                                  </Button>
+
+                                  <Button
+                                    size="sm"
+                                    variant="outline"
+                                    onClick={(e) => {
+                                      e.stopPropagation();
+                                      navigate({
+                                        to: '/finance/structures/$classId',
+                                        params: { classId: cls.class_id },
+                                      });
+                                    }}
+                                    className="h-7 text-xs px-2.5 gap-1 group-hover:border-primary/50 cursor-pointer"
+                                  >
+                                    <span>Manage</span>
+                                    <ArrowRight className="w-3 h-3 transition-transform group-hover:translate-x-0.5" />
+                                  </Button>
+                                </div>
+                              </TableCell>
+                            </TableRow>
+                          );
+                        })}
+                      </TableBody>
+                    </Table>
+                  </div>
+                </Card>
+              )}
             </div>
           )}
 
-          {/* Classes Table (Minimalist Architecture) */}
-          {isLoading ? (
-            <Card className="border border-border/60 shadow-xs overflow-hidden rounded-xl bg-card p-6 space-y-3">
-              {[...Array(5)].map((_, i) => (
-                <div key={i} className="h-10 rounded-lg bg-muted/30 animate-pulse" />
-              ))}
-            </Card>
-          ) : filteredClasses.length === 0 ? (
-            <EmptyState
-              icon={Coins}
-              title={searchQuery ? 'No Classes Found' : 'No Classes Configured'}
-              description={
-                searchQuery
-                  ? `No classes match your search "${searchQuery}". Try a different keyword.`
-                  : 'No academic classes have been set up yet. Configure your classes in the Academic module first.'
-              }
-              action={
-                searchQuery ? (
-                  <Button
-                    variant="outline"
-                    size="sm"
-                    onClick={() => setSearchQuery('')}
-                    className="text-xs"
-                  >
-                    Clear Filter
-                  </Button>
-                ) : (
-                  <Button
-                    onClick={() => navigate({ to: '/academic/classes' })}
-                    className="text-xs gap-1.5"
-                  >
-                    Go to Classes & Sections
-                  </Button>
-                )
-              }
-            />
-          ) : (
-            <Card className="border border-border/60 shadow-xs overflow-hidden rounded-xl bg-card">
-              <div className="overflow-x-auto">
-                <Table>
-                  <TableHeader className="bg-muted/40 text-[11px] uppercase tracking-wider text-muted-foreground font-semibold">
-                    <TableRow>
-                      <TableHead className="py-3 px-4">Class / Level</TableHead>
-                      <TableHead className="py-3 px-4">Sections</TableHead>
-                      <TableHead className="py-3 px-4 text-center">Students</TableHead>
-                      <TableHead className="py-3 px-4 text-center">Fee Heads</TableHead>
-                      <TableHead className="py-3 px-4 text-right">Monthly Base Tuition</TableHead>
-                      <TableHead className="py-3 px-4 text-center">Transportation</TableHead>
-                      <TableHead className="py-3 px-4 text-right">Actions</TableHead>
-                    </TableRow>
-                  </TableHeader>
-                  <TableBody className="divide-y divide-border/40 text-xs">
-                    {filteredClasses.map((cls) => {
-                      const monthlyTuition = Number(cls.monthly_tuition_total) || 0;
-                      const sections = cls.sections || [];
-
-                      return (
-                        <TableRow
-                          key={cls.class_id}
-                          onClick={() =>
-                            navigate({
-                              to: '/finance/structures/$classId',
-                              params: { classId: cls.class_id },
-                            })
-                          }
-                          className="hover:bg-muted/40 cursor-pointer transition-colors group"
-                        >
-                          {/* Class / Level */}
-                          <TableCell className="py-3 px-4">
-                            <div className="flex items-center gap-2">
-                              <span className="font-bold text-sm text-foreground group-hover:text-primary transition-colors">
-                                {cls.class_name}
-                              </span>
-                              {cls.sequence_order !== undefined && (
-                                <Badge variant="secondary" className="text-[10px] py-0 px-1.5 font-normal">
-                                  Grade {cls.sequence_order}
-                                </Badge>
-                              )}
-                            </div>
-                          </TableCell>
-
-                          {/* Sections */}
-                          <TableCell className="py-3 px-4 text-muted-foreground">
-                            {sections.length > 0 ? (
-                              <div className="flex flex-wrap gap-1">
-                                {sections.map((sec) => (
-                                  <span
-                                    key={sec.section_id}
-                                    className="inline-block px-1.5 py-0.5 rounded bg-muted text-[11px] font-medium text-foreground"
-                                  >
-                                    {sec.section_name} ({sec.students_count})
-                                  </span>
-                                ))}
-                              </div>
-                            ) : (
-                              <span className="text-muted-foreground/60 italic">—</span>
-                            )}
-                          </TableCell>
-
-                          {/* Students Count */}
-                          <TableCell className="py-3 px-4 text-center font-medium text-foreground">
-                            {cls.students_count}
-                          </TableCell>
-
-                          {/* Fee Heads Count */}
-                          <TableCell className="py-3 px-4 text-center">
-                            <Badge
-                              variant={cls.fee_heads_count > 0 ? 'outline' : 'secondary'}
-                              className="text-[10px] font-medium"
-                            >
-                              {cls.fee_heads_count} {cls.fee_heads_count === 1 ? 'Head' : 'Heads'}
-                            </Badge>
-                          </TableCell>
-
-                          {/* Monthly Base Tuition */}
-                          <TableCell className="py-3 px-4 text-right font-mono font-bold text-foreground">
-                            NPR {monthlyTuition.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
-                          </TableCell>
-
-                          {/* Transportation */}
-                          <TableCell className="py-3 px-4 text-center">
-                            {cls.transport_users_count > 0 ? (
-                              <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-medium bg-emerald-500/10 text-emerald-700 dark:text-emerald-300 border border-emerald-500/20">
-                                <Bus className="w-3 h-3" />
-                                {cls.transport_users_count} {cls.transport_users_count === 1 ? 'user' : 'users'}
-                              </span>
-                            ) : (
-                              <span className="text-muted-foreground/60">—</span>
-                            )}
-                          </TableCell>
-
-                          {/* Actions */}
-                          <TableCell className="py-3 px-4 text-right" onClick={(e) => e.stopPropagation()}>
-                            <div className="flex items-center justify-end gap-1.5">
-                              <Button
-                                size="sm"
-                                variant="ghost"
-                                onClick={(e) => {
-                                  e.stopPropagation();
-                                  setSelectedClassIdForAdd(cls.class_id);
-                                  setIsFeeStructureOpen(true);
-                                }}
-                                className="h-7 text-xs px-2 gap-1 text-muted-foreground hover:text-foreground cursor-pointer"
-                              >
-                                <Plus className="w-3.5 h-3.5" />
-                                <span>Fee Head</span>
-                              </Button>
-
-                              <Button
-                                size="sm"
-                                variant="outline"
-                                onClick={(e) => {
-                                  e.stopPropagation();
-                                  navigate({
-                                    to: '/finance/structures/$classId',
-                                    params: { classId: cls.class_id },
-                                  });
-                                }}
-                                className="h-7 text-xs px-2.5 gap-1 group-hover:border-primary/50 cursor-pointer"
-                              >
-                                <span>Manage</span>
-                                <ArrowRight className="w-3 h-3 transition-transform group-hover:translate-x-0.5" />
-                              </Button>
-                            </div>
-                          </TableCell>
-                        </TableRow>
-                      );
-                    })}
-                  </TableBody>
-                </Table>
-              </div>
-            </Card>
+          {/* Tab 3 Content: Student Level Fees */}
+          {activeTab === 'student' && (
+            <StudentLevelFeesTab tenantId={effectiveTenantId} />
           )}
 
           {/* Fee Structure Dialog */}
@@ -418,14 +550,14 @@ export const FeeStructuresPage: React.FC = () => {
             isOpen={isFeeStructureOpen}
             onClose={() => {
               setIsFeeStructureOpen(false);
+              setEditingFeeStructure(null);
               setSelectedClassIdForAdd('');
             }}
+            defaultFeeLevel={activeTab === 'school' ? 'SCHOOL' : activeTab === 'student' ? 'STUDENT' : 'CLASS'}
             defaultClassId={selectedClassIdForAdd || undefined}
-            onSubmit={async (data) => {
-              await createStructureMutation.mutateAsync(data);
-              refetch();
-            }}
-            isLoading={createStructureMutation.isPending}
+            initialData={editingFeeStructure}
+            onSubmit={handleSaveFeeStructure}
+            isLoading={createStructureMutation.isPending || updateStructureMutation.isPending}
             tenantId={effectiveTenantId}
           />
         </>

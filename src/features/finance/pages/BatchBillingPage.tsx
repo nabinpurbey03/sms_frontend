@@ -46,6 +46,9 @@ import {
   TrendingDown,
 } from 'lucide-react';
 import { toast } from 'sonner';
+import { useCalendarPreferenceStore } from '@/stores/calendarPreferenceStore';
+import { formatDualDate, formatDualDateRange } from '@/features/school-settings/utils/nepaliDate';
+import { NepaliDatePicker } from '@/components/ui/nepali-date-picker';
 
 const formatCurrency = (amount: number | string): string => {
   return `NPR ${Number(amount || 0).toLocaleString('en-IN', {
@@ -55,16 +58,17 @@ const formatCurrency = (amount: number | string): string => {
 };
 
 const QUARTERS = [
-  { id: 'Q1', name: 'Quarter 1', months: 'Baishakh, Jestha, Ashadh', period: 'Months 1-3' },
-  { id: 'Q2', name: 'Quarter 2', months: 'Shrawan, Bhadra, Ashwin', period: 'Months 4-6' },
-  { id: 'Q3', name: 'Quarter 3', months: 'Kartik, Mangsir, Poush', period: 'Months 7-9' },
-  { id: 'Q4', name: 'Quarter 4', months: 'Magh, Falgun, Chaitra', period: 'Months 10-12' },
+  { id: 'Q1', name: 'Quarter 1', monthsBs: 'Baishakh, Jestha, Ashadh', monthsAd: 'Mid Apr – Mid Jul', period: 'Months 1-3' },
+  { id: 'Q2', name: 'Quarter 2', monthsBs: 'Shrawan, Bhadra, Ashwin', monthsAd: 'Mid Jul – Mid Oct', period: 'Months 4-6' },
+  { id: 'Q3', name: 'Quarter 3', monthsBs: 'Kartik, Mangsir, Poush', monthsAd: 'Mid Oct – Mid Jan', period: 'Months 7-9' },
+  { id: 'Q4', name: 'Quarter 4', monthsBs: 'Magh, Falgun, Chaitra', monthsAd: 'Mid Jan – Mid Apr', period: 'Months 10-12' },
 ] as const;
 
 export const BatchBillingPage: React.FC = () => {
   const { activeTenantId } = useAuth();
   const navigate = useNavigate();
   const { currentYear, isLoading: isLoadingYear } = useCurrentAcademicYear(activeTenantId);
+  const { calendarSystem } = useCalendarPreferenceStore();
 
   // Class & Section Selection State
   const [selectedClassId, setSelectedClassId] = useState<string>('');
@@ -201,7 +205,8 @@ export const BatchBillingPage: React.FC = () => {
     setValue('quarter', quarterId);
     const qObj = QUARTERS.find((q) => q.id === quarterId);
     if (qObj) {
-      setValue('billing_month', `${qObj.name} (${qObj.months}) Fee Bill`);
+      const monthLabel = calendarSystem === 'BS' ? qObj.monthsBs : `${qObj.monthsAd} / ${qObj.monthsBs}`;
+      setValue('billing_month', `${qObj.name} (${monthLabel}) Fee Bill`);
     }
   };
 
@@ -414,7 +419,7 @@ export const BatchBillingPage: React.FC = () => {
                           {q.name}
                         </div>
                         <div className="text-[10px] text-muted-foreground truncate mt-0.5">
-                          {q.months}
+                          {calendarSystem === 'BS' ? q.monthsBs : `${q.monthsAd} (${q.monthsBs})`}
                         </div>
                       </button>
                     );
@@ -450,9 +455,8 @@ export const BatchBillingPage: React.FC = () => {
                           </span>
                         </div>
                         <p className="text-[11px] opacity-90 leading-relaxed">
-                          Quarter cycle spans <span className="font-mono font-bold">{windowStatus.start_date}</span> to{' '}
-                          <span className="font-mono font-bold">{windowStatus.end_date}</span>. Generation is permitted
-                          within 30 days before quarter end (opened on <span className="font-mono font-bold">{windowStatus.window_open_date}</span>).
+                          Quarter cycle spans <span className="font-semibold text-foreground">{formatDualDateRange(windowStatus.start_date, windowStatus.end_date, calendarSystem)}</span>. Generation is permitted
+                          within 30 days before quarter end (opened on <span className="font-semibold text-foreground">{formatDualDate(windowStatus.window_open_date, calendarSystem)}</span>).
                         </p>
                       </div>
                     </div>
@@ -553,14 +557,15 @@ export const BatchBillingPage: React.FC = () => {
                   </div>
 
                   {/* Due Date */}
-                  <div className="space-y-1.5">
-                    <Label className="text-xs font-semibold">
-                      Payment Due Date <span className="text-destructive">*</span>
-                    </Label>
-                    <Input type="date" {...register('due_date')} className="text-xs h-9" />
-                    {errors.due_date && (
-                      <p className="text-[11px] text-destructive">{errors.due_date.message}</p>
-                    )}
+                  <div>
+                    <NepaliDatePicker
+                      id="due_date"
+                      label="Payment Due Date *"
+                      value={watch('due_date')}
+                      onChange={(val) => setValue('due_date', val, { shouldValidate: true })}
+                      size="sm"
+                      error={errors.due_date?.message}
+                    />
                   </div>
 
                   {/* Invoice Memo / Notes */}

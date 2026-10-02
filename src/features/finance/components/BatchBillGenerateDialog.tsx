@@ -40,6 +40,9 @@ import {
 } from '../schema';
 import { useClasses, useClassSections } from '@/features/academic/hooks';
 import { useFeeStructures, useQuarterWindowStatus } from '../hooks';
+import { useCalendarPreferenceStore } from '@/stores/calendarPreferenceStore';
+import { formatDualDate } from '@/features/school-settings/utils/nepaliDate';
+import { NepaliDatePicker } from '@/components/ui/nepali-date-picker';
 
 interface BatchBillGenerateDialogProps {
   isOpen: boolean;
@@ -50,10 +53,10 @@ interface BatchBillGenerateDialogProps {
 }
 
 const QUARTERS = [
-  { id: 'Q1', label: 'Q1', months: 'Baishakh - Ashadh', description: 'First Quarter' },
-  { id: 'Q2', label: 'Q2', months: 'Shrawan - Ashwin', description: 'Second Quarter' },
-  { id: 'Q3', label: 'Q3', months: 'Kartik - Poush', description: 'Third Quarter' },
-  { id: 'Q4', label: 'Q4', months: 'Magh - Chaitra', description: 'Fourth Quarter' },
+  { id: 'Q1', label: 'Q1', monthsBs: 'Baishakh - Ashadh', monthsAd: 'Mid Apr – Mid Jul', description: 'First Quarter' },
+  { id: 'Q2', label: 'Q2', monthsBs: 'Shrawan - Ashwin', monthsAd: 'Mid Jul – Mid Oct', description: 'Second Quarter' },
+  { id: 'Q3', label: 'Q3', monthsBs: 'Kartik - Poush', monthsAd: 'Mid Oct – Mid Jan', description: 'Third Quarter' },
+  { id: 'Q4', label: 'Q4', monthsBs: 'Magh - Chaitra', monthsAd: 'Mid Jan – Mid Apr', description: 'Fourth Quarter' },
 ] as const;
 
 export const BatchBillGenerateDialog: React.FC<BatchBillGenerateDialogProps> = ({
@@ -63,6 +66,7 @@ export const BatchBillGenerateDialog: React.FC<BatchBillGenerateDialogProps> = (
   isLoading,
   tenantId,
 }) => {
+  const { calendarSystem } = useCalendarPreferenceStore();
   const [selectedClassId, setSelectedClassId] = useState<string>('');
   const { data: classesData } = useClasses(tenantId);
   const classes = classesData || [];
@@ -254,7 +258,7 @@ export const BatchBillGenerateDialog: React.FC<BatchBillGenerateDialogProps> = (
                         )}
                       </div>
                       <span className="text-[10px] text-muted-foreground mt-0.5 font-medium leading-tight">
-                        {q.months}
+                        {calendarSystem === 'BS' ? q.monthsBs : `${q.monthsAd} (${q.monthsBs})`}
                       </span>
                     </button>
                   );
@@ -277,7 +281,7 @@ export const BatchBillGenerateDialog: React.FC<BatchBillGenerateDialogProps> = (
                       30-Day Billing Window Active
                     </div>
                     <p className="text-[11px] text-emerald-700 dark:text-emerald-400/90 mt-0.5">
-                      Regular invoicing is open for {windowStatus.quarter_name} (opened {windowStatus.window_open_date}).
+                      Regular invoicing is open for {windowStatus.quarter_name} (opened {formatDualDate(windowStatus.window_open_date, calendarSystem)}).
                     </p>
                   </div>
                 </div>
@@ -292,10 +296,10 @@ export const BatchBillGenerateDialog: React.FC<BatchBillGenerateDialogProps> = (
                     <AlertTriangle className="w-4 h-4 text-amber-600 dark:text-amber-400 shrink-0 mt-0.5" />
                     <div>
                       <span className="font-semibold text-amber-800 dark:text-amber-300">
-                        Window Locked — Opens in {windowStatus?.days_until_window_open ?? 'X'} days (on {windowStatus?.window_open_date})
+                        Window Locked — Opens in {windowStatus?.days_until_window_open ?? 'X'} days (on {windowStatus ? formatDualDate(windowStatus.window_open_date, calendarSystem) : ''})
                       </span>
                       <p className="text-[11px] text-amber-700 dark:text-amber-300/90 mt-0.5">
-                        Regular batch invoicing opens 30 days before quarter end on {windowStatus?.end_date}. Early generation requires admin authorization.
+                        Regular batch invoicing opens 30 days before quarter end on {windowStatus ? formatDualDate(windowStatus.end_date, calendarSystem) : ''}. Early generation requires admin authorization.
                       </p>
                     </div>
                   </div>
@@ -386,19 +390,15 @@ export const BatchBillGenerateDialog: React.FC<BatchBillGenerateDialogProps> = (
 
             {/* 4. Due Date & Optional Custom Billing Label */}
             <div className="grid grid-cols-2 gap-3">
-              <div className="space-y-1.5">
-                <Label htmlFor="due_date" className="text-xs font-semibold">
-                  Due Date <span className="text-destructive">*</span>
-                </Label>
-                <Input
+              <div>
+                <NepaliDatePicker
                   id="due_date"
-                  type="date"
-                  className="text-xs h-9"
-                  {...register('due_date')}
+                  label="Due Date *"
+                  value={watch('due_date')}
+                  onChange={(val) => setValue('due_date', val, { shouldValidate: true })}
+                  size="sm"
+                  error={errors.due_date?.message}
                 />
-                {errors.due_date && (
-                  <p className="text-destructive text-[11px] font-medium">{errors.due_date.message}</p>
-                )}
               </div>
 
               <div className="space-y-1.5">

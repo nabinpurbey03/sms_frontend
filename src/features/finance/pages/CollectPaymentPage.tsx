@@ -20,9 +20,12 @@ import {
 } from 'lucide-react';
 import type { FeeBill, FeePayment, PaymentMethod } from '../types';
 import { PrintableReceiptModal } from '../components/PrintableReceiptModal';
+import { useCalendarPreferenceStore } from '@/stores/calendarPreferenceStore';
+import { formatDualDate } from '@/features/school-settings/utils/nepaliDate';
 
 export const CollectPaymentPage: React.FC = () => {
   const { activeTenantId } = useAuth();
+  const { calendarSystem } = useCalendarPreferenceStore();
   const { currentYear } = useCurrentAcademicYear(activeTenantId);
   const { data: classesData } = useClasses(activeTenantId);
   const classes = classesData || [];
@@ -187,7 +190,7 @@ export const CollectPaymentPage: React.FC = () => {
                           <span className="font-mono">#{bill.bill_number}</span>
                         </div>
                         <div className="mt-1 flex items-center justify-between text-[10px] text-muted-foreground border-t pt-1">
-                          <span>Due Date: {bill.due_date}</span>
+                          <span>Due Date: {formatDualDate(bill.due_date, calendarSystem)}</span>
                           {Number(bill.paid_amount) > 0 && (
                             <span className="text-amber-600 font-medium">
                               Partial: NPR {Number(bill.paid_amount).toFixed(2)} already paid

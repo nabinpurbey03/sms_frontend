@@ -10,6 +10,8 @@ import {
 import { Button } from '@/components/ui/button';
 import { Printer, X, Loader2, CheckCircle2 } from 'lucide-react';
 import { useReceiptDocument } from '../hooks';
+import { useCalendarPreferenceStore } from '@/stores/calendarPreferenceStore';
+import { formatDualDate } from '@/features/school-settings/utils/nepaliDate';
 
 interface PrintableReceiptModalProps {
   isOpen: boolean;
@@ -24,6 +26,7 @@ export const PrintableReceiptModal: React.FC<PrintableReceiptModalProps> = ({
   tenantId,
   paymentId,
 }) => {
+  const { calendarSystem } = useCalendarPreferenceStore();
   const { data: receipt, isLoading } = useReceiptDocument(tenantId, paymentId);
 
   const handlePrint = () => {
@@ -125,7 +128,7 @@ export const PrintableReceiptModal: React.FC<PrintableReceiptModalProps> = ({
                 <div className="space-y-1 text-right">
                   <div>
                     <span className="text-zinc-500">Payment Date: </span>
-                    <span className="font-medium">{receipt.payment_date}</span>
+                    <span className="font-medium">{formatDualDate(receipt.payment_date, calendarSystem)}</span>
                   </div>
                   <div>
                     <span className="text-zinc-500">Payment Mode: </span>

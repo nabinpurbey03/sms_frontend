@@ -15,9 +15,12 @@ import {
   CreditCard,
 } from 'lucide-react';
 import { PrintableReceiptModal } from '../components/PrintableReceiptModal';
+import { useCalendarPreferenceStore } from '@/stores/calendarPreferenceStore';
+import { formatDualDate } from '@/features/school-settings/utils/nepaliDate';
 
 export const TransactionsPage: React.FC = () => {
   const { activeTenantId } = useAuth();
+  const { calendarSystem } = useCalendarPreferenceStore();
   const { currentYear } = useCurrentAcademicYear(activeTenantId);
 
   // Filter States
@@ -143,7 +146,9 @@ export const TransactionsPage: React.FC = () => {
                     <td className="py-2.5 px-4 font-mono text-muted-foreground">
                       {p.transaction_reference || '—'}
                     </td>
-                    <td className="py-2.5 px-4 text-muted-foreground">{p.payment_date}</td>
+                    <td className="py-2.5 px-4 text-muted-foreground whitespace-nowrap">
+                      {formatDualDate(p.payment_date, calendarSystem)}
+                    </td>
                     <td className="py-2.5 px-4 text-muted-foreground">{p.received_by_name || 'Cashier'}</td>
                     <td className="py-2.5 px-4 text-right font-mono font-bold text-foreground">
                       NPR {Number(p.amount_paid).toFixed(2)}

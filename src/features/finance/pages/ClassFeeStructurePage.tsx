@@ -86,6 +86,10 @@ export const ClassFeeStructurePage: React.FC = () => {
   } = useFeeStructures(tenantId, { class_id: classId });
 
   const {
+    data: schoolFeeStructures = [],
+  } = useFeeStructures(tenantId, { fee_level: 'SCHOOL' });
+
+  const {
     data: studentTransports = [],
     isLoading: isTransportsLoading,
   } = useStudentTransports(tenantId);
@@ -127,6 +131,13 @@ export const ClassFeeStructurePage: React.FC = () => {
   const activeClassFees = useMemo(() => {
     return classFees.filter((f) => f.is_active);
   }, [classFees]);
+
+  // Compute School-level monthly total applicable to all students
+  const schoolMonthlyTotal = useMemo(() => {
+    return schoolFeeStructures
+      .filter((f) => f.is_active && f.frequency === 'MONTHLY')
+      .reduce((sum, f) => sum + (Number(f.amount) || 0), 0);
+  }, [schoolFeeStructures]);
 
   // Compute Base Monthly Tuition for this class
   const baseTuition = useMemo(() => {
@@ -228,11 +239,14 @@ export const ClassFeeStructurePage: React.FC = () => {
           frequency: values.frequency,
           amount: values.amount,
           description: values.description,
+          fee_level: values.fee_level,
+          class_id: values.fee_level === 'SCHOOL' ? null : (values.class_id || classId),
         },
       });
     } else {
       await createFeeMutation.mutateAsync({
-        class_id: classId,
+        class_id: values.fee_level === 'SCHOOL' ? null : (values.class_id || classId),
+        fee_level: values.fee_level,
         name: values.name,
         fee_category: values.fee_category,
         frequency: values.frequency,
@@ -355,9 +369,15 @@ export const ClassFeeStructurePage: React.FC = () => {
           <Layers className="w-3.5 h-3.5" />
           <span>{sections.length} {sections.length === 1 ? 'Section' : 'Sections'}</span>
         </div>
+        {schoolMonthlyTotal > 0 && (
+          <div className="inline-flex items-center gap-2 px-3 py-1.5 rounded-xl text-xs font-semibold bg-purple-500/10 text-purple-700 dark:text-purple-300 border border-purple-500/20 shadow-2xs">
+            <Receipt className="w-3.5 h-3.5" />
+            <span>School-wide Base: NPR {schoolMonthlyTotal.toLocaleString()}</span>
+          </div>
+        )}
         <div className="inline-flex items-center gap-2 px-3 py-1.5 rounded-xl text-xs font-semibold bg-emerald-500/10 text-emerald-700 dark:text-emerald-300 border border-emerald-500/20 shadow-2xs">
           <Coins className="w-3.5 h-3.5" />
-          <span>Base Tuition: NPR {baseTuition.toLocaleString()}</span>
+          <span>Class Tuition: NPR {baseTuition.toLocaleString()}</span>
         </div>
         <div className="inline-flex items-center gap-2 px-3 py-1.5 rounded-xl text-xs font-semibold bg-amber-500/10 text-amber-700 dark:text-amber-300 border border-amber-500/20 shadow-2xs">
           <Bus className="w-3.5 h-3.5" />

@@ -24,6 +24,9 @@ import {
 } from 'lucide-react';
 import { useAuth } from '@/auth/useAuth';
 import { useStudentDuesBreakdown } from '../hooks';
+import { useCalendarPreferenceStore } from '@/stores/calendarPreferenceStore';
+import { formatDualDate } from '@/features/school-settings/utils/nepaliDate';
+import { NepaliDatePicker } from '@/components/ui/nepali-date-picker';
 import {
   paymentCollectSchema,
   type PaymentCollectFormValues,
@@ -53,6 +56,7 @@ export const PaymentCollectDialog: React.FC<PaymentCollectDialogProps> = ({
   onPaymentSuccess,
 }) => {
   const { activeTenantId } = useAuth();
+  const { calendarSystem } = useCalendarPreferenceStore();
   const effectiveTenantId = tenantId || bill?.tenant_id || activeTenantId || null;
   const studentId = bill?.student_id || null;
 
@@ -74,6 +78,7 @@ export const PaymentCollectDialog: React.FC<PaymentCollectDialogProps> = ({
     defaultValues: {
       bill_id: '',
       amount_paid: undefined,
+      payment_date: new Date().toISOString().slice(0, 10),
       payment_method: 'CASH',
       transaction_reference: '',
       remarks: '',
@@ -121,6 +126,7 @@ export const PaymentCollectDialog: React.FC<PaymentCollectDialogProps> = ({
       reset({
         bill_id: bill.id,
         amount_paid: initialDue,
+        payment_date: new Date().toISOString().slice(0, 10),
         payment_method: 'CASH',
         transaction_reference: '',
         remarks: '',
@@ -209,6 +215,12 @@ export const PaymentCollectDialog: React.FC<PaymentCollectDialogProps> = ({
               <span>{bill.bill_title}</span>
               <span className="font-mono">{bill.bill_number}</span>
             </div>
+            {bill.due_date && (
+              <div className="text-[11px] text-muted-foreground flex justify-between">
+                <span>Due Date:</span>
+                <span className="font-medium text-foreground">{formatDualDate(bill.due_date, calendarSystem)}</span>
+              </div>
+            )}
             <div className="pt-2 border-t border-border/60 flex justify-between items-center text-xs">
               <div>
                 <span className="text-muted-foreground">Total Payable: </span>
@@ -507,24 +519,37 @@ export const PaymentCollectDialog: React.FC<PaymentCollectDialogProps> = ({
               )}
             </div>
 
-            {/* Payment Method */}
-            <div className="space-y-1.5">
-              <Label htmlFor="payment_method" className="text-xs font-semibold">
-                Payment Method <span className="text-destructive">*</span>
-              </Label>
-              <select
-                id="payment_method"
-                {...register('payment_method')}
-                className="w-full h-9 rounded-md border border-input bg-background px-3 py-1 text-xs shadow-xs focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring"
-              >
-                <option value="CASH">Cash</option>
-                <option value="BANK_TRANSFER">Bank Transfer / ConnectIPS</option>
-                <option value="CHEQUE">Cheque</option>
-                <option value="OTHER">Other</option>
-              </select>
-              {errors.payment_method && (
-                <p className="text-destructive text-[11px] font-medium">{errors.payment_method.message}</p>
-              )}
+            {/* Payment Date & Payment Method */}
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+              <div>
+                <NepaliDatePicker
+                  id="payment_date"
+                  label="Payment Date *"
+                  value={watch('payment_date') || new Date().toISOString().slice(0, 10)}
+                  onChange={(val) => setValue('payment_date', val, { shouldValidate: true })}
+                  size="sm"
+                  error={errors.payment_date?.message}
+                />
+              </div>
+
+              <div className="space-y-1.5">
+                <Label htmlFor="payment_method" className="text-xs font-semibold">
+                  Payment Method <span className="text-destructive">*</span>
+                </Label>
+                <select
+                  id="payment_method"
+                  {...register('payment_method')}
+                  className="w-full h-9 rounded-md border border-input bg-background px-3 py-1 text-xs shadow-xs focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring"
+                >
+                  <option value="CASH">Cash</option>
+                  <option value="BANK_TRANSFER">Bank Transfer / ConnectIPS</option>
+                  <option value="CHEQUE">Cheque</option>
+                  <option value="OTHER">Other</option>
+                </select>
+                {errors.payment_method && (
+                  <p className="text-destructive text-[11px] font-medium">{errors.payment_method.message}</p>
+                )}
+              </div>
             </div>
 
             {/* Reference Number */}

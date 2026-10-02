@@ -39,6 +39,8 @@ import {
 } from 'lucide-react';
 import { FeeStructureDialog } from '../components/FeeStructureDialog';
 import { PrintableReceiptModal } from '../components/PrintableReceiptModal';
+import { useCalendarPreferenceStore } from '@/stores/calendarPreferenceStore';
+import { formatDualDate } from '@/features/school-settings/utils/nepaliDate';
 
 const formatCurrency = (amount: number | string): string => {
   return `NPR ${Number(amount || 0).toLocaleString('en-IN', {
@@ -63,6 +65,7 @@ const getPaymentMethodBadgeClass = (method: string): string => {
 
 export const FinanceDashboardPage: React.FC = () => {
   const { activeTenantId, activeRole } = useAuth();
+  const { calendarSystem } = useCalendarPreferenceStore();
   const { currentYear, isLoading: isLoadingYear } = useCurrentAcademicYear(activeTenantId);
   const { data: summary, isLoading: isLoadingSummary } = useFinanceDashboardSummary(activeTenantId);
 
@@ -719,8 +722,8 @@ export const FinanceDashboardPage: React.FC = () => {
                           {p.payment_method}
                         </span>
                       </td>
-                      <td className="py-2.5 px-4 text-muted-foreground font-mono">
-                        {p.payment_date}
+                      <td className="py-2.5 px-4 text-muted-foreground whitespace-nowrap">
+                        {formatDualDate(p.payment_date, calendarSystem)}
                       </td>
                       <td className="py-2.5 px-4 text-right font-mono font-bold text-emerald-600 dark:text-emerald-400">
                         {formatCurrency(p.amount_paid)}

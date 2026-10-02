@@ -21,10 +21,13 @@ import type { FeeBill, FeePayment } from '../types';
 import { PaymentCollectDialog } from '../components/PaymentCollectDialog';
 import { PrintableBillModal } from '../components/PrintableBillModal';
 import { PrintableReceiptModal } from '../components/PrintableReceiptModal';
+import { useCalendarPreferenceStore } from '@/stores/calendarPreferenceStore';
+import { formatDualDate } from '@/features/school-settings/utils/nepaliDate';
 
 export const StudentLedgerPage: React.FC = () => {
   const { studentId } = useParams({ strict: false }) as { studentId: string };
   const { activeTenantId } = useAuth();
+  const { calendarSystem } = useCalendarPreferenceStore();
   const { currentYear } = useCurrentAcademicYear(activeTenantId);
 
   const { data: ledger, isLoading } = useStudentLedger(activeTenantId, studentId);
@@ -174,8 +177,12 @@ export const StudentLedgerPage: React.FC = () => {
                           <tr key={b.id} className="hover:bg-muted/30 transition-colors">
                             <td className="py-2.5 px-3 font-mono font-bold">{b.bill_number}</td>
                             <td className="py-2.5 px-3 font-medium">{b.bill_title}</td>
-                            <td className="py-2.5 px-3 text-muted-foreground">{b.issue_date}</td>
-                            <td className="py-2.5 px-3 text-muted-foreground">{b.due_date}</td>
+                            <td className="py-2.5 px-3 text-muted-foreground whitespace-nowrap">
+                              {formatDualDate(b.issue_date, calendarSystem)}
+                            </td>
+                            <td className="py-2.5 px-3 text-muted-foreground whitespace-nowrap">
+                              {formatDualDate(b.due_date, calendarSystem)}
+                            </td>
                             <td className="py-2.5 px-3 text-right font-mono">
                               {Number(b.subtotal_amount).toFixed(2)}
                             </td>
@@ -267,7 +274,9 @@ export const StudentLedgerPage: React.FC = () => {
                           <td className="py-2.5 px-4 font-mono text-muted-foreground">
                             {p.transaction_reference || '—'}
                           </td>
-                          <td className="py-2.5 px-4 text-muted-foreground">{p.payment_date}</td>
+                          <td className="py-2.5 px-4 text-muted-foreground whitespace-nowrap">
+                            {formatDualDate(p.payment_date, calendarSystem)}
+                          </td>
                           <td className="py-2.5 px-4 text-muted-foreground">{p.received_by_name || 'Cashier'}</td>
                           <td className="py-2.5 px-4 text-right font-mono font-bold text-foreground">
                             NPR {Number(p.amount_paid).toFixed(2)}
