@@ -7,6 +7,7 @@ import { Badge } from '@/components/ui/badge';
 import { getMediaUrl } from '@/lib/utils';
 import { useCalendarPreferenceStore } from '@/stores/calendarPreferenceStore';
 import { formatDualDate } from '@/features/school-settings/utils/nepaliDate';
+import { BRAND_LOGO_URL } from '@/config/env';
 
 export const DashboardHeroBanner: React.FC = () => {
   const { user, activeRole, activeTenantName, activeTenantId } = useAuth();
@@ -68,7 +69,7 @@ export const DashboardHeroBanner: React.FC = () => {
           </div>
         ) : (
           <img
-            src="/logo.svg"
+            src={BRAND_LOGO_URL}
             alt="School Logo"
             className="h-24 w-24 sm:h-32 sm:w-32 opacity-10 drop-shadow-sm object-contain select-none grayscale"
           />

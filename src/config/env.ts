@@ -43,3 +43,5 @@ export const getApiUrl = (endpoint = ''): string => {
   const cleanEndpoint = endpoint.startsWith('/') ? endpoint : `/${endpoint}`;
   return `${ENV.API_BASE_URL}${ENV.API_VERSION}${cleanEndpoint}`;
 };
+
+export const BRAND_LOGO_URL = `${import.meta.env.BASE_URL}logo.svg`;

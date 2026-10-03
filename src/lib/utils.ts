@@ -28,8 +28,12 @@ export function getMediaUrl(path?: string | null): string | undefined {
     return cleanPath;
   }
 
-  // If API_BASE_URL is empty (production Docker reverse-proxy via Nginx)
-  if (!ENV.API_BASE_URL) {
+  // If API_BASE_URL is empty or points to localhost/loopback in a production build,
+  // rely on same-origin reverse-proxy via Nginx so client browsers don't try to query localhost
+  const isLocalhostUrl = Boolean(
+    ENV.API_BASE_URL && /https?:\/\/(localhost|127\.0\.0\.1)(:\d+)?/i.test(ENV.API_BASE_URL)
+  );
+  if (!ENV.API_BASE_URL || (ENV.IS_PROD && isLocalhostUrl)) {
     return cleanPath;
   }
 

@@ -26,6 +26,7 @@ import { Checkbox } from '@/components/ui/checkbox';
 import { loginSchema, type LoginFormData } from '../schema';
 import { useAuth } from '@/auth/useAuth';
 import { ApiError } from '@/api/errors';
+import { BRAND_LOGO_URL } from '@/config/env';
 
 export const LoginPage: React.FC = () => {
   const navigate = useNavigate();
@@ -116,7 +117,7 @@ export const LoginPage: React.FC = () => {
           <div className="relative z-10 space-y-5">
             <div className="flex items-center gap-3">
               <div className="p-2 rounded-xl bg-white/15 backdrop-blur-sm border border-white/10">
-                <img src="/logo.svg" alt="Schools Up Pro" className="h-9 w-9 object-contain" />
+                <img src={BRAND_LOGO_URL} alt="Schools Up Pro" className="h-9 w-9 object-contain" />
               </div>
               <div>
                 <h1 className="text-lg font-bold text-white tracking-tight">Schools Up Pro</h1>
