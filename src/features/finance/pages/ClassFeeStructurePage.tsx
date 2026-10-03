@@ -4,6 +4,7 @@ import { useAuth } from '@/auth/useAuth';
 import { usePermission } from '@/auth/usePermission';
 import { useClasses } from '@/features/academic/hooks';
 import { useCurrentAcademicYear } from '@/features/academic-year/hooks/useCurrentAcademicYear';
+import { toast } from 'sonner';
 import {
   useFinanceClassRoster,
   useFeeStructures,
@@ -241,6 +242,7 @@ export const ClassFeeStructurePage: React.FC = () => {
           description: values.description,
           fee_level: values.fee_level,
           class_id: values.fee_level === 'SCHOOL' ? null : (values.class_id || classId),
+          is_active: values.is_active,
         },
       });
     } else {
@@ -256,6 +258,14 @@ export const ClassFeeStructurePage: React.FC = () => {
     }
     setIsFeeDialogOpen(false);
     setEditingFeeHead(null);
+  };
+
+  const handleReactivateFeeHead = async (fee: FeeStructure) => {
+    await updateFeeMutation.mutateAsync({
+      structureId: fee.id,
+      data: { is_active: true },
+    });
+    toast.success(`Fee head '${fee.name}' reactivated`);
   };
 
   const handleDeleteFeeHead = async (feeId: string) => {
@@ -595,6 +605,7 @@ export const ClassFeeStructurePage: React.FC = () => {
               setIsFeeDialogOpen(true);
             }}
             onDeleteFeeHead={handleDeleteFeeHead}
+            onReactivateFeeHead={handleReactivateFeeHead}
             isDeleting={deleteFeeMutation.isPending}
           />
         </div>

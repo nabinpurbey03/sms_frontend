@@ -29,14 +29,20 @@ import {
   AlertTriangle,
   Loader2,
   CheckCircle,
+  RotateCcw,
 } from 'lucide-react';
 import type { FeeStructure, FeeCategory, FeeFrequency } from '../types';
+
+export function getFeeHeadAction(fee?: { is_active?: boolean } | null): 'deactivate' | 'reactivate' {
+  return fee?.is_active ? 'deactivate' : 'reactivate';
+}
 
 export interface ClassFeeHeadsTableProps {
   feeStructures: FeeStructure[];
   onAddFeeHead: () => void;
   onEditFeeHead: (fee: FeeStructure) => void;
   onDeleteFeeHead: (feeId: string) => Promise<void>;
+  onReactivateFeeHead?: (fee: FeeStructure) => Promise<void> | void;
   isDeleting?: boolean;
 }
 
@@ -45,6 +51,7 @@ export const ClassFeeHeadsTable: React.FC<ClassFeeHeadsTableProps> = ({
   onAddFeeHead,
   onEditFeeHead,
   onDeleteFeeHead,
+  onReactivateFeeHead,
   isDeleting = false,
 }) => {
   const [feeToDelete, setFeeToDelete] = useState<FeeStructure | null>(null);
@@ -320,15 +327,27 @@ export const ClassFeeHeadsTable: React.FC<ClassFeeHeadsTableProps> = ({
                         >
                           <Pencil className="w-3.5 h-3.5" />
                         </Button>
-                        <Button
-                          variant="ghost"
-                          size="sm"
-                          onClick={() => setFeeToDelete(fee)}
-                          className="h-8 w-8 p-0 text-destructive/70 hover:text-destructive hover:bg-destructive/10"
-                          title="Deactivate Fee Head"
-                        >
-                          <Trash2 className="w-3.5 h-3.5" />
-                        </Button>
+                        {fee.is_active ? (
+                          <Button
+                            variant="ghost"
+                            size="sm"
+                            onClick={() => setFeeToDelete(fee)}
+                            className="h-8 w-8 p-0 text-destructive/70 hover:text-destructive hover:bg-destructive/10"
+                            title="Deactivate Fee Head"
+                          >
+                            <Trash2 className="w-3.5 h-3.5" />
+                          </Button>
+                        ) : (
+                          <Button
+                            variant="ghost"
+                            size="sm"
+                            onClick={() => onReactivateFeeHead?.(fee)}
+                            className="h-8 w-8 p-0 text-emerald-600 dark:text-emerald-400 hover:text-emerald-700 dark:hover:text-emerald-300 hover:bg-emerald-500/10"
+                            title="Reactivate Fee Head"
+                          >
+                            <RotateCcw className="w-3.5 h-3.5 text-emerald-600 dark:text-emerald-400" />
+                          </Button>
+                        )}
                       </div>
                     </TableCell>
                   </TableRow>

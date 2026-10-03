@@ -29,6 +29,7 @@ export const feeStructureFormSchema = z
       .number({ message: 'Amount is required' })
       .positive('Fee amount must be greater than zero'),
     description: z.string().max(255).optional().or(z.literal('')),
+    is_active: z.boolean().optional().default(true),
   })
   .refine(
     (data) => {
@@ -44,6 +45,7 @@ export const feeStructureFormSchema = z
   );
 
 export type FeeStructureFormValues = z.infer<typeof feeStructureFormSchema>;
+export type FeeStructureInputValues = z.input<typeof feeStructureFormSchema>;
 
 export const studentFeeAssignmentSchema = z.object({
   student_id: z.string().min(1, 'Please select a student'),

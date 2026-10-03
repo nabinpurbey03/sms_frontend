@@ -14,6 +14,7 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Badge } from '@/components/ui/badge';
 import { Textarea } from '@/components/ui/textarea';
+import { Checkbox } from '@/components/ui/checkbox';
 import {
   Coins,
   Loader2,
@@ -30,7 +31,11 @@ import {
   Calendar,
   Layers,
 } from 'lucide-react';
-import { feeStructureFormSchema, type FeeStructureFormValues } from '../schema';
+import {
+  feeStructureFormSchema,
+  type FeeStructureFormValues,
+  type FeeStructureInputValues,
+} from '../schema';
 import type { FeeStructure } from '../types';
 import { useClasses } from '@/features/academic/hooks';
 
@@ -223,7 +228,7 @@ export const FeeStructureDialog: React.FC<FeeStructureDialogProps> = ({
     watch,
     setValue,
     formState: { errors },
-  } = useForm<FeeStructureFormValues>({
+  } = useForm<FeeStructureInputValues, any, FeeStructureFormValues>({
     resolver: zodResolver(feeStructureFormSchema),
     defaultValues: {
       fee_level: defaultFeeLevel,
@@ -233,6 +238,7 @@ export const FeeStructureDialog: React.FC<FeeStructureDialogProps> = ({
       frequency: 'MONTHLY',
       amount: undefined,
       description: '',
+      is_active: true,
     },
   });
 
@@ -253,6 +259,7 @@ export const FeeStructureDialog: React.FC<FeeStructureDialogProps> = ({
         frequency: initialData.frequency,
         amount: Number(initialData.amount),
         description: initialData.description || '',
+        is_active: initialData.is_active ?? true,
       });
     } else {
       reset({
@@ -266,6 +273,7 @@ export const FeeStructureDialog: React.FC<FeeStructureDialogProps> = ({
         frequency: 'MONTHLY',
         amount: undefined,
         description: '',
+        is_active: true,
       });
     }
   }, [initialData, defaultClassId, defaultFeeLevel, reset, classes]);
@@ -275,6 +283,7 @@ export const FeeStructureDialog: React.FC<FeeStructureDialogProps> = ({
       const payload: FeeStructureFormValues = {
         ...values,
         class_id: values.fee_level === 'SCHOOL' ? '' : values.class_id,
+        is_active: values.is_active ?? true,
       };
       await onSubmit(payload);
       onClose();
@@ -766,6 +775,41 @@ export const FeeStructureDialog: React.FC<FeeStructureDialogProps> = ({
                 <p className="text-destructive text-[11px] font-medium">{errors.description.message}</p>
               )}
             </div>
+
+            {/* Status Toggle (Only when editing an existing fee head) */}
+            {Boolean(initialData) && (
+              <div className="flex items-center justify-between p-3.5 rounded-xl border border-border/70 bg-muted/20">
+                <div className="space-y-0.5">
+                  <div className="flex items-center gap-2">
+                    <Label htmlFor="is_active" className="text-xs font-bold text-foreground cursor-pointer">
+                      Status: Active in Billing
+                    </Label>
+                    {watch('is_active') ? (
+                      <Badge className="text-[10px] py-0 px-1.5 font-semibold bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border-emerald-500/20">
+                        Active
+                      </Badge>
+                    ) : (
+                      <Badge variant="outline" className="text-[10px] py-0 px-1.5 font-medium text-muted-foreground border-border/70">
+                        Inactive
+                      </Badge>
+                    )}
+                  </div>
+                  <p className="text-[11px] text-muted-foreground">
+                    {watch('is_active')
+                      ? 'Active fee heads are included when generating batch and individual invoices.'
+                      : 'Inactive fee heads are paused and will not be included in new invoices.'}
+                  </p>
+                </div>
+                <Checkbox
+                  id="is_active"
+                  checked={watch('is_active') ?? true}
+                  onCheckedChange={(checked) => {
+                    setValue('is_active', Boolean(checked), { shouldValidate: true });
+                  }}
+                  className="data-[state=checked]:bg-emerald-600 data-[state=checked]:border-emerald-600"
+                />
+              </div>
+            )}
           </div>
 
           {/* 3. Footer */}

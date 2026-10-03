@@ -3,6 +3,7 @@ import { useNavigate } from '@tanstack/react-router';
 import { useAuth } from '@/auth/useAuth';
 import { usePermission } from '@/auth/usePermission';
 import { useCurrentAcademicYear } from '@/features/academic-year/hooks/useCurrentAcademicYear';
+import { toast } from 'sonner';
 import {
   useFinanceClassOverview,
   useCreateFeeStructure,
@@ -129,6 +130,7 @@ export const FeeStructuresPage: React.FC = () => {
           frequency: values.frequency,
           amount: values.amount,
           description: values.description,
+          is_active: values.is_active,
         },
       });
     } else {
@@ -145,6 +147,16 @@ export const FeeStructuresPage: React.FC = () => {
     refetch();
     refetchSchoolFees();
     setEditingFeeStructure(null);
+  };
+
+  const handleReactivateFeeHead = async (fee: FeeStructure) => {
+    await updateStructureMutation.mutateAsync({
+      structureId: fee.id,
+      data: { is_active: true },
+    });
+    toast.success(`Fee head '${fee.name}' reactivated`);
+    refetch();
+    refetchSchoolFees();
   };
 
   const handleDeleteFeeStructure = async (structureId: string) => {
@@ -343,6 +355,7 @@ export const FeeStructuresPage: React.FC = () => {
                 setIsFeeStructureOpen(true);
               }}
               onDeleteFeeHead={handleDeleteFeeStructure}
+              onReactivateFeeHead={handleReactivateFeeHead}
               isDeleting={deleteStructureMutation.isPending}
             />
           )}
