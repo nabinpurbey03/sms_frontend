@@ -114,3 +114,5 @@ export const useTenantRollover = () => {
 };
 
 export * from './hooks/useCurrentAcademicYear';
+export * from './hooks/useSelectedAcademicYear';
+export * from './hooks/useAcademicYearStatus';

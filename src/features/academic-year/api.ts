@@ -5,6 +5,11 @@ import type {
   AcademicYearUpdateDTO,
   PlatformRolloverDTO,
   PlatformRolloverSummaryDTO,
+  AcademicYearStatusResponse,
+  QuickTransitionPayload,
+  QuickTransitionResponse,
+  PlatformBsProvisionPayload,
+  PlatformBsProvisionResponse,
 } from './types';
 import type {
   TenantAcademicYearRolloverRequest,
@@ -14,6 +19,23 @@ import type {
 import type { ApiResponse } from '@/api/types';
 
 export const academicYearApi = {
+  getAcademicYearStatus: async (tenantId: string): Promise<AcademicYearStatusResponse> => {
+    return apiClient.get(`/tenants/${tenantId}/academic-years/status`);
+  },
+
+  quickTransition: async (
+    tenantId: string,
+    data: QuickTransitionPayload
+  ): Promise<QuickTransitionResponse> => {
+    return apiClient.post(`/tenants/${tenantId}/academic-years/quick-transition`, data);
+  },
+
+  provisionBsYear: async (
+    data: PlatformBsProvisionPayload
+  ): Promise<PlatformBsProvisionResponse> => {
+    return apiClient.post('/platform/academic-years/provision-bs', data);
+  },
+
   previewRollover: async (tenantId: string): Promise<RolloverPreviewResponse> => {
     return apiClient.post(`/academic/tenants/${tenantId}/academic-years/rollover/preview`);
   },

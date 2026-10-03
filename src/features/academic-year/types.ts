@@ -38,3 +38,38 @@ export interface PlatformRolloverSummaryDTO {
   total_students_graduated: number;
 }
 
+export interface AcademicYearStatusResponse {
+  current_year: AcademicYearResponse | null;
+  is_expired: boolean;
+  days_since_ended: number;
+  next_year: AcademicYearResponse | null;
+  eligible_students_count: number;
+  can_transition: boolean;
+}
+
+export interface QuickTransitionPayload {
+  target_year_id: string;
+  promote_students?: boolean;
+}
+
+export interface QuickTransitionResponse {
+  previous_year_name: string;
+  current_year_name: string;
+  students_promoted: number;
+  students_graduated: number;
+  status: string;
+}
+
+export interface PlatformBsProvisionPayload {
+  bs_year: number;
+}
+
+export interface PlatformBsProvisionResponse {
+  bs_year: number;
+  academic_year_name: string;
+  start_date: string;
+  end_date: string;
+  tenants_provisioned: number;
+  tenants_skipped: number;
+}
+
