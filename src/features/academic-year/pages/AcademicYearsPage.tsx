@@ -3,6 +3,7 @@ import { useAuth } from '@/auth/useAuth';
 import { usePermission } from '@/auth/usePermission';
 import { useAcademicYears, useSetCurrentAcademicYear, useCloseAcademicYear } from '../hooks';
 import { AcademicYearFormDialog } from '../components/AcademicYearFormDialog';
+import { AcademicYearExpiryBanner } from '../components/AcademicYearExpiryBanner';
 import { PlatformRolloverDialog } from '../components/PlatformRolloverDialog';
 import { TenantRolloverDialog } from '../components/TenantRolloverDialog';
 import { TenantRequiredState } from '@/components/common/TenantRequiredState';
@@ -223,6 +224,11 @@ export const AcademicYearsPage: React.FC<AcademicYearsPageProps> = ({
             </Button>
           </div>
         </div>
+      )}
+
+      {/* Academic Year Expiry Alert Banner */}
+      {effectiveTenantId && (
+        <AcademicYearExpiryBanner tenantId={effectiveTenantId} />
       )}
 
       <Card className="overflow-hidden">

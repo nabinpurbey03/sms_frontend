@@ -40,6 +40,7 @@ import { ParentReportCardsDashboardHub } from '@/features/examination/components
 import { useAttendanceSummary, useDailyAttendanceStatus } from '@/features/attendance/hooks';
 import { useAllClassesWithDetails, useMyTeacherAssignments } from '@/features/academic/hooks';
 import { useAcademicYears } from '@/features/academic-year/hooks';
+import { AcademicYearExpiryBanner } from '@/features/academic-year/components';
 import { useAllMyChildren, useParentChildren } from '@/features/members/hooks';
 import { useMyChildrenReportCards } from '@/features/examination/hooks';
 import { useSuperAdminDashboard, useTenantDashboard } from '../hooks';
@@ -197,6 +198,9 @@ export const DashboardPage: React.FC = () => {
         />
       ) : (
         <>
+          {/* Academic Year Expiry Alert Banner */}
+          <AcademicYearExpiryBanner tenantId={activeTenantId || undefined} />
+
           {/* Academic Session Context & Switcher Bar (Admin, Office-Admin, Teachers) */}
           {!isParent && (
             <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 p-4 rounded-xl border border-border/70 bg-card/60 backdrop-blur-sm shadow-xs">
