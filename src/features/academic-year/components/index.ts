@@ -5,3 +5,4 @@ export * from './AcademicYearSelector';
 export * from './PlatformRolloverDialog';
 export * from './SchoolSearchSelect';
 export * from './TenantRolloverDialog';
+export * from './PlatformBsYearProvisioner';

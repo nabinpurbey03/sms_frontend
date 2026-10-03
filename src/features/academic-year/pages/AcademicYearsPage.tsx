@@ -5,6 +5,7 @@ import { useAcademicYears, useSetCurrentAcademicYear, useCloseAcademicYear } fro
 import { AcademicYearFormDialog } from '../components/AcademicYearFormDialog';
 import { AcademicYearExpiryBanner } from '../components/AcademicYearExpiryBanner';
 import { PlatformRolloverDialog } from '../components/PlatformRolloverDialog';
+import { PlatformBsYearProvisioner } from '../components/PlatformBsYearProvisioner';
 import { TenantRolloverDialog } from '../components/TenantRolloverDialog';
 import { TenantRequiredState } from '@/components/common/TenantRequiredState';
 import { ConfirmDialog } from '@/components/common/ConfirmDialog';
@@ -176,6 +177,11 @@ export const AcademicYearsPage: React.FC<AcademicYearsPageProps> = ({
             />
           </div>
         </Card>
+      )}
+
+      {/* Standalone Super Admin Platform BS Year Provisioner */}
+      {!isEmbedded && isSuperAdmin && (
+        <PlatformBsYearProvisioner />
       )}
 
       {/* Embedded Action Bar */}
