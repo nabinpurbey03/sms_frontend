@@ -93,6 +93,10 @@ A production-grade, domain-aligned **React 19 Single Page Application (SPA)** fo
     - Examination schedules & score entry (`ExamsListPage.tsx`)
     - Official report cards & printable rosters (`OfficialReportCardDocument.tsx`, `PrintableRosterModal.tsx`)
     - System Audit Logs (`AuditLogsPage.tsx`)
+- **Automated Academic Year & Smart Expiry Prompt Workflow**:
+  - **Academic Year Expiry Banner (`AcademicYearExpiryBanner.tsx`)**: High-visibility WCAG AA amber alert banner automatically rendered on both the School Dashboard and Academic Sessions page when the active session reaches its end date. Gated strictly to administrative personas (`ADMIN`, `OFFICE_ADMIN`, or `MANAGE_TENANT_SETTINGS`).
+  - **1-Click Rollover & Progression Modal (`QuickAcademicYearTransitionDialog.tsx`)**: Accessible Radix confirmation modal summarizing old session completion, target session activation, dual BS/AD date ranges, and live student progression count pill with an automatic student advancement toggle.
+  - **Super Admin Platform BS Year Provisioner (`PlatformBsYearProvisioner.tsx`)**: Centralized provisioning widget for Super Admins to seed standard Bikram Sambat academic years (1 Baisakh to 30/31 Chaitra with auto-calculated Gregorian dates) across all schools on the platform with 1 click.
 - **School Settings UI/UX Modernization & Accessible Dialogs**:
   - Replaced custom tab nav with accessible shadcn `Tabs`.
   - Standardized accessible confirmation dialogs (`ConfirmDialog.tsx`, `alert-dialog.tsx`) replacing native `window.confirm()` and `alert()`.
