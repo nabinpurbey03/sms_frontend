@@ -10,7 +10,6 @@ import {
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Badge } from '@/components/ui/badge';
-import { Checkbox } from '@/components/ui/checkbox';
 import {
   Select,
   SelectContent,
@@ -35,6 +34,8 @@ import {
   Layers,
   Sparkles,
   Save,
+  Pencil,
+  PowerOff,
 } from 'lucide-react';
 import {
   useStudentFeeAssignments,
@@ -53,6 +54,7 @@ import {
   calculateStudentConcessionsMonthlyTotal,
   calculateStudentNetMonthlyTotal,
   getFacilityCategoryMeta,
+  getTransportDisplayMeta,
 } from '../utils/studentFacilityUtils';
 import type { AcademicStudent } from '@/features/academic/types';
 import type { FeeCategory, FeeFrequency, StudentTransportProfile } from '../types';
@@ -117,6 +119,7 @@ export const ManageStudentFacilitiesDialog: React.FC<ManageStudentFacilitiesDial
   const [isTransport, setIsTransport] = useState<boolean>(initialTransportApplicable);
   const [customTransportFee, setCustomTransportFee] = useState<number | null>(initialTransportFee);
   const [transportReason, setTransportReason] = useState<string>(initialTransportReason);
+  const [isEditingTransport, setIsEditingTransport] = useState<boolean>(false);
   const [isSavingTransportLocal, setIsSavingTransportLocal] = useState<boolean>(false);
   const [justSavedTransport, setJustSavedTransport] = useState<boolean>(false);
 
@@ -129,17 +132,9 @@ export const ManageStudentFacilitiesDialog: React.FC<ManageStudentFacilitiesDial
         : null
     );
     setTransportReason(transportProfile?.reason ?? '');
+    setIsEditingTransport(false);
     setJustSavedTransport(false);
   }, [transportProfile, student?.id]);
-
-  const isTransportDirty = useMemo(() => {
-    const effectiveFee = isTransport ? customTransportFee : null;
-    return (
-      isTransport !== initialTransportApplicable ||
-      effectiveFee !== initialTransportFee ||
-      transportReason.trim() !== initialTransportReason.trim()
-    );
-  }, [isTransport, initialTransportApplicable, customTransportFee, initialTransportFee, transportReason, initialTransportReason]);
 
   // --- Add Facility Form State ---
   const [enrollMode, setEnrollMode] = useState<'PRESET' | 'CUSTOM'>('PRESET');
@@ -177,6 +172,17 @@ export const ManageStudentFacilitiesDialog: React.FC<ManageStudentFacilitiesDial
     classDefaultTransportRate
   );
 
+  const transportMeta = useMemo(() => {
+    return getTransportDisplayMeta(
+      {
+        is_transport_applicable: isTransport,
+        transport_fee: customTransportFee,
+        reason: transportReason,
+      },
+      classDefaultTransportRate
+    );
+  }, [isTransport, customTransportFee, transportReason, classDefaultTransportRate]);
+
   const customFacilitiesMonthlyTotal = calculateStudentFacilitiesMonthlyTotal(assignments);
   const concessionsMonthlyTotal = calculateStudentConcessionsMonthlyTotal(assignments);
 
@@ -207,9 +213,55 @@ export const ManageStudentFacilitiesDialog: React.FC<ManageStudentFacilitiesDial
       }
       invalidateRelevantCaches();
       setJustSavedTransport(true);
+      setIsEditingTransport(false);
       setTimeout(() => setJustSavedTransport(false), 2500);
     } finally {
       setIsSavingTransportLocal(false);
+    }
+  };
+
+  const handleCancelEditTransport = () => {
+    if (!initialTransportApplicable) {
+      setIsTransport(false);
+    }
+    setCustomTransportFee(initialTransportFee);
+    setTransportReason(initialTransportReason);
+    setIsEditingTransport(false);
+  };
+
+  const handleDisableTransport = async () => {
+    if (!student) return;
+    setIsSavingTransportLocal(true);
+    try {
+      if (onSaveTransport) {
+        await onSaveTransport(student.id, false, null, undefined);
+      } else {
+        await internalSetTransportMutation.mutateAsync({
+          student_id: student.id,
+          is_transport_applicable: false,
+          transport_fee: null,
+          reason: undefined,
+        });
+      }
+      invalidateRelevantCaches();
+      setIsTransport(false);
+      setCustomTransportFee(null);
+      setTransportReason('');
+      setIsEditingTransport(false);
+    } finally {
+      setIsSavingTransportLocal(false);
+    }
+  };
+
+  const handleStartEditTransport = () => {
+    setIsEditingTransport(true);
+  };
+
+  const handleStartEnrollTransport = () => {
+    setIsTransport(true);
+    setIsEditingTransport(true);
+    if (customTransportFee == null && classDefaultTransportRate > 0) {
+      setCustomTransportFee(classDefaultTransportRate);
     }
   };
 
@@ -355,45 +407,124 @@ export const ManageStudentFacilitiesDialog: React.FC<ManageStudentFacilitiesDial
           </div>
 
           {/* Transportation Section */}
-          <div className="p-4 rounded-2xl border border-blue-500/20 bg-blue-500/5 space-y-3">
-            <div className="flex items-center justify-between">
-              <div className="flex items-center gap-2">
-                <div className="w-7 h-7 rounded-lg bg-blue-500/15 text-blue-600 dark:text-blue-400 flex items-center justify-center">
-                  <Bus className="w-4 h-4" />
+          {isTransport && !isEditingTransport ? (
+            /* State A: Enrolled & Saved */
+            <div className="p-4 rounded-2xl border border-blue-500/25 bg-blue-500/5 space-y-3">
+              <div className="flex items-center justify-between gap-3 flex-wrap">
+                <div className="flex items-center gap-2.5">
+                  <div className="w-8 h-8 rounded-lg bg-blue-500/15 text-blue-600 dark:text-blue-400 flex items-center justify-center shrink-0">
+                    <Bus className="w-4 h-4" />
+                  </div>
+                  <div>
+                    <div className="flex items-center gap-2">
+                      <h4 className="text-xs font-bold uppercase tracking-wider text-foreground">
+                        Transportation Service
+                      </h4>
+                      <Badge
+                        variant="outline"
+                        className="text-[10px] px-1.5 py-0 font-medium bg-blue-500/15 text-blue-700 dark:text-blue-300 border-blue-500/30"
+                      >
+                        Active Service
+                      </Badge>
+                      {justSavedTransport && (
+                        <Badge
+                          variant="outline"
+                          className="text-[10px] px-1.5 py-0 font-medium bg-emerald-500/15 text-emerald-700 dark:text-emerald-300 border-emerald-500/30 flex items-center gap-1 animate-pulse"
+                        >
+                          <CheckCircle2 className="w-3 h-3 text-emerald-500" />
+                          <span>Saved</span>
+                        </Badge>
+                      )}
+                    </div>
+                    <p className="text-[11px] text-muted-foreground">
+                      School bus service enrollment and custom stop billing
+                    </p>
+                  </div>
                 </div>
-                <div>
-                  <h4 className="text-xs font-bold uppercase tracking-wider text-foreground">
-                    Transportation Service
-                  </h4>
-                  <p className="text-[11px] text-muted-foreground">
-                    School bus service enrollment and custom stop billing
-                  </p>
+
+                <div className="flex items-center gap-1.5">
+                  <Button
+                    type="button"
+                    variant="outline"
+                    size="sm"
+                    onClick={handleStartEditTransport}
+                    className="h-7 text-xs gap-1.5 cursor-pointer"
+                  >
+                    <Pencil className="w-3.5 h-3.5" />
+                    <span>Edit Details</span>
+                  </Button>
+                  <Button
+                    type="button"
+                    variant="ghost"
+                    size="sm"
+                    onClick={handleDisableTransport}
+                    disabled={isSavingTransportLocal || isSavingTransport}
+                    className="h-7 text-xs text-muted-foreground hover:text-destructive hover:bg-destructive/10 cursor-pointer gap-1"
+                    title="Disable bus service"
+                  >
+                    <PowerOff className="w-3.5 h-3.5" />
+                    <span>Disable</span>
+                  </Button>
                 </div>
               </div>
 
-              <label className="flex items-center gap-2 cursor-pointer select-none">
-                <Checkbox
-                  checked={isTransport}
-                  onCheckedChange={(checked) => {
-                    const isChecked = Boolean(checked);
-                    setIsTransport(isChecked);
-                    if (isChecked && customTransportFee == null && classDefaultTransportRate > 0) {
-                      setCustomTransportFee(classDefaultTransportRate);
-                    }
-                  }}
-                  className="data-[state=checked]:bg-blue-600 data-[state=checked]:border-blue-600"
-                />
-                <span className="text-xs font-semibold text-foreground">Enable Bus Service</span>
-              </label>
-            </div>
+              <div className="pt-2 border-t border-blue-500/10 grid grid-cols-1 sm:grid-cols-2 gap-3 text-xs">
+                <div className="p-2.5 rounded-xl bg-card/60 border border-blue-500/15 flex items-center justify-between">
+                  <div>
+                    <span className="text-[11px] text-muted-foreground block">Monthly Rate</span>
+                    <span className="font-mono font-bold text-foreground">
+                      NPR {transportMeta.monthlyFee.toLocaleString()}/mo
+                    </span>
+                  </div>
+                  <Badge variant="secondary" className="text-[10px] px-1.5 py-0 font-medium">
+                    {transportMeta.rateBadgeLabel}
+                  </Badge>
+                </div>
 
-            {isTransport && (
+                <div className="p-2.5 rounded-xl bg-card/60 border border-blue-500/15">
+                  <span className="text-[11px] text-muted-foreground block">Route / Pickup Stop</span>
+                  <span className="font-medium text-foreground text-xs truncate block" title={transportMeta.routeDescription}>
+                    Stop / Route: {transportMeta.routeDescription}
+                  </span>
+                </div>
+              </div>
+            </div>
+          ) : isTransport && isEditingTransport ? (
+            /* State B: Editing / Enrolling */
+            <div className="p-4 rounded-2xl border border-blue-500/25 bg-blue-500/5 space-y-3">
+              <div className="flex items-center justify-between gap-2">
+                <div className="flex items-center gap-2">
+                  <div className="w-7 h-7 rounded-lg bg-blue-500/15 text-blue-600 dark:text-blue-400 flex items-center justify-center shrink-0">
+                    <Bus className="w-4 h-4" />
+                  </div>
+                  <div>
+                    <h4 className="text-xs font-bold uppercase tracking-wider text-foreground">
+                      {initialTransportApplicable ? 'Edit Transportation Details' : 'Enroll Transportation Service'}
+                    </h4>
+                    <p className="text-[11px] text-muted-foreground">
+                      Configure monthly bus rate and pickup stop
+                    </p>
+                  </div>
+                </div>
+              </div>
+
               <div className="pt-2 border-t border-blue-500/10 space-y-3">
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                   <div className="space-y-1">
-                    <label className="text-xs font-semibold text-muted-foreground">
-                      Monthly Bus Fee (NPR)
-                    </label>
+                    <div className="flex items-center justify-between">
+                      <label className="text-xs font-semibold text-muted-foreground">
+                        Monthly Bus Fee (NPR)
+                      </label>
+                      {classDefaultTransportRate > 0 && customTransportFee !== classDefaultTransportRate && (
+                        <button
+                          type="button"
+                          onClick={() => setCustomTransportFee(classDefaultTransportRate)}
+                          className="text-[10px] text-primary hover:underline font-medium cursor-pointer"
+                        >
+                          Use Class Default (NPR {classDefaultTransportRate.toLocaleString()})
+                        </button>
+                      )}
+                    </div>
                     <Input
                       type="number"
                       min="0"
@@ -424,35 +555,74 @@ export const ManageStudentFacilitiesDialog: React.FC<ManageStudentFacilitiesDial
                   </div>
                 </div>
 
-                <div className="flex justify-end pt-1">
+                <div className="flex items-center justify-end gap-2 pt-1">
                   <Button
+                    type="button"
+                    variant="outline"
                     size="sm"
-                    variant={isTransportDirty ? 'default' : 'outline'}
-                    disabled={(!isTransportDirty && !justSavedTransport) || isSavingTransportLocal || isSavingTransport}
+                    onClick={handleCancelEditTransport}
+                    disabled={isSavingTransportLocal || isSavingTransport}
+                    className="h-8 text-xs cursor-pointer"
+                  >
+                    Cancel
+                  </Button>
+                  <Button
+                    type="button"
+                    size="sm"
+                    variant="default"
+                    disabled={isSavingTransportLocal || isSavingTransport}
                     onClick={handleSaveTransport}
-                    className="h-7 px-3 text-xs gap-1.5 cursor-pointer"
+                    className="h-8 text-xs gap-1.5 cursor-pointer"
                   >
                     {isSavingTransportLocal || isSavingTransport ? (
                       <>
-                        <Loader2 className="w-3 h-3 animate-spin" />
+                        <Loader2 className="w-3.5 h-3.5 animate-spin" />
                         <span>Saving...</span>
-                      </>
-                    ) : justSavedTransport ? (
-                      <>
-                        <CheckCircle2 className="w-3 h-3 text-emerald-500" />
-                        <span>Transport Saved</span>
                       </>
                     ) : (
                       <>
-                        <Save className="w-3 h-3" />
+                        <Save className="w-3.5 h-3.5" />
                         <span>Save Transport Settings</span>
                       </>
                     )}
                   </Button>
                 </div>
               </div>
-            )}
-          </div>
+            </div>
+          ) : (
+            /* State C: Not Enrolled */
+            <div className="p-4 rounded-2xl border border-border/70 bg-muted/20 flex items-center justify-between gap-3 flex-wrap">
+              <div className="flex items-center gap-3">
+                <div className="w-8 h-8 rounded-lg bg-muted flex items-center justify-center text-muted-foreground shrink-0">
+                  <Bus className="w-4 h-4" />
+                </div>
+                <div>
+                  <div className="flex items-center gap-2">
+                    <h4 className="text-xs font-bold uppercase tracking-wider text-foreground">
+                      Transportation Service
+                    </h4>
+                    <Badge variant="outline" className="text-[10px] px-1.5 py-0 font-medium text-muted-foreground bg-muted/40">
+                      Not Enrolled
+                    </Badge>
+                  </div>
+                  <p className="text-[11px] text-muted-foreground">
+                    No bus service enrolled. Class standard rate: NPR {classDefaultTransportRate.toLocaleString()}/mo
+                  </p>
+                </div>
+              </div>
+
+              <Button
+                type="button"
+                variant="outline"
+                size="sm"
+                onClick={handleStartEnrollTransport}
+                className="h-8 text-xs gap-1.5 cursor-pointer font-semibold"
+              >
+                <Plus className="w-3.5 h-3.5 text-primary" />
+                <span>Enroll in Bus Service</span>
+              </Button>
+            </div>
+          )}
 
           {/* Active Facilities Table / List */}
           <div className="space-y-3">
