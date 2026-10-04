@@ -194,3 +194,47 @@ export function formatFacilityBadgeLabel(
   }
   return meta.label;
 }
+
+export interface TransportDisplayMeta {
+  isEnrolled: boolean;
+  monthlyFee: number;
+  isCustomRate: boolean;
+  rateBadgeLabel: string;
+  routeDescription: string;
+}
+
+/**
+ * Returns structured presentation metadata for student transportation status,
+ * differentiating unenrolled, class standard rates, and custom route rates.
+ */
+export function getTransportDisplayMeta(
+  profile: { is_transport_applicable?: boolean; transport_fee?: number | null; reason?: string | null } | null | undefined,
+  classDefaultRate: number = 0
+): TransportDisplayMeta {
+  const isEnrolled = Boolean(profile?.is_transport_applicable);
+  if (!isEnrolled) {
+    return {
+      isEnrolled: false,
+      monthlyFee: 0,
+      isCustomRate: false,
+      rateBadgeLabel: 'Not Enrolled',
+      routeDescription: 'No bus facility requested',
+    };
+  }
+
+  const hasCustomFee = profile?.transport_fee !== null && profile?.transport_fee !== undefined;
+  const monthlyFee = hasCustomFee ? Number(profile!.transport_fee) : classDefaultRate;
+  const isCustomRate = hasCustomFee && Number(profile!.transport_fee) !== classDefaultRate;
+
+  const rawReason = typeof profile?.reason === 'string' ? profile.reason.trim() : '';
+  const routeDescription = rawReason.length > 0 ? rawReason : 'Standard school bus route';
+
+  return {
+    isEnrolled: true,
+    monthlyFee,
+    isCustomRate,
+    rateBadgeLabel: isCustomRate ? 'Custom Rate' : 'Class Standard',
+    routeDescription,
+  };
+}
+

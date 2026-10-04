@@ -7,6 +7,7 @@ import {
   calculateStudentNetMonthlyTotal,
   getFacilityCategoryMeta,
   formatFacilityBadgeLabel,
+  getTransportDisplayMeta,
 } from '../../utils/studentFacilityUtils.ts';
 
 test('calculateEffectiveTransportFee: returns 0 when transport is disabled or null', () => {
@@ -112,3 +113,106 @@ test('formatFacilityBadgeLabel: formats labels according to spec with NPR amount
   assert.equal(formatFacilityBadgeLabel('COACHING', 'Math Clinic', 1500), 'Coaching (NPR 1,500)');
   assert.equal(formatFacilityBadgeLabel('LAB', 'Physics Lab', 800), 'Lab (NPR 800)');
 });
+
+test('getTransportDisplayMeta: returns unenrolled meta when transport is disabled or null', () => {
+  const metaNull = getTransportDisplayMeta(null, 1500);
+  assert.equal(metaNull.isEnrolled, false);
+  assert.equal(metaNull.monthlyFee, 0);
+  assert.equal(metaNull.isCustomRate, false);
+  assert.equal(metaNull.rateBadgeLabel, 'Not Enrolled');
+  assert.equal(metaNull.routeDescription, 'No bus facility requested');
+
+  const metaUndefined = getTransportDisplayMeta(undefined, 1500);
+  assert.equal(metaUndefined.isEnrolled, false);
+  assert.equal(metaUndefined.monthlyFee, 0);
+  assert.equal(metaUndefined.isCustomRate, false);
+  assert.equal(metaUndefined.rateBadgeLabel, 'Not Enrolled');
+  assert.equal(metaUndefined.routeDescription, 'No bus facility requested');
+
+  const metaDisabled = getTransportDisplayMeta({ is_transport_applicable: false, transport_fee: 1500, reason: 'Route 1' }, 1500);
+  assert.equal(metaDisabled.isEnrolled, false);
+  assert.equal(metaDisabled.monthlyFee, 0);
+  assert.equal(metaDisabled.isCustomRate, false);
+  assert.equal(metaDisabled.rateBadgeLabel, 'Not Enrolled');
+  assert.equal(metaDisabled.routeDescription, 'No bus facility requested');
+});
+
+test('getTransportDisplayMeta: returns class standard rate details when custom fee is not set', () => {
+  const meta = getTransportDisplayMeta(
+    { is_transport_applicable: true, transport_fee: null, reason: 'Route 2, Bus Stop' },
+    1200
+  );
+  assert.equal(meta.isEnrolled, true);
+  assert.equal(meta.monthlyFee, 1200);
+  assert.equal(meta.isCustomRate, false);
+  assert.equal(meta.rateBadgeLabel, 'Class Standard');
+  assert.equal(meta.routeDescription, 'Route 2, Bus Stop');
+
+  const metaUndefinedFee = getTransportDisplayMeta(
+    { is_transport_applicable: true, transport_fee: undefined },
+    1500
+  );
+  assert.equal(metaUndefinedFee.isEnrolled, true);
+  assert.equal(metaUndefinedFee.monthlyFee, 1500);
+  assert.equal(metaUndefinedFee.isCustomRate, false);
+  assert.equal(metaUndefinedFee.rateBadgeLabel, 'Class Standard');
+
+  const metaDefaultRateFallback = getTransportDisplayMeta(
+    { is_transport_applicable: true }
+  );
+  assert.equal(metaDefaultRateFallback.isEnrolled, true);
+  assert.equal(metaDefaultRateFallback.monthlyFee, 0);
+  assert.equal(metaDefaultRateFallback.isCustomRate, false);
+  assert.equal(metaDefaultRateFallback.rateBadgeLabel, 'Class Standard');
+});
+
+test('getTransportDisplayMeta: returns custom route rate details when custom fee is specified', () => {
+  const meta = getTransportDisplayMeta(
+    { is_transport_applicable: true, transport_fee: 1800, reason: 'Stop A' },
+    1200
+  );
+  assert.equal(meta.isEnrolled, true);
+  assert.equal(meta.monthlyFee, 1800);
+  assert.equal(meta.isCustomRate, true);
+  assert.equal(meta.rateBadgeLabel, 'Custom Rate');
+  assert.equal(meta.routeDescription, 'Stop A');
+});
+
+test('getTransportDisplayMeta: sets isCustomRate to false when custom fee equals default rate', () => {
+  const meta = getTransportDisplayMeta(
+    { is_transport_applicable: true, transport_fee: 1200, reason: 'Stop B' },
+    1200
+  );
+  assert.equal(meta.isEnrolled, true);
+  assert.equal(meta.monthlyFee, 1200);
+  assert.equal(meta.isCustomRate, false);
+  assert.equal(meta.rateBadgeLabel, 'Class Standard');
+  assert.equal(meta.routeDescription, 'Stop B');
+});
+
+test('getTransportDisplayMeta: falls back to default route description when reason is empty or whitespace', () => {
+  const metaEmpty = getTransportDisplayMeta(
+    { is_transport_applicable: true, transport_fee: 1000, reason: '' },
+    1000
+  );
+  assert.equal(metaEmpty.routeDescription, 'Standard school bus route');
+
+  const metaWhitespace = getTransportDisplayMeta(
+    { is_transport_applicable: true, transport_fee: 1000, reason: '   ' },
+    1000
+  );
+  assert.equal(metaWhitespace.routeDescription, 'Standard school bus route');
+
+  const metaNullReason = getTransportDisplayMeta(
+    { is_transport_applicable: true, transport_fee: 1000, reason: null },
+    1000
+  );
+  assert.equal(metaNullReason.routeDescription, 'Standard school bus route');
+
+  const metaTrimmed = getTransportDisplayMeta(
+    { is_transport_applicable: true, transport_fee: 1000, reason: '  Main Gate Stop  ' },
+    1000
+  );
+  assert.equal(metaTrimmed.routeDescription, 'Main Gate Stop');
+});
+
