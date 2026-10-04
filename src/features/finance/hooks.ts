@@ -35,6 +35,7 @@ export const PARENT_CHILDREN_FEES_KEY = 'parent_children_fees';
 export const QUARTER_WINDOW_STATUS_KEY = 'quarter_window_status';
 export const STUDENT_WALLET_KEY = 'student_wallet';
 export const STUDENT_DUES_BREAKDOWN_KEY = 'student_dues_breakdown';
+export const BILL_LATE_FEE_KEY = 'finance_bill_late_fee';
 
 // --- Query Hooks ---
 
@@ -167,6 +168,18 @@ export const useBill = (tenantId: string | null, billId: string | null) => {
   return useQuery({
     queryKey: [BILL_KEY, tenantId, billId],
     queryFn: () => financeApi.getBill(tenantId!, billId!),
+    enabled: !!tenantId && !!billId,
+  });
+};
+
+export const useBillLateFee = (
+  tenantId: string | null,
+  billId: string | null,
+  asOfDate?: string
+) => {
+  return useQuery({
+    queryKey: [BILL_LATE_FEE_KEY, tenantId, billId, asOfDate],
+    queryFn: () => financeApi.getBillLateFee(tenantId!, billId!, asOfDate),
     enabled: !!tenantId && !!billId,
   });
 };

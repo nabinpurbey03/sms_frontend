@@ -14,6 +14,7 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Badge } from '@/components/ui/badge';
 import {
+  AlertTriangle,
   CreditCard,
   Loader2,
   Layers,
@@ -23,7 +24,12 @@ import {
   ArrowDownRight,
 } from 'lucide-react';
 import { useAuth } from '@/auth/useAuth';
-import { useStudentDuesBreakdown } from '../hooks';
+import { useStudentDuesBreakdown, useBillLateFee } from '../hooks';
+import {
+  formatLateFeeBanner,
+  formatCollectLateFeeLabel,
+  formatWaiveLateFeeLabel,
+} from '../utils/lateFeeUtils';
 import { useCalendarPreferenceStore } from '@/stores/calendarPreferenceStore';
 import { formatDualDate } from '@/features/school-settings/utils/nepaliDate';
 import { NepaliDatePicker } from '@/components/ui/nepali-date-picker';
@@ -60,11 +66,22 @@ export const PaymentCollectDialog: React.FC<PaymentCollectDialogProps> = ({
   const effectiveTenantId = tenantId || bill?.tenant_id || activeTenantId || null;
   const studentId = bill?.student_id || null;
 
+  const [collectLateFee, setCollectLateFee] = React.useState<boolean>(true);
+
   const { data: fetchedBreakdown, isLoading: isBreakdownLoading } = useStudentDuesBreakdown(
     effectiveTenantId,
     studentId
   );
   const breakdown = duesBreakdown ?? fetchedBreakdown;
+
+  const { data: lateFeeData } = useBillLateFee(
+    effectiveTenantId,
+    bill?.id || null
+  );
+
+  const isOverduePastGrace = !!lateFeeData?.is_overdue && Number(lateFeeData?.late_fee || 0) > 0;
+  const lateFeeAmount = Number(lateFeeData?.late_fee || 0);
+  const overdueDays = lateFeeData?.overdue_days || 0;
 
   const {
     register,
@@ -122,6 +139,7 @@ export const PaymentCollectDialog: React.FC<PaymentCollectDialogProps> = ({
 
   useEffect(() => {
     if (bill) {
+      setCollectLateFee(true);
       const initialDue = Number(bill.due_amount);
       reset({
         bill_id: bill.id,
@@ -175,6 +193,8 @@ export const PaymentCollectDialog: React.FC<PaymentCollectDialogProps> = ({
             ? liveDiscountAmt
             : undefined,
         allow_excess_to_wallet: true,
+        late_fee_paid: isOverduePastGrace && collectLateFee ? lateFeeAmount : 0,
+        late_fee_waived: isOverduePastGrace && !collectLateFee,
       };
 
       const payment = await onSubmit(payload);
@@ -232,6 +252,59 @@ export const PaymentCollectDialog: React.FC<PaymentCollectDialogProps> = ({
               </div>
             </div>
           </div>
+
+          {/* Overdue Late Fee Notice & Waiver Toggle */}
+          {isOverduePastGrace && (
+            <div className="rounded-xl border border-destructive/40 bg-destructive/10 dark:bg-destructive/20 p-3.5 space-y-2.5 animate-in fade-in duration-150">
+              <div className="flex items-center justify-between">
+                <div className="flex items-center gap-1.5 font-semibold text-xs text-destructive">
+                  <AlertTriangle className="w-4 h-4 text-destructive shrink-0" />
+                  <span>Late Fee Notice</span>
+                </div>
+                <Badge variant="destructive" className="text-[10px] uppercase font-bold">
+                  {overdueDays} Days Past Grace
+                </Badge>
+              </div>
+
+              <div className="p-2.5 rounded-lg bg-background/95 border border-destructive/30 text-xs font-semibold text-foreground">
+                <span>{formatLateFeeBanner(lateFeeAmount, overdueDays)}</span>
+              </div>
+
+              <div className="space-y-1">
+                <Label className="text-[10px] uppercase tracking-wider font-semibold text-muted-foreground block">
+                  Penalty Action
+                </Label>
+                <div
+                  role="group"
+                  aria-label="Late fee collection action"
+                  className="grid grid-cols-2 gap-1.5 p-1 bg-muted/60 rounded-lg border border-border/60"
+                >
+                  <button
+                    type="button"
+                    onClick={() => setCollectLateFee(true)}
+                    className={`text-xs py-1.5 px-2.5 rounded-md font-medium transition-all text-center cursor-pointer ${
+                      collectLateFee
+                        ? 'bg-destructive text-destructive-foreground shadow-xs font-bold'
+                        : 'text-muted-foreground hover:text-foreground'
+                    }`}
+                  >
+                    {formatCollectLateFeeLabel(lateFeeAmount)}
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => setCollectLateFee(false)}
+                    className={`text-xs py-1.5 px-2.5 rounded-md font-medium transition-all text-center cursor-pointer ${
+                      !collectLateFee
+                        ? 'bg-foreground text-background shadow-xs font-bold'
+                        : 'text-muted-foreground hover:text-foreground'
+                    }`}
+                  >
+                    {formatWaiveLateFeeLabel()}
+                  </button>
+                </div>
+              </div>
+            </div>
+          )}
 
           {/* Waterfall Dues Breakdown UI Card */}
           {isBreakdownLoading ? (

@@ -13,11 +13,14 @@ import { useReceiptDocument } from '../hooks';
 import { useCalendarPreferenceStore } from '@/stores/calendarPreferenceStore';
 import { formatDualDate } from '@/features/school-settings/utils/nepaliDate';
 
+import type { FeePayment } from '../types';
+
 interface PrintableReceiptModalProps {
   isOpen: boolean;
   onClose: () => void;
   tenantId: string | null;
   paymentId: string | null;
+  payment?: FeePayment | null;
 }
 
 export const PrintableReceiptModal: React.FC<PrintableReceiptModalProps> = ({
@@ -25,9 +28,11 @@ export const PrintableReceiptModal: React.FC<PrintableReceiptModalProps> = ({
   onClose,
   tenantId,
   paymentId,
+  payment,
 }) => {
   const { calendarSystem } = useCalendarPreferenceStore();
   const { data: receipt, isLoading } = useReceiptDocument(tenantId, paymentId);
+  const lateFeeAmount = Number(receipt?.late_fee_amount ?? payment?.late_fee_amount ?? 0);
 
   const handlePrint = () => {
     window.print();
@@ -208,6 +213,12 @@ export const PrintableReceiptModal: React.FC<PrintableReceiptModalProps> = ({
                     <span>Total Bill Payable:</span>
                     <span className="font-mono">NPR {Number(receipt.total_payable).toFixed(2)}</span>
                   </div>
+                  {lateFeeAmount > 0 && (
+                    <div className="flex justify-between py-0.5 text-zinc-800 font-medium">
+                      <span>Late Fee / Penalty:</span>
+                      <span className="font-mono">+ NPR {lateFeeAmount.toFixed(2)}</span>
+                    </div>
+                  )}
                   <div className="flex justify-between py-1 border-y-2 border-black font-bold text-sm bg-zinc-50 px-1">
                     <span>AMOUNT RECEIVED:</span>
                     <span className="font-mono">NPR {Number(receipt.amount_paid).toFixed(2)}</span>

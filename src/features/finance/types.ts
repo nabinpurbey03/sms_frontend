@@ -270,6 +270,14 @@ export interface StudentDuesBreakdown {
   unpaid_bills: FeeBillSummaryItem[];
 }
 
+export interface LateFeeCalculation {
+  late_fee: number | string;
+  overdue_days: number;
+  grace_days: number;
+  is_overdue: boolean;
+  fee_type: string;
+}
+
 export interface FeePaymentCreateDTO {
   bill_id: string;
   amount_paid: number;
@@ -282,6 +290,8 @@ export interface FeePaymentCreateDTO {
   discount_rate?: number;
   discount_amount?: number;
   allow_excess_to_wallet?: boolean;
+  late_fee_paid?: number;
+  late_fee_waived?: boolean;
 }
 
 export interface FeePayment {
@@ -298,6 +308,8 @@ export interface FeePayment {
   discount_rate?: number;
   discount_amount?: number;
   excess_amount?: number;
+  late_fee_amount?: number | string;
+  late_fee_waived?: boolean;
   advance_wallet_balance_after?: number;
   payment_method: PaymentMethod;
   transaction_reference?: string | null;
@@ -329,6 +341,8 @@ export interface ReceiptDocument {
   total_payable: number | string;
   amount_paid: number | string;
   remaining_due: number | string;
+  late_fee_amount?: number | string;
+  late_fee_waived?: boolean;
   payment_method: string;
   transaction_reference?: string | null;
   received_by_name?: string | null;

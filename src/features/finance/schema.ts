@@ -198,6 +198,8 @@ export const paymentCollectSchema = z.object({
   discount_rate: z.number().min(0).max(100).optional(),
   discount_amount: z.number().min(0).optional(),
   allow_excess_to_wallet: z.boolean().default(true),
+  late_fee_paid: z.number().min(0).optional(),
+  late_fee_waived: z.boolean().optional(),
 });
 
 export type PaymentCollectFormValues = z.infer<typeof paymentCollectSchema>;

@@ -29,6 +29,7 @@ import type {
   QuarterlyWindowStatus,
   StudentWallet,
   StudentDuesBreakdown,
+  LateFeeCalculation,
 } from './types';
 
 export interface PaginatedResult<T> {
@@ -159,6 +160,16 @@ export const financeApi = {
 
   getBill: async (tenantId: string, billId: string): Promise<FeeBill> => {
     return apiClient.get(`/finance/tenants/${tenantId}/bills/${billId}`);
+  },
+
+  getBillLateFee: async (
+    tenantId: string,
+    billId: string,
+    asOfDate?: string
+  ): Promise<LateFeeCalculation> => {
+    return apiClient.get(`/finance/tenants/${tenantId}/bills/${billId}/late-fee`, {
+      params: asOfDate ? { as_of_date: asOfDate } : undefined,
+    });
   },
 
   cancelBill: async (tenantId: string, billId: string): Promise<boolean> => {
