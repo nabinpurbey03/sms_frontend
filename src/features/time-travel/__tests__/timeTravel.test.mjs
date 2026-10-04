@@ -6,8 +6,16 @@ import {
   getBsDateFromGregorian,
   getGregorianFromBs,
   formatDateToIso,
+  shouldRenderTimeTravelBanner,
+  shouldRenderTimeTravelToolbar,
+  formatTimeTravelBannerText,
+  formatToolbarPillLabel,
+  BS_MONTHS,
 } from '../timeTravelUtils.ts';
-import { getCurrentBsMonthIndex } from '../../finance/utils/cashierUtils.ts';
+import {
+  getCurrentBsMonthIndex,
+  computeMonthStatus,
+} from '../../finance/utils/cashierUtils.ts';
 
 // -------------------------------------------------------------------------
 // 1. Constants & Storage Key
@@ -155,3 +163,165 @@ test('Request interceptor injects X-Simulated-Date when present in sessionStorag
     delete globalThis.sessionStorage;
   }
 });
+
+// -------------------------------------------------------------------------
+// 8. TimeTravelBanner Guard & Rendering
+// -------------------------------------------------------------------------
+test('shouldRenderTimeTravelBanner: strictly requires isEnabled, isSuperAdmin, and isSimulated', () => {
+  // All true -> renders
+  assert.equal(
+    shouldRenderTimeTravelBanner({ isEnabled: 'true', isSuperAdmin: true, isSimulated: true }),
+    true
+  );
+  assert.equal(
+    shouldRenderTimeTravelBanner({ isEnabled: true, isSuperAdmin: true, isSimulated: true }),
+    true
+  );
+
+  // Feature flag disabled -> hidden
+  assert.equal(
+    shouldRenderTimeTravelBanner({ isEnabled: 'false', isSuperAdmin: true, isSimulated: true }),
+    false
+  );
+  assert.equal(
+    shouldRenderTimeTravelBanner({ isEnabled: undefined, isSuperAdmin: true, isSimulated: true }),
+    false
+  );
+
+  // Non-super-admin -> hidden
+  assert.equal(
+    shouldRenderTimeTravelBanner({ isEnabled: 'true', isSuperAdmin: false, isSimulated: true }),
+    false
+  );
+  assert.equal(
+    shouldRenderTimeTravelBanner({ isEnabled: 'true', isSuperAdmin: undefined, isSimulated: true }),
+    false
+  );
+
+  // Not in simulation mode -> hidden
+  assert.equal(
+    shouldRenderTimeTravelBanner({ isEnabled: 'true', isSuperAdmin: true, isSimulated: false }),
+    false
+  );
+});
+
+// -------------------------------------------------------------------------
+// 9. TimeTravelToolbar Guard & Rendering
+// -------------------------------------------------------------------------
+test('shouldRenderTimeTravelToolbar: strictly requires isEnabled and isSuperAdmin', () => {
+  // Super admin with flag enabled -> renders (even if not currently simulated, so user can trigger it)
+  assert.equal(
+    shouldRenderTimeTravelToolbar({ isEnabled: 'true', isSuperAdmin: true }),
+    true
+  );
+  assert.equal(
+    shouldRenderTimeTravelToolbar({ isEnabled: true, isSuperAdmin: true }),
+    true
+  );
+
+  // Feature flag disabled -> hidden
+  assert.equal(
+    shouldRenderTimeTravelToolbar({ isEnabled: 'false', isSuperAdmin: true }),
+    false
+  );
+  assert.equal(
+    shouldRenderTimeTravelToolbar({ isEnabled: undefined, isSuperAdmin: true }),
+    false
+  );
+
+  // Non-super-admin -> hidden
+  assert.equal(
+    shouldRenderTimeTravelToolbar({ isEnabled: 'true', isSuperAdmin: false }),
+    false
+  );
+  assert.equal(
+    shouldRenderTimeTravelToolbar({ isEnabled: 'true', isSuperAdmin: undefined }),
+    false
+  );
+});
+
+// -------------------------------------------------------------------------
+// 10. formatTimeTravelBannerText formatting
+// -------------------------------------------------------------------------
+test('formatTimeTravelBannerText: formats exact text matching template', () => {
+  // 2024-04-13 is Baishakh 1, 2081 BS
+  const date1 = new Date(2024, 3, 13, 12, 0, 0);
+  const text1 = formatTimeTravelBannerText(date1);
+  assert.equal(
+    text1,
+    'Time Travel Active: System simulated as Baishakh 1, 2081 (2024-04-13). Real server time is unaffected.'
+  );
+
+  // 2024-07-16 is Shrawan 1, 2081 BS
+  const date2 = new Date(2024, 6, 16, 12, 0, 0);
+  const text2 = formatTimeTravelBannerText(date2);
+  assert.equal(
+    text2,
+    'Time Travel Active: System simulated as Shrawan 1, 2081 (2024-07-16). Real server time is unaffected.'
+  );
+});
+
+// -------------------------------------------------------------------------
+// 11. formatToolbarPillLabel formatting
+// -------------------------------------------------------------------------
+test('formatToolbarPillLabel: formats compact pill label for live and simulated state', () => {
+  const date = new Date(2024, 3, 13, 12, 0, 0);
+
+  // When live (not simulated)
+  assert.equal(
+    formatToolbarPillLabel({ isSimulated: false, effectiveDate: date }),
+    'Live Time'
+  );
+
+  // When simulated
+  assert.equal(
+    formatToolbarPillLabel({ isSimulated: true, effectiveDate: date }),
+    'Simulated: Baishakh 01'
+  );
+
+  // Another month
+  const date2 = new Date(2024, 6, 16, 12, 0, 0);
+  assert.equal(
+    formatToolbarPillLabel({ isSimulated: true, effectiveDate: date2 }),
+    'Simulated: Shrawan 01'
+  );
+});
+
+// -------------------------------------------------------------------------
+// 12. BatchBilling Reactive Month Transition on Time-Travel
+// -------------------------------------------------------------------------
+test('BatchBilling reactive integration: simulated date shifts recalculate running BS month index and month statuses', () => {
+  const generatedSet = new Set();
+
+  // In Baishakh (month index 0):
+  const dateBaishakh = new Date(2024, 3, 13, 12, 0, 0);
+  const runningIdx1 = getCurrentBsMonthIndex(dateBaishakh);
+  assert.equal(runningIdx1, 0);
+
+  const baishakhStatus1 = computeMonthStatus('Baishakh', runningIdx1, generatedSet);
+  assert.equal(baishakhStatus1.status, 'AVAILABLE_RUNNING');
+  assert.equal(baishakhStatus1.isSelectable, true);
+
+  const jesthaStatus1 = computeMonthStatus('Jestha', runningIdx1, generatedSet);
+  assert.equal(jesthaStatus1.status, 'FUTURE_LOCKED');
+  assert.equal(jesthaStatus1.isSelectable, false);
+
+  // Time travel into Jestha (month index 1) via month jumper:
+  const dateJestha = getGregorianFromBs(2081, 1, 1);
+  const runningIdx2 = getCurrentBsMonthIndex(dateJestha);
+  assert.equal(runningIdx2, 1);
+
+  // Baishakh is now backlog unbilled, Jestha is running current, Ashadh is upcoming locked!
+  const baishakhStatus2 = computeMonthStatus('Baishakh', runningIdx2, generatedSet);
+  assert.equal(baishakhStatus2.status, 'AVAILABLE_BACKLOG');
+  assert.equal(baishakhStatus2.isSelectable, true);
+
+  const jesthaStatus2 = computeMonthStatus('Jestha', runningIdx2, generatedSet);
+  assert.equal(jesthaStatus2.status, 'AVAILABLE_RUNNING');
+  assert.equal(jesthaStatus2.isSelectable, true);
+
+  const ashadhStatus2 = computeMonthStatus('Ashadh', runningIdx2, generatedSet);
+  assert.equal(ashadhStatus2.status, 'FUTURE_LOCKED');
+  assert.equal(ashadhStatus2.isSelectable, false);
+});
+

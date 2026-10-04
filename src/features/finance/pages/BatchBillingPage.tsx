@@ -25,6 +25,7 @@ import {
   computeMonthStatus,
   type MonthStatusInfo,
 } from '../utils/cashierUtils';
+import { useTimeTravel } from '@/features/time-travel/TimeTravelContext';
 import { Card, CardHeader, CardTitle, CardDescription, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -63,10 +64,11 @@ export const BatchBillingPage: React.FC = () => {
   const navigate = useNavigate();
   const { currentYear, isLoading: isLoadingYear } = useCurrentAcademicYear(activeTenantId);
 
-  const runningMonthIndex = useMemo(() => getCurrentBsMonthIndex(), []);
+  const { effectiveDate } = useTimeTravel();
+  const runningMonthIndex = useMemo(() => getCurrentBsMonthIndex(effectiveDate), [effectiveDate]);
 
   // Month Selection State (12 Bikram Sambat Months)
-  const [selectedMonth, setSelectedMonth] = useState<BsMonth>(() => BS_MONTHS[getCurrentBsMonthIndex()]);
+  const [selectedMonth, setSelectedMonth] = useState<BsMonth>(() => BS_MONTHS[getCurrentBsMonthIndex(effectiveDate)]);
 
   // Inline Ad-Hoc Fee State
   const [showAdHoc, setShowAdHoc] = useState<boolean>(false);
@@ -147,10 +149,11 @@ export const BatchBillingPage: React.FC = () => {
     return BS_MONTHS.map((m) => computeMonthStatus(m, runningMonthIndex, generatedMonthsSet));
   }, [runningMonthIndex, generatedMonthsSet]);
 
-  // Default Due Date (15 days from today)
-  const defaultDueDate = new Date(Date.now() + 15 * 24 * 60 * 60 * 1000)
-    .toISOString()
-    .slice(0, 10);
+  // Default Due Date (15 days from effective date)
+  const defaultDueDate = useMemo(() => {
+    const d = new Date(effectiveDate.getTime() + 15 * 24 * 60 * 60 * 1000);
+    return d.toISOString().slice(0, 10);
+  }, [effectiveDate]);
 
   // Dynamic bill title based on selected month and current academic session
   const defaultBillTitle = useMemo(() => {
@@ -186,18 +189,28 @@ export const BatchBillingPage: React.FC = () => {
   // Batch Generation Mutation
   const batchBillMutation = useBatchGenerateBills(activeTenantId);
 
-  // Auto-sync selected month if current selection becomes unselectable
+  // Sync selected month when time travel shifts running month or month status updates
   useEffect(() => {
-    const currentStatus = computeMonthStatus(selectedMonth, runningMonthIndex, generatedMonthsSet);
-    if (!currentStatus.isSelectable) {
-      const preferred = monthStatuses.find((s) => s.status === 'AVAILABLE_RUNNING') ||
-                        monthStatuses.find((s) => s.status === 'AVAILABLE_BACKLOG');
+    const runningMonth = BS_MONTHS[runningMonthIndex];
+    const status = computeMonthStatus(runningMonth, runningMonthIndex, generatedMonthsSet);
+    if (status.isSelectable) {
+      setSelectedMonth(runningMonth);
+      setValue('billing_month', runningMonth);
+    } else {
+      const preferred =
+        monthStatuses.find((s) => s.status === 'AVAILABLE_RUNNING') ||
+        monthStatuses.find((s) => s.status === 'AVAILABLE_BACKLOG');
       if (preferred) {
         setSelectedMonth(preferred.month);
         setValue('billing_month', preferred.month);
       }
     }
-  }, [monthStatuses, selectedMonth, runningMonthIndex, generatedMonthsSet, setValue]);
+  }, [runningMonthIndex, generatedMonthsSet, monthStatuses, setValue]);
+
+  // Auto-sync default due date when time travel shifts effective date
+  useEffect(() => {
+    setValue('due_date', defaultDueDate);
+  }, [defaultDueDate, setValue]);
 
   // Sync initial class
   useEffect(() => {
