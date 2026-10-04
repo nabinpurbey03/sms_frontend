@@ -1,3 +1,9 @@
+import rawNepaliDate from 'nepali-date-converter';
+
+// Handle CJS/ESM interop across Vite bundler and Node
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+const NepaliDate: any = (rawNepaliDate as any)?.default || rawNepaliDate;
+
 /**
  * Utilities for Cashier POS, Monthly Billing, and Receipt Itemization.
  */
@@ -96,4 +102,95 @@ export function isArrearsFeeHead(feeName: string): boolean {
     lower.includes('prior dues') ||
     lower.includes('carried arrears')
   );
+}
+
+export type MonthGenerationStatus =
+  | 'GENERATED'         // Invoiced already -> Faded & Disabled
+  | 'AVAILABLE_RUNNING' // Active running month, unbilled -> Highlighted & Selectable
+  | 'AVAILABLE_BACKLOG' // Past month that was skipped/unbilled -> Selectable
+  | 'FUTURE_LOCKED';    // Month after running month in session -> Faded & Disabled
+
+export interface MonthStatusInfo {
+  month: BsMonth;
+  index: number;
+  status: MonthGenerationStatus;
+  isSelectable: boolean;
+  badgeLabel: string;
+  tooltipText: string;
+  description: string;
+}
+
+/**
+ * Returns the 0-indexed Bikram Sambat month (0 = Baishakh, 11 = Chaitra)
+ * for the given Gregorian date (defaults to today).
+ */
+export function getCurrentBsMonthIndex(asOfDate?: Date): number {
+  const npDate = asOfDate ? new NepaliDate(asOfDate) : new NepaliDate();
+  return npDate.getMonth();
+}
+
+/**
+ * Computes availability status, selectable flag, badge label, and tooltip description
+ * for a Bikram Sambat month given the running month index and previously generated months.
+ */
+export function computeMonthStatus(
+  month: BsMonth,
+  runningMonthIndex: number,
+  generatedMonths: Set<string>
+): MonthStatusInfo {
+  const monthIdx = BS_MONTHS.indexOf(month);
+
+  // 1. If generatedMonths.has(month) -> status = 'GENERATED', isSelectable = false, badgeLabel = 'Generated', tooltipText = `${month} invoices have already been generated for this class.`
+  if (generatedMonths.has(month)) {
+    const tooltipText = `${month} invoices have already been generated for this class.`;
+    return {
+      month,
+      index: monthIdx,
+      status: 'GENERATED',
+      isSelectable: false,
+      badgeLabel: 'Generated',
+      tooltipText,
+      description: tooltipText,
+    };
+  }
+
+  // 2. If monthIdx === runningMonthIndex -> status = 'AVAILABLE_RUNNING', isSelectable = true, badgeLabel = 'Current Month', tooltipText = `${month} is the current running cycle.`
+  if (monthIdx === runningMonthIndex) {
+    const tooltipText = `${month} is the current running cycle.`;
+    return {
+      month,
+      index: monthIdx,
+      status: 'AVAILABLE_RUNNING',
+      isSelectable: true,
+      badgeLabel: 'Current Month',
+      tooltipText,
+      description: tooltipText,
+    };
+  }
+
+  // 3. If monthIdx < runningMonthIndex -> status = 'AVAILABLE_BACKLOG', isSelectable = true, badgeLabel = 'Unbilled Past', tooltipText = `${month} was not generated yet and can be billed now.`
+  if (monthIdx < runningMonthIndex) {
+    const tooltipText = `${month} was not generated yet and can be billed now.`;
+    return {
+      month,
+      index: monthIdx,
+      status: 'AVAILABLE_BACKLOG',
+      isSelectable: true,
+      badgeLabel: 'Unbilled Past',
+      tooltipText,
+      description: tooltipText,
+    };
+  }
+
+  // 4. If monthIdx > runningMonthIndex -> status = 'FUTURE_LOCKED', isSelectable = false, badgeLabel = 'Upcoming', tooltipText = `${month} is an upcoming month in this academic session.`
+  const tooltipText = `${month} is an upcoming month in this academic session.`;
+  return {
+    month,
+    index: monthIdx,
+    status: 'FUTURE_LOCKED',
+    isSelectable: false,
+    badgeLabel: 'Upcoming',
+    tooltipText,
+    description: tooltipText,
+  };
 }

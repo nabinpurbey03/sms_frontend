@@ -36,6 +36,7 @@ export const QUARTER_WINDOW_STATUS_KEY = 'quarter_window_status';
 export const STUDENT_WALLET_KEY = 'student_wallet';
 export const STUDENT_DUES_BREAKDOWN_KEY = 'student_dues_breakdown';
 export const BILL_LATE_FEE_KEY = 'finance_bill_late_fee';
+export const GENERATED_MONTHS_KEY = 'finance_generated_months';
 
 // --- Query Hooks ---
 
@@ -244,6 +245,15 @@ export const useStudentDuesBreakdown = (
   });
 };
 
+export const useGeneratedMonths = (tenantId: string | null, classId?: string | null) => {
+  return useQuery({
+    queryKey: [GENERATED_MONTHS_KEY, tenantId, classId],
+    queryFn: () => financeApi.getGeneratedMonths(tenantId!, classId),
+    enabled: !!tenantId,
+    staleTime: 1000 * 30,
+  });
+};
+
 // --- Mutation Hooks ---
 
 export const useCreateFeeStructure = (tenantId: string | null) => {
@@ -424,6 +434,7 @@ export const useBatchGenerateBills = (tenantId: string | null) => {
       toast.success(`Generated ${res.generated_count} fee bills successfully!`);
       queryClient.invalidateQueries({ queryKey: [BILLS_KEY, tenantId] });
       queryClient.invalidateQueries({ queryKey: [FINANCE_DASHBOARD_KEY, tenantId] });
+      queryClient.invalidateQueries({ queryKey: [GENERATED_MONTHS_KEY, tenantId] });
     },
     onError: (err: any) => {
       toast.error(err.response?.data?.message || err.message || 'Failed to generate batch bills');
@@ -441,12 +452,15 @@ export const useSingleGenerateBill = (tenantId: string | null) => {
       queryClient.invalidateQueries({ queryKey: [BILLS_KEY, tenantId] });
       queryClient.invalidateQueries({ queryKey: [FINANCE_DASHBOARD_KEY, tenantId] });
       queryClient.invalidateQueries({ queryKey: [STUDENT_LEDGER_KEY, tenantId] });
+      queryClient.invalidateQueries({ queryKey: [GENERATED_MONTHS_KEY, tenantId] });
     },
     onError: (err: any) => {
       toast.error(err.response?.data?.message || err.message || 'Failed to generate bill');
     },
   });
 };
+
+export const useGenerateSingleBill = useSingleGenerateBill;
 
 export const useCancelBill = (tenantId: string | null) => {
   const queryClient = useQueryClient();

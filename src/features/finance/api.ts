@@ -144,6 +144,15 @@ export const financeApi = {
     return apiClient.post(`/finance/tenants/${tenantId}/bills/generate-single`, data);
   },
 
+  getGeneratedMonths: async (tenantId: string, classId?: string | null): Promise<string[]> => {
+    const params = classId ? { class_id: classId } : undefined;
+    const res = (await apiClient.get(`/finance/tenants/${tenantId}/bills/generated-months`, { params })) as any;
+    if (Array.isArray(res)) return res;
+    if (Array.isArray(res?.data?.data)) return res.data.data;
+    if (Array.isArray(res?.data)) return res.data;
+    return [];
+  },
+
   listBills: async (
     tenantId: string,
     params?: FeeBillFilters

@@ -7,6 +7,8 @@ import {
   calculateBaseMonthlyFee,
   calculateNetReceived,
   isArrearsFeeHead,
+  computeMonthStatus,
+  getCurrentBsMonthIndex,
 } from '../../utils/cashierUtils.ts';
 
 // -------------------------------------------------------------------------
@@ -176,5 +178,59 @@ test('batchBillGenerateSchema accepts empty string for optional ad_hoc_fee_amoun
     ad_hoc_fee_amount: -50,
   });
   assert.equal(negRes.success, false);
+});
+
+// -------------------------------------------------------------------------
+// 6. Month Generation Status Calculation Utilities
+// -------------------------------------------------------------------------
+
+test('computeMonthStatus: correctly identifies generated, running, backlog, and future months', () => {
+  // Assume running month is Ashwin (index 5)
+  const runningIndex = 5;
+  const generated = new Set(['Baishakh', 'Ashadh']);
+
+  // Case 1: Baishakh is generated -> GENERATED, not selectable
+  const baishakh = computeMonthStatus('Baishakh', runningIndex, generated);
+  assert.equal(baishakh.status, 'GENERATED');
+  assert.equal(baishakh.isSelectable, false);
+  assert.equal(baishakh.badgeLabel, 'Generated');
+  assert.equal(baishakh.tooltipText, 'Baishakh invoices have already been generated for this class.');
+  assert.equal(baishakh.index, 0);
+
+  // Case 2: Jestha was not generated and is past -> AVAILABLE_BACKLOG, selectable
+  const jestha = computeMonthStatus('Jestha', runningIndex, generated);
+  assert.equal(jestha.status, 'AVAILABLE_BACKLOG');
+  assert.equal(jestha.isSelectable, true);
+  assert.equal(jestha.badgeLabel, 'Unbilled Past');
+  assert.equal(jestha.tooltipText, 'Jestha was not generated yet and can be billed now.');
+  assert.equal(jestha.index, 1);
+
+  // Case 3: Ashwin is running month and not generated -> AVAILABLE_RUNNING, selectable
+  const ashwin = computeMonthStatus('Ashwin', runningIndex, generated);
+  assert.equal(ashwin.status, 'AVAILABLE_RUNNING');
+  assert.equal(ashwin.isSelectable, true);
+  assert.equal(ashwin.badgeLabel, 'Current Month');
+  assert.equal(ashwin.tooltipText, 'Ashwin is the current running cycle.');
+  assert.equal(ashwin.index, 5);
+
+  // Case 4: Kartik is future month -> FUTURE_LOCKED, not selectable
+  const kartik = computeMonthStatus('Kartik', runningIndex, generated);
+  assert.equal(kartik.status, 'FUTURE_LOCKED');
+  assert.equal(kartik.isSelectable, false);
+  assert.equal(kartik.badgeLabel, 'Upcoming');
+  assert.equal(kartik.tooltipText, 'Kartik is an upcoming month in this academic session.');
+  assert.equal(kartik.index, 6);
+});
+
+test('getCurrentBsMonthIndex returns an integer between 0 and 11', () => {
+  const currentIdx = getCurrentBsMonthIndex();
+  assert.equal(typeof currentIdx, 'number');
+  assert.equal(Number.isInteger(currentIdx), true);
+  assert.ok(currentIdx >= 0 && currentIdx <= 11);
+
+  // With a specific known date (e.g., 2026-05-15 is in Jestha, index 1)
+  const jesthaDate = new Date('2026-05-15');
+  const jesthaIdx = getCurrentBsMonthIndex(jesthaDate);
+  assert.equal(jesthaIdx, 1);
 });
 
