@@ -17,6 +17,7 @@ const envSchema = z.object({
     .min(1, 'VITE_TENANT_HEADER_NAME is required')
     .default('X-Tenant-ID'),
   VITE_APP_NAME: z.string().default('Schools Up Pro'),
+  VITE_ENABLE_TIME_TRAVEL: z.string().optional().default('false'),
 });
 
 const parsedEnv = envSchema.safeParse(import.meta.env);
@@ -35,6 +36,7 @@ export const ENV = Object.freeze({
   API_VERSION: rawConfig.VITE_API_VERSION.replace(/\/$/, ''),
   TENANT_HEADER_NAME: rawConfig.VITE_TENANT_HEADER_NAME,
   APP_NAME: rawConfig.VITE_APP_NAME,
+  ENABLE_TIME_TRAVEL: rawConfig.VITE_ENABLE_TIME_TRAVEL === 'true',
   IS_DEV: import.meta.env.DEV,
   IS_PROD: import.meta.env.PROD,
 });
