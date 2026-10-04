@@ -55,6 +55,12 @@ A production-grade, domain-aligned **React 19 Single Page Application (SPA)** fo
 
 ---
 
+- **Simulated Date ("Time-Travel") Testing Toolbar & Reactive Month Grid**:
+  - **Floating Sandbox Toolbar ([`TimeTravelToolbar.tsx`](file:///E:/SSUP/frontend/src/features/time-travel/components/TimeTravelToolbar.tsx))**: Collapsible floating pill docked in the bottom-right corner offering `+15 Days`, `+1 Month`, `+1 Year` presets, 12 Bikram Sambat month jumpers (`Baishakh` through `Chaitra`), and a custom BS date picker.
+  - **Active Sandbox Warning Banner ([`TimeTravelBanner.tsx`](file:///E:/SSUP/frontend/src/features/time-travel/components/TimeTravelBanner.tsx))**: High-visibility sticky amber banner displaying active simulated Bikram Sambat and Gregorian dates alongside a 1-click **"Reset to Live"** button.
+  - **Per-Session Header Injection & TanStack Invalidation ([`TimeTravelContext.tsx`](file:///E:/SSUP/frontend/src/features/time-travel/TimeTravelContext.tsx))**: Stores active simulated date in `sessionStorage` (`ssup_simulated_date`) and injects the `X-Simulated-Date` header across all Axios requests. Dynamically invalidates React Query caches (`bills`, `dashboard`, `academic-years`, `stats`) upon date shift.
+  - **Reactive Batch Billing Integration ([`BatchBillingPage.tsx`](file:///E:/SSUP/frontend/src/features/finance/pages/BatchBillingPage.tsx))**: Seamlessly recalculates the running BS month, due date defaults, and 12-month generation statuses in real-time as the simulated date shifts.
+  - **Production Kill-Switch & Role Gate**: Toolbar and banner are completely stripped from DOM when `VITE_ENABLE_TIME_TRAVEL !== 'true'` or when logged-in user is not `SUPER_ADMIN`.
 - **Hardened Finance Module: 12 BS Month Billing, Student Facilities & POS Cashier Counter**:
   - **12 Bikram Sambat Month Batch Billing ([`BatchBillGenerateDialog.tsx`](file:///E:/SSUP/frontend/src/features/finance/components/BatchBillGenerateDialog.tsx))**:
     - Complete migration from quarterly billing to 12 Bikram Sambat months (`Baishakh` through `Chaitra`).
@@ -602,10 +608,14 @@ frontend/
     │   │   └── utils/                # attendanceStatus.ts (local date, marked checks, duty resolution)
     │   ├── examination/              # Exams, grading & report cards
     │   ├── members/                  # School member directory & parent-student links
-    │   └── finance/                  # 3-level fees, bulk assignment, cloning, batch billing & payments
-    │       ├── pages/                # FeeStructuresPage, BillingPage, PaymentsPage
-    │       ├── components/           # FeeStructureDialog, CloneFeeStructuresDialog, BatchBillGenerateDialog
-    │       └── hooks/                # useFeeStructures, useCloneFeeStructures, useBulkClassFeeStructures
+    │   ├── finance/                  # 3-level fees, bulk assignment, cloning, batch billing & payments
+    │   │   ├── pages/                # FeeStructuresPage, BillingPage, PaymentsPage
+    │   │   ├── components/           # FeeStructureDialog, CloneFeeStructuresDialog, BatchBillGenerateDialog
+    │   │   └── hooks/                # useFeeStructures, useCloneFeeStructures, useBulkClassFeeStructures
+    │   └── time-travel/              # Simulated date sandbox toolbar, banner, context & utilities
+    │       ├── components/           # TimeTravelToolbar, TimeTravelBanner
+    │       ├── TimeTravelContext.tsx # Context provider with sessionStorage sync & React Query invalidation
+    │       └── timeTravelUtils.ts    # Bikram Sambat ↔ Gregorian date shift & preset calculators
     │
     └── lib/
         └── utils.ts                  # cn() class merging utility (clsx + twMerge)
@@ -810,6 +820,7 @@ All frontend configuration is managed through environment variables loaded and v
 | `VITE_API_VERSION` | `string` (Path) | `/api/v1` | API version route prefix |
 | `VITE_TENANT_HEADER_NAME` | `string` | `X-Tenant-ID` | Header name attached to requests for active tenant scoping |
 | `VITE_APP_NAME` | `string` | `Schools Up Pro` | Application display name |
+| `VITE_ENABLE_TIME_TRAVEL` | `string` (`'true'` / `'false'`) | `'false'` | Enable floating time-travel toolbar and warning banner for Super Admins in dev/staging. **Must remain `'false'` in production.** |
 
 ---
 
