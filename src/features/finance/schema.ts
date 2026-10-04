@@ -143,8 +143,8 @@ export type StudentTransportInputValues = z.input<typeof studentTransportSchema>
 export const batchBillGenerateSchema = z.object({
   class_id: z.string().min(1, 'Please select a target class'),
   section_id: z.string().optional().or(z.literal('')),
-  billing_month: z.string().optional().or(z.literal('')),
-  quarter: z.enum(['Q1', 'Q2', 'Q3', 'Q4']).default('Q1'),
+  billing_month: z.string().min(1, 'Please select a billing month'),
+  quarter: z.string().optional(),
   fee_structure_ids: z
     .array(z.string())
     .min(1, 'Select at least one fee head to invoice'),

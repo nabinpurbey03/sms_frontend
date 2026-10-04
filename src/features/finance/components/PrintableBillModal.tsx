@@ -160,13 +160,26 @@ export const PrintableBillModal: React.FC<PrintableBillModalProps> = ({
                   </tr>
                 </thead>
                 <tbody>
-                  {bill.items.map((item, idx) => (
-                    <tr key={idx} className="border-b border-zinc-200">
-                      <td className="py-1.5 px-3 border-r border-zinc-300 font-mono text-zinc-500">{idx + 1}</td>
-                      <td className="py-1.5 px-3 border-r border-zinc-300 font-medium">{item.fee_name}</td>
-                      <td className="py-1.5 px-3 text-right font-mono">{Number(item.amount).toFixed(2)}</td>
-                    </tr>
-                  ))}
+                  {bill.items.map((item, idx) => {
+                    const isArrears =
+                      item.fee_name.toLowerCase().includes('due amount for') ||
+                      item.fee_name.toLowerCase().includes('due amount academic year') ||
+                      item.fee_name.toLowerCase().includes('prior dues');
+                    return (
+                      <tr key={idx} className="border-b border-zinc-200">
+                        <td className="py-1.5 px-3 border-r border-zinc-300 font-mono text-zinc-500">{idx + 1}</td>
+                        <td className="py-1.5 px-3 border-r border-zinc-300 font-medium">
+                          {item.fee_name}
+                          {isArrears && (
+                            <span className="ml-1.5 text-[9px] px-1 py-0.2 rounded bg-amber-100 text-amber-900 border border-amber-300 font-semibold">
+                              Arrears
+                            </span>
+                          )}
+                        </td>
+                        <td className="py-1.5 px-3 text-right font-mono">{Number(item.amount).toFixed(2)}</td>
+                      </tr>
+                    );
+                  })}
                 </tbody>
               </table>
 
@@ -174,17 +187,17 @@ export const PrintableBillModal: React.FC<PrintableBillModalProps> = ({
               <div className="flex justify-end text-xs">
                 <div className="w-72 space-y-1.5">
                   <div className="flex justify-between py-0.5">
-                    <span className="text-zinc-600">Subtotal:</span>
+                    <span className="text-zinc-600">Current Month Subtotal:</span>
                     <span className="font-mono">NPR {Number(bill.subtotal_amount).toFixed(2)}</span>
                   </div>
                   {Number(bill.previous_due_amount) > 0 && (
                     <div className="flex justify-between py-0.5 text-zinc-700">
-                      <span>Previous Session Dues:</span>
+                      <span>Carried Arrears / Prior Dues:</span>
                       <span className="font-mono">+ NPR {Number(bill.previous_due_amount).toFixed(2)}</span>
                     </div>
                   )}
                   <div className="flex justify-between py-1 border-t border-zinc-300 font-bold">
-                    <span>Total Payable:</span>
+                    <span>Total Bill Payable:</span>
                     <span className="font-mono">NPR {Number(bill.total_payable).toFixed(2)}</span>
                   </div>
                   {Number(bill.paid_amount) > 0 && (

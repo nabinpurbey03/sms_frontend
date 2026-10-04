@@ -129,6 +129,12 @@ export const PrintableReceiptModal: React.FC<PrintableReceiptModalProps> = ({
                     <span className="text-zinc-500">Bill Title: </span>
                     <span className="font-medium">{receipt.bill_title}</span>
                   </div>
+                  {receipt.billing_month && (
+                    <div>
+                      <span className="text-zinc-500">Billing Month: </span>
+                      <span className="font-medium">{receipt.billing_month}</span>
+                    </div>
+                  )}
                 </div>
                 <div className="space-y-1 text-right">
                   <div>
@@ -184,28 +190,41 @@ export const PrintableReceiptModal: React.FC<PrintableReceiptModalProps> = ({
                   </tr>
                 </thead>
                 <tbody>
-                  {receipt.items.map((item, idx) => (
-                    <tr key={idx} className="border-b border-zinc-200">
-                      <td className="py-1.5 px-3 border-r border-zinc-300 font-mono text-zinc-500">{idx + 1}</td>
-                      <td className="py-1.5 px-3 border-r border-zinc-300 font-medium">{item.fee_name}</td>
-                      <td className="py-1.5 px-3 text-right font-mono">
-                        {Number(item.amount).toFixed(2)}
-                      </td>
-                    </tr>
-                  ))}
+                  {receipt.items.map((item, idx) => {
+                    const isArrears =
+                      item.fee_name.toLowerCase().includes('due amount for') ||
+                      item.fee_name.toLowerCase().includes('due amount academic year') ||
+                      item.fee_name.toLowerCase().includes('prior dues');
+                    return (
+                      <tr key={idx} className="border-b border-zinc-200">
+                        <td className="py-1.5 px-3 border-r border-zinc-300 font-mono text-zinc-500">{idx + 1}</td>
+                        <td className="py-1.5 px-3 border-r border-zinc-300 font-medium">
+                          {item.fee_name}
+                          {isArrears && (
+                            <span className="ml-1.5 text-[9px] px-1 py-0.2 rounded bg-amber-100 text-amber-900 border border-amber-300 font-semibold">
+                              Arrears
+                            </span>
+                          )}
+                        </td>
+                        <td className="py-1.5 px-3 text-right font-mono">
+                          {Number(item.amount).toFixed(2)}
+                        </td>
+                      </tr>
+                    );
+                  })}
                 </tbody>
               </table>
 
               {/* Financial Calculation Summary */}
               <div className="flex justify-end text-xs">
-                <div className="w-72 space-y-1.5">
+                <div className="w-80 space-y-1.5">
                   <div className="flex justify-between py-0.5">
                     <span className="text-zinc-600">Subtotal:</span>
                     <span className="font-mono">NPR {Number(receipt.subtotal_amount).toFixed(2)}</span>
                   </div>
                   {Number(receipt.previous_due_amount) > 0 && (
                     <div className="flex justify-between py-0.5 text-zinc-700">
-                      <span>Previous Session Dues:</span>
+                      <span>Carried Arrears / Prior Dues:</span>
                       <span className="font-mono">+ NPR {Number(receipt.previous_due_amount).toFixed(2)}</span>
                     </div>
                   )}
@@ -213,15 +232,27 @@ export const PrintableReceiptModal: React.FC<PrintableReceiptModalProps> = ({
                     <span>Total Bill Payable:</span>
                     <span className="font-mono">NPR {Number(receipt.total_payable).toFixed(2)}</span>
                   </div>
+                  {Number(receipt.discount_amount || 0) > 0 && (
+                    <div className="flex justify-between py-0.5 text-emerald-700 font-medium">
+                      <span>Discount / Waiver Granted:</span>
+                      <span className="font-mono">- NPR {Number(receipt.discount_amount).toFixed(2)}</span>
+                    </div>
+                  )}
                   {lateFeeAmount > 0 && (
                     <div className="flex justify-between py-0.5 text-zinc-800 font-medium">
                       <span>Late Fee / Penalty:</span>
                       <span className="font-mono">+ NPR {lateFeeAmount.toFixed(2)}</span>
                     </div>
                   )}
-                  <div className="flex justify-between py-1 border-y-2 border-black font-bold text-sm bg-zinc-50 px-1">
-                    <span>AMOUNT RECEIVED:</span>
+                  <div className="flex justify-between py-0.5 text-zinc-700">
+                    <span>Payment Received (Fees):</span>
                     <span className="font-mono">NPR {Number(receipt.amount_paid).toFixed(2)}</span>
+                  </div>
+                  <div className="flex justify-between py-1 border-y-2 border-black font-bold text-sm bg-zinc-50 px-1">
+                    <span>NET RECEIVED:</span>
+                    <span className="font-mono">
+                      NPR {Number(receipt.net_received ?? (Number(receipt.amount_paid) + lateFeeAmount)).toFixed(2)}
+                    </span>
                   </div>
                   <div className="flex justify-between py-0.5 font-medium">
                     <span className="text-zinc-600">Remaining Balance Due:</span>

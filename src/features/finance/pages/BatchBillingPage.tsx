@@ -8,7 +8,6 @@ import { useClasses, useClassSections, useClassStudents } from '@/features/acade
 import {
   useFeeStructures,
   useBatchGenerateBills,
-  useQuarterWindowStatus,
   useStudentFeeAssignments,
 } from '../hooks';
 import {
@@ -16,6 +15,12 @@ import {
   type BatchBillGenerateFormValues,
   type BatchBillGenerateInputValues,
 } from '../schema';
+import {
+  BS_MONTHS,
+  type BsMonth,
+  getDefaultBillTitle,
+  calculateBaseMonthlyFee,
+} from '../utils/cashierUtils';
 import { Card, CardHeader, CardTitle, CardDescription, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -25,29 +30,18 @@ import { Checkbox } from '@/components/ui/checkbox';
 import {
   Sparkles,
   Calendar,
-  FileText,
   Loader2,
-  CheckSquare,
-  Square,
   School,
-  GraduationCap,
   Info,
   ArrowLeft,
-  ShieldCheck,
-  AlertTriangle,
   Lock,
   Users,
   Coins,
-  Wallet,
-  Receipt,
   CheckCircle2,
   Search,
-  ChevronRight,
   TrendingDown,
+  CalendarDays,
 } from 'lucide-react';
-import { toast } from 'sonner';
-import { useCalendarPreferenceStore } from '@/stores/calendarPreferenceStore';
-import { formatDualDate, formatDualDateRange } from '@/features/school-settings/utils/nepaliDate';
 import { NepaliDatePicker } from '@/components/ui/nepali-date-picker';
 
 const formatCurrency = (amount: number | string): string => {
@@ -57,18 +51,13 @@ const formatCurrency = (amount: number | string): string => {
   })}`;
 };
 
-const QUARTERS = [
-  { id: 'Q1', name: 'Quarter 1', monthsBs: 'Baishakh, Jestha, Ashadh', monthsAd: 'Mid Apr – Mid Jul', period: 'Months 1-3' },
-  { id: 'Q2', name: 'Quarter 2', monthsBs: 'Shrawan, Bhadra, Ashwin', monthsAd: 'Mid Jul – Mid Oct', period: 'Months 4-6' },
-  { id: 'Q3', name: 'Quarter 3', monthsBs: 'Kartik, Mangsir, Poush', monthsAd: 'Mid Oct – Mid Jan', period: 'Months 7-9' },
-  { id: 'Q4', name: 'Quarter 4', monthsBs: 'Magh, Falgun, Chaitra', monthsAd: 'Mid Jan – Mid Apr', period: 'Months 10-12' },
-] as const;
-
 export const BatchBillingPage: React.FC = () => {
   const { activeTenantId } = useAuth();
   const navigate = useNavigate();
   const { currentYear, isLoading: isLoadingYear } = useCurrentAcademicYear(activeTenantId);
-  const { calendarSystem } = useCalendarPreferenceStore();
+
+  // Month Selection State (12 Bikram Sambat Months)
+  const [selectedMonth, setSelectedMonth] = useState<BsMonth>('Baishakh');
 
   // Class & Section Selection State
   const [selectedClassId, setSelectedClassId] = useState<string>('');
@@ -78,7 +67,7 @@ export const BatchBillingPage: React.FC = () => {
   const [generationSummary, setGenerationSummary] = useState<{
     count: number;
     totalPayable: number;
-    quarter: string;
+    month: string;
     className: string;
   } | null>(null);
 
@@ -142,6 +131,11 @@ export const BatchBillingPage: React.FC = () => {
     .toISOString()
     .slice(0, 10);
 
+  // Dynamic bill title based on selected month and current academic session
+  const defaultBillTitle = useMemo(() => {
+    return getDefaultBillTitle(selectedMonth, currentYear?.name);
+  }, [selectedMonth, currentYear?.name]);
+
   // Form Setup
   const {
     register,
@@ -155,29 +149,18 @@ export const BatchBillingPage: React.FC = () => {
     defaultValues: {
       class_id: '',
       section_id: '',
-      billing_month: 'Quarter 1 (Baishakh - Ashadh) Fee Bill',
+      billing_month: 'Baishakh',
       fee_structure_ids: [],
       due_date: defaultDueDate,
       notes: '',
-      quarter: 'Q1',
-      override_30_day_window: false,
-      override_reason: '',
       ad_hoc_fee_name: '',
       ad_hoc_fee_amount: undefined,
     },
   });
 
-  const watchedQuarter = watch('quarter') || 'Q1';
   const watchedFeeStructureIds = watch('fee_structure_ids') || [];
-  const watchedOverride = watch('override_30_day_window') || false;
   const watchedAdHocName = watch('ad_hoc_fee_name') || '';
   const watchedAdHocAmount = watch('ad_hoc_fee_amount') || 0;
-
-  // Query window status for active quarter
-  const { data: windowStatus, isLoading: isLoadingWindow } = useQuarterWindowStatus(
-    activeTenantId,
-    watchedQuarter
-  );
 
   // Batch Generation Mutation
   const batchBillMutation = useBatchGenerateBills(activeTenantId);
@@ -200,14 +183,10 @@ export const BatchBillingPage: React.FC = () => {
     }
   }, [allAvailableStructures, setValue]);
 
-  // Sync quarter selection title
-  const handleQuarterChange = (quarterId: 'Q1' | 'Q2' | 'Q3' | 'Q4') => {
-    setValue('quarter', quarterId);
-    const qObj = QUARTERS.find((q) => q.id === quarterId);
-    if (qObj) {
-      const monthLabel = calendarSystem === 'BS' ? qObj.monthsBs : `${qObj.monthsAd} / ${qObj.monthsBs}`;
-      setValue('billing_month', `${qObj.name} (${monthLabel}) Fee Bill`);
-    }
+  // Handle month selection
+  const handleMonthChange = (month: BsMonth) => {
+    setSelectedMonth(month);
+    setValue('billing_month', month);
   };
 
   const handleSelectAll = () => {
@@ -238,25 +217,13 @@ export const BatchBillingPage: React.FC = () => {
     watchedFeeStructureIds.includes(s.id)
   );
 
-  // Calculate base per-student fee (excluding student-specific transport/hostel)
-  const baseQuarterFeePerStudent = useMemo(() => {
-    let total = 0;
-    for (const s of selectedStructures) {
-      const amount = Number(s.amount) || 0;
-      if (s.frequency === 'MONTHLY') {
-        total += amount * 3;
-      } else {
-        total += amount;
-      }
-    }
-    if (watchedAdHocAmount > 0) {
-      total += Number(watchedAdHocAmount);
-    }
-    return total;
+  // Calculate base per-student monthly fee
+  const baseMonthlyFeePerStudent = useMemo(() => {
+    return calculateBaseMonthlyFee(selectedStructures, watchedAdHocAmount);
   }, [selectedStructures, watchedAdHocAmount]);
 
   // Estimated Class Total
-  const estimatedClassTotal = baseQuarterFeePerStudent * filteredStudents.length;
+  const estimatedClassTotal = baseMonthlyFeePerStudent * filteredStudents.length;
 
   const onFormSubmit = async (values: BatchBillGenerateFormValues) => {
     try {
@@ -264,11 +231,8 @@ export const BatchBillingPage: React.FC = () => {
         ...values,
         class_id: selectedClassId,
         section_id: selectedSectionId ? selectedSectionId : undefined,
-        billing_month: values.billing_month?.trim() || undefined,
+        billing_month: selectedMonth,
         notes: values.notes?.trim() || undefined,
-        quarter: values.quarter || 'Q1',
-        override_30_day_window: Boolean(values.override_30_day_window),
-        override_reason: values.override_reason?.trim() || undefined,
         ad_hoc_fee_name: values.ad_hoc_fee_name?.trim() || undefined,
         ad_hoc_fee_amount:
           values.ad_hoc_fee_amount && Number(values.ad_hoc_fee_amount) > 0
@@ -280,7 +244,7 @@ export const BatchBillingPage: React.FC = () => {
       setGenerationSummary({
         count: result?.generated_count || filteredStudents.length,
         totalPayable: Number(result?.total_amount || estimatedClassTotal),
-        quarter: watchedQuarter,
+        month: selectedMonth,
         className: selectedClass?.name || 'Class',
       });
       setIsSuccessModalOpen(true);
@@ -288,8 +252,6 @@ export const BatchBillingPage: React.FC = () => {
       // Toast handled by mutation hook
     }
   };
-
-  const isWindowBlocked = windowStatus && !windowStatus.is_window_open && !watchedOverride;
 
   return (
     <div className="space-y-6 pb-8 max-w-7xl mx-auto">
@@ -305,16 +267,16 @@ export const BatchBillingPage: React.FC = () => {
               Back to Bills & Invoices
             </Link>
             <span className="text-muted-foreground/40 text-xs">/</span>
-            <span className="text-xs font-medium text-foreground">Batch Invoicing</span>
+            <span className="text-xs font-medium text-foreground">Monthly Batch Invoicing</span>
           </div>
           <h1 className="text-2xl font-bold tracking-tight text-foreground flex items-center gap-2.5">
             <div className="w-8 h-8 rounded-lg bg-primary/10 text-primary flex items-center justify-center">
               <Sparkles className="w-4 h-4" />
             </div>
-            Quarterly Batch Invoicing Engine
+            Monthly Batch Invoicing Engine
           </h1>
           <p className="text-xs sm:text-sm text-muted-foreground mt-1">
-            Generate official quarterly invoices with 30-day window guard, duplicate lock, and student advance credit deductions.
+            Generate monthly fee bills for any of the 12 Bikram Sambat months with automatic rolling arrears integration and student advance wallet credit deductions.
           </p>
         </div>
 
@@ -334,8 +296,8 @@ export const BatchBillingPage: React.FC = () => {
             type="submit"
             form="batch-billing-form"
             size="sm"
-            disabled={batchBillMutation.isPending || isWindowBlocked || filteredStudents.length === 0}
-            className="text-xs font-bold gap-1.5 shadow-xs"
+            disabled={batchBillMutation.isPending || filteredStudents.length === 0}
+            className="text-xs font-bold gap-1.5 shadow-xs cursor-pointer"
           >
             {batchBillMutation.isPending ? (
               <>
@@ -345,7 +307,7 @@ export const BatchBillingPage: React.FC = () => {
             ) : (
               <>
                 <Sparkles className="w-3.5 h-3.5" />
-                Generate Invoices
+                Generate {selectedMonth} Invoices
               </>
             )}
           </Button>
@@ -358,135 +320,62 @@ export const BatchBillingPage: React.FC = () => {
           {/* LEFT COLUMN: CONFIGURATION CONTROLS (7 COLS)              */}
           {/* ======================================================== */}
           <div className="lg:col-span-7 space-y-6">
-            {/* Step 1: Quarter Selection & Window Guard */}
+            {/* Step 1: 12 BS Months Selector */}
             <Card className="border-border/60 shadow-xs">
               <CardHeader className="p-4 sm:p-5 pb-3">
                 <div className="flex items-center justify-between">
                   <div className="space-y-1">
                     <CardTitle className="text-sm sm:text-base font-bold flex items-center gap-2">
-                      <Calendar className="w-4 h-4 text-primary" />
-                      1. Select Billing Quarter
+                      <CalendarDays className="w-4 h-4 text-primary" />
+                      1. Select Billing Month (Bikram Sambat)
                     </CardTitle>
                     <CardDescription className="text-xs">
-                      Pick the academic quarter. Monthly fees will be aggregated for 3 months.
+                      Pick the Nepali calendar month to invoice. Standard monthly fees will be charged for this cycle.
                     </CardDescription>
                   </div>
-                  {windowStatus && (
-                    <Badge
-                      variant={windowStatus.is_window_open ? 'success' : 'warning'}
-                      className="gap-1 font-mono text-[11px]"
-                    >
-                      {windowStatus.is_window_open ? (
-                        <>
-                          <ShieldCheck className="w-3.5 h-3.5" />
-                          Window Open
-                        </>
-                      ) : (
-                        <>
-                          <AlertTriangle className="w-3.5 h-3.5" />
-                          Window Locked
-                        </>
-                      )}
-                    </Badge>
-                  )}
+                  <Badge variant="outline" className="gap-1 font-mono text-[11px] bg-primary/5 text-primary border-primary/20">
+                    <Calendar className="w-3 h-3" />
+                    {selectedMonth}
+                  </Badge>
                 </div>
               </CardHeader>
               <CardContent className="p-4 sm:p-5 pt-2 space-y-4">
-                {/* 4 Quarter Pill Cards */}
-                <div className="grid grid-cols-2 sm:grid-cols-4 gap-2.5">
-                  {QUARTERS.map((q) => {
-                    const isSelected = watchedQuarter === q.id;
+                {/* 12 BS Month Buttons Grid */}
+                <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-2">
+                  {BS_MONTHS.map((month, idx) => {
+                    const isSelected = selectedMonth === month;
+                    const monthNumber = String(idx + 1).padStart(2, '0');
                     return (
                       <button
-                        key={q.id}
+                        key={month}
                         type="button"
-                        onClick={() => handleQuarterChange(q.id as any)}
-                        className={`p-3 rounded-xl border text-left transition-all cursor-pointer flex flex-col justify-between ${
+                        onClick={() => handleMonthChange(month)}
+                        className={`p-2.5 rounded-xl border text-left transition-all cursor-pointer flex flex-col justify-between ${
                           isSelected
-                            ? 'border-primary bg-primary/10 shadow-2xs ring-2 ring-primary/20'
-                            : 'border-border/60 hover:border-border hover:bg-muted/40'
+                            ? 'border-primary bg-primary/10 shadow-xs ring-2 ring-primary/25 font-bold'
+                            : 'border-border/60 hover:border-border hover:bg-muted/40 text-muted-foreground'
                         }`}
                       >
                         <div className="flex items-center justify-between w-full mb-1">
-                          <span className={`text-xs font-bold ${isSelected ? 'text-primary' : 'text-foreground'}`}>
-                            {q.id}
+                          <span className={`text-[10px] font-mono uppercase font-semibold ${isSelected ? 'text-primary' : 'text-muted-foreground'}`}>
+                            M{monthNumber}
                           </span>
-                          <span className="text-[10px] uppercase font-mono text-muted-foreground">
-                            {q.period}
-                          </span>
+                          {isSelected && <CheckCircle2 className="w-3.5 h-3.5 text-primary shrink-0" />}
                         </div>
-                        <div className="text-[11px] font-medium text-foreground/90 truncate">
-                          {q.name}
-                        </div>
-                        <div className="text-[10px] text-muted-foreground truncate mt-0.5">
-                          {calendarSystem === 'BS' ? q.monthsBs : `${q.monthsAd} (${q.monthsBs})`}
+                        <div className={`text-xs ${isSelected ? 'text-primary font-bold' : 'text-foreground font-medium'}`}>
+                          {month}
                         </div>
                       </button>
                     );
                   })}
                 </div>
 
-                {/* Window Guard Status Banner */}
-                {windowStatus && (
-                  <div
-                    className={`p-3.5 rounded-xl border text-xs flex flex-col gap-2 ${
-                      windowStatus.is_window_open
-                        ? 'bg-emerald-500/10 border-emerald-500/30 text-emerald-950 dark:text-emerald-200'
-                        : 'bg-amber-500/10 border-amber-500/30 text-amber-950 dark:text-amber-200'
-                    }`}
-                  >
-                    <div className="flex items-start gap-2.5">
-                      {windowStatus.is_window_open ? (
-                        <ShieldCheck className="w-4 h-4 text-emerald-600 dark:text-emerald-400 mt-0.5 shrink-0" />
-                      ) : (
-                        <AlertTriangle className="w-4 h-4 text-amber-600 dark:text-amber-400 mt-0.5 shrink-0" />
-                      )}
-                      <div className="space-y-1 flex-1">
-                        <div className="font-semibold text-xs flex items-center justify-between">
-                          <span>
-                            {windowStatus.is_window_open
-                              ? `Generation Window Active for ${windowStatus.quarter_name}`
-                              : `Generation Window Locked for ${windowStatus.quarter_name}`}
-                          </span>
-                          <span className="font-mono text-[11px]">
-                            {windowStatus.days_until_window_open > 0
-                              ? `Opens in ${windowStatus.days_until_window_open} days`
-                              : 'Ready for Generation'}
-                          </span>
-                        </div>
-                        <p className="text-[11px] opacity-90 leading-relaxed">
-                          Quarter cycle spans <span className="font-semibold text-foreground">{formatDualDateRange(windowStatus.start_date, windowStatus.end_date, calendarSystem)}</span>. Generation is permitted
-                          within 30 days before quarter end (opened on <span className="font-semibold text-foreground">{formatDualDate(windowStatus.window_open_date, calendarSystem)}</span>).
-                        </p>
-                      </div>
-                    </div>
-
-                    {/* Admin Override Toggle if Locked */}
-                    {!windowStatus.is_window_open && (
-                      <div className="pt-2.5 mt-1 border-t border-amber-500/20 flex flex-col sm:flex-row sm:items-center justify-between gap-3">
-                        <div className="flex items-center gap-2">
-                          <Checkbox
-                            id="override-switch"
-                            checked={watchedOverride}
-                            onCheckedChange={(checked) => setValue('override_30_day_window', Boolean(checked))}
-                          />
-                          <Label htmlFor="override-switch" className="text-xs font-semibold cursor-pointer">
-                            Enable Admin Early Generation Override
-                          </Label>
-                        </div>
-                        {watchedOverride && (
-                          <div className="w-full sm:w-1/2">
-                            <Input
-                              placeholder="Reason for early generation..."
-                              {...register('override_reason')}
-                              className="text-xs h-7 bg-background"
-                            />
-                          </div>
-                        )}
-                      </div>
-                    )}
-                  </div>
-                )}
+                <div className="text-[11px] text-muted-foreground bg-muted/40 p-2.5 rounded-lg border border-border/50 flex items-center gap-2">
+                  <Info className="w-3.5 h-3.5 shrink-0 text-primary" />
+                  <span>
+                    Invoices will default to title: <strong className="text-foreground">{defaultBillTitle}</strong>
+                  </span>
+                </div>
               </CardContent>
             </Card>
 
@@ -495,7 +384,7 @@ export const BatchBillingPage: React.FC = () => {
               <CardHeader className="p-4 sm:p-5 pb-3">
                 <CardTitle className="text-sm sm:text-base font-bold flex items-center gap-2">
                   <School className="w-4 h-4 text-primary" />
-                  2. Target Class & Invoice Parameters
+                  2. Target Class & Terms
                 </CardTitle>
                 <CardDescription className="text-xs">
                   Choose the target student cohort and set payment due terms.
@@ -546,16 +435,6 @@ export const BatchBillingPage: React.FC = () => {
                     </select>
                   </div>
 
-                  {/* Billing Title */}
-                  <div className="space-y-1.5 sm:col-span-2">
-                    <Label className="text-xs font-semibold">Invoice Title / Month Description</Label>
-                    <Input
-                      placeholder="e.g., Quarter 1 (Baishakh - Ashadh) Fee Bill"
-                      {...register('billing_month')}
-                      className="text-xs h-9"
-                    />
-                  </div>
-
                   {/* Due Date */}
                   <div>
                     <NepaliDatePicker
@@ -591,7 +470,7 @@ export const BatchBillingPage: React.FC = () => {
                       3. Fee Structures to Include ({selectedStructures.length}/{allAvailableStructures.length})
                     </CardTitle>
                     <CardDescription className="text-xs">
-                      School-level and class-level fee heads. Monthly heads will be multiplied by 3.
+                      School-level and class-level fee heads to be charged for {selectedMonth}.
                     </CardDescription>
                   </div>
                   <div className="flex items-center gap-2">
@@ -631,8 +510,6 @@ export const BatchBillingPage: React.FC = () => {
                     {allAvailableStructures.map((structure) => {
                       const isSelected = watchedFeeStructureIds.includes(structure.id);
                       const isSchoolLevel = structure.fee_level === 'SCHOOL';
-                      const isMonthly = structure.frequency === 'MONTHLY';
-                      const quarterAmount = isMonthly ? Number(structure.amount) * 3 : Number(structure.amount);
 
                       return (
                         <div
@@ -664,12 +541,7 @@ export const BatchBillingPage: React.FC = () => {
                             <div className="flex items-center justify-between text-[11px] text-muted-foreground">
                               <span className="capitalize">{structure.frequency.toLowerCase()}</span>
                               <span className="font-mono font-bold text-foreground">
-                                {formatCurrency(quarterAmount)}
-                                {isMonthly && (
-                                  <span className="text-[10px] text-muted-foreground font-normal ml-1">
-                                    (3x {formatCurrency(structure.amount)})
-                                  </span>
-                                )}
+                                {formatCurrency(structure.amount)}
                               </span>
                             </div>
                           </div>
@@ -689,7 +561,7 @@ export const BatchBillingPage: React.FC = () => {
                   4. Optional Class-Level Ad-Hoc Charge
                 </CardTitle>
                 <CardDescription className="text-xs">
-                  Inject an optional one-time class fee into all generated bills (e.g., Term Exam Fee, Field Trip).
+                  Inject an optional one-time fee for this month (e.g., Monthly Assessment, Activity).
                 </CardDescription>
               </CardHeader>
               <CardContent className="p-4 sm:p-5 pt-2">
@@ -697,7 +569,7 @@ export const BatchBillingPage: React.FC = () => {
                   <div className="space-y-1.5">
                     <Label className="text-xs font-semibold">Ad-Hoc Fee Title</Label>
                     <Input
-                      placeholder="e.g., Term 1 Exam & Material Fee"
+                      placeholder="e.g., Monthly Test Fee"
                       {...register('ad_hoc_fee_name')}
                       className="text-xs h-9"
                     />
@@ -725,7 +597,7 @@ export const BatchBillingPage: React.FC = () => {
             <Card className="border-primary/30 bg-primary/5 shadow-xs overflow-hidden">
               <div className="p-4 sm:p-5 border-b border-primary/20 space-y-1">
                 <span className="text-[10px] font-bold uppercase tracking-wider text-primary">
-                  Billing Cohort Projection
+                  Billing Cohort Projection • {selectedMonth}
                 </span>
                 <h3 className="text-base font-bold text-foreground">
                   {selectedClass?.name || 'Selected Class'} ({filteredStudents.length} Students)
@@ -739,9 +611,9 @@ export const BatchBillingPage: React.FC = () => {
                       Base Fee Per Student
                     </span>
                     <div className="text-base font-bold font-mono text-foreground mt-0.5">
-                      {formatCurrency(baseQuarterFeePerStudent)}
+                      {formatCurrency(baseMonthlyFeePerStudent)}
                     </div>
-                    <span className="text-[10px] text-muted-foreground">Includes 3-mo tuition</span>
+                    <span className="text-[10px] text-muted-foreground">For {selectedMonth}</span>
                   </div>
 
                   <div className="p-3 rounded-xl bg-background border border-border/60">
@@ -779,30 +651,21 @@ export const BatchBillingPage: React.FC = () => {
                 <div className="p-3 rounded-lg bg-muted/40 border border-border/50 space-y-1.5 text-[11px] text-muted-foreground">
                   <div className="flex items-center gap-1.5 font-semibold text-foreground">
                     <Info className="w-3.5 h-3.5 text-primary" />
-                    Quarterly Invoicing Rules
+                    Monthly Invoicing Rules
                   </div>
                   <ul className="list-disc list-inside space-y-1 pl-1">
-                    <li>Duplicate generation is strictly locked to prevent double receivables.</li>
-                    <li>Individual student facility fees (hostel, bus) are auto-calculated for 3 months.</li>
+                    <li>Duplicate generation is strictly locked to prevent double receivables for {selectedMonth}.</li>
+                    <li>Individual student facility fees (hostel, bus) are auto-calculated for the month.</li>
                     <li>Advance credits in student wallets will automatically reduce net payable.</li>
+                    <li>Rolling arrears from previous months will be automatically itemized.</li>
                   </ul>
                 </div>
 
                 {/* Primary Batch Generation Action */}
                 <div className="pt-3 border-t border-primary/20 space-y-3">
-                  {isWindowBlocked && (
-                    <div className="p-3 rounded-lg bg-amber-500/10 border border-amber-500/30 text-amber-800 dark:text-amber-300 text-xs flex items-start gap-2">
-                      <Lock className="w-4 h-4 shrink-0 mt-0.5 text-amber-600 dark:text-amber-400" />
-                      <div className="space-y-0.5">
-                        <span className="font-bold block">Quarter Window Restricted</span>
-                        <span>{watchedQuarter} billing is closed until 30 days before quarter end. Check admin override to proceed.</span>
-                      </div>
-                    </div>
-                  )}
-
                   {filteredStudents.length === 0 && !isLoadingStudents && (
                     <div className="p-3 rounded-lg bg-muted text-muted-foreground text-xs flex items-center gap-2">
-                      <AlertTriangle className="w-4 h-4 shrink-0 text-amber-500" />
+                      <Info className="w-4 h-4 shrink-0 text-amber-500" />
                       <span>Please select a class with enrolled students to generate invoices.</span>
                     </div>
                   )}
@@ -810,7 +673,7 @@ export const BatchBillingPage: React.FC = () => {
                   <Button
                     type="submit"
                     form="batch-billing-form"
-                    disabled={batchBillMutation.isPending || isWindowBlocked || filteredStudents.length === 0}
+                    disabled={batchBillMutation.isPending || filteredStudents.length === 0}
                     className="w-full gap-2 h-11 text-xs sm:text-sm font-bold shadow-md cursor-pointer"
                   >
                     {batchBillMutation.isPending ? (
@@ -818,15 +681,10 @@ export const BatchBillingPage: React.FC = () => {
                         <Loader2 className="w-4 h-4 animate-spin" />
                         Generating Invoices...
                       </>
-                    ) : isWindowBlocked ? (
-                      <>
-                        <Lock className="w-4 h-4" />
-                        Window Locked (Needs Override)
-                      </>
                     ) : (
                       <>
                         <Sparkles className="w-4 h-4" />
-                        Generate {filteredStudents.length} Invoices for {watchedQuarter}
+                        Generate {filteredStudents.length} Invoices for {selectedMonth}
                       </>
                     )}
                   </Button>
@@ -912,7 +770,7 @@ export const BatchBillingPage: React.FC = () => {
 
                           <div className="text-right shrink-0">
                             <span className="font-mono font-bold text-foreground text-xs block">
-                              ~{formatCurrency(baseQuarterFeePerStudent)}
+                              ~{formatCurrency(baseMonthlyFeePerStudent)}
                             </span>
                             <span className="text-[10px] text-emerald-600 font-medium">Ready</span>
                           </div>
@@ -937,7 +795,7 @@ export const BatchBillingPage: React.FC = () => {
             <div className="space-y-1">
               <h3 className="text-lg font-bold text-foreground">Invoices Generated Successfully!</h3>
               <p className="text-xs text-muted-foreground">
-                Batch quarterly billing was recorded for {generationSummary.className} ({generationSummary.quarter}).
+                Monthly billing for {generationSummary.month} was created for {generationSummary.className}.
               </p>
             </div>
 
@@ -947,8 +805,8 @@ export const BatchBillingPage: React.FC = () => {
                 <span className="font-bold">{generationSummary.count}</span>
               </div>
               <div className="flex justify-between">
-                <span className="text-muted-foreground font-sans">Quarter:</span>
-                <span className="font-bold">{generationSummary.quarter}</span>
+                <span className="text-muted-foreground font-sans">Billing Month:</span>
+                <span className="font-bold text-primary">{generationSummary.month}</span>
               </div>
               <div className="flex justify-between">
                 <span className="text-muted-foreground font-sans">Total Billed:</span>

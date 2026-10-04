@@ -335,14 +335,17 @@ export interface ReceiptDocument {
   parent_phone?: string | null;
   bill_title: string;
   bill_number: string;
+  billing_month?: string | null;
   items: FeeBillItem[];
   subtotal_amount: number | string;
   previous_due_amount: number | string;
   total_payable: number | string;
   amount_paid: number | string;
+  discount_amount?: number | string;
   remaining_due: number | string;
   late_fee_amount?: number | string;
   late_fee_waived?: boolean;
+  net_received?: number | string;
   payment_method: string;
   transaction_reference?: string | null;
   received_by_name?: string | null;
