@@ -9,6 +9,7 @@ import {
   useFeeStructures,
   useBatchGenerateBills,
   useStudentFeeAssignments,
+  useGeneratedMonths,
 } from '../hooks';
 import {
   batchBillGenerateSchema,
@@ -20,6 +21,9 @@ import {
   type BsMonth,
   getDefaultBillTitle,
   calculateBaseMonthlyFee,
+  getCurrentBsMonthIndex,
+  computeMonthStatus,
+  type MonthStatusInfo,
 } from '../utils/cashierUtils';
 import { Card, CardHeader, CardTitle, CardDescription, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -27,6 +31,7 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Badge } from '@/components/ui/badge';
 import { Checkbox } from '@/components/ui/checkbox';
+import { Tooltip, TooltipTrigger, TooltipContent } from '@/components/ui/tooltip';
 import {
   Sparkles,
   Calendar,
@@ -41,6 +46,8 @@ import {
   Search,
   TrendingDown,
   CalendarDays,
+  Plus,
+  X,
 } from 'lucide-react';
 import { NepaliDatePicker } from '@/components/ui/nepali-date-picker';
 
@@ -56,8 +63,13 @@ export const BatchBillingPage: React.FC = () => {
   const navigate = useNavigate();
   const { currentYear, isLoading: isLoadingYear } = useCurrentAcademicYear(activeTenantId);
 
+  const runningMonthIndex = useMemo(() => getCurrentBsMonthIndex(), []);
+
   // Month Selection State (12 Bikram Sambat Months)
-  const [selectedMonth, setSelectedMonth] = useState<BsMonth>('Baishakh');
+  const [selectedMonth, setSelectedMonth] = useState<BsMonth>(() => BS_MONTHS[getCurrentBsMonthIndex()]);
+
+  // Inline Ad-Hoc Fee State
+  const [showAdHoc, setShowAdHoc] = useState<boolean>(false);
 
   // Class & Section Selection State
   const [selectedClassId, setSelectedClassId] = useState<string>('');
@@ -126,6 +138,15 @@ export const BatchBillingPage: React.FC = () => {
   );
   const studentAssignedFees = studentAssignedFeesData || [];
 
+  // Query generated months for this class in current session
+  const { data: generatedMonthsList = [] } = useGeneratedMonths(activeTenantId, selectedClassId || null);
+  const generatedMonthsSet = useMemo(() => new Set(generatedMonthsList), [generatedMonthsList]);
+
+  // Memoize statuses for all 12 BS months
+  const monthStatuses = useMemo(() => {
+    return BS_MONTHS.map((m) => computeMonthStatus(m, runningMonthIndex, generatedMonthsSet));
+  }, [runningMonthIndex, generatedMonthsSet]);
+
   // Default Due Date (15 days from today)
   const defaultDueDate = new Date(Date.now() + 15 * 24 * 60 * 60 * 1000)
     .toISOString()
@@ -149,7 +170,7 @@ export const BatchBillingPage: React.FC = () => {
     defaultValues: {
       class_id: '',
       section_id: '',
-      billing_month: 'Baishakh',
+      billing_month: BS_MONTHS[runningMonthIndex],
       fee_structure_ids: [],
       due_date: defaultDueDate,
       notes: '',
@@ -164,6 +185,19 @@ export const BatchBillingPage: React.FC = () => {
 
   // Batch Generation Mutation
   const batchBillMutation = useBatchGenerateBills(activeTenantId);
+
+  // Auto-sync selected month if current selection becomes unselectable
+  useEffect(() => {
+    const currentStatus = computeMonthStatus(selectedMonth, runningMonthIndex, generatedMonthsSet);
+    if (!currentStatus.isSelectable) {
+      const preferred = monthStatuses.find((s) => s.status === 'AVAILABLE_RUNNING') ||
+                        monthStatuses.find((s) => s.status === 'AVAILABLE_BACKLOG');
+      if (preferred) {
+        setSelectedMonth(preferred.month);
+        setValue('billing_month', preferred.month);
+      }
+    }
+  }, [monthStatuses, selectedMonth, runningMonthIndex, generatedMonthsSet, setValue]);
 
   // Sync initial class
   useEffect(() => {
@@ -342,28 +376,65 @@ export const BatchBillingPage: React.FC = () => {
               <CardContent className="p-4 sm:p-5 pt-2 space-y-4">
                 {/* 12 BS Month Buttons Grid */}
                 <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-2">
-                  {BS_MONTHS.map((month, idx) => {
-                    const isSelected = selectedMonth === month;
-                    const monthNumber = String(idx + 1).padStart(2, '0');
+                  {monthStatuses.map((info) => {
+                    const isSelected = selectedMonth === info.month;
+                    const monthNumber = String(info.index + 1).padStart(2, '0');
+
+                    // Styles based on status
+                    let cardClass = '';
+                    if (info.status === 'GENERATED') {
+                      cardClass = 'opacity-45 bg-muted/20 border-border/40 cursor-not-allowed select-none';
+                    } else if (info.status === 'FUTURE_LOCKED') {
+                      cardClass = 'opacity-35 bg-muted/10 border-border/30 cursor-not-allowed select-none';
+                    } else if (isSelected) {
+                      cardClass = 'border-primary bg-primary/10 shadow-xs ring-2 ring-primary/25 font-bold cursor-pointer';
+                    } else {
+                      cardClass = 'border-border/60 hover:border-border hover:bg-muted/40 text-muted-foreground cursor-pointer';
+                    }
+
                     return (
                       <button
-                        key={month}
+                        key={info.month}
                         type="button"
-                        onClick={() => handleMonthChange(month)}
-                        className={`p-2.5 rounded-xl border text-left transition-all cursor-pointer flex flex-col justify-between ${
-                          isSelected
-                            ? 'border-primary bg-primary/10 shadow-xs ring-2 ring-primary/25 font-bold'
-                            : 'border-border/60 hover:border-border hover:bg-muted/40 text-muted-foreground'
-                        }`}
+                        disabled={!info.isSelectable}
+                        onClick={() => {
+                          if (info.isSelectable) {
+                            handleMonthChange(info.month);
+                          }
+                        }}
+                        title={info.tooltipText}
+                        className={`p-2.5 rounded-xl border text-left transition-all flex flex-col justify-between ${cardClass}`}
                       >
                         <div className="flex items-center justify-between w-full mb-1">
                           <span className={`text-[10px] font-mono uppercase font-semibold ${isSelected ? 'text-primary' : 'text-muted-foreground'}`}>
                             M{monthNumber}
                           </span>
+                          {info.status === 'GENERATED' && (
+                            <Badge variant="outline" className="text-[9px] px-1 py-0 font-medium bg-emerald-500/10 text-emerald-700 dark:text-emerald-300 border-emerald-500/20 flex items-center gap-0.5">
+                              <CheckCircle2 className="w-2.5 h-2.5 text-emerald-500" />
+                              <span>Generated</span>
+                            </Badge>
+                          )}
+                          {info.status === 'FUTURE_LOCKED' && (
+                            <Badge variant="outline" className="text-[9px] px-1 py-0 font-medium text-muted-foreground bg-muted/40 flex items-center gap-0.5">
+                              <Lock className="w-2.5 h-2.5" />
+                              <span>Upcoming</span>
+                            </Badge>
+                          )}
+                          {info.status === 'AVAILABLE_RUNNING' && !isSelected && (
+                            <Badge variant="outline" className="text-[9px] px-1 py-0 font-medium bg-blue-500/10 text-blue-600 dark:text-blue-400 border-blue-500/20">
+                              Current
+                            </Badge>
+                          )}
+                          {info.status === 'AVAILABLE_BACKLOG' && !isSelected && (
+                            <Badge variant="secondary" className="text-[9px] px-1 py-0 font-medium">
+                              Unbilled
+                            </Badge>
+                          )}
                           {isSelected && <CheckCircle2 className="w-3.5 h-3.5 text-primary shrink-0" />}
                         </div>
-                        <div className={`text-xs ${isSelected ? 'text-primary font-bold' : 'text-foreground font-medium'}`}>
-                          {month}
+                        <div className={`text-xs ${isSelected ? 'text-primary font-bold' : info.isSelectable ? 'text-foreground font-medium' : 'text-muted-foreground'}`}>
+                          {info.month}
                         </div>
                       </button>
                     );
@@ -373,7 +444,7 @@ export const BatchBillingPage: React.FC = () => {
                 <div className="text-[11px] text-muted-foreground bg-muted/40 p-2.5 rounded-lg border border-border/50 flex items-center gap-2">
                   <Info className="w-3.5 h-3.5 shrink-0 text-primary" />
                   <span>
-                    Invoices will default to title: <strong className="text-foreground">{defaultBillTitle}</strong>
+                    Running month: <strong className="text-foreground">{BS_MONTHS[runningMonthIndex]}</strong>. You can generate invoices for the running month and any past unbilled months.
                   </span>
                 </div>
               </CardContent>
@@ -474,6 +545,27 @@ export const BatchBillingPage: React.FC = () => {
                     </CardDescription>
                   </div>
                   <div className="flex items-center gap-2">
+                    <Tooltip>
+                      <TooltipTrigger asChild>
+                        <Button
+                          type="button"
+                          variant={showAdHoc ? 'secondary' : 'outline'}
+                          size="sm"
+                          onClick={() => {
+                            if (showAdHoc && !watchedAdHocAmount && !watchedAdHocName) {
+                              setShowAdHoc(false);
+                            } else {
+                              setShowAdHoc(!showAdHoc);
+                            }
+                          }}
+                          className="text-[11px] h-7 px-2 gap-1 cursor-pointer"
+                        >
+                          <Plus className="w-3.5 h-3.5 text-primary" />
+                          <span>Ad-Hoc Fee</span>
+                        </Button>
+                      </TooltipTrigger>
+                      <TooltipContent>Optional Class-Level Ad-Hoc Charge</TooltipContent>
+                    </Tooltip>
                     <Button
                       type="button"
                       variant="ghost"
@@ -496,6 +588,57 @@ export const BatchBillingPage: React.FC = () => {
                 </div>
               </CardHeader>
               <CardContent className="p-4 sm:p-5 pt-2 space-y-3">
+                {(showAdHoc || watchedAdHocAmount > 0 || Boolean(watchedAdHocName)) && (
+                  <div className="p-3 rounded-xl border border-dashed border-primary/40 bg-primary/5 space-y-2.5 animate-in fade-in duration-150">
+                    <div className="flex items-center justify-between">
+                      <div className="flex items-center gap-1.5 text-xs font-semibold text-primary">
+                        <Sparkles className="w-3.5 h-3.5" />
+                        <span>Optional Class-Level Ad-Hoc Charge</span>
+                      </div>
+                      <Button
+                        type="button"
+                        variant="ghost"
+                        size="icon"
+                        className="w-5 h-5 text-muted-foreground hover:text-destructive cursor-pointer"
+                        onClick={() => {
+                          setValue('ad_hoc_fee_name', '');
+                          setValue('ad_hoc_fee_amount', undefined);
+                          setShowAdHoc(false);
+                        }}
+                        title="Remove ad-hoc charge"
+                      >
+                        <X className="w-3 h-3" />
+                      </Button>
+                    </div>
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                      <div className="space-y-1">
+                        <Label className="text-xs font-semibold">Fee Title</Label>
+                        <Input
+                          placeholder="e.g., Monthly Assessment Fee"
+                          {...register('ad_hoc_fee_name')}
+                          className="text-xs h-8 bg-card"
+                        />
+                        {errors.ad_hoc_fee_name && (
+                          <p className="text-[11px] text-destructive">{errors.ad_hoc_fee_name.message}</p>
+                        )}
+                      </div>
+                      <div className="space-y-1">
+                        <Label className="text-xs font-semibold">Amount (NPR)</Label>
+                        <Input
+                          type="number"
+                          step="any"
+                          placeholder="e.g., 500"
+                          {...register('ad_hoc_fee_amount', { valueAsNumber: true })}
+                          className="text-xs h-8 bg-card font-mono"
+                        />
+                        {errors.ad_hoc_fee_amount && (
+                          <p className="text-[11px] text-destructive">{errors.ad_hoc_fee_amount.message}</p>
+                        )}
+                      </div>
+                    </div>
+                  </div>
+                )}
+
                 {isLoadingSchoolFees || isLoadingClassFees ? (
                   <div className="flex items-center justify-center p-6 text-muted-foreground text-xs gap-2">
                     <Loader2 className="w-4 h-4 animate-spin" />
@@ -550,47 +693,6 @@ export const BatchBillingPage: React.FC = () => {
                     })}
                   </div>
                 )}
-              </CardContent>
-            </Card>
-
-            {/* Step 4: Optional Class Ad-Hoc Fee */}
-            <Card className="border-border/60 shadow-xs">
-              <CardHeader className="p-4 sm:p-5 pb-3">
-                <CardTitle className="text-sm sm:text-base font-bold flex items-center gap-2">
-                  <Sparkles className="w-4 h-4 text-primary" />
-                  4. Optional Class-Level Ad-Hoc Charge
-                </CardTitle>
-                <CardDescription className="text-xs">
-                  Inject an optional one-time fee for this month (e.g., Monthly Assessment, Activity).
-                </CardDescription>
-              </CardHeader>
-              <CardContent className="p-4 sm:p-5 pt-2">
-                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                  <div className="space-y-1.5">
-                    <Label className="text-xs font-semibold">Ad-Hoc Fee Title</Label>
-                    <Input
-                      placeholder="e.g., Monthly Test Fee"
-                      {...register('ad_hoc_fee_name')}
-                      className="text-xs h-9"
-                    />
-                    {errors.ad_hoc_fee_name && (
-                      <p className="text-[11px] text-destructive">{errors.ad_hoc_fee_name.message}</p>
-                    )}
-                  </div>
-                  <div className="space-y-1.5">
-                    <Label className="text-xs font-semibold">Amount (NPR)</Label>
-                    <Input
-                      type="number"
-                      step="any"
-                      placeholder="e.g., 500"
-                      {...register('ad_hoc_fee_amount', { valueAsNumber: true })}
-                      className="text-xs h-9"
-                    />
-                    {errors.ad_hoc_fee_amount && (
-                      <p className="text-[11px] text-destructive">{errors.ad_hoc_fee_amount.message}</p>
-                    )}
-                  </div>
-                </div>
               </CardContent>
             </Card>
           </div>
