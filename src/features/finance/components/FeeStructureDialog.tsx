@@ -36,13 +36,14 @@ import {
   type FeeStructureFormValues,
   type FeeStructureInputValues,
 } from '../schema';
-import type { FeeStructure } from '../types';
+import type { FeeStructure, FeeStructureBulkClassCreateDTO } from '../types';
 import { useClasses } from '@/features/academic/hooks';
 
 interface FeeStructureDialogProps {
   isOpen: boolean;
   onClose: () => void;
   onSubmit: (data: FeeStructureFormValues) => Promise<any>;
+  onBulkSubmit?: (data: FeeStructureBulkClassCreateDTO) => Promise<any>;
   isLoading: boolean;
   tenantId: string | null;
   initialData?: FeeStructure | null;
@@ -212,6 +213,7 @@ export const FeeStructureDialog: React.FC<FeeStructureDialogProps> = ({
   isOpen,
   onClose,
   onSubmit,
+  onBulkSubmit,
   isLoading,
   tenantId,
   initialData,
@@ -233,6 +235,8 @@ export const FeeStructureDialog: React.FC<FeeStructureDialogProps> = ({
     defaultValues: {
       fee_level: defaultFeeLevel,
       class_id: defaultClassId || '',
+      class_ids: defaultClassId ? [defaultClassId] : [],
+      is_bulk_class: false,
       name: '',
       fee_category: 'TUITION',
       frequency: 'MONTHLY',
@@ -246,6 +250,8 @@ export const FeeStructureDialog: React.FC<FeeStructureDialogProps> = ({
   const watchedFrequency = watch('frequency') || 'MONTHLY';
   const watchedAmount = watch('amount');
   const watchedClassId = watch('class_id');
+  const watchedClassIds = watch('class_ids') || [];
+  const isBulkMode = watch('is_bulk_class') ?? false;
   const watchedCategory = watch('fee_category');
 
   // Pre-fill or reset form on open / change
@@ -254,6 +260,8 @@ export const FeeStructureDialog: React.FC<FeeStructureDialogProps> = ({
       reset({
         fee_level: (initialData.fee_level as 'SCHOOL' | 'CLASS' | 'STUDENT') || 'CLASS',
         class_id: initialData.class_id || '',
+        class_ids: initialData.class_id ? [initialData.class_id] : [],
+        is_bulk_class: false,
         name: initialData.name,
         fee_category: initialData.fee_category,
         frequency: initialData.frequency,
@@ -262,12 +270,15 @@ export const FeeStructureDialog: React.FC<FeeStructureDialogProps> = ({
         is_active: initialData.is_active ?? true,
       });
     } else {
+      const fallbackClassId =
+        defaultFeeLevel === 'SCHOOL'
+          ? ''
+          : defaultClassId || (classes.length > 0 ? classes[0].id : '');
       reset({
         fee_level: defaultFeeLevel,
-        class_id:
-          defaultFeeLevel === 'SCHOOL'
-            ? ''
-            : defaultClassId || (classes.length > 0 ? classes[0].id : ''),
+        class_id: fallbackClassId,
+        class_ids: fallbackClassId ? [fallbackClassId] : [],
+        is_bulk_class: false,
         name: '',
         fee_category: defaultFeeLevel === 'SCHOOL' ? 'MANAGEMENT' : 'TUITION',
         frequency: 'MONTHLY',
@@ -280,6 +291,20 @@ export const FeeStructureDialog: React.FC<FeeStructureDialogProps> = ({
 
   const onFormSubmit = async (values: FeeStructureFormValues) => {
     try {
+      if (values.fee_level === 'CLASS' && values.is_bulk_class && onBulkSubmit) {
+        const bulkPayload: FeeStructureBulkClassCreateDTO = {
+          class_ids: values.class_ids || [],
+          name: values.name,
+          fee_category: values.fee_category,
+          frequency: values.frequency,
+          amount: values.amount,
+          description: values.description || undefined,
+        };
+        await onBulkSubmit(bulkPayload);
+        onClose();
+        return;
+      }
+
       const payload: FeeStructureFormValues = {
         ...values,
         class_id: values.fee_level === 'SCHOOL' ? '' : values.class_id,
@@ -365,25 +390,45 @@ export const FeeStructureDialog: React.FC<FeeStructureDialogProps> = ({
                 </div>
                 <div>
                   <DialogTitle className="text-lg font-bold text-foreground flex items-center gap-2">
-                    {initialData ? 'Edit Fee Head' : 'Add Fee Structure'}
+                    {initialData
+                      ? 'Edit Fee Head'
+                      : isBulkMode && watchedFeeLevel === 'CLASS'
+                      ? 'Batch Fee Structure Setup'
+                      : 'Add Fee Structure'}
                     <Badge variant="outline" className="text-[10px] font-mono font-medium">
-                      {initialData ? 'Modification' : 'New Setup'}
+                      {initialData
+                        ? 'Modification'
+                        : isBulkMode && watchedFeeLevel === 'CLASS'
+                        ? 'Batch Multi-Class'
+                        : 'New Setup'}
                     </Badge>
                   </DialogTitle>
                   <DialogDescription className="text-xs text-muted-foreground mt-0.5">
-                    Define standardized fee heads, collection frequencies, and automatic billing scaling rules.
+                    {isBulkMode && watchedFeeLevel === 'CLASS'
+                      ? 'Configure and assign a standardized fee structure across multiple classes simultaneously.'
+                      : 'Define standardized fee heads, collection frequencies, and automatic billing scaling rules.'}
                   </DialogDescription>
                 </div>
               </div>
 
-              {currentClassObj && watchedFeeLevel === 'CLASS' && (
-                <Badge
-                  variant="secondary"
-                  className="hidden sm:inline-flex text-[11px] gap-1 px-2.5 py-1 bg-primary/10 text-primary border-primary/20"
-                >
-                  <GraduationCap className="w-3.5 h-3.5" />
-                  {currentClassObj.name}
-                </Badge>
+              {watchedFeeLevel === 'CLASS' && (
+                !isBulkMode && currentClassObj ? (
+                  <Badge
+                    variant="secondary"
+                    className="hidden sm:inline-flex text-[11px] gap-1 px-2.5 py-1 bg-primary/10 text-primary border-primary/20"
+                  >
+                    <GraduationCap className="w-3.5 h-3.5" />
+                    {currentClassObj.name}
+                  </Badge>
+                ) : isBulkMode && watchedClassIds.length > 0 ? (
+                  <Badge
+                    variant="secondary"
+                    className="hidden sm:inline-flex text-[11px] gap-1 px-2.5 py-1 bg-primary/10 text-primary border-primary/20"
+                  >
+                    <Layers className="w-3.5 h-3.5" />
+                    {watchedClassIds.length} {watchedClassIds.length === 1 ? 'Class' : 'Classes'}
+                  </Badge>
+                ) : null
               )}
             </div>
           </DialogHeader>
@@ -525,21 +570,21 @@ export const FeeStructureDialog: React.FC<FeeStructureDialogProps> = ({
             </div>
 
             {/* Target Class Selection (Only when Class Level is active) */}
-            {watchedFeeLevel === 'CLASS' && (
+            {watchedFeeLevel === 'CLASS' && Boolean(initialData) && (
               <div className="p-3.5 rounded-xl bg-muted/30 border border-border/70 space-y-2">
                 <div className="flex items-center justify-between">
                   <Label htmlFor="class_id" className="text-xs font-semibold text-foreground">
                     Target Class / Grade Cohort <span className="text-destructive">*</span>
                   </Label>
                   <span className="text-[11px] text-muted-foreground">
-                    Fee head will apply to all students in this class
+                    Class locked in edit mode
                   </span>
                 </div>
                 <select
                   id="class_id"
                   {...register('class_id')}
-                  disabled={isLoadingClasses || !!initialData}
-                  className="w-full h-9 rounded-lg border border-input bg-background px-3 text-xs shadow-2xs focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring disabled:opacity-50 font-medium"
+                  disabled
+                  className="w-full h-9 rounded-lg border border-input bg-background px-3 text-xs shadow-2xs focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring disabled:opacity-50 font-medium cursor-not-allowed"
                 >
                   <option value="">Select a class cohort...</option>
                   {classes.map((cls) => (
@@ -548,8 +593,193 @@ export const FeeStructureDialog: React.FC<FeeStructureDialogProps> = ({
                     </option>
                   ))}
                 </select>
-                {errors.class_id && (
-                  <p className="text-destructive text-[11px] font-medium">{errors.class_id.message}</p>
+              </div>
+            )}
+
+            {watchedFeeLevel === 'CLASS' && !initialData && (
+              <div className="p-3.5 rounded-xl bg-muted/30 border border-border/70 space-y-3">
+                {/* Mode Selector */}
+                <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2">
+                  <div>
+                    <Label className="text-xs font-semibold text-foreground">
+                      Target Assignment Mode <span className="text-destructive">*</span>
+                    </Label>
+                    <p className="text-[11px] text-muted-foreground">
+                      Assign to an individual class or apply across multiple classes in batch
+                    </p>
+                  </div>
+
+                  <div className="inline-flex p-1 rounded-lg bg-background border border-border/80 shadow-2xs">
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setValue('is_bulk_class', false, { shouldValidate: true });
+                        if (!watchedClassId && classes.length > 0) {
+                          setValue('class_id', watchedClassIds[0] || classes[0].id, { shouldValidate: true });
+                        }
+                      }}
+                      className={`px-3 py-1 text-xs rounded-md font-medium transition-all cursor-pointer flex items-center gap-1.5 ${
+                        !isBulkMode
+                          ? 'bg-primary text-primary-foreground font-semibold shadow-2xs'
+                          : 'text-muted-foreground hover:text-foreground'
+                      }`}
+                    >
+                      <GraduationCap className="w-3.5 h-3.5" />
+                      <span>Single Class</span>
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setValue('is_bulk_class', true, { shouldValidate: true });
+                        if (watchedClassIds.length === 0 && watchedClassId) {
+                          setValue('class_ids', [watchedClassId], { shouldValidate: true });
+                        }
+                      }}
+                      className={`px-3 py-1 text-xs rounded-md font-medium transition-all cursor-pointer flex items-center gap-1.5 ${
+                        isBulkMode
+                          ? 'bg-primary text-primary-foreground font-semibold shadow-2xs'
+                          : 'text-muted-foreground hover:text-foreground'
+                      }`}
+                    >
+                      <Layers className="w-3.5 h-3.5" />
+                      <span>Multiple Classes (Batch)</span>
+                    </button>
+                  </div>
+                </div>
+
+                {/* Single Class Mode View */}
+                {!isBulkMode ? (
+                  <div className="space-y-1.5 pt-1 border-t border-border/40">
+                    <Label htmlFor="class_id" className="text-xs font-medium text-foreground">
+                      Select Class Cohort <span className="text-destructive">*</span>
+                    </Label>
+                    <select
+                      id="class_id"
+                      {...register('class_id')}
+                      disabled={isLoadingClasses}
+                      className="w-full h-9 rounded-lg border border-input bg-background px-3 text-xs shadow-2xs focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring disabled:opacity-50 font-medium"
+                    >
+                      <option value="">Select a class cohort...</option>
+                      {classes.map((cls) => (
+                        <option key={cls.id} value={cls.id}>
+                          {cls.name}
+                        </option>
+                      ))}
+                    </select>
+                    {errors.class_id && (
+                      <p className="text-destructive text-[11px] font-medium">{errors.class_id.message}</p>
+                    )}
+                  </div>
+                ) : (
+                  /* Multiple Classes (Batch) Mode View */
+                  <div className="space-y-2.5 pt-1 border-t border-border/40">
+                    <div className="flex items-center justify-between gap-2 flex-wrap">
+                      <div className="flex items-center gap-2">
+                        <Label className="text-xs font-medium text-foreground">
+                          Select Classes <span className="text-destructive">*</span>
+                        </Label>
+                        <Badge
+                          variant={watchedClassIds.length > 0 ? 'secondary' : 'outline'}
+                          className={`text-[10px] px-2 py-0.5 font-semibold ${
+                            watchedClassIds.length > 0
+                              ? 'bg-primary/10 text-primary border-primary/20'
+                              : 'text-muted-foreground'
+                          }`}
+                        >
+                          {watchedClassIds.length} of {classes.length} selected
+                        </Badge>
+                      </div>
+
+                      {/* Quick Select Buttons */}
+                      <div className="flex items-center gap-1.5">
+                        <Button
+                          type="button"
+                          variant="outline"
+                          size="sm"
+                          onClick={() => {
+                            setValue(
+                              'class_ids',
+                              classes.map((c) => c.id),
+                              { shouldValidate: true }
+                            );
+                          }}
+                          className="h-7 px-2 text-[11px] cursor-pointer"
+                        >
+                          Select All
+                        </Button>
+                        <Button
+                          type="button"
+                          variant="ghost"
+                          size="sm"
+                          onClick={() => {
+                            setValue('class_ids', [], { shouldValidate: true });
+                          }}
+                          className="h-7 px-2 text-[11px] text-muted-foreground hover:text-foreground cursor-pointer"
+                        >
+                          Clear All
+                        </Button>
+                      </div>
+                    </div>
+
+                    {/* Class Chips / Checkbox Grid */}
+                    {classes.length === 0 ? (
+                      <div className="text-xs text-muted-foreground py-2 text-center">
+                        No classes available in this institution.
+                      </div>
+                    ) : (
+                      <div className="grid grid-cols-2 sm:grid-cols-3 gap-2 max-h-48 overflow-y-auto p-1 border border-border/60 rounded-lg bg-background">
+                        {classes.map((cls) => {
+                          const isSelected = watchedClassIds.includes(cls.id);
+                          const sectionsCount = (cls as any).sections?.length ?? (cls as any).section_count;
+                          return (
+                            <button
+                              key={cls.id}
+                              type="button"
+                              onClick={() => {
+                                const current = watchedClassIds;
+                                const next = isSelected
+                                  ? current.filter((id) => id !== cls.id)
+                                  : [...current, cls.id];
+                                setValue('class_ids', next, { shouldValidate: true });
+                              }}
+                              className={`p-2 rounded-lg border text-left text-xs transition-all cursor-pointer flex items-center justify-between gap-1.5 ${
+                                isSelected
+                                  ? 'border-primary bg-primary/10 text-primary font-semibold ring-1 ring-primary/40 shadow-2xs'
+                                  : 'border-border/60 hover:border-border hover:bg-muted/50 text-foreground'
+                              }`}
+                            >
+                              <div className="flex items-center gap-2 min-w-0">
+                                <div
+                                  className={`w-4 h-4 rounded border flex items-center justify-center shrink-0 text-[10px] ${
+                                    isSelected
+                                      ? 'bg-primary border-primary text-primary-foreground'
+                                      : 'border-muted-foreground/40 bg-background'
+                                  }`}
+                                >
+                                  {isSelected && '✓'}
+                                </div>
+                                <span className="truncate">{cls.name}</span>
+                              </div>
+                              {sectionsCount !== undefined && (
+                                <span className="text-[10px] text-muted-foreground font-normal shrink-0">
+                                  {sectionsCount} {sectionsCount === 1 ? 'sec' : 'secs'}
+                                </span>
+                              )}
+                            </button>
+                          );
+                        })}
+                      </div>
+                    )}
+
+                    {errors.class_ids && (
+                      <p className="text-destructive text-[11px] font-medium">{errors.class_ids.message}</p>
+                    )}
+                    {watchedClassIds.length === 0 && !errors.class_ids && (
+                      <p className="text-amber-600 dark:text-amber-400 text-[11px]">
+                        Please select at least one class to apply this fee structure.
+                      </p>
+                    )}
+                  </div>
                 )}
               </div>
             )}
@@ -838,7 +1068,13 @@ export const FeeStructureDialog: React.FC<FeeStructureDialogProps> = ({
               ) : (
                 <>
                   <Sparkles className="w-3.5 h-3.5" />
-                  {initialData ? 'Update Fee Structure' : 'Create Fee Structure'}
+                  {initialData
+                    ? 'Update Fee Structure'
+                    : isBulkMode && watchedFeeLevel === 'CLASS'
+                    ? `Create for ${watchedClassIds.length} ${
+                        watchedClassIds.length === 1 ? 'Class' : 'Classes'
+                      }`
+                    : 'Create Fee Structure'}
                 </>
               )}
             </Button>

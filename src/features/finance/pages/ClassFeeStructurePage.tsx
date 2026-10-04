@@ -13,6 +13,7 @@ import {
   useUpdateFeeStructure,
   useDeleteFeeStructure,
   useSetStudentTransport,
+  useBulkCreateClassFeeStructures,
 } from '../hooks';
 import { ClassProgressionNavigator } from '@/features/academic/components/ClassProgressionNavigator';
 import { StudentFeeProfileRow } from '../components/StudentFeeProfileRow';
@@ -100,6 +101,7 @@ export const ClassFeeStructurePage: React.FC = () => {
   const updateFeeMutation = useUpdateFeeStructure(tenantId);
   const deleteFeeMutation = useDeleteFeeStructure(tenantId);
   const setTransportMutation = useSetStudentTransport(tenantId);
+  const bulkCreateFeeMutation = useBulkCreateClassFeeStructures(tenantId);
 
   const handleBack = () => {
     navigate({ to: '/finance/structures' });
@@ -619,7 +621,14 @@ export const ClassFeeStructurePage: React.FC = () => {
           setEditingFeeHead(null);
         }}
         onSubmit={handleSaveFeeHead}
-        isLoading={createFeeMutation.isPending || updateFeeMutation.isPending}
+        onBulkSubmit={async (bulkData) => {
+          await bulkCreateFeeMutation.mutateAsync(bulkData);
+        }}
+        isLoading={
+          createFeeMutation.isPending ||
+          updateFeeMutation.isPending ||
+          bulkCreateFeeMutation.isPending
+        }
         tenantId={tenantId}
         initialData={editingFeeHead}
         defaultClassId={classId}

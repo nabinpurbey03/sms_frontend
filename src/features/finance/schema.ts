@@ -4,6 +4,8 @@ export const feeStructureFormSchema = z
   .object({
     fee_level: z.enum(['SCHOOL', 'CLASS', 'STUDENT']),
     class_id: z.string().optional().or(z.literal('')),
+    class_ids: z.array(z.string()).optional(),
+    is_bulk_class: z.boolean().optional().default(false),
     name: z
       .string()
       .trim()
@@ -31,18 +33,27 @@ export const feeStructureFormSchema = z
     description: z.string().max(255).optional().or(z.literal('')),
     is_active: z.boolean().optional().default(true),
   })
-  .refine(
-    (data) => {
-      if (data.fee_level === 'CLASS') {
-        return Boolean(data.class_id && data.class_id.trim().length > 0);
+  .superRefine((data, ctx) => {
+    if (data.fee_level === 'CLASS') {
+      if (data.is_bulk_class) {
+        if (!data.class_ids || data.class_ids.length === 0) {
+          ctx.addIssue({
+            code: z.ZodIssueCode.custom,
+            message: 'Please select at least one class',
+            path: ['class_ids'],
+          });
+        }
+      } else {
+        if (!data.class_id || data.class_id.trim().length === 0) {
+          ctx.addIssue({
+            code: z.ZodIssueCode.custom,
+            message: 'Please select a class for class-level fee structures',
+            path: ['class_id'],
+          });
+        }
       }
-      return true;
-    },
-    {
-      message: 'Please select a class for class-level fee structures',
-      path: ['class_id'],
     }
-  );
+  });
 
 export type FeeStructureFormValues = z.infer<typeof feeStructureFormSchema>;
 export type FeeStructureInputValues = z.input<typeof feeStructureFormSchema>;

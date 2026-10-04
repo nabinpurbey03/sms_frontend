@@ -10,6 +10,7 @@ import {
   useUpdateFeeStructure,
   useDeleteFeeStructure,
   useFeeStructures,
+  useBulkCreateClassFeeStructures,
 } from '../hooks';
 import { StatCard } from '@/components/ui/stat-card';
 import { Button } from '@/components/ui/button';
@@ -90,6 +91,7 @@ export const FeeStructuresPage: React.FC = () => {
   const createStructureMutation = useCreateFeeStructure(effectiveTenantId);
   const updateStructureMutation = useUpdateFeeStructure(effectiveTenantId);
   const deleteStructureMutation = useDeleteFeeStructure(effectiveTenantId);
+  const bulkCreateMutation = useBulkCreateClassFeeStructures(effectiveTenantId);
 
   // Filtered Classes based on search query
   const filteredClasses = useMemo(() => {
@@ -570,7 +572,14 @@ export const FeeStructuresPage: React.FC = () => {
             defaultClassId={selectedClassIdForAdd || undefined}
             initialData={editingFeeStructure}
             onSubmit={handleSaveFeeStructure}
-            isLoading={createStructureMutation.isPending || updateStructureMutation.isPending}
+            onBulkSubmit={async (bulkData) => {
+              await bulkCreateMutation.mutateAsync(bulkData);
+            }}
+            isLoading={
+              createStructureMutation.isPending ||
+              updateStructureMutation.isPending ||
+              bulkCreateMutation.isPending
+            }
             tenantId={effectiveTenantId}
           />
         </>
