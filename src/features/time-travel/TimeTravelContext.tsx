@@ -27,12 +27,7 @@ export interface TimeTravelProviderProps {
 }
 
 export const TimeTravelProvider: React.FC<TimeTravelProviderProps> = ({ children }) => {
-  let queryClient: ReturnType<typeof useQueryClient> | null = null;
-  try {
-    queryClient = useQueryClient();
-  } catch {
-    queryClient = null;
-  }
+  const queryClient = useQueryClient();
 
   const [simulatedDate, setSimulatedDateState] = useState<string | null>(() => {
     if (typeof window !== 'undefined' && window.sessionStorage) {

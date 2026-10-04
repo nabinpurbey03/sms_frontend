@@ -4,6 +4,7 @@ import { ApiError } from './errors';
 import type { ApiResponse, TokenResponse } from './types';
 import { useTenantStore } from '@/stores/tenantStore';
 import { useViewAsStore } from '@/stores/viewAsStore';
+import { SIMULATED_DATE_STORAGE_KEY } from '@/features/time-travel/timeTravelUtils';
 
 let inMemoryAccessToken: string | null = null;
 
@@ -146,7 +147,7 @@ apiClient.interceptors.request.use(
 
     // Attach X-Simulated-Date if simulated date is set
     const simulatedDate = typeof window !== 'undefined' && window.sessionStorage
-      ? sessionStorage.getItem('ssup_simulated_date')
+      ? sessionStorage.getItem(SIMULATED_DATE_STORAGE_KEY)
       : null;
     if (simulatedDate && config.headers) {
       config.headers['X-Simulated-Date'] = simulatedDate;
