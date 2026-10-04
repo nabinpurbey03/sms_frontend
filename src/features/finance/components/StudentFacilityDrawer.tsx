@@ -39,6 +39,7 @@ import {
   useRemoveStudentFee,
   useFeeStructures,
 } from '../hooks';
+import { getTransportDisplayMeta } from '../utils/studentFacilityUtils';
 import type { AcademicStudent } from '@/features/academic/types';
 import type { FeeCategory, FeeFrequency, StudentTransportProfile } from '../types';
 
@@ -106,6 +107,11 @@ export const StudentFacilityDrawer: React.FC<StudentFacilityDrawerProps> = ({
       ? customTransportFee
       : classDefaultTransportRate
     : 0;
+
+  const transportMeta = useMemo(
+    () => getTransportDisplayMeta(transportProfile, classDefaultTransportRate),
+    [transportProfile, classDefaultTransportRate]
+  );
 
   // Real-time Arithmetic Calculations
   const customFacilitiesMonthlyTotal = useMemo(() => {
@@ -275,10 +281,19 @@ export const StudentFacilityDrawer: React.FC<StudentFacilityDrawerProps> = ({
                     </Badge>
                   </div>
                   {isTransport ? (
-                    <p className="text-xs text-muted-foreground mt-0.5">
-                      Fee: <span className="font-mono font-bold text-foreground">NPR {transportRate.toLocaleString()}/mo</span>
-                      {transportProfile?.reason ? ` • ${transportProfile.reason}` : ''}
-                    </p>
+                    <div className="space-y-0.5 mt-1">
+                      <div className="flex items-center gap-2">
+                        <p className="text-xs text-muted-foreground">
+                          Fee: <span className="font-mono font-bold text-foreground">NPR {transportMeta.monthlyFee.toLocaleString()}/mo</span>
+                        </p>
+                        <Badge variant="outline" className="text-[10px] px-1.5 py-0 font-medium text-muted-foreground">
+                          {transportMeta.rateBadgeLabel}
+                        </Badge>
+                      </div>
+                      <p className="text-[11px] text-muted-foreground">
+                        Route: <span className="font-medium text-foreground">{transportMeta.routeDescription}</span>
+                      </p>
+                    </div>
                   ) : (
                     <p className="text-xs text-muted-foreground mt-0.5">No bus facility requested</p>
                   )}

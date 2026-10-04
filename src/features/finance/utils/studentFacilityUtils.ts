@@ -208,7 +208,7 @@ export interface TransportDisplayMeta {
  * differentiating unenrolled, class standard rates, and custom route rates.
  */
 export function getTransportDisplayMeta(
-  profile: { is_transport_applicable?: boolean; transport_fee?: number | null; reason?: string | null } | null | undefined,
+  profile: { is_transport_applicable?: boolean; transport_fee?: number | string | null; reason?: string | null } | null | undefined,
   classDefaultRate: number = 0
 ): TransportDisplayMeta {
   const isEnrolled = Boolean(profile?.is_transport_applicable);
