@@ -210,23 +210,42 @@ export const TopHeader: React.FC<TopHeaderProps> = ({
           <Search className="h-4 w-4" />
         </Button>
 
-        {/* Calendar System Switcher Pill (AD / BS) */}
+        {/* Calendar System Switcher Segmented Pill (BS / AD) */}
         <Tooltip>
           <TooltipTrigger asChild>
-            <button
-              type="button"
-              onClick={onToggleCalendarSystem}
-              className="hidden sm:flex h-8 px-2 sm:px-2.5 rounded-full text-xs font-semibold gap-1.5 border border-input bg-background hover:bg-accent text-foreground cursor-pointer transition-colors shadow-2xs items-center shrink-0"
-              aria-label="Toggle Calendar System (AD/BS)"
+            <div
+              role="group"
+              aria-label="Calendar System Preference"
+              className="hidden sm:inline-flex items-center rounded-full border border-input bg-muted/50 p-0.5 shadow-2xs shrink-0"
             >
-              <CalendarDays className="h-3.5 w-3.5 text-primary shrink-0" />
-              <span className="font-mono text-[11px] font-bold">
-                {calendarSystem}
-              </span>
-            </button>
+              <button
+                type="button"
+                onClick={() => onSetCalendarSystem('BS')}
+                className={`h-7 px-2.5 rounded-full text-[11px] font-bold transition-all cursor-pointer flex items-center gap-1 ${
+                  calendarSystem === 'BS'
+                    ? 'bg-background text-foreground shadow-xs'
+                    : 'text-muted-foreground hover:text-foreground'
+                }`}
+                aria-label="Switch to Bikram Sambat (BS) Calendar"
+              >
+                <span>BS</span>
+              </button>
+              <button
+                type="button"
+                onClick={() => onSetCalendarSystem('AD')}
+                className={`h-7 px-2.5 rounded-full text-[11px] font-bold transition-all cursor-pointer flex items-center gap-1 ${
+                  calendarSystem === 'AD'
+                    ? 'bg-background text-foreground shadow-xs'
+                    : 'text-muted-foreground hover:text-foreground'
+                }`}
+                aria-label="Switch to Gregorian (AD) Calendar"
+              >
+                <span>AD</span>
+              </button>
+            </div>
           </TooltipTrigger>
           <TooltipContent side="bottom" className="text-xs">
-            Toggle Calendar System (AD/BS)
+            Calendar System: {calendarSystem === 'BS' ? 'Bikram Sambat (BS)' : 'Gregorian (AD)'}
           </TooltipContent>
         </Tooltip>
 
