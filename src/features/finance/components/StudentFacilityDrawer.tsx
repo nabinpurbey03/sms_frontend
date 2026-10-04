@@ -220,7 +220,7 @@ export const StudentFacilityDrawer: React.FC<StudentFacilityDrawerProps> = ({
                 <h4 className="text-sm font-bold text-foreground">Projected Monthly Bill</h4>
               </div>
               <span className="text-xs font-mono font-extrabold text-primary bg-primary/10 px-2.5 py-1 rounded-full">
-                NPR {totalEstimatedMonthly.toLocaleString()}/mo
+                NPR {totalEstimatedMonthly.toLocaleString('en-IN')}/mo
               </span>
             </div>
 
@@ -228,25 +228,25 @@ export const StudentFacilityDrawer: React.FC<StudentFacilityDrawerProps> = ({
               <div className="p-2.5 rounded-xl bg-muted/40 border border-border/50">
                 <span className="text-[11px] text-muted-foreground block">School Baseline</span>
                 <span className="font-mono font-bold text-foreground">
-                  NPR {schoolMonthlyTotal.toLocaleString()}
+                  NPR {schoolMonthlyTotal.toLocaleString('en-IN')}
                 </span>
               </div>
               <div className="p-2.5 rounded-xl bg-muted/40 border border-border/50">
                 <span className="text-[11px] text-muted-foreground block">Class Tuition</span>
                 <span className="font-mono font-bold text-foreground">
-                  NPR {classMonthlyTuition.toLocaleString()}
+                  NPR {classMonthlyTuition.toLocaleString('en-IN')}
                 </span>
               </div>
               <div className="p-2.5 rounded-xl bg-muted/40 border border-border/50">
                 <span className="text-[11px] text-muted-foreground block">Transportation</span>
                 <span className="font-mono font-bold text-emerald-600 dark:text-emerald-400">
-                  {isTransport ? `+NPR ${transportRate.toLocaleString()}` : 'None'}
+                  {isTransport ? `+NPR ${transportRate.toLocaleString('en-IN')}` : 'None'}
                 </span>
               </div>
               <div className="p-2.5 rounded-xl bg-muted/40 border border-border/50">
                 <span className="text-[11px] text-muted-foreground block">Facilities & Add-ons</span>
                 <span className="font-mono font-bold text-indigo-600 dark:text-indigo-400">
-                  +NPR {customFacilitiesMonthlyTotal.toLocaleString()}
+                  +NPR {customFacilitiesMonthlyTotal.toLocaleString('en-IN')}
                 </span>
               </div>
             </div>
@@ -254,7 +254,7 @@ export const StudentFacilityDrawer: React.FC<StudentFacilityDrawerProps> = ({
             {concessionsMonthlyTotal > 0 && (
               <div className="px-3 py-1.5 rounded-lg bg-blue-500/10 border border-blue-500/20 text-xs text-blue-700 dark:text-blue-300 flex items-center justify-between font-medium">
                 <span>Applied Concessions / Waiver</span>
-                <span className="font-mono font-bold">-NPR {concessionsMonthlyTotal.toLocaleString()}</span>
+                <span className="font-mono font-bold">-NPR {concessionsMonthlyTotal.toLocaleString('en-IN')}</span>
               </div>
             )}
           </div>
@@ -284,7 +284,7 @@ export const StudentFacilityDrawer: React.FC<StudentFacilityDrawerProps> = ({
                     <div className="space-y-0.5 mt-1">
                       <div className="flex items-center gap-2">
                         <p className="text-xs text-muted-foreground">
-                          Fee: <span className="font-mono font-bold text-foreground">NPR {transportMeta.monthlyFee.toLocaleString()}/mo</span>
+                          Fee: <span className="font-mono font-bold text-foreground">NPR {transportMeta.monthlyFee.toLocaleString('en-IN')}/mo</span>
                         </p>
                         <Badge variant="outline" className="text-[10px] px-1.5 py-0 font-medium text-muted-foreground">
                           {transportMeta.rateBadgeLabel}
@@ -364,7 +364,7 @@ export const StudentFacilityDrawer: React.FC<StudentFacilityDrawerProps> = ({
                           </Badge>
                         </div>
                         <p className="text-xs text-muted-foreground mt-0.5">
-                          Rate: <span className="font-mono font-bold text-foreground">NPR {Number(assignment.amount).toLocaleString()}</span>
+                          Rate: <span className="font-mono font-bold text-foreground">NPR {Number(assignment.amount).toLocaleString('en-IN')}</span>
                           <span className="text-[11px] opacity-75"> ({assignment.frequency.toLowerCase()})</span>
                           {assignment.notes ? ` • ${assignment.notes}` : ''}
                         </p>
@@ -436,7 +436,7 @@ export const StudentFacilityDrawer: React.FC<StudentFacilityDrawerProps> = ({
                           <SelectItem key={preset.id} value={preset.id} className="text-xs">
                             <span className="font-semibold">{preset.name}</span>
                             <span className="text-muted-foreground ml-2">
-                              (NPR {Number(preset.amount).toLocaleString()} / {preset.frequency.toLowerCase()})
+                              (NPR {Number(preset.amount).toLocaleString('en-IN')} / {preset.frequency.toLowerCase()})
                             </span>
                           </SelectItem>
                         ))

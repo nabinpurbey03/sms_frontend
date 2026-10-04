@@ -198,7 +198,9 @@ export const ManageStudentFacilitiesDialog: React.FC<ManageStudentFacilitiesDial
     if (!student) return;
     setIsSavingTransportLocal(true);
     try {
-      const targetFee = isTransport ? (customTransportFee ?? classDefaultTransportRate) : null;
+      const targetFee = isTransport
+        ? (customTransportFee === classDefaultTransportRate ? null : customTransportFee)
+        : null;
       const targetReason = transportReason.trim() || undefined;
 
       if (onSaveTransport) {
@@ -374,7 +376,7 @@ export const ManageStudentFacilitiesDialog: React.FC<ManageStudentFacilitiesDial
                 <h4 className="text-sm font-bold text-foreground">Projected Monthly Total</h4>
               </div>
               <span className="text-xs font-mono font-extrabold text-primary bg-primary/10 px-3 py-1 rounded-full border border-primary/20">
-                NPR {totalEstimatedMonthly.toLocaleString()}/mo
+                NPR {totalEstimatedMonthly.toLocaleString('en-IN')}/mo
               </span>
             </div>
 
@@ -382,25 +384,25 @@ export const ManageStudentFacilitiesDialog: React.FC<ManageStudentFacilitiesDial
               <div className="p-2.5 rounded-xl bg-muted/40 border border-border/50">
                 <span className="text-[11px] text-muted-foreground block">Base Tuition</span>
                 <span className="font-mono font-bold text-foreground">
-                  NPR {effectiveBaseTuition.toLocaleString()}
+                  NPR {effectiveBaseTuition.toLocaleString('en-IN')}
                 </span>
               </div>
               <div className="p-2.5 rounded-xl bg-muted/40 border border-border/50">
                 <span className="text-[11px] text-muted-foreground block">Transport</span>
                 <span className="font-mono font-bold text-blue-600 dark:text-blue-400">
-                  {isTransport ? `+NPR ${effectiveTransportRate.toLocaleString()}` : 'None'}
+                  {isTransport ? `+NPR ${effectiveTransportRate.toLocaleString('en-IN')}` : 'None'}
                 </span>
               </div>
               <div className="p-2.5 rounded-xl bg-muted/40 border border-border/50">
                 <span className="text-[11px] text-muted-foreground block">Active Facilities</span>
                 <span className="font-mono font-bold text-purple-600 dark:text-purple-400">
-                  +NPR {customFacilitiesMonthlyTotal.toLocaleString()}
+                  +NPR {customFacilitiesMonthlyTotal.toLocaleString('en-IN')}
                 </span>
               </div>
               <div className="p-2.5 rounded-xl bg-muted/40 border border-border/50">
                 <span className="text-[11px] text-muted-foreground block">Concessions</span>
                 <span className="font-mono font-bold text-emerald-600 dark:text-emerald-400">
-                  {concessionsMonthlyTotal > 0 ? `-NPR ${concessionsMonthlyTotal.toLocaleString()}` : 'None'}
+                  {concessionsMonthlyTotal > 0 ? `-NPR ${concessionsMonthlyTotal.toLocaleString('en-IN')}` : 'None'}
                 </span>
               </div>
             </div>
@@ -473,7 +475,7 @@ export const ManageStudentFacilitiesDialog: React.FC<ManageStudentFacilitiesDial
                   <div>
                     <span className="text-[11px] text-muted-foreground block">Monthly Rate</span>
                     <span className="font-mono font-bold text-foreground">
-                      NPR {transportMeta.monthlyFee.toLocaleString()}/mo
+                      NPR {transportMeta.monthlyFee.toLocaleString('en-IN')}/mo
                     </span>
                   </div>
                   <Badge variant="secondary" className="text-[10px] px-1.5 py-0 font-medium">
@@ -519,9 +521,9 @@ export const ManageStudentFacilitiesDialog: React.FC<ManageStudentFacilitiesDial
                         <button
                           type="button"
                           onClick={() => setCustomTransportFee(classDefaultTransportRate)}
-                          className="text-[10px] text-primary hover:underline font-medium cursor-pointer"
+                          className="text-[10px] text-primary hover:underline font-medium cursor-pointer rounded-xs focus-visible:outline-hidden focus-visible:ring-1 focus-visible:ring-ring"
                         >
-                          Use Class Default (NPR {classDefaultTransportRate.toLocaleString()})
+                          Use Class Default (NPR {classDefaultTransportRate.toLocaleString('en-IN')})
                         </button>
                       )}
                     </div>
@@ -538,7 +540,7 @@ export const ManageStudentFacilitiesDialog: React.FC<ManageStudentFacilitiesDial
                       className="text-xs h-8 font-mono bg-card"
                     />
                     <p className="text-[10px] text-muted-foreground">
-                      Default class rate: NPR {classDefaultTransportRate.toLocaleString()}
+                      Default class rate: NPR {classDefaultTransportRate.toLocaleString('en-IN')}
                     </p>
                   </div>
 
@@ -606,7 +608,7 @@ export const ManageStudentFacilitiesDialog: React.FC<ManageStudentFacilitiesDial
                     </Badge>
                   </div>
                   <p className="text-[11px] text-muted-foreground">
-                    No bus service enrolled. Class standard rate: NPR {classDefaultTransportRate.toLocaleString()}/mo
+                    No bus service enrolled. Class standard rate: NPR {classDefaultTransportRate.toLocaleString('en-IN')}/mo
                   </p>
                 </div>
               </div>
@@ -669,7 +671,7 @@ export const ManageStudentFacilitiesDialog: React.FC<ManageStudentFacilitiesDial
                             </Badge>
                           </div>
                           <p className="text-[11px] text-muted-foreground mt-0.5">
-                            Amount: <span className="font-mono font-bold text-foreground">NPR {Number(assignment.amount).toLocaleString()}</span>
+                            Amount: <span className="font-mono font-bold text-foreground">NPR {Number(assignment.amount).toLocaleString('en-IN')}</span>
                             {assignment.notes ? ` • ${assignment.notes}` : ''}
                           </p>
                         </div>
@@ -741,7 +743,7 @@ export const ManageStudentFacilitiesDialog: React.FC<ManageStudentFacilitiesDial
                           <SelectItem key={preset.id} value={preset.id} className="text-xs">
                             <span className="font-semibold">{preset.name}</span>
                             <span className="text-muted-foreground ml-2">
-                              (NPR {Number(preset.amount).toLocaleString()} / {preset.frequency.toLowerCase()})
+                              (NPR {Number(preset.amount).toLocaleString('en-IN')} / {preset.frequency.toLowerCase()})
                             </span>
                           </SelectItem>
                         ))
