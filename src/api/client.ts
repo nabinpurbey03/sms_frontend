@@ -144,6 +144,14 @@ apiClient.interceptors.request.use(
       config.headers[ENV.TENANT_HEADER_NAME] = activeTenantId;
     }
 
+    // Attach X-Simulated-Date if simulated date is set
+    const simulatedDate = typeof window !== 'undefined' && window.sessionStorage
+      ? sessionStorage.getItem('ssup_simulated_date')
+      : null;
+    if (simulatedDate && config.headers) {
+      config.headers['X-Simulated-Date'] = simulatedDate;
+    }
+
     // View As session logic
     const viewAsState = useViewAsStore.getState();
     if (viewAsState.activeToken) {

@@ -124,9 +124,12 @@ export interface MonthStatusInfo {
  * Returns the 0-indexed Bikram Sambat month (0 = Baishakh, 11 = Chaitra)
  * for the given Gregorian date (defaults to today).
  */
-export function getCurrentBsMonthIndex(asOfDate?: Date): number {
-  const npDate = asOfDate ? new NepaliDate(asOfDate) : new NepaliDate();
-  return npDate.getMonth();
+export function getCurrentBsMonthIndex(asOfDate?: Date | string | null): number {
+  if (!asOfDate) {
+    return new NepaliDate().getMonth();
+  }
+  const dateObj = typeof asOfDate === 'string' ? new Date(asOfDate) : asOfDate;
+  return new NepaliDate(dateObj).getMonth();
 }
 
 /**
