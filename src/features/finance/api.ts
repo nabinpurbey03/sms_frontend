@@ -3,6 +3,10 @@ import type {
   FeeStructure,
   FeeStructureCreateDTO,
   FeeStructureUpdateDTO,
+  FeeStructureBulkClassCreateDTO,
+  FeeStructureBulkClassResponseDTO,
+  FeeStructureCloneRequestDTO,
+  FeeStructureCloneResponseDTO,
   StudentFeeAssignment,
   StudentFeeAssignmentCreateDTO,
   BulkStudentFeeAssignmentDTO,
@@ -91,6 +95,20 @@ export const financeApi = {
 
   deleteFeeStructure: async (tenantId: string, structureId: string): Promise<boolean> => {
     return apiClient.delete(`/finance/tenants/${tenantId}/fee-structures/${structureId}`);
+  },
+
+  bulkCreateClassFeeStructures: async (
+    tenantId: string,
+    data: FeeStructureBulkClassCreateDTO
+  ): Promise<FeeStructureBulkClassResponseDTO> => {
+    return apiClient.post(`/finance/tenants/${tenantId}/fee-structures/bulk-classes`, data);
+  },
+
+  cloneFeeStructures: async (
+    tenantId: string,
+    data: FeeStructureCloneRequestDTO
+  ): Promise<FeeStructureCloneResponseDTO> => {
+    return apiClient.post(`/finance/tenants/${tenantId}/fee-structures/clone-from-year`, data);
   },
 
   setStudentTransport: async (

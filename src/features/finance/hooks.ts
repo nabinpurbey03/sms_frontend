@@ -4,6 +4,8 @@ import { financeApi } from './api';
 import type {
   FeeStructureCreateDTO,
   FeeStructureUpdateDTO,
+  FeeStructureBulkClassCreateDTO,
+  FeeStructureCloneRequestDTO,
   StudentFeeAssignmentCreateDTO,
   BulkStudentFeeAssignmentDTO,
   StudentTransportCreateDTO,
@@ -280,6 +282,52 @@ export const useDeleteFeeStructure = (tenantId: string | null) => {
     },
   });
 };
+
+export const useBulkCreateClassFeeStructures = (tenantId: string | null) => {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: (data: FeeStructureBulkClassCreateDTO) =>
+      financeApi.bulkCreateClassFeeStructures(tenantId!, data),
+    onSuccess: (res) => {
+      toast.success(`Fee structure created for ${res.total_processed} classes`);
+      queryClient.invalidateQueries({ queryKey: [FEE_STRUCTURES_KEY, tenantId] });
+      queryClient.invalidateQueries({ queryKey: [FINANCE_CLASS_OVERVIEW_KEY, tenantId] });
+      queryClient.invalidateQueries({ queryKey: [FINANCE_DASHBOARD_KEY, tenantId] });
+    },
+    onError: (err: any) => {
+      toast.error(err.response?.data?.message || err.message || 'Failed to create fee structures');
+    },
+  });
+};
+
+export const useCloneFeeStructures = (tenantId: string | null) => {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: (data: FeeStructureCloneRequestDTO) =>
+      financeApi.cloneFeeStructures(tenantId!, data),
+    onSuccess: (res) => {
+      toast.success(`Successfully cloned ${res.total_cloned} fee structures (${res.skipped_existing} skipped)`);
+      queryClient.invalidateQueries({ queryKey: [FEE_STRUCTURES_KEY, tenantId] });
+      queryClient.invalidateQueries({ queryKey: [FINANCE_CLASS_OVERVIEW_KEY, tenantId] });
+      queryClient.invalidateQueries({ queryKey: [FINANCE_DASHBOARD_KEY, tenantId] });
+    },
+    onError: (err: any) => {
+      toast.error(err.response?.data?.message || err.message || 'Failed to clone fee structures');
+    },
+  });
+};
+
+export function calculateAdjustedAmount(
+  baseAmount: number,
+  percentageIncrease: number = 0,
+  roundToNearest: number = 10
+): number {
+  const raw = baseAmount * (1 + percentageIncrease / 100);
+  if (!roundToNearest || roundToNearest <= 0) {
+    return Math.round(raw * 100) / 100;
+  }
+  return Math.round(raw / roundToNearest) * roundToNearest;
+}
 
 export const useSetStudentTransport = (tenantId: string | null) => {
   const queryClient = useQueryClient();

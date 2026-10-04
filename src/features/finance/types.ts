@@ -58,6 +58,43 @@ export interface FeeStructureUpdateDTO {
   is_active?: boolean;
 }
 
+export interface FeeStructureBulkClassCreateDTO {
+  class_ids: string[];
+  name: string;
+  fee_category: FeeCategory;
+  frequency: FeeFrequency;
+  amount: number;
+  description?: string;
+}
+
+export interface FeeStructureBulkClassResponseDTO {
+  total_processed: number;
+  created_count: number;
+  updated_count: number;
+  reactivated_count: number;
+  items: FeeStructure[];
+}
+
+export interface FeeStructureCloneRequestDTO {
+  source_academic_year_id: string;
+  target_academic_year_id?: string;
+  percentage_increase?: number;
+  round_to_nearest?: number;
+  include_school_fees?: boolean;
+  include_class_fees?: boolean;
+  include_student_presets?: boolean;
+}
+
+export interface FeeStructureCloneResponseDTO {
+  total_cloned: number;
+  school_fees_cloned: number;
+  class_fees_cloned: number;
+  student_presets_cloned: number;
+  skipped_existing: number;
+  skipped_unmatched_classes: string[];
+}
+
+
 export interface StudentFeeAssignment {
   id: string;
   tenant_id: string;
