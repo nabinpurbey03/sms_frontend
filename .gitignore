@@ -38,6 +38,8 @@ build
 
 # AI tooling / local assistant settings
 .claude/
+.agents/
+.superpowers/
 
 # Caches and Temporary files
 .cache

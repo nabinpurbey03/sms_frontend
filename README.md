@@ -55,8 +55,21 @@ A production-grade, domain-aligned **React 19 Single Page Application (SPA)** fo
 
 ---
 
-## ✨ Recent Updates
-
+- **Hardened Finance Module: 12 BS Month Billing, Student Facilities & POS Cashier Counter**:
+  - **12 Bikram Sambat Month Batch Billing ([`BatchBillGenerateDialog.tsx`](file:///E:/SSUP/frontend/src/features/finance/components/BatchBillGenerateDialog.tsx))**:
+    - Complete migration from quarterly billing to 12 Bikram Sambat months (`Baishakh` through `Chaitra`).
+    - Dynamic bill title preview (`{Month} Fee Bill ({Session})`), Nepali month selector, duplicate generation prevention alert, and live 1x monthly fee head aggregation preview without quarterly multipliers.
+  - **Level-3 Student Facilities Dialog & Class Badges ([`ManageStudentFacilitiesDialog.tsx`](file:///E:/SSUP/frontend/src/features/finance/components/ManageStudentFacilitiesDialog.tsx), [`ClassFeeStructurePage.tsx`](file:///E:/SSUP/frontend/src/features/finance/pages/ClassFeeStructurePage.tsx))**:
+    - Dedicated student facilities management modal for assigning individualized recurring fee heads (Hostel, Tutoring/Coaching, Transport overrides, Special Labs) directly to students.
+    - Responsive facility pill badges on the class fee structure table showing active services with category color chips and NPR amounts.
+    - Dynamic baseline calculation showing base tuition, transport, active facilities, and scholarship deductions.
+  - **Cashier POS Counter & Quick Fill Presets ([`CollectPaymentPage.tsx`](file:///E:/SSUP/frontend/src/features/finance/pages/CollectPaymentPage.tsx), [`PaymentCollectDialog.tsx`](file:///E:/SSUP/frontend/src/features/finance/components/PaymentCollectDialog.tsx))**:
+    - High-efficiency cashier payment counter with intelligent quick-fill preset chips: **"Full Balance"** (total remaining due including arrears) and **"Current Month Only"** (excludes prior rolling arrears).
+    - Real-time counter discount calculator (Percentage % or Flat NPR) reducing net cash required.
+    - Dynamic late fee penalty detection with warning banner, overdue days counter, and cashier collect/waive toggle.
+  - **Audit-Proof Printable Receipt Documents ([`PrintableReceiptModal.tsx`](file:///E:/SSUP/frontend/src/features/finance/components/PrintableReceiptModal.tsx))**:
+    - High-fidelity printable cash counter receipts formatted for standard thermal POS or A4 printouts.
+    - Features unique receipt numbers (`RCP-{tenant}-{year}-{seq}`), itemized line item breakdown (current month heads, rolling arrears from previous months, late fee assessments, and counter discounts), payment method, cashier attribution, and automated number-to-words NPR currency representation.
 - **Finance Module: Multi-Class Fee Assignment & Year-to-Year Fee Structure Cloning**:
   - **Multi-Class Batch Fee Assignment ([`FeeStructureDialog.tsx`](file:///E:/SSUP/frontend/src/features/finance/components/FeeStructureDialog.tsx))**:
     - Extends the class-level fee configuration modal with a **Batch Assignment (Multiple Classes)** toggle mode.
@@ -179,7 +192,7 @@ A production-grade, domain-aligned **React 19 Single Page Application (SPA)** fo
 | **School Settings** | Centralized hub for academic sessions & rollovers, tenant-configurable weekly academic days (Sun-Fri, Mon-Fri, etc.), academic calendar events & official holidays, and school branding profile. |
 | **Academic Management** | Class catalog with auto-provisioned Section A; 20-student eligibility check before sequential section expansion; single & bulk student enrollment (CSV/XLSX template download); subjects management. |
 | **Attendance Tracking** | Daily section attendance checklist with batch toggle actions (Mark All Present/Absent); Class Teacher verification; date range section reports; linked child reports for parents; multi-level dashboard summary. |
-| **Financial Management** | 3-level fee architecture (School, Class, Student), multi-class bulk fee assignment, year-to-year fee cloning with percentage adjustments and rounding rules, dynamic batch billing, and payment processing. |
+| **Financial Management** | 3-level fee architecture (School, Class, Student Facilities), 12 Bikram Sambat monthly batch billing, rolling arrears itemization, year-to-year fee cloning, cashier POS payment counter with quick fill presets and late fee warning, and audit-proof printable receipts. |
 | **Modern Component System** | Accessible **shadcn/ui** design tokens built on Tailwind CSS v4, Radix UI primitives, Lucide icons, and Sonner toast notifications. |
 
 ---
