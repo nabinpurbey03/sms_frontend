@@ -397,7 +397,7 @@ export const ManageStudentFacilitiesDialog: React.FC<ManageStudentFacilitiesDial
                     <Input
                       type="number"
                       min="0"
-                      step="50"
+                      step="any"
                       placeholder={classDefaultTransportRate > 0 ? String(classDefaultTransportRate) : '0'}
                       value={customTransportFee ?? ''}
                       onChange={(e) => {
@@ -620,8 +620,8 @@ export const ManageStudentFacilitiesDialog: React.FC<ManageStudentFacilitiesDial
                   <label className="text-xs font-semibold text-muted-foreground">Amount (NPR)</label>
                   <Input
                     type="number"
-                    min="1"
-                    step="50"
+                    min="0.01"
+                    step="any"
                     required
                     placeholder="4500"
                     value={customAmount}

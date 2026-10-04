@@ -411,7 +411,7 @@ export const PaymentCollectDialog: React.FC<PaymentCollectDialogProps> = ({
                   <Input
                     id="discount_rate"
                     type="number"
-                    step="0.1"
+                    step="any"
                     min="0"
                     max="100"
                     placeholder="e.g. 10"

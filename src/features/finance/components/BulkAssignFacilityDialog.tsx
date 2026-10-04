@@ -212,8 +212,8 @@ export const BulkAssignFacilityDialog: React.FC<BulkAssignFacilityDialogProps> =
               <label className="text-xs font-semibold text-muted-foreground">Fee Amount (NPR)</label>
               <Input
                 type="number"
-                min="1"
-                step="50"
+                min="0.01"
+                step="any"
                 required
                 placeholder="4000"
                 value={amount}

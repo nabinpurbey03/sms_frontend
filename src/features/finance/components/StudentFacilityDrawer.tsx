@@ -470,8 +470,8 @@ export const StudentFacilityDrawer: React.FC<StudentFacilityDrawerProps> = ({
                   <label className="text-xs font-semibold text-muted-foreground">Amount (NPR)</label>
                   <Input
                     type="number"
-                    min="1"
-                    step="50"
+                    min="0.01"
+                    step="any"
                     required
                     placeholder="4500"
                     value={customAmount}
