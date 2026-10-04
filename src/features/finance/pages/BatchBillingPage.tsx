@@ -160,7 +160,7 @@ export const BatchBillingPage: React.FC = () => {
 
   const watchedFeeStructureIds = watch('fee_structure_ids') || [];
   const watchedAdHocName = watch('ad_hoc_fee_name') || '';
-  const watchedAdHocAmount = watch('ad_hoc_fee_amount') || 0;
+  const watchedAdHocAmount = Number(watch('ad_hoc_fee_amount')) || 0;
 
   // Batch Generation Mutation
   const batchBillMutation = useBatchGenerateBills(activeTenantId);
@@ -573,6 +573,9 @@ export const BatchBillingPage: React.FC = () => {
                       {...register('ad_hoc_fee_name')}
                       className="text-xs h-9"
                     />
+                    {errors.ad_hoc_fee_name && (
+                      <p className="text-[11px] text-destructive">{errors.ad_hoc_fee_name.message}</p>
+                    )}
                   </div>
                   <div className="space-y-1.5">
                     <Label className="text-xs font-semibold">Amount (NPR)</Label>
@@ -580,9 +583,12 @@ export const BatchBillingPage: React.FC = () => {
                       type="number"
                       step="any"
                       placeholder="e.g., 500"
-                      {...register('ad_hoc_fee_amount')}
+                      {...register('ad_hoc_fee_amount', { valueAsNumber: true })}
                       className="text-xs h-9"
                     />
+                    {errors.ad_hoc_fee_amount && (
+                      <p className="text-[11px] text-destructive">{errors.ad_hoc_fee_amount.message}</p>
+                    )}
                   </div>
                 </div>
               </CardContent>

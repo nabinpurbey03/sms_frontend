@@ -121,3 +121,60 @@ test('isArrearsFeeHead detects monthly rolling arrears and academic year carried
   assert.equal(isArrearsFeeHead('Tuition Fee Grade 10'), false);
   assert.equal(isArrearsFeeHead('Computer Lab Fee'), false);
 });
+
+// -------------------------------------------------------------------------
+// 5. Batch Bill Generation Schema: Ad-Hoc Fee Optional Preprocessing
+// -------------------------------------------------------------------------
+
+test('batchBillGenerateSchema accepts empty string for optional ad_hoc_fee_amount without validation error', async () => {
+  const { batchBillGenerateSchema } = await import('../../schema.ts');
+  const basePayload = {
+    class_id: 'class-123',
+    billing_month: 'Baishakh',
+    fee_structure_ids: ['fee-1'],
+    due_date: '2026-05-15',
+  };
+
+  // Case A: empty string "" (returned by empty HTML number input)
+  const emptyStrRes = batchBillGenerateSchema.safeParse({
+    ...basePayload,
+    ad_hoc_fee_name: '',
+    ad_hoc_fee_amount: '',
+  });
+  assert.equal(emptyStrRes.success, true);
+  assert.equal(emptyStrRes.data.ad_hoc_fee_amount, undefined);
+
+  // Case B: undefined
+  const undefRes = batchBillGenerateSchema.safeParse({
+    ...basePayload,
+    ad_hoc_fee_amount: undefined,
+  });
+  assert.equal(undefRes.success, true);
+  assert.equal(undefRes.data.ad_hoc_fee_amount, undefined);
+
+  // Case C: valid number 500
+  const validNumRes = batchBillGenerateSchema.safeParse({
+    ...basePayload,
+    ad_hoc_fee_name: 'Test Fee',
+    ad_hoc_fee_amount: 500,
+  });
+  assert.equal(validNumRes.success, true);
+  assert.equal(validNumRes.data.ad_hoc_fee_amount, 500);
+
+  // Case D: valid string "500"
+  const validStrRes = batchBillGenerateSchema.safeParse({
+    ...basePayload,
+    ad_hoc_fee_name: 'Test Fee',
+    ad_hoc_fee_amount: '500',
+  });
+  assert.equal(validStrRes.success, true);
+  assert.equal(validStrRes.data.ad_hoc_fee_amount, 500);
+
+  // Case E: negative number fails
+  const negRes = batchBillGenerateSchema.safeParse({
+    ...basePayload,
+    ad_hoc_fee_amount: -50,
+  });
+  assert.equal(negRes.success, false);
+});
+

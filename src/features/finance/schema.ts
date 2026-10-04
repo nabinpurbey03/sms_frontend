@@ -152,8 +152,14 @@ export const batchBillGenerateSchema = z.object({
   notes: z.string().max(255).optional().or(z.literal('')),
   override_30_day_window: z.boolean().default(false),
   override_reason: z.string().optional(),
-  ad_hoc_fee_name: z.string().optional(),
-  ad_hoc_fee_amount: z.number().min(0).optional(),
+  ad_hoc_fee_name: z.string().optional().or(z.literal('')),
+  ad_hoc_fee_amount: z.preprocess((val) => {
+    if (val === '' || val === null || val === undefined || (typeof val === 'number' && isNaN(val))) {
+      return undefined;
+    }
+    const num = Number(val);
+    return isNaN(num) ? undefined : num;
+  }, z.number().min(0, 'Amount cannot be negative').optional()),
 });
 
 export type BatchBillGenerateFormValues = z.infer<typeof batchBillGenerateSchema>;
@@ -195,10 +201,28 @@ export const paymentCollectSchema = z.object({
   payment_date: z.string().optional().or(z.literal('')),
   remarks: z.string().max(255).optional().or(z.literal('')),
   discount_type: z.enum(['NONE', 'PERCENT', 'FIXED']).default('NONE'),
-  discount_rate: z.number().min(0).max(100).optional(),
-  discount_amount: z.number().min(0).optional(),
+  discount_rate: z.preprocess((val) => {
+    if (val === '' || val === null || val === undefined || (typeof val === 'number' && isNaN(val))) {
+      return undefined;
+    }
+    const num = Number(val);
+    return isNaN(num) ? undefined : num;
+  }, z.number().min(0).max(100).optional()),
+  discount_amount: z.preprocess((val) => {
+    if (val === '' || val === null || val === undefined || (typeof val === 'number' && isNaN(val))) {
+      return undefined;
+    }
+    const num = Number(val);
+    return isNaN(num) ? undefined : num;
+  }, z.number().min(0).optional()),
   allow_excess_to_wallet: z.boolean().default(true),
-  late_fee_paid: z.number().min(0).optional(),
+  late_fee_paid: z.preprocess((val) => {
+    if (val === '' || val === null || val === undefined || (typeof val === 'number' && isNaN(val))) {
+      return undefined;
+    }
+    const num = Number(val);
+    return isNaN(num) ? undefined : num;
+  }, z.number().min(0).optional()),
   late_fee_waived: z.boolean().optional(),
 });
 
