@@ -38,6 +38,7 @@ import {
 import { useClasses, useClassStudents } from '@/features/academic/hooks';
 import { StudentFacilityBadge } from './StudentFacilityBadge';
 import { StudentFacilityDrawer } from './StudentFacilityDrawer';
+import { ManageStudentFacilitiesDialog } from './ManageStudentFacilitiesDialog';
 import { BulkAssignFacilityDialog } from './BulkAssignFacilityDialog';
 import type { AcademicStudent } from '@/features/academic/types';
 import type { StudentTransportProfile, StudentFeeAssignment } from '../types';
@@ -128,6 +129,29 @@ export const StudentLevelFeesTab: React.FC<StudentLevelFeesTabProps> = ({ tenant
     const tHead = classFees.find((f) => f.fee_category === 'TRANSPORT');
     return tHead ? Number(tHead.amount) || 0 : 0;
   }, [classFees]);
+
+  // Real-time facility counts across the selected class
+  const facilityCounts = useMemo(() => {
+    let transport = 0;
+    let hostel = 0;
+    let canteen = 0;
+    let coaching = 0;
+    let custom = 0;
+
+    for (const st of students) {
+      const trans = transportMap.get(st.id);
+      const isTrans = Boolean(trans?.is_transport_applicable);
+      const customFees = assignmentsMap.get(st.id) || [];
+
+      if (isTrans) transport++;
+      if (customFees.some((c) => c.fee_category === 'HOSTEL')) hostel++;
+      if (customFees.some((c) => c.fee_category === 'CANTEEN')) canteen++;
+      if (customFees.some((c) => c.fee_category === 'COACHING' || c.fee_category === 'ACTIVITY')) coaching++;
+      if (isTrans || customFees.length > 0) custom++;
+    }
+
+    return { transport, hostel, canteen, coaching, custom };
+  }, [students, transportMap, assignmentsMap]);
 
   // Filtered Students
   const filteredStudents = useMemo(() => {
@@ -319,7 +343,7 @@ export const StudentLevelFeesTab: React.FC<StudentLevelFeesTabProps> = ({ tenant
             }`}
           >
             <Bus className="w-3 h-3" />
-            <span>Transport Users</span>
+            <span>Transport Users ({facilityCounts.transport})</span>
           </button>
 
           <button
@@ -332,7 +356,7 @@ export const StudentLevelFeesTab: React.FC<StudentLevelFeesTabProps> = ({ tenant
             }`}
           >
             <Building2 className="w-3 h-3" />
-            <span>Hostel Residents</span>
+            <span>Hostel Residents ({facilityCounts.hostel})</span>
           </button>
 
           <button
@@ -345,7 +369,7 @@ export const StudentLevelFeesTab: React.FC<StudentLevelFeesTabProps> = ({ tenant
             }`}
           >
             <Utensils className="w-3 h-3" />
-            <span>Canteen / Meals</span>
+            <span>Canteen / Meals ({facilityCounts.canteen})</span>
           </button>
 
           <button
@@ -358,7 +382,7 @@ export const StudentLevelFeesTab: React.FC<StudentLevelFeesTabProps> = ({ tenant
             }`}
           >
             <Trophy className="w-3 h-3" />
-            <span>Activities & Coaching</span>
+            <span>Activities & Coaching ({facilityCounts.coaching})</span>
           </button>
 
           <button
@@ -370,7 +394,7 @@ export const StudentLevelFeesTab: React.FC<StudentLevelFeesTabProps> = ({ tenant
                 : 'text-muted-foreground hover:text-foreground hover:bg-muted/50'
             }`}
           >
-            Any Subscribed Facility
+            Any Subscribed Facility ({facilityCounts.custom})
           </button>
         </div>
 
@@ -546,8 +570,8 @@ export const StudentLevelFeesTab: React.FC<StudentLevelFeesTabProps> = ({ tenant
         </div>
       )}
 
-      {/* Student Facility Drawer */}
-      <StudentFacilityDrawer
+      {/* Student Facility Dialog */}
+      <ManageStudentFacilitiesDialog
         isOpen={isDrawerOpen}
         onClose={() => {
           setIsDrawerOpen(false);
@@ -556,6 +580,7 @@ export const StudentLevelFeesTab: React.FC<StudentLevelFeesTabProps> = ({ tenant
         student={drawerStudent}
         tenantId={tenantId || ''}
         schoolMonthlyTotal={schoolMonthlyTotal}
+        baseTuition={classMonthlyTuition}
         classMonthlyTuition={classMonthlyTuition}
         transportProfile={drawerStudent ? transportMap.get(drawerStudent.id) : null}
         classDefaultTransportRate={classDefaultTransportRate}

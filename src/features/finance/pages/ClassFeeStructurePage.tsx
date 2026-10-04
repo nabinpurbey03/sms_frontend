@@ -9,6 +9,7 @@ import {
   useFinanceClassRoster,
   useFeeStructures,
   useStudentTransports,
+  useStudentFeeAssignments,
   useCreateFeeStructure,
   useUpdateFeeStructure,
   useDeleteFeeStructure,
@@ -17,6 +18,7 @@ import {
 } from '../hooks';
 import { ClassProgressionNavigator } from '@/features/academic/components/ClassProgressionNavigator';
 import { StudentFeeProfileRow } from '../components/StudentFeeProfileRow';
+import { ManageStudentFacilitiesDialog } from '../components/ManageStudentFacilitiesDialog';
 import { ClassFeeHeadsTable } from '../components/ClassFeeHeadsTable';
 import { FeeStructureDialog } from '../components/FeeStructureDialog';
 import { TenantRequiredState } from '@/components/common/TenantRequiredState';
@@ -37,6 +39,7 @@ import {
   Coins,
   Users,
   Bus,
+  Building2,
   Percent,
   Plus,
   Lock,
@@ -49,7 +52,8 @@ import {
   Layers,
   GraduationCap,
 } from 'lucide-react';
-import type { FeeStructure, StudentTransportProfile } from '../types';
+import type { FeeStructure, StudentTransportProfile, StudentFeeAssignment } from '../types';
+import type { AcademicStudent } from '@/features/academic/types';
 import type { FeeStructureFormValues } from '../schema';
 
 export const ClassFeeStructurePage: React.FC = () => {
@@ -61,12 +65,14 @@ export const ClassFeeStructurePage: React.FC = () => {
   // Dialog State
   const [isFeeDialogOpen, setIsFeeDialogOpen] = useState(false);
   const [editingFeeHead, setEditingFeeHead] = useState<FeeStructure | null>(null);
+  const [managingStudent, setManagingStudent] = useState<AcademicStudent | null>(null);
+  const [isFacilitiesDialogOpen, setIsFacilitiesDialogOpen] = useState(false);
 
   // UI Tabs & Filters
   const [activeTab, setActiveTab] = useState<'students' | 'structures'>('students');
   const [selectedSectionId, setSelectedSectionId] = useState<string>(''); // '' = All Sections
   const [studentSearchQuery, setStudentSearchQuery] = useState('');
-  const [rosterFilter, setRosterFilter] = useState<'ALL' | 'TRANSPORT' | 'STANDARD'>('ALL');
+  const [rosterFilter, setRosterFilter] = useState<'ALL' | 'TRANSPORT' | 'HOSTEL' | 'STANDARD'>('ALL');
   const [savingStudentId, setSavingStudentId] = useState<string | null>(null);
 
   // Queries
@@ -95,6 +101,11 @@ export const ClassFeeStructurePage: React.FC = () => {
     data: studentTransports = [],
     isLoading: isTransportsLoading,
   } = useStudentTransports(tenantId);
+
+  const {
+    data: studentFeeAssignments = [],
+    isLoading: isAssignmentsLoading,
+  } = useStudentFeeAssignments(tenantId, { class_id: classId });
 
   // Mutations
   const createFeeMutation = useCreateFeeStructure(tenantId);
@@ -125,6 +136,19 @@ export const ClassFeeStructurePage: React.FC = () => {
     }
     return map;
   }, [studentTransports]);
+
+  // Pre-index student fee assignments by student_id
+  const assignmentsByStudentId = useMemo(() => {
+    const map = new Map<string, StudentFeeAssignment[]>();
+    for (const a of studentFeeAssignments) {
+      if (a.student_id && a.is_active) {
+        const list = map.get(a.student_id) || [];
+        list.push(a);
+        map.set(a.student_id, list);
+      }
+    }
+    return map;
+  }, [studentFeeAssignments]);
 
   // Filter fee structures active for this class
   const classFees = useMemo(() => {
@@ -178,6 +202,26 @@ export const ClassFeeStructurePage: React.FC = () => {
     return allStudents.filter((s) => s.section_id === selectedSectionId);
   }, [allStudents, selectedSectionId]);
 
+  // Quick Metrics for this class
+  const classTransports = useMemo(() => {
+    const studentIds = new Set(allStudents.map((s) => s.id));
+    return studentTransports.filter((d) => d.is_active && studentIds.has(d.student_id));
+  }, [allStudents, studentTransports]);
+
+  const transportUsersCount = useMemo(() => {
+    return classTransports.filter((d) => Boolean(d.is_transport_applicable)).length;
+  }, [classTransports]);
+
+  const hostelUsersCount = useMemo(() => {
+    const studentIdsWithHostel = new Set<string>();
+    for (const a of studentFeeAssignments) {
+      if (a.is_active && a.fee_category === 'HOSTEL' && a.student_id) {
+        studentIdsWithHostel.add(a.student_id);
+      }
+    }
+    return studentIdsWithHostel.size;
+  }, [studentFeeAssignments]);
+
   // Apply search and quick filters to students
   const filteredStudents = useMemo(() => {
     return sectionStudents.filter((student) => {
@@ -194,22 +238,15 @@ export const ClassFeeStructurePage: React.FC = () => {
       // 2. Roster Filter
       const transportProfile = transportsByStudentId.get(student.id);
       const isTransport = Boolean(transportProfile?.is_transport_applicable);
+      const studentAssigned = assignmentsByStudentId.get(student.id) || [];
+      const hasHostel = studentAssigned.some((a) => a.fee_category === 'HOSTEL');
 
       if (rosterFilter === 'TRANSPORT') return isTransport;
-      if (rosterFilter === 'STANDARD') return !isTransport;
+      if (rosterFilter === 'HOSTEL') return hasHostel;
+      if (rosterFilter === 'STANDARD') return !isTransport && studentAssigned.length === 0;
       return true; // 'ALL'
     });
-  }, [sectionStudents, studentSearchQuery, rosterFilter, transportsByStudentId]);
-
-  // Quick Metrics for this class
-  const classTransports = useMemo(() => {
-    const studentIds = new Set(allStudents.map((s) => s.id));
-    return studentTransports.filter((d) => d.is_active && studentIds.has(d.student_id));
-  }, [allStudents, studentTransports]);
-
-  const transportUsersCount = useMemo(() => {
-    return classTransports.filter((d) => Boolean(d.is_transport_applicable)).length;
-  }, [classTransports]);
+  }, [sectionStudents, studentSearchQuery, rosterFilter, transportsByStudentId, assignmentsByStudentId]);
 
   // Save student transport status
   const handleSaveStudentFeeProfile = async (
@@ -280,7 +317,7 @@ export const ClassFeeStructurePage: React.FC = () => {
   }
 
   // 2. Loading state guard
-  if (isClassLoading || isFeesLoading || isTransportsLoading) {
+  if (isClassLoading || isFeesLoading || isTransportsLoading || isAssignmentsLoading) {
     return (
       <div className="flex flex-col items-center justify-center min-h-[60vh] text-center p-6 space-y-4">
         <Loader2 className="w-8 h-8 animate-spin text-primary" />
@@ -395,6 +432,10 @@ export const ClassFeeStructurePage: React.FC = () => {
           <Bus className="w-3.5 h-3.5" />
           <span>{transportUsersCount} Transport Users</span>
         </div>
+        <div className="inline-flex items-center gap-2 px-3 py-1.5 rounded-xl text-xs font-semibold bg-purple-500/10 text-purple-700 dark:text-purple-300 border border-purple-500/20 shadow-2xs">
+          <Building2 className="w-3.5 h-3.5" />
+          <span>{hostelUsersCount} Hostel Residents</span>
+        </div>
       </div>
 
       {/* Main Tabs Switcher */}
@@ -507,6 +548,17 @@ export const ClassFeeStructurePage: React.FC = () => {
               </button>
               <button
                 type="button"
+                onClick={() => setRosterFilter('HOSTEL')}
+                className={`px-2.5 py-0.5 rounded-md font-medium transition-colors cursor-pointer ${
+                  rosterFilter === 'HOSTEL'
+                    ? 'bg-purple-600 text-white shadow-2xs font-bold'
+                    : 'text-muted-foreground hover:text-foreground'
+                }`}
+              >
+                Hostel Residents ({hostelUsersCount})
+              </button>
+              <button
+                type="button"
                 onClick={() => setRosterFilter('STANDARD')}
                 className={`px-2.5 py-0.5 rounded-md font-medium transition-colors cursor-pointer ${
                   rosterFilter === 'STANDARD'
@@ -562,25 +614,30 @@ export const ClassFeeStructurePage: React.FC = () => {
                 <TableHeader className="bg-muted/50">
                   <TableRow>
                     <TableHead className="font-semibold text-xs min-w-[200px]">Student Details</TableHead>
-                    <TableHead className="font-semibold text-xs min-w-[180px]">Transportation</TableHead>
+                    <TableHead className="font-semibold text-xs min-w-[120px]">Base Tuition</TableHead>
+                    <TableHead className="font-semibold text-xs min-w-[240px]">Active Facilities</TableHead>
                     <TableHead className="font-semibold text-xs min-w-[160px]">Est. Net Monthly Fee</TableHead>
-                    <TableHead className="font-semibold text-xs text-right min-w-[100px]">Action</TableHead>
+                    <TableHead className="font-semibold text-xs text-right min-w-[140px]">Action</TableHead>
                   </TableRow>
                 </TableHeader>
                 <TableBody>
                   {filteredStudents.map((student, idx) => {
                     const transportProfile = transportsByStudentId.get(student.id);
                     const sec = sections.find((s) => s.id === student.section_id);
+                    const studentAssigned = assignmentsByStudentId.get(student.id) || [];
 
                     return (
                       <StudentFeeProfileRow
                         key={student.id}
                         student={student}
+                        assignedFees={studentAssigned}
                         transportProfile={transportProfile}
                         baseTuition={baseTuition}
-                        transportFee={transportFee}
-                        onSave={handleSaveStudentFeeProfile}
-                        isSaving={savingStudentId === student.id}
+                        classDefaultTransportRate={transportFee}
+                        onManageFacilities={(st) => {
+                          setManagingStudent(st);
+                          setIsFacilitiesDialogOpen(true);
+                        }}
                         sectionName={sec?.name}
                         rollNumber={idx + 1}
                       />
@@ -632,6 +689,24 @@ export const ClassFeeStructurePage: React.FC = () => {
         tenantId={tenantId}
         initialData={editingFeeHead}
         defaultClassId={classId}
+      />
+
+      {/* Manage Student Facilities Dialog */}
+      <ManageStudentFacilitiesDialog
+        isOpen={isFacilitiesDialogOpen}
+        onClose={() => {
+          setIsFacilitiesDialogOpen(false);
+          setManagingStudent(null);
+        }}
+        student={managingStudent}
+        tenantId={tenantId}
+        schoolMonthlyTotal={schoolMonthlyTotal}
+        baseTuition={baseTuition}
+        classMonthlyTuition={baseTuition}
+        transportProfile={managingStudent ? transportsByStudentId.get(managingStudent.id) : null}
+        classDefaultTransportRate={transportFee}
+        onSaveTransport={handleSaveStudentFeeProfile}
+        isSavingTransport={savingStudentId === managingStudent?.id}
       />
     </div>
   );

@@ -7,6 +7,7 @@ export { ClassFeeHeadsTable, type ClassFeeHeadsTableProps } from './ClassFeeHead
 export { SchoolFeeHeadsTable, type SchoolFeeHeadsTableProps, getFeeHeadAction } from './SchoolFeeHeadsTable';
 export * from './StudentFacilityBadge';
 export * from './StudentFacilityDrawer';
+export * from './ManageStudentFacilitiesDialog';
 export * from './StudentFeeProfileRow';
 export * from './StudentLevelFeesTab';
 export * from './PaymentCollectDialog';

@@ -24,6 +24,7 @@ export const FEE_STRUCTURES_KEY = 'fee_structures';
 export const STUDENT_TRANSPORTS_KEY = 'student-transports';
 export const STUDENT_TRANSPORT_KEY = 'student-transport';
 export const STUDENT_FEES_KEY = 'student_fees';
+export const STUDENT_FEE_ASSIGNMENTS_KEY = STUDENT_FEES_KEY;
 export const BILLS_KEY = 'finance_bills';
 export const BILL_KEY = 'finance_bill';
 export const PAYMENTS_KEY = 'finance_payments';
@@ -338,6 +339,7 @@ export const useSetStudentTransport = (tenantId: string | null) => {
       toast.success('Student transport profile updated');
       queryClient.invalidateQueries({ queryKey: [STUDENT_TRANSPORTS_KEY, tenantId] });
       queryClient.invalidateQueries({ queryKey: [STUDENT_TRANSPORT_KEY, tenantId] });
+      queryClient.invalidateQueries({ queryKey: [FINANCE_CLASS_OVERVIEW_KEY, tenantId] });
       queryClient.invalidateQueries({ queryKey: [STUDENT_LEDGER_KEY, tenantId] });
     },
     onError: (err: any) => {
@@ -354,6 +356,8 @@ export const useAssignStudentFee = (tenantId: string | null) => {
     onSuccess: () => {
       toast.success('Student fee assigned successfully');
       queryClient.invalidateQueries({ queryKey: [STUDENT_FEES_KEY, tenantId] });
+      queryClient.invalidateQueries({ queryKey: [STUDENT_TRANSPORTS_KEY, tenantId] });
+      queryClient.invalidateQueries({ queryKey: [FINANCE_CLASS_OVERVIEW_KEY, tenantId] });
       queryClient.invalidateQueries({ queryKey: [STUDENT_LEDGER_KEY, tenantId] });
     },
     onError: (err: any) => {
@@ -370,6 +374,8 @@ export const useBulkAssignStudentFees = (tenantId: string | null) => {
     onSuccess: (res) => {
       toast.success(`Successfully assigned facility to ${res.assigned_count} students!`);
       queryClient.invalidateQueries({ queryKey: [STUDENT_FEES_KEY, tenantId] });
+      queryClient.invalidateQueries({ queryKey: [STUDENT_TRANSPORTS_KEY, tenantId] });
+      queryClient.invalidateQueries({ queryKey: [FINANCE_CLASS_OVERVIEW_KEY, tenantId] });
       queryClient.invalidateQueries({ queryKey: [STUDENT_LEDGER_KEY, tenantId] });
     },
     onError: (err: any) => {
@@ -386,6 +392,8 @@ export const useRemoveStudentFee = (tenantId: string | null) => {
     onSuccess: () => {
       toast.success('Student fee removed successfully');
       queryClient.invalidateQueries({ queryKey: [STUDENT_FEES_KEY, tenantId] });
+      queryClient.invalidateQueries({ queryKey: [STUDENT_TRANSPORTS_KEY, tenantId] });
+      queryClient.invalidateQueries({ queryKey: [FINANCE_CLASS_OVERVIEW_KEY, tenantId] });
       queryClient.invalidateQueries({ queryKey: [STUDENT_LEDGER_KEY, tenantId] });
     },
     onError: (err: any) => {
