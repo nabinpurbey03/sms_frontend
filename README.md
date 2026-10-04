@@ -57,6 +57,17 @@ A production-grade, domain-aligned **React 19 Single Page Application (SPA)** fo
 
 ## ✨ Recent Updates
 
+- **Finance Module: Multi-Class Fee Assignment & Year-to-Year Fee Structure Cloning**:
+  - **Multi-Class Batch Fee Assignment ([`FeeStructureDialog.tsx`](file:///E:/SSUP/frontend/src/features/finance/components/FeeStructureDialog.tsx))**:
+    - Extends the class-level fee configuration modal with a **Batch Assignment (Multiple Classes)** toggle mode.
+    - Interactive class chips with instant "Select All" and "Clear All" convenience toggles.
+    - Submits via `POST /api/v1/finance/tenants/{tenant_id}/fee-structures/bulk-classes` with selected `class_ids`, triggering smart upsert behavior (creates new heads, updates existing heads matching class + name, and reactivates soft-deleted records) without duplicate constraint errors.
+  - **Year-to-Year Fee Structure Cloning ([`CloneFeeStructuresDialog.tsx`](file:///E:/SSUP/frontend/src/features/finance/components/CloneFeeStructuresDialog.tsx))**:
+    - Automated year-to-year fee migration modal with intelligent previous academic session auto-selection.
+    - **Percentage Adjustment**: Numeric percentage input (-100% to +500%) with quick-fill presets (`0%`, `5%`, `10%`, `15%`, `20%`).
+    - **Rounding Engine**: Configurable rounding options: Round to nearest 10 NPR (`Default`), Round to nearest 1 NPR (Integer), or Exact cents/paisa.
+    - **Granular Scope Selection**: Checkboxes for Universal School Fees, Class-Specific Fees, and Student Presets with validation requiring at least one scope.
+    - **Non-Destructive Safety**: Conflict-safe cloning that preserves existing target fee structures, safely ignores unmatched legacy classes, and provides detailed toast notifications of cloned and skipped counts.
 - **UI/UX Modernization & Design System Upgrade (Phases 1–5)**:
   - **Global Command Palette (`Cmd+K` / `Ctrl+K`)**: Fast accessible command palette modal ([`CommandPalette.tsx`](file:///E:/SSUP/frontend/src/components/layout/CommandPalette.tsx)) featuring role-aware page navigation, live keyword filtering, keyboard arrows/enter support, and direct actions (theme and calendar system toggles).
   - **Interactive Notification Popover ([`NotificationPopover.tsx`](file:///E:/SSUP/frontend/src/components/layout/NotificationPopover.tsx))**: Replaced the static header bell icon with a real-time notification popover displaying today's classroom attendance pending prompts (with 1-click navigation to mark attendance), upcoming calendar events, and "Mark all as read" dismiss controls.
@@ -168,6 +179,7 @@ A production-grade, domain-aligned **React 19 Single Page Application (SPA)** fo
 | **School Settings** | Centralized hub for academic sessions & rollovers, tenant-configurable weekly academic days (Sun-Fri, Mon-Fri, etc.), academic calendar events & official holidays, and school branding profile. |
 | **Academic Management** | Class catalog with auto-provisioned Section A; 20-student eligibility check before sequential section expansion; single & bulk student enrollment (CSV/XLSX template download); subjects management. |
 | **Attendance Tracking** | Daily section attendance checklist with batch toggle actions (Mark All Present/Absent); Class Teacher verification; date range section reports; linked child reports for parents; multi-level dashboard summary. |
+| **Financial Management** | 3-level fee architecture (School, Class, Student), multi-class bulk fee assignment, year-to-year fee cloning with percentage adjustments and rounding rules, dynamic batch billing, and payment processing. |
 | **Modern Component System** | Accessible **shadcn/ui** design tokens built on Tailwind CSS v4, Radix UI primitives, Lucide icons, and Sonner toast notifications. |
 
 ---
@@ -576,7 +588,11 @@ frontend/
     │   │   ├── components/           # AbsentStudentsDrawer, AttendanceConfirmDialog
     │   │   └── utils/                # attendanceStatus.ts (local date, marked checks, duty resolution)
     │   ├── examination/              # Exams, grading & report cards
-    │   └── members/                  # School member directory & parent-student links
+    │   ├── members/                  # School member directory & parent-student links
+    │   └── finance/                  # 3-level fees, bulk assignment, cloning, batch billing & payments
+    │       ├── pages/                # FeeStructuresPage, BillingPage, PaymentsPage
+    │       ├── components/           # FeeStructureDialog, CloneFeeStructuresDialog, BatchBillGenerateDialog
+    │       └── hooks/                # useFeeStructures, useCloneFeeStructures, useBulkClassFeeStructures
     │
     └── lib/
         └── utils.ts                  # cn() class merging utility (clsx + twMerge)
