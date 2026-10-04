@@ -30,11 +30,13 @@ import {
   TableRow,
 } from '@/components/ui/table';
 import { FeeStructureDialog } from '../components/FeeStructureDialog';
+import { CloneFeeStructuresDialog } from '../components/CloneFeeStructuresDialog';
 import { SchoolFeeHeadsTable } from '../components/SchoolFeeHeadsTable';
 import { StudentLevelFeesTab } from '../components/StudentLevelFeesTab';
 import {
   Coins,
   Plus,
+  CopyPlus,
   Lock,
   School,
   Bus,
@@ -69,6 +71,7 @@ export const FeeStructuresPage: React.FC = () => {
 
   // Dialog State
   const [isFeeStructureOpen, setIsFeeStructureOpen] = useState(false);
+  const [isCloneDialogOpen, setIsCloneDialogOpen] = useState(false);
   const [editingFeeStructure, setEditingFeeStructure] = useState<FeeStructure | null>(null);
   const [selectedClassIdForAdd, setSelectedClassIdForAdd] = useState<string>('');
 
@@ -240,6 +243,16 @@ export const FeeStructuresPage: React.FC = () => {
                 <Lock className="w-3.5 h-3.5 text-primary" />
                 <span>Session: {currentYear?.name || 'Active Session'} (Locked)</span>
               </div>
+
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={() => setIsCloneDialogOpen(true)}
+                className="gap-1.5 cursor-pointer border-border/80 hover:bg-accent"
+              >
+                <CopyPlus className="w-4 h-4 text-purple-600 dark:text-purple-400" />
+                <span>Clone from Previous Session</span>
+              </Button>
 
               <Button
                 size="sm"
@@ -581,6 +594,18 @@ export const FeeStructuresPage: React.FC = () => {
               bulkCreateMutation.isPending
             }
             tenantId={effectiveTenantId}
+          />
+
+          {/* Clone Fee Structures Dialog */}
+          <CloneFeeStructuresDialog
+            isOpen={isCloneDialogOpen}
+            onClose={() => setIsCloneDialogOpen(false)}
+            tenantId={effectiveTenantId}
+            currentYearId={currentYear?.id}
+            onSuccess={() => {
+              refetch();
+              refetchSchoolFees();
+            }}
           />
         </>
       )}

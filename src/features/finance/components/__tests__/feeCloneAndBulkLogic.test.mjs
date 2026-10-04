@@ -1,6 +1,13 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import { feeStructureFormSchema } from '../../schema.ts';
+import {
+  filterAndSortCandidateAcademicYears,
+  isCloneScopeValid,
+  formatCloneSampleText,
+  ROUNDING_OPTIONS,
+  PERCENTAGE_PRESETS,
+} from '../../utils/feeCloneUtils.ts';
 
 /**
  * Calculates adjusted amount based on percentage increase and rounding interval.
@@ -126,3 +133,75 @@ test('feeStructureFormSchema: school level does not require class_id or class_id
   });
   assert.equal(schoolFee.success, true);
 });
+
+test('filterAndSortCandidateAcademicYears filters current session and sorts descending', () => {
+  const mockYears = [
+    { id: 'ay-2079', name: '2079 BS', start_date: '2022-04-14' },
+    { id: 'ay-2081', name: '2081 BS', start_date: '2024-04-13', is_current: true },
+    { id: 'ay-2080', name: '2080 BS', start_date: '2023-04-14' },
+  ];
+
+  const candidates = filterAndSortCandidateAcademicYears(mockYears, 'ay-2081');
+  assert.equal(candidates.length, 2);
+  assert.equal(candidates[0].id, 'ay-2080');
+  assert.equal(candidates[1].id, 'ay-2079');
+});
+
+test('filterAndSortCandidateAcademicYears handles empty or null array', () => {
+  assert.deepEqual(filterAndSortCandidateAcademicYears([], 'ay-1'), []);
+  assert.deepEqual(filterAndSortCandidateAcademicYears(null, 'ay-1'), []);
+  assert.deepEqual(filterAndSortCandidateAcademicYears(undefined, 'ay-1'), []);
+});
+
+test('isCloneScopeValid validates scope checkboxes correctly', () => {
+  assert.equal(
+    isCloneScopeValid({ includeSchoolFees: true, includeClassFees: false, includeStudentPresets: false }),
+    true
+  );
+  assert.equal(
+    isCloneScopeValid({ includeSchoolFees: false, includeClassFees: true, includeStudentPresets: false }),
+    true
+  );
+  assert.equal(
+    isCloneScopeValid({ includeSchoolFees: false, includeClassFees: false, includeStudentPresets: true }),
+    true
+  );
+  assert.equal(
+    isCloneScopeValid({ includeSchoolFees: true, includeClassFees: true, includeStudentPresets: true }),
+    true
+  );
+  assert.equal(
+    isCloneScopeValid({ includeSchoolFees: false, includeClassFees: false, includeStudentPresets: false }),
+    false
+  );
+});
+
+test('formatCloneSampleText formats interactive sample preview text correctly', () => {
+  const text10 = formatCloneSampleText(1000, 10, 10);
+  assert.equal(
+    text10,
+    'Base fee of NPR 1,000 with +10% rounded to nearest 10 NPR → NPR 1,100'
+  );
+
+  const textExact = formatCloneSampleText(1000, 0, 0);
+  assert.equal(
+    textExact,
+    'Base fee of NPR 1,000 with +0% rounded to exact → NPR 1,000'
+  );
+
+  const textNearestRe1 = formatCloneSampleText(1255, 5, 1);
+  // 1255 * 1.05 = 1317.75 -> rounded to nearest 1 = 1318
+  assert.equal(
+    textNearestRe1,
+    'Base fee of NPR 1,255 with +5% rounded to nearest Re 1 → NPR 1,318'
+  );
+});
+
+test('PERCENTAGE_PRESETS and ROUNDING_OPTIONS verify preset values', () => {
+  const pctValues = PERCENTAGE_PRESETS.map((p) => p.value);
+  assert.deepEqual(pctValues, [0, 5, 10, 15]);
+
+  const roundValues = ROUNDING_OPTIONS.map((r) => r.value);
+  assert.deepEqual(roundValues, [0, 1, 10]);
+});
+
