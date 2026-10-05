@@ -2,7 +2,7 @@ import React from 'react';
 import { useAuth } from '@/auth/useAuth';
 import { GraduatedStudentsTable } from '../components/GraduatedStudentsTable';
 import { Button } from '@/components/ui/button';
-import { ArrowLeft, Building2, GraduationCap } from 'lucide-react';
+import { ArrowLeft, Building2, GraduationCap, Users } from 'lucide-react';
 import { Link } from '@tanstack/react-router';
 
 export const AlumniPage: React.FC = () => {
@@ -29,7 +29,7 @@ export const AlumniPage: React.FC = () => {
 
   return (
     <div className="space-y-6 pb-12">
-      {/* Header with Navigation */}
+      {/* Header with Navigation and Segmented Switcher */}
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
         <div className="space-y-1">
           <div className="flex items-center gap-2">
@@ -54,6 +54,21 @@ export const AlumniPage: React.FC = () => {
                 Historical records, graduation batches, and enrollment transcripts of graduated students.
               </p>
             </div>
+          </div>
+        </div>
+
+        {/* Segmented Roster Switcher */}
+        <div className="flex items-center p-1 bg-muted/60 rounded-xl border border-border/50 text-xs font-medium self-start sm:self-auto shrink-0 shadow-2xs">
+          <Link
+            to="/academic/students"
+            className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-muted-foreground hover:text-foreground hover:bg-background/50 transition-colors"
+          >
+            <Users className="w-4 h-4 text-muted-foreground" />
+            <span>Active Roster</span>
+          </Link>
+          <div className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-background text-foreground font-semibold shadow-xs">
+            <GraduationCap className="w-4 h-4 text-purple-600 dark:text-purple-400" />
+            <span>Alumni Directory</span>
           </div>
         </div>
       </div>
