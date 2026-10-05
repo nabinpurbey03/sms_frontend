@@ -27,3 +27,34 @@ test('navConfig does not include Alumni Directory in sidebar navigation (kept in
   const analytics = items.find((item) => item.href === '/academic/analytics');
   assert.ok(analytics, 'Analytics item should exist under Academics');
 });
+
+test('navConfig includes Invoice Generation under Finance category for users with VIEW_FINANCE', () => {
+  const financeCtx = createMockCtx({
+    can: (perm) => perm === 'VIEW_FINANCE',
+  });
+  const items = getNavItems(financeCtx);
+
+  const invoiceGenItem = items.find((item) => item.href === '/finance/batch-billing');
+  assert.ok(invoiceGenItem, 'Invoice Generation item should exist');
+  assert.equal(invoiceGenItem.label, 'Invoice Generation');
+  assert.equal(invoiceGenItem.category, 'Finance');
+  assert.equal(invoiceGenItem.show, true);
+
+  // Hidden for parent
+  const parentCtx = createMockCtx({
+    isParent: true,
+    can: (perm) => perm === 'VIEW_FINANCE',
+  });
+  const parentItems = getNavItems(parentCtx);
+  const parentInvoiceGen = parentItems.find((item) => item.href === '/finance/batch-billing');
+  assert.equal(parentInvoiceGen?.show, false, 'Invoice Generation should be hidden for parent');
+
+  // Hidden when lacking permission
+  const noPermCtx = createMockCtx({
+    can: () => false,
+  });
+  const noPermItems = getNavItems(noPermCtx);
+  const noPermInvoiceGen = noPermItems.find((item) => item.href === '/finance/batch-billing');
+  assert.equal(noPermInvoiceGen?.show, false, 'Invoice Generation should be hidden when lacking VIEW_FINANCE');
+});
+

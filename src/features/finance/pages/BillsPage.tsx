@@ -8,7 +8,6 @@ import {
   useBills,
   useCancelBill,
   useRecordPayment,
-  useBatchGenerateBills,
 } from '../hooks';
 import { Card } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -17,8 +16,6 @@ import { Badge } from '@/components/ui/badge';
 import {
   FileText,
   Search,
-  Plus,
-  Sparkles,
   CreditCard,
   Printer,
   Ban,
@@ -78,7 +75,6 @@ export const BillsPage: React.FC = () => {
   // Mutations
   const cancelBillMutation = useCancelBill(activeTenantId);
   const recordPaymentMutation = useRecordPayment(activeTenantId);
-  const batchBillMutation = useBatchGenerateBills(activeTenantId);
 
   const getStatusBadge = (status: BillStatus, discountAmt: number = 0) => {
     switch (status) {
@@ -165,17 +161,6 @@ export const BillsPage: React.FC = () => {
             <Calendar className="w-3.5 h-3.5 text-primary" />
             <span>Session: {currentYear?.name || 'Active Session'}</span>
           </div>
-
-          <Button
-            asChild
-            size="sm"
-            className="gap-1.5 text-xs shadow-xs cursor-pointer"
-          >
-            <Link to="/finance/batch-billing">
-              <Sparkles className="w-3.5 h-3.5" />
-              Batch Invoicing
-            </Link>
-          </Button>
         </div>
       </div>
 
@@ -244,7 +229,7 @@ export const BillsPage: React.FC = () => {
             <p className="text-[11px] text-muted-foreground mt-0.5">
               {search || classFilter || statusFilter
                 ? 'Try adjusting your search criteria or clearing filters.'
-                : 'Click "Batch Invoicing" to generate fee bills for a class.'}
+                : 'Generate fee bills using Invoice Generation in the sidebar.'}
             </p>
           </div>
         </div>
