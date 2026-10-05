@@ -120,10 +120,10 @@ export const StudentLedgerPage: React.FC = () => {
         <div className="space-y-1">
           <Link
             to="/finance/bills"
-            className="inline-flex items-center gap-1 text-xs text-muted-foreground hover:text-foreground mb-1"
+            className="inline-flex items-center gap-1.5 text-xs font-semibold text-muted-foreground hover:text-foreground mb-1.5 transition-colors"
           >
             <ArrowLeft className="w-3.5 h-3.5" />
-            Back to Bills
+            Back to Bills & Invoices
           </Link>
           <h1 className="text-xl sm:text-2xl font-bold tracking-tight text-foreground flex items-center gap-2">
             <Coins className="w-6 h-6 text-primary" />

@@ -1,14 +1,9 @@
 import React, { useState } from 'react';
 import { Link } from '@tanstack/react-router';
 import { useAuth } from '@/auth/useAuth';
-import { hasPermission } from '@/config/permissions';
 import { useCurrentAcademicYear } from '@/features/academic-year/hooks/useCurrentAcademicYear';
 import { useClasses } from '@/features/academic/hooks';
-import {
-  useBills,
-  useCancelBill,
-  useRecordPayment,
-} from '../hooks';
+import { useBills } from '../hooks';
 import { Card } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -16,33 +11,26 @@ import { Badge } from '@/components/ui/badge';
 import {
   FileText,
   Search,
-  CreditCard,
-  Printer,
-  Ban,
   ExternalLink,
   Loader2,
   Calendar,
   Filter,
   Tag,
+  BookOpen,
 } from 'lucide-react';
-import type { FeeBill, BillStatus, FeePayment } from '../types';
+import type { FeeBill, BillStatus } from '../types';
 import {
   Tooltip,
   TooltipContent,
   TooltipProvider,
   TooltipTrigger,
 } from '@/components/ui/tooltip';
-import { PaymentCollectDialog } from '../components/PaymentCollectDialog';
-import { PrintableBillModal } from '../components/PrintableBillModal';
-import { PrintableReceiptModal } from '../components/PrintableReceiptModal';
-import { CancelBillDialog } from '../components/CancelBillDialog';
-import { getCancelBillEligibility } from '../utils/cashierUtils';
 import { useCalendarPreferenceStore } from '@/stores/calendarPreferenceStore';
 import { formatDate } from '@/features/school-settings/utils/nepaliDate';
+import { formatStudentFullName } from '../utils/cashierUtils';
 
 export const BillsPage: React.FC = () => {
-  const { activeTenantId, activeRole, user } = useAuth();
-  const canManageFinance = hasPermission(activeRole, 'MANAGE_FINANCE') || !!user?.is_super_admin;
+  const { activeTenantId } = useAuth();
   const { calendarSystem } = useCalendarPreferenceStore();
   const { currentYear } = useCurrentAcademicYear(activeTenantId);
   const { data: classesData } = useClasses(activeTenantId);
@@ -65,16 +53,6 @@ export const BillsPage: React.FC = () => {
 
   const bills = billsData?.items || [];
   const meta = billsData?.meta;
-
-  // Dialog States
-  const [activeCollectBill, setActiveCollectBill] = useState<FeeBill | null>(null);
-  const [activePrintBillId, setActivePrintBillId] = useState<string | null>(null);
-  const [generatedReceiptPaymentId, setGeneratedReceiptPaymentId] = useState<string | null>(null);
-  const [activeCancelBill, setActiveCancelBill] = useState<FeeBill | null>(null);
-
-  // Mutations
-  const cancelBillMutation = useCancelBill(activeTenantId);
-  const recordPaymentMutation = useRecordPayment(activeTenantId);
 
   const getStatusBadge = (status: BillStatus, discountAmt: number = 0) => {
     switch (status) {
@@ -129,16 +107,6 @@ export const BillsPage: React.FC = () => {
       case 'UNPAID':
       default:
         return <Badge variant="outline">UNPAID</Badge>;
-    }
-  };
-
-  const handleConfirmCancelBill = async () => {
-    if (!activeCancelBill) return;
-    try {
-      await cancelBillMutation.mutateAsync(activeCancelBill.id);
-      setActiveCancelBill(null);
-    } catch {
-      // Error is caught and surfaced by useCancelBill mutation onError toast
     }
   };
 
@@ -248,18 +216,16 @@ export const BillsPage: React.FC = () => {
                   <th className="py-2.5 px-3 text-right">Paid</th>
                   <th className="py-2.5 px-3 text-right">Balance Due</th>
                   <th className="py-2.5 px-3 text-center">Status</th>
-                  <th className="py-2.5 px-3 text-right">Actions</th>
+                  <th className="py-2.5 px-3 text-right">Action</th>
                 </tr>
               </thead>
               <tbody className="divide-y divide-border/40">
                 {bills.map((b) => {
                   const due = Number(b.due_amount);
-                  const isPaid = b.status === 'PAID';
-                  const isCancelled = b.status === 'CANCELLED';
                   const discount = Number(
                     b.discount_amount ?? Math.max(0, Number(b.total_payable) - Number(b.paid_amount) - due)
                   );
-                  const cancelEligibility = getCancelBillEligibility(b, canManageFinance);
+                  const studentDisplayName = formatStudentFullName(b);
 
                   return (
                     <tr key={b.id} className="hover:bg-muted/30 transition-colors">
@@ -270,10 +236,10 @@ export const BillsPage: React.FC = () => {
                         <Link
                           to="/finance/ledger/$studentId"
                           params={{ studentId: b.student_id }}
-                          className="hover:underline flex items-center gap-1 group"
+                          className="hover:text-primary transition-colors inline-flex items-center gap-1.5 group font-semibold"
                         >
-                          <span>{b.student_name || 'Student'}</span>
-                          <ExternalLink className="w-2.5 h-2.5 opacity-0 group-hover:opacity-100 transition-opacity" />
+                          <span>{studentDisplayName}</span>
+                          <ExternalLink className="w-2.5 h-2.5 opacity-0 group-hover:opacity-100 transition-opacity text-primary" />
                         </Link>
                       </td>
                       <td className="py-2.5 px-3 text-muted-foreground">{b.class_name}</td>
@@ -332,82 +298,20 @@ export const BillsPage: React.FC = () => {
                       </td>
                       <td className="py-2.5 px-3 text-center">{getStatusBadge(b.status, discount)}</td>
                       <td className="py-2.5 px-3 text-right">
-                        <div className="flex items-center justify-end gap-1">
-                          {due > 0 && !isCancelled && canManageFinance && (
-                            <Button
-                              size="sm"
-                              variant="default"
-                              onClick={() => setActiveCollectBill(b)}
-                              className="h-7 text-[11px] gap-1 px-2.5 cursor-pointer shadow-2xs"
-                            >
-                              <CreditCard className="w-3 h-3" />
-                              Pay
-                            </Button>
-                          )}
-
-                          <TooltipProvider delayDuration={150}>
-                            <Tooltip>
-                              <TooltipTrigger asChild>
-                                <Button
-                                  size="sm"
-                                  variant="ghost"
-                                  onClick={() => setActivePrintBillId(b.id)}
-                                  className="h-7 w-7 p-0 text-muted-foreground hover:text-foreground cursor-pointer"
-                                  aria-label="Print Invoice"
-                                >
-                                  <Printer className="w-3.5 h-3.5" />
-                                </Button>
-                              </TooltipTrigger>
-                              <TooltipContent side="top" className="text-xs">
-                                Print Invoice
-                              </TooltipContent>
-                            </Tooltip>
-                          </TooltipProvider>
-
-                          {canManageFinance && !isCancelled && (
-                            cancelEligibility.canCancel ? (
-                              <TooltipProvider delayDuration={150}>
-                                <Tooltip>
-                                  <TooltipTrigger asChild>
-                                    <Button
-                                      size="sm"
-                                      variant="ghost"
-                                      onClick={() => setActiveCancelBill(b)}
-                                      className="h-7 w-7 p-0 text-muted-foreground hover:text-destructive hover:bg-destructive/10 transition-colors cursor-pointer"
-                                      aria-label={`Cancel Bill ${b.bill_number}`}
-                                    >
-                                      <Ban className="w-3.5 h-3.5" />
-                                    </Button>
-                                  </TooltipTrigger>
-                                  <TooltipContent side="left" className="text-xs">
-                                    Void & Cancel Bill
-                                  </TooltipContent>
-                                </Tooltip>
-                              </TooltipProvider>
-                            ) : (
-                              <TooltipProvider delayDuration={150}>
-                                <Tooltip>
-                                  <TooltipTrigger asChild>
-                                    <span className="inline-block">
-                                      <Button
-                                        size="sm"
-                                        variant="ghost"
-                                        disabled
-                                        className="h-7 w-7 p-0 text-muted-foreground/30 cursor-not-allowed"
-                                        aria-label={cancelEligibility.reason || 'Cannot cancel bill'}
-                                      >
-                                        <Ban className="w-3.5 h-3.5" />
-                                      </Button>
-                                    </span>
-                                  </TooltipTrigger>
-                                  <TooltipContent side="left" className="text-xs max-w-xs">
-                                    {cancelEligibility.reason}
-                                  </TooltipContent>
-                                </Tooltip>
-                              </TooltipProvider>
-                            )
-                          )}
-                        </div>
+                        <Button
+                          asChild
+                          size="sm"
+                          variant="outline"
+                          className="h-7 text-xs gap-1.5 px-2.5 font-medium hover:bg-primary/5 hover:text-primary hover:border-primary/40 transition-colors shadow-2xs cursor-pointer"
+                        >
+                          <Link
+                            to="/finance/ledger/$studentId"
+                            params={{ studentId: b.student_id }}
+                          >
+                            <BookOpen className="w-3.5 h-3.5 text-primary" />
+                            <span>View Ledger</span>
+                          </Link>
+                        </Button>
                       </td>
                     </tr>
                   );
@@ -446,43 +350,6 @@ export const BillsPage: React.FC = () => {
           )}
         </div>
       )}
-
-      {/* Payment Collect Dialog */}
-      <PaymentCollectDialog
-        isOpen={!!activeCollectBill}
-        onClose={() => setActiveCollectBill(null)}
-        bill={activeCollectBill}
-        onSubmit={async (data) => recordPaymentMutation.mutateAsync(data)}
-        isLoading={recordPaymentMutation.isPending}
-        onPaymentSuccess={(payment: FeePayment) => {
-          setGeneratedReceiptPaymentId(payment.id);
-        }}
-      />
-
-      {/* Printable Invoice Modal */}
-      <PrintableBillModal
-        isOpen={!!activePrintBillId}
-        onClose={() => setActivePrintBillId(null)}
-        tenantId={activeTenantId}
-        billId={activePrintBillId}
-      />
-
-      {/* Printable Receipt Modal (on instant payment success) */}
-      <PrintableReceiptModal
-        isOpen={!!generatedReceiptPaymentId}
-        onClose={() => setGeneratedReceiptPaymentId(null)}
-        tenantId={activeTenantId}
-        paymentId={generatedReceiptPaymentId}
-      />
-
-      {/* Cancel Bill Confirmation Dialog */}
-      <CancelBillDialog
-        bill={activeCancelBill}
-        isOpen={!!activeCancelBill}
-        onClose={() => setActiveCancelBill(null)}
-        onConfirm={handleConfirmCancelBill}
-        isPending={cancelBillMutation.isPending}
-      />
     </div>
   );
 };

@@ -21,6 +21,7 @@ import {
   getBillMonthIndex,
   sortBillsChronologically,
   generateMonthlyLedgerSummary,
+  formatStudentFullName,
 } from '../../utils/cashierUtils.ts';
 
 // -------------------------------------------------------------------------
@@ -601,5 +602,51 @@ test('generateMonthlyLedgerSummary creates compact overview pills with exact for
   assert.equal(pills[2].status, 'UNPAID');
   assert.equal(pills[2].dueAmount, 5000);
 });
+
+test('formatStudentFullName correctly formats first, middle, and last names', () => {
+  // Full three parts
+  assert.equal(
+    formatStudentFullName({
+      student_first_name: 'Aarav',
+      student_middle_name: 'Kumar',
+      student_last_name: 'Sharma',
+    }),
+    'Aarav Kumar Sharma'
+  );
+
+  // Without middle name
+  assert.equal(
+    formatStudentFullName({
+      student_first_name: 'Sita',
+      student_middle_name: null,
+      student_last_name: 'Adhikari',
+    }),
+    'Sita Adhikari'
+  );
+
+  // Direct student model properties
+  assert.equal(
+    formatStudentFullName({
+      first_name: 'Ram',
+      middle_name: 'Bahadur',
+      last_name: 'Thapa',
+    }),
+    'Ram Bahadur Thapa'
+  );
+
+  // Fallback to student_name
+  assert.equal(
+    formatStudentFullName({
+      student_name: 'Deepak Shrestha',
+    }),
+    'Deepak Shrestha'
+  );
+
+  // Fallback when empty or null
+  assert.equal(formatStudentFullName(null), 'Student');
+  assert.equal(formatStudentFullName(undefined), 'Student');
+  assert.equal(formatStudentFullName({}), 'Student');
+});
+
 
 

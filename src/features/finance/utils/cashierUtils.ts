@@ -648,3 +648,31 @@ export function generateMonthlyLedgerSummary<T extends {
   return pills;
 }
 
+/**
+ * Formats full student name by combining first_name, middle_name, and last_name cleanly,
+ * or falls back to student_name.
+ */
+export function formatStudentFullName(studentOrBill?: {
+  student_name?: string | null;
+  student_first_name?: string | null;
+  student_middle_name?: string | null;
+  student_last_name?: string | null;
+  first_name?: string | null;
+  middle_name?: string | null;
+  last_name?: string | null;
+} | null): string {
+  if (!studentOrBill) return 'Student';
+  const first = studentOrBill.student_first_name ?? studentOrBill.first_name;
+  const middle = studentOrBill.student_middle_name ?? studentOrBill.middle_name;
+  const last = studentOrBill.student_last_name ?? studentOrBill.last_name;
+
+  if (first || last) {
+    const parts = [first, middle, last].map((p) => p?.trim()).filter(Boolean);
+    if (parts.length > 0) {
+      return parts.join(' ');
+    }
+  }
+  return studentOrBill.student_name?.trim() || 'Student';
+}
+
+

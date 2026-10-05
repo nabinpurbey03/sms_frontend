@@ -1,6 +1,6 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import { getNavItems } from '../navConfig.ts';
+import { getNavItems, isNavItemActive, getBreadcrumbs } from '../navConfig.ts';
 
 function createMockCtx(overrides = {}) {
   return {
@@ -57,4 +57,25 @@ test('navConfig includes Invoice Generation under Finance category for users wit
   const noPermInvoiceGen = noPermItems.find((item) => item.href === '/finance/batch-billing');
   assert.equal(noPermInvoiceGen?.show, false, 'Invoice Generation should be hidden when lacking VIEW_FINANCE');
 });
+
+test('isNavItemActive activates Bills & Invoices for /finance/ledger routes', () => {
+  assert.equal(isNavItemActive('/finance/ledger/student-123', '/finance/bills'), true);
+  assert.equal(isNavItemActive('/finance/bills', '/finance/bills'), true);
+  assert.equal(isNavItemActive('/finance/batch-billing', '/finance/bills'), false);
+});
+
+test('getBreadcrumbs resolves Finance > Bills & Invoices > Student Ledger for student ledger paths', () => {
+  const financeCtx = createMockCtx({
+    can: (perm) => perm === 'VIEW_FINANCE',
+  });
+  const items = getNavItems(financeCtx);
+
+  const crumbs = getBreadcrumbs('/finance/ledger/student-999', items);
+  assert.equal(crumbs.length, 3);
+  assert.equal(crumbs[0].label, 'Finance');
+  assert.equal(crumbs[1].label, 'Bills & Invoices');
+  assert.equal(crumbs[1].href, '/finance/bills');
+  assert.equal(crumbs[2].label, 'Student Ledger');
+});
+
 

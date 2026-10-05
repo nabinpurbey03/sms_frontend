@@ -307,6 +307,9 @@ export const isNavItemActive = (currentPath: string, navHref: string): boolean =
   if (navHref === '/dashboard' || navHref === '/finance') {
     return currentPath === navHref;
   }
+  if (navHref === '/finance/bills' && currentPath.startsWith('/finance/ledger')) {
+    return true;
+  }
   return currentPath === navHref || currentPath.startsWith(`${navHref}/`);
 };
 
@@ -323,6 +326,14 @@ export const getBreadcrumbs = (pathname: string, navItems: NavItem[]): Breadcrum
     visibleItems.find((n) => isNavItemActive(pathname, n.href));
 
   if (!active) {
+    if (pathname.startsWith('/finance/ledger')) {
+      const billsItem = visibleItems.find((n) => n.href === '/finance/bills');
+      return [
+        { label: billsItem?.category || 'Finance' },
+        { label: billsItem?.label || 'Bills & Invoices', href: '/finance/bills', icon: billsItem?.icon },
+        { label: 'Student Ledger' },
+      ];
+    }
     const defaultDash = visibleItems.find((n) => n.label === 'Dashboard');
     return [{ label: 'Dashboard', href: defaultDash ? defaultDash.href : '/dashboard' }];
   }
@@ -339,6 +350,8 @@ export const getBreadcrumbs = (pathname: string, navItems: NavItem[]): Breadcrum
     pathname.trim().replace(/\/+$/, '') !== '/finance/structures'
   ) {
     crumbs.push({ label: 'Class Fee Structure' });
+  } else if (pathname.startsWith('/finance/ledger')) {
+    crumbs.push({ label: 'Student Ledger' });
   } else if (pathname.includes('/create')) {
     crumbs.push({ label: 'Create New' });
   } else if (pathname.includes('/edit')) {

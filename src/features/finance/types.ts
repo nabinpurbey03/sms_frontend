@@ -216,6 +216,9 @@ export interface FeeBill {
   bill_number: string;
   student_id: string;
   student_name?: string;
+  student_first_name?: string;
+  student_middle_name?: string | null;
+  student_last_name?: string;
   class_id: string;
   class_name?: string;
   academic_year_id: string;
