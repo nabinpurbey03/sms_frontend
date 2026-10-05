@@ -142,6 +142,14 @@ export const getNavItems = (ctx: NavPermissionsContext): NavItem[] => [
     category: 'Academics',
   },
   {
+    label: 'Alumni Directory',
+    href: '/academic/alumni',
+    icon: GraduationCap,
+    description: 'Historical records, graduation batches, and alumni transcripts.',
+    show: ctx.can('VIEW_SECTIONS_STUDENTS') && ctx.activeRole !== 'ACCOUNTANT',
+    category: 'Academics',
+  },
+  {
     label: 'Teacher Assignments',
     href: '/academic/assignments',
     icon: UserCheck,
