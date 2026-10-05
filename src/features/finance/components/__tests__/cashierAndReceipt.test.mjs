@@ -12,6 +12,7 @@ import {
   formatCurrency,
   formatCompactNumber,
   formatCompactCurrency,
+  numberToWords,
 } from '../../utils/cashierUtils.ts';
 
 // -------------------------------------------------------------------------
@@ -293,5 +294,18 @@ test('formatCurrency: preserves exact 2-decimal precision for receipts and audit
   assert.equal(formatCurrency(0), 'NPR 0.00');
   assert.equal(formatCurrency(1250.5), 'NPR 1,250.50');
   assert.equal(formatCurrency(1250000), 'NPR 12,50,000.00');
+});
+
+test('numberToWords: converts amounts to South Asian English words with Rupees Only suffix', () => {
+  assert.equal(numberToWords(0), 'Zero Rupees Only');
+  assert.equal(numberToWords('0'), 'Zero Rupees Only');
+  assert.equal(numberToWords(500), 'Five Hundred Rupees Only');
+  assert.equal(numberToWords(1250), 'One Thousand Two Hundred Fifty Rupees Only');
+  assert.equal(numberToWords(12500), 'Twelve Thousand Five Hundred Rupees Only');
+  assert.equal(numberToWords('75500'), 'Seventy Five Thousand Five Hundred Rupees Only');
+  assert.equal(numberToWords(125000), 'One Lakh Twenty Five Thousand Rupees Only');
+  assert.equal(numberToWords(1500000), 'Fifteen Lakh Rupees Only');
+  assert.equal(numberToWords(10000000), 'One Crore Rupees Only');
+  assert.equal(numberToWords(25000000), 'Two Crore Fifty Lakh Rupees Only');
 });
 

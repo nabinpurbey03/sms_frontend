@@ -38,13 +38,31 @@ export const PrintableReceiptModal: React.FC<PrintableReceiptModalProps> = ({
     window.print();
   };
 
+  // Keyboard shortcut: Ctrl+P or Cmd+P to trigger print while preview modal is open
+  React.useEffect(() => {
+    if (!isOpen) return;
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if ((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === 'p') {
+        e.preventDefault();
+        handlePrint();
+      }
+    };
+    window.addEventListener('keydown', handleKeyDown);
+    return () => window.removeEventListener('keydown', handleKeyDown);
+  }, [isOpen]);
+
   return (
     <>
       <style>{`
         @media print {
           @page {
             size: portrait;
-            margin: 12mm;
+            margin: 10mm 12mm;
+          }
+          html, body {
+            background: #fff !important;
+            height: auto !important;
+            overflow: visible !important;
           }
           body * {
             visibility: hidden !important;
@@ -62,42 +80,76 @@ export const PrintableReceiptModal: React.FC<PrintableReceiptModalProps> = ({
             margin: 0 !important;
             background: #fff !important;
             color: #000 !important;
+            box-shadow: none !important;
+            border: none !important;
           }
           .no-print {
             display: none !important;
+          }
+          .print-avoid-break {
+            page-break-inside: avoid !important;
+            break-inside: avoid !important;
           }
         }
       `}</style>
 
       <Dialog open={isOpen} onOpenChange={(open) => !open && onClose()}>
-        <DialogContent className="sm:max-w-2xl max-h-[92vh] overflow-y-auto p-0 border bg-card text-foreground">
+        {/* [&>button:last-child]:hidden hides the default DialogPrimitive.Close button so there is only ONE close button in the header bar */}
+        <DialogContent className="sm:max-w-3xl lg:max-w-4xl max-h-[92vh] overflow-y-auto p-0 border border-border/80 bg-background text-foreground [&>button:last-child]:hidden shadow-2xl">
           {/* Header Action Bar */}
-          <div className="flex items-center justify-between px-6 py-3 border-b bg-muted/30 no-print">
-            <div className="flex items-center gap-2">
-              <CheckCircle2 className="w-4 h-4 text-emerald-600" />
-              <span className="text-xs font-semibold text-foreground">Official Payment Receipt</span>
+          <div className="flex items-center justify-between px-5 py-3 border-b bg-muted/40 no-print sticky top-0 z-20 backdrop-blur-sm">
+            <div className="flex items-center gap-2.5">
+              <div className="p-1.5 rounded-lg bg-emerald-500/10 text-emerald-600 border border-emerald-500/20">
+                <CheckCircle2 className="w-4 h-4" />
+              </div>
+              <div className="flex items-center gap-2 flex-wrap">
+                <span className="text-xs font-bold text-foreground">Official Payment Receipt Preview</span>
+                {receipt?.receipt_number && (
+                  <span className="font-mono text-[10px] px-1.5 py-0.5 rounded border border-border bg-card font-semibold">
+                    #{receipt.receipt_number}
+                  </span>
+                )}
+              </div>
             </div>
             <div className="flex items-center gap-2">
-              <Button size="sm" onClick={handlePrint} className="gap-1.5 h-8 text-xs cursor-pointer">
+              <Button
+                size="sm"
+                onClick={handlePrint}
+                className="gap-1.5 h-8 text-xs font-semibold shadow-xs cursor-pointer bg-primary text-primary-foreground hover:bg-primary/90 transition-all"
+                title="Print Receipt (Ctrl+P)"
+              >
                 <Printer className="w-3.5 h-3.5" />
-                Print Receipt
+                <span>Print Receipt</span>
               </Button>
-              <Button variant="ghost" size="icon" onClick={onClose} className="h-8 w-8 rounded-full">
+              <Button
+                variant="ghost"
+                size="icon"
+                onClick={onClose}
+                className="h-8 w-8 rounded-lg hover:bg-muted text-muted-foreground hover:text-foreground cursor-pointer transition-colors"
+                aria-label="Close receipt preview"
+                title="Close preview (Esc)"
+              >
                 <X className="w-4 h-4" />
+                <span className="sr-only">Close preview</span>
               </Button>
             </div>
           </div>
 
-          {isLoading ? (
-            <div className="p-12 flex flex-col items-center justify-center gap-2 text-muted-foreground">
-              <Loader2 className="w-6 h-6 animate-spin text-primary" />
-              <span className="text-xs">Loading receipt document...</span>
-            </div>
-          ) : !receipt ? (
-            <div className="p-12 text-center text-xs text-muted-foreground">Receipt not found.</div>
-          ) : (
-            <div id="printable-receipt-doc" className="p-8 space-y-6 text-black bg-white">
-              {/* Receipt Letterhead */}
+          {/* Modal Body / Document Preview Canvas */}
+          <div className="p-4 sm:p-6 md:p-8 bg-muted/30 dark:bg-zinc-950/60 flex justify-center min-h-[500px]">
+            {isLoading ? (
+              <div className="p-16 flex flex-col items-center justify-center gap-3 text-muted-foreground">
+                <Loader2 className="w-7 h-7 animate-spin text-primary" />
+                <span className="text-xs font-medium">Generating official receipt preview...</span>
+              </div>
+            ) : !receipt ? (
+              <div className="p-16 text-center text-xs text-muted-foreground">Receipt not found.</div>
+            ) : (
+              <div
+                id="printable-receipt-doc"
+                className="w-full max-w-[210mm] bg-white text-zinc-900 shadow-md sm:shadow-lg border border-zinc-200/90 rounded-xs p-6 sm:p-8 md:p-10 space-y-6 text-xs font-sans"
+              >
+                {/* Receipt Letterhead */}
               <div className="text-center space-y-1 border-b-2 border-black pb-4">
                 <h1 className="text-xl font-bold tracking-tight uppercase">{receipt.school_name}</h1>
                 {receipt.school_address && (
@@ -290,13 +342,27 @@ export const PrintableReceiptModal: React.FC<PrintableReceiptModalProps> = ({
                   <p className="text-[10px] text-zinc-500">Authorized Signature & Seal</p>
                 </div>
               </div>
-            </div>
-          )}
+              </div>
+            )}
+          </div>
 
-          <DialogFooter className="p-3 border-t bg-muted/20 no-print">
-            <Button variant="outline" size="sm" onClick={onClose} className="text-xs">
-              Close
-            </Button>
+          <DialogFooter className="p-3.5 border-t bg-muted/20 no-print flex flex-row items-center justify-between">
+            <span className="text-[11px] text-muted-foreground hidden sm:inline">
+              Tip: Press <kbd className="px-1.5 py-0.5 text-[10px] font-mono font-semibold bg-muted rounded border">Ctrl</kbd> + <kbd className="px-1.5 py-0.5 text-[10px] font-mono font-semibold bg-muted rounded border">P</kbd> to quick-print this receipt.
+            </span>
+            <div className="flex items-center gap-2 ml-auto">
+              <Button variant="outline" size="sm" onClick={onClose} className="text-xs cursor-pointer">
+                Close
+              </Button>
+              <Button
+                size="sm"
+                onClick={handlePrint}
+                className="gap-1.5 text-xs font-semibold cursor-pointer bg-primary text-primary-foreground hover:bg-primary/90"
+              >
+                <Printer className="w-3.5 h-3.5" />
+                Print Receipt
+              </Button>
+            </div>
           </DialogFooter>
         </DialogContent>
       </Dialog>

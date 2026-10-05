@@ -258,3 +258,93 @@ export function formatCompactCurrency(
   const compact = formatCompactNumber(Math.abs(num));
   return isNegative ? `-${prefix}${compact}` : `${prefix}${compact}`;
 }
+
+/**
+ * Converts a monetary number to English words in South Asian numbering (Rupees ... Only).
+ */
+export function numberToWords(amount: number | string): string {
+  try {
+    const num = Math.round(Math.abs(Number(amount) || 0));
+    if (num === 0) {
+      return 'Zero Rupees Only';
+    }
+
+    const units = [
+      '',
+      'One',
+      'Two',
+      'Three',
+      'Four',
+      'Five',
+      'Six',
+      'Seven',
+      'Eight',
+      'Nine',
+      'Ten',
+      'Eleven',
+      'Twelve',
+      'Thirteen',
+      'Fourteen',
+      'Fifteen',
+      'Sixteen',
+      'Seventeen',
+      'Eighteen',
+      'Nineteen',
+    ];
+    const tens = [
+      '',
+      '',
+      'Twenty',
+      'Thirty',
+      'Forty',
+      'Fifty',
+      'Sixty',
+      'Seventy',
+      'Eighty',
+      'Ninety',
+    ];
+
+    function convertBelowThousand(n: number): string {
+      let res = '';
+      if (n >= 100) {
+        res += units[Math.floor(n / 100)] + ' Hundred ';
+        n %= 100;
+      }
+      if (n >= 20) {
+        res += tens[Math.floor(n / 10)] + ' ';
+        n %= 10;
+      }
+      if (n > 0) {
+        res += units[n] + ' ';
+      }
+      return res.trim();
+    }
+
+    let intVal = num;
+    const parts: string[] = [];
+
+    const crore = Math.floor(intVal / 10000000);
+    intVal %= 10000000;
+    const lakh = Math.floor(intVal / 100000);
+    intVal %= 100000;
+    const thousand = Math.floor(intVal / 1000);
+    const remainder = intVal % 1000;
+
+    if (crore > 0) {
+      parts.push(convertBelowThousand(crore) + ' Crore');
+    }
+    if (lakh > 0) {
+      parts.push(convertBelowThousand(lakh) + ' Lakh');
+    }
+    if (thousand > 0) {
+      parts.push(convertBelowThousand(thousand) + ' Thousand');
+    }
+    if (remainder > 0) {
+      parts.push(convertBelowThousand(remainder));
+    }
+
+    return parts.join(' ').trim() + ' Rupees Only';
+  } catch {
+    return `${amount} Rupees Only`;
+  }
+}
