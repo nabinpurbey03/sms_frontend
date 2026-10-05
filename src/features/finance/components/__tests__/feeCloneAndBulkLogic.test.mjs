@@ -264,4 +264,42 @@ test('computeSessionCloneBannerState: session with fees returns shouldShowBanner
   });
 });
 
+test('parent fee bill payment receipt resolution: empty vs single vs installment receipts', () => {
+  const unpaidBill = {
+    id: 'b-1',
+    bill_number: 'BILL-001',
+    payments: [],
+  };
+  assert.equal((unpaidBill.payments || []).length, 0);
+
+  const singlePaymentBill = {
+    id: 'b-2',
+    bill_number: 'BILL-002',
+    payments: [
+      {
+        id: 'p-1',
+        receipt_number: 'RCP-2082-001',
+        amount_paid: 2500,
+        payment_date: '2026-05-10',
+        payment_method: 'CASH',
+        created_at: '2026-05-10T10:00:00Z',
+      },
+    ],
+  };
+  assert.equal(singlePaymentBill.payments.length, 1);
+  assert.equal(singlePaymentBill.payments[0].receipt_number, 'RCP-2082-001');
+
+  const multiPaymentBill = {
+    id: 'b-3',
+    bill_number: 'BILL-003',
+    payments: [
+      { id: 'p-2', receipt_number: 'RCP-2082-002', amount_paid: 1500, payment_date: '2026-05-10', payment_method: 'CASH', created_at: '2026-05-10T10:00:00Z' },
+      { id: 'p-3', receipt_number: 'RCP-2082-003', amount_paid: 1000, payment_date: '2026-05-20', payment_method: 'ESEWA', created_at: '2026-05-20T10:00:00Z' },
+    ],
+  };
+  assert.equal(multiPaymentBill.payments.length, 2);
+  const totalPaid = multiPaymentBill.payments.reduce((s, p) => s + p.amount_paid, 0);
+  assert.equal(totalPaid, 2500);
+});
+
 

@@ -192,6 +192,16 @@ export interface FeeBillItem {
   amount: number | string;
 }
 
+export interface FeeBillPaymentSummary {
+  id: string;
+  receipt_number: string;
+  amount_paid: number | string;
+  payment_date: string;
+  payment_method: string;
+  transaction_reference?: string | null;
+  created_at: string;
+}
+
 export interface FeeBill {
   id: string;
   tenant_id: string;
@@ -216,6 +226,7 @@ export interface FeeBill {
   status: BillStatus;
   notes?: string | null;
   items: FeeBillItem[];
+  payments?: FeeBillPaymentSummary[];
   created_at: string;
 }
 

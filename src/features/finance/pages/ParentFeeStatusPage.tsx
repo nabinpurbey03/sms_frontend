@@ -1,11 +1,18 @@
-import React from 'react';
+import React, { useState } from 'react';
 import { useAuth } from '@/auth/useAuth';
 import { useParentChildrenFees } from '../hooks';
 import { Card } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
+import { Button } from '@/components/ui/button';
 import { StatCard } from '@/components/ui/stat-card';
 import { EmptyState } from '@/components/common/EmptyState';
 import { TenantRequiredState } from '@/components/common/TenantRequiredState';
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from '@/components/ui/dropdown-menu';
 import {
   Table,
   TableBody,
@@ -22,14 +29,20 @@ import {
   Calendar,
   AlertCircle,
   CheckCircle2,
+  FileText,
+  ChevronDown,
 } from 'lucide-react';
 import type { FeeBill } from '../types';
 import { useCalendarPreferenceStore } from '@/stores/calendarPreferenceStore';
 import { formatDualDate } from '@/features/school-settings/utils/nepaliDate';
+import { PrintableBillModal } from '../components/PrintableBillModal';
+import { PrintableReceiptModal } from '../components/PrintableReceiptModal';
 
 export const ParentFeeStatusPage: React.FC = () => {
   const { activeTenantId } = useAuth();
   const { calendarSystem } = useCalendarPreferenceStore();
+  const [selectedBillId, setSelectedBillId] = useState<string | null>(null);
+  const [selectedReceiptPaymentId, setSelectedReceiptPaymentId] = useState<string | null>(null);
   const {
     data: childrenFees = [],
     isLoading,
@@ -242,6 +255,7 @@ export const ParentFeeStatusPage: React.FC = () => {
                             <TableHead className="py-2.5 px-3 text-right">Paid</TableHead>
                             <TableHead className="py-2.5 px-3 text-right">Balance</TableHead>
                             <TableHead className="py-2.5 px-3 text-center">Status</TableHead>
+                            <TableHead className="py-2.5 px-3 text-right">Actions</TableHead>
                           </TableRow>
                         </TableHeader>
                         <TableBody className="divide-y divide-border/40 text-xs">
@@ -277,6 +291,70 @@ export const ParentFeeStatusPage: React.FC = () => {
                                 <TableCell className="py-2.5 px-3 text-center">
                                   {getStatusBadge(bill.status)}
                                 </TableCell>
+                                <TableCell className="py-2.5 px-3 text-right">
+                                  <div className="flex items-center justify-end gap-1.5">
+                                    <Button
+                                      variant="outline"
+                                      size="sm"
+                                      className="h-7 px-2 text-xs gap-1 font-medium hover:bg-muted/80 text-foreground"
+                                      onClick={() => setSelectedBillId(bill.id)}
+                                      title="View & Print Official Bill"
+                                      aria-label={`View bill ${bill.bill_number}`}
+                                    >
+                                      <FileText className="w-3.5 h-3.5 text-primary" />
+                                      <span className="hidden sm:inline">Bill</span>
+                                    </Button>
+
+                                    {bill.payments && bill.payments.length === 1 ? (
+                                      <Button
+                                        variant="outline"
+                                        size="sm"
+                                        className="h-7 px-2 text-xs gap-1 font-medium text-emerald-700 dark:text-emerald-300 border-emerald-500/30 hover:bg-emerald-500/10"
+                                        onClick={() => setSelectedReceiptPaymentId(bill.payments![0].id)}
+                                        title="View & Print Official Payment Receipt"
+                                        aria-label={`View receipt ${bill.payments[0].receipt_number}`}
+                                      >
+                                        <Receipt className="w-3.5 h-3.5 text-emerald-600 dark:text-emerald-400" />
+                                        <span className="hidden sm:inline">Receipt</span>
+                                      </Button>
+                                    ) : bill.payments && bill.payments.length > 1 ? (
+                                      <DropdownMenu>
+                                        <DropdownMenuTrigger asChild>
+                                          <Button
+                                            variant="outline"
+                                            size="sm"
+                                            className="h-7 px-2 text-xs gap-1 font-medium text-emerald-700 dark:text-emerald-300 border-emerald-500/30 hover:bg-emerald-500/10"
+                                            title="Multiple Receipts Available"
+                                          >
+                                            <Receipt className="w-3.5 h-3.5 text-emerald-600 dark:text-emerald-400" />
+                                            <span className="hidden sm:inline">{bill.payments.length} Receipts</span>
+                                            <ChevronDown className="w-3 h-3 opacity-60 ml-0.5" />
+                                          </Button>
+                                        </DropdownMenuTrigger>
+                                        <DropdownMenuContent align="end" className="w-56 p-1 text-xs">
+                                          <div className="px-2 py-1.5 font-semibold text-muted-foreground text-[10px] uppercase tracking-wider border-b border-border/50">
+                                            Payment Receipts ({bill.payments.length})
+                                          </div>
+                                          {bill.payments.map((p) => (
+                                            <DropdownMenuItem
+                                              key={p.id}
+                                              onClick={() => setSelectedReceiptPaymentId(p.id)}
+                                              className="flex items-center justify-between py-1.5 px-2 cursor-pointer text-xs"
+                                            >
+                                              <div className="flex flex-col">
+                                                <span className="font-mono font-medium">{p.receipt_number}</span>
+                                                <span className="text-[10px] text-muted-foreground">{p.payment_date}</span>
+                                              </div>
+                                              <span className="font-bold text-emerald-600 dark:text-emerald-400 font-mono">
+                                                NPR {Number(p.amount_paid).toLocaleString('en-US')}
+                                              </span>
+                                            </DropdownMenuItem>
+                                          ))}
+                                        </DropdownMenuContent>
+                                      </DropdownMenu>
+                                    ) : null}
+                                  </div>
+                                </TableCell>
                               </TableRow>
                             );
                           })}
@@ -290,6 +368,22 @@ export const ParentFeeStatusPage: React.FC = () => {
           })}
         </div>
       )}
+
+      {/* Printable Bill / Invoice Modal */}
+      <PrintableBillModal
+        isOpen={!!selectedBillId}
+        onClose={() => setSelectedBillId(null)}
+        tenantId={activeTenantId}
+        billId={selectedBillId}
+      />
+
+      {/* Printable Payment Receipt Modal */}
+      <PrintableReceiptModal
+        isOpen={!!selectedReceiptPaymentId}
+        onClose={() => setSelectedReceiptPaymentId(null)}
+        tenantId={activeTenantId}
+        paymentId={selectedReceiptPaymentId}
+      />
     </div>
   );
 };
