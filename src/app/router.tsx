@@ -45,7 +45,6 @@ import { PlatformUsersPage } from '@/features/platform-users/pages/PlatformUsers
 import { AuditLogsPage } from '@/features/audit-log/pages/AuditLogsPage';
 import { FinanceDashboardPage } from '@/features/finance/pages/FinanceDashboardPage';
 import { BillsPage } from '@/features/finance/pages/BillsPage';
-import { CollectPaymentPage } from '@/features/finance/pages/CollectPaymentPage';
 import { FeeStructuresPage } from '@/features/finance/pages/FeeStructuresPage';
 import { ClassFeeStructurePage } from '@/features/finance/pages/ClassFeeStructurePage';
 import { TransactionsPage } from '@/features/finance/pages/TransactionsPage';
@@ -446,7 +445,7 @@ const financeGenerateRoute = createRoute({
 const financeCollectRoute = createRoute({
   getParentRoute: () => protectedLayoutRoute,
   path: '/finance/collect',
-  component: CollectPaymentPage,
+  component: () => <Navigate to="/finance/bills" replace />,
 });
 
 const financeStructuresRoute = createRoute({

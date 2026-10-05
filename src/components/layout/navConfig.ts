@@ -256,14 +256,6 @@ export const getNavItems = (ctx: NavPermissionsContext): NavItem[] => [
     category: 'Finance',
   },
   {
-    label: 'Collect Payment',
-    href: '/finance/collect',
-    icon: CreditCard,
-    description: 'Collect fee payments and issue official receipts.',
-    show: ctx.can('VIEW_FINANCE') && !ctx.isParent,
-    category: 'Finance',
-  },
-  {
     label: 'Payment Transactions',
     href: '/finance/transactions',
     icon: Receipt,

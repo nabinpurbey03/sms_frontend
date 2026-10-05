@@ -158,7 +158,7 @@ export const FinanceDashboardPage: React.FC = () => {
           </div>
 
           {/* Primary Action: Direct Payment Collection */}
-          <Link to="/finance/collect">
+          <Link to="/finance/bills">
             <Button
               size="sm"
               className="gap-1.5 text-xs font-semibold shadow-xs cursor-pointer bg-emerald-600 hover:bg-emerald-700 text-white"
@@ -537,7 +537,7 @@ export const FinanceDashboardPage: React.FC = () => {
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3.5">
           {/* Card 1: Collect Payment */}
           <Link
-            to="/finance/collect"
+            to="/finance/bills"
             className="p-4 rounded-xl border border-border/60 bg-card hover:border-emerald-500/50 hover:bg-accent/40 transition-all duration-200 flex flex-col justify-between group cursor-pointer shadow-2xs"
           >
             <div className="flex items-start justify-between">
@@ -557,7 +557,7 @@ export const FinanceDashboardPage: React.FC = () => {
               </p>
             </div>
             <div className="mt-3 pt-2.5 border-t border-border/40 flex items-center text-xs font-semibold text-emerald-600 dark:text-emerald-400 group-hover:translate-x-1 transition-transform">
-              Open Terminal
+              View &amp; Collect Bills
               <ArrowUpRight className="w-3.5 h-3.5 ml-1" />
             </div>
           </Link>

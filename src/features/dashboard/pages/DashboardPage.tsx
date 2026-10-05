@@ -573,7 +573,7 @@ export const DashboardPage: React.FC = () => {
                   className="w-full text-xs font-semibold h-10"
                   asChild
                 >
-                  <Link to="/finance/collect">Collect Payment</Link>
+                  <Link to="/finance/bills">Collect Payment</Link>
                 </Button>
               </CardContent>
             </Card>
