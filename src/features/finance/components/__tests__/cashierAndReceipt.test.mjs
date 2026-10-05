@@ -22,6 +22,7 @@ import {
   sortBillsChronologically,
   generateMonthlyLedgerSummary,
   formatStudentFullName,
+  extractSeparateMonthsDue,
 } from '../../utils/cashierUtils.ts';
 
 // -------------------------------------------------------------------------
@@ -646,6 +647,66 @@ test('formatStudentFullName correctly formats first, middle, and last names', ()
   assert.equal(formatStudentFullName(null), 'Student');
   assert.equal(formatStudentFullName(undefined), 'Student');
   assert.equal(formatStudentFullName({}), 'Student');
+});
+
+test('extractSeparateMonthsDue: extracts, sorts chronologically, and itemizes unpaid months with dues', () => {
+  // Empty or null cases
+  assert.deepEqual(extractSeparateMonthsDue(null), []);
+  assert.deepEqual(extractSeparateMonthsDue([]), []);
+
+  const sampleBills = [
+    {
+      id: 'b-jestha',
+      bill_number: 'FB-2082-002',
+      billing_month: 'Jestha',
+      due_amount: 3000,
+      total_payable: 5000,
+      paid_amount: 2000,
+      status: 'PARTIAL',
+    },
+    {
+      id: 'b-baishakh',
+      bill_number: 'FB-2082-001',
+      billing_month: 'Baishakh',
+      due_amount: 5000,
+      total_payable: 5000,
+      paid_amount: 0,
+      status: 'UNPAID',
+    },
+    {
+      id: 'b-ashadh',
+      bill_number: 'FB-2082-003',
+      billing_month: 'Ashadh',
+      due_amount: 0,
+      total_payable: 5000,
+      paid_amount: 5000,
+      status: 'PAID',
+    },
+    {
+      id: 'b-shrawan-cancelled',
+      bill_number: 'FB-2082-004',
+      billing_month: 'Shrawan',
+      due_amount: 5000,
+      total_payable: 5000,
+      paid_amount: 0,
+      status: 'CANCELLED',
+    },
+  ];
+
+  const result = extractSeparateMonthsDue(sampleBills);
+  assert.equal(result.length, 2);
+
+  // Baishakh comes first chronologically
+  assert.equal(result[0].month, 'Baishakh');
+  assert.equal(result[0].dueAmount, 5000);
+  assert.equal(result[0].billNumber, 'FB-2082-001');
+  assert.equal(result[0].status, 'UNPAID');
+
+  // Jestha comes second
+  assert.equal(result[1].month, 'Jestha');
+  assert.equal(result[1].dueAmount, 3000);
+  assert.equal(result[1].billNumber, 'FB-2082-002');
+  assert.equal(result[1].status, 'PARTIAL');
 });
 
 

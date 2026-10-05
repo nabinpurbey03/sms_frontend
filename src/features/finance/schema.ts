@@ -224,6 +224,7 @@ export const paymentCollectSchema = z.object({
     return isNaN(num) ? undefined : num;
   }, z.number().min(0).optional()),
   late_fee_waived: z.boolean().optional(),
+  apply_waterfall: z.boolean().optional(),
 });
 
 export type PaymentCollectFormValues = z.infer<typeof paymentCollectSchema>;

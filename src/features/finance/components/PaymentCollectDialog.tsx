@@ -48,6 +48,11 @@ interface PaymentCollectDialogProps {
   tenantId?: string | null;
   duesBreakdown?: StudentDuesBreakdown | null;
   onPaymentSuccess?: (payment: FeePayment) => void;
+  isPayAllMode?: boolean;
+  totalAccountDue?: number;
+  unpaidBills?: FeeBill[];
+  studentName?: string;
+  className?: string;
 }
 
 export const PaymentCollectDialog: React.FC<PaymentCollectDialogProps> = ({
@@ -59,11 +64,22 @@ export const PaymentCollectDialog: React.FC<PaymentCollectDialogProps> = ({
   tenantId,
   duesBreakdown,
   onPaymentSuccess,
+  isPayAllMode = false,
+  totalAccountDue,
+  unpaidBills,
+  studentName,
+  className,
 }) => {
   const { activeTenantId } = useAuth();
   const { calendarSystem } = useCalendarPreferenceStore();
-  const effectiveTenantId = tenantId || bill?.tenant_id || activeTenantId || null;
-  const studentId = bill?.student_id || null;
+  const effectiveTenantId =
+    tenantId ||
+    bill?.tenant_id ||
+    (unpaidBills && unpaidBills[0]?.tenant_id) ||
+    activeTenantId ||
+    null;
+  const targetBill = bill || (unpaidBills && unpaidBills.length > 0 ? unpaidBills[0] : null);
+  const studentId = bill?.student_id || targetBill?.student_id || null;
 
   const [collectLateFee, setCollectLateFee] = React.useState<boolean>(true);
 
@@ -75,7 +91,7 @@ export const PaymentCollectDialog: React.FC<PaymentCollectDialogProps> = ({
 
   const { data: lateFeeData } = useBillLateFee(
     effectiveTenantId,
-    bill?.id || null
+    targetBill?.id || null
   );
 
   const isOverduePastGrace = !!lateFeeData?.is_overdue && Number(lateFeeData?.late_fee || 0) > 0;
@@ -102,13 +118,20 @@ export const PaymentCollectDialog: React.FC<PaymentCollectDialogProps> = ({
       discount_rate: undefined,
       discount_amount: undefined,
       allow_excess_to_wallet: true,
+      apply_waterfall: isPayAllMode,
     },
   });
 
-  const dueAmount = bill ? Number(bill.due_amount) : 0;
-  const subtotalAmount = bill ? Number(bill.subtotal_amount) : 0;
-  const previousDueAmount = bill ? Number(bill.previous_due_amount) : 0;
-  const totalPayableAmount = bill ? Number(bill.total_payable) : 0;
+  const dueAmount = isPayAllMode && totalAccountDue !== undefined
+    ? totalAccountDue
+    : (targetBill ? Number(targetBill.due_amount) : 0);
+  const subtotalAmount = isPayAllMode && totalAccountDue !== undefined
+    ? totalAccountDue
+    : (targetBill ? Number(targetBill.subtotal_amount) : 0);
+  const previousDueAmount = isPayAllMode ? 0 : (targetBill ? Number(targetBill.previous_due_amount) : 0);
+  const totalPayableAmount = isPayAllMode && totalAccountDue !== undefined
+    ? totalAccountDue
+    : (targetBill ? Number(targetBill.total_payable) : 0);
   const advanceWalletBalance = Number(breakdown?.advance_wallet_balance || 0);
 
   const discountType = watch('discount_type') || 'NONE';
@@ -138,23 +161,29 @@ export const PaymentCollectDialog: React.FC<PaymentCollectDialogProps> = ({
   const remainingAfterPayment = Math.max(0, netPayable - watchedAmount);
 
   useEffect(() => {
-    if (bill) {
-      setCollectLateFee(true);
-      const initialDue = Number(bill.due_amount);
-      reset({
-        bill_id: bill.id,
-        amount_paid: initialDue,
-        payment_date: new Date().toISOString().slice(0, 10),
-        payment_method: 'CASH',
-        transaction_reference: '',
-        remarks: '',
-        discount_type: 'NONE',
-        discount_rate: undefined,
-        discount_amount: undefined,
-        allow_excess_to_wallet: true,
-      });
+    if (isOpen) {
+      const activeBill = bill || (unpaidBills && unpaidBills.length > 0 ? unpaidBills[0] : null);
+      if (activeBill) {
+        setCollectLateFee(true);
+        const initialDue = isPayAllMode && totalAccountDue !== undefined
+          ? totalAccountDue
+          : Number(activeBill.due_amount);
+        reset({
+          bill_id: activeBill.id,
+          amount_paid: initialDue,
+          payment_date: new Date().toISOString().slice(0, 10),
+          payment_method: 'CASH',
+          transaction_reference: '',
+          remarks: isPayAllMode ? 'Consolidated payment for all outstanding dues' : '',
+          discount_type: 'NONE',
+          discount_rate: undefined,
+          discount_amount: undefined,
+          allow_excess_to_wallet: true,
+          apply_waterfall: isPayAllMode,
+        });
+      }
     }
-  }, [bill, reset]);
+  }, [isOpen, bill, isPayAllMode, totalAccountDue, unpaidBills, reset]);
 
   const handleDiscountModeChange = (mode: 'NONE' | 'PERCENT' | 'FIXED') => {
     setValue('discount_type', mode);
@@ -177,8 +206,11 @@ export const PaymentCollectDialog: React.FC<PaymentCollectDialogProps> = ({
 
   const onFormSubmit = async (values: PaymentCollectFormValues) => {
     try {
+      const activeBill = bill || (unpaidBills && unpaidBills.length > 0 ? unpaidBills[0] : null);
+      if (!activeBill) return;
+
       const payload: PaymentCollectFormValues = {
-        bill_id: bill!.id,
+        bill_id: activeBill.id,
         amount_paid: Number(values.amount_paid),
         payment_method: values.payment_method,
         transaction_reference: values.transaction_reference?.trim() || '',
@@ -195,6 +227,7 @@ export const PaymentCollectDialog: React.FC<PaymentCollectDialogProps> = ({
         allow_excess_to_wallet: true,
         late_fee_paid: isOverduePastGrace && collectLateFee ? lateFeeAmount : 0,
         late_fee_waived: isOverduePastGrace && !collectLateFee,
+        apply_waterfall: isPayAllMode ? true : false,
       };
 
       const payment = await onSubmit(payload);
@@ -207,7 +240,7 @@ export const PaymentCollectDialog: React.FC<PaymentCollectDialogProps> = ({
     }
   };
 
-  if (!bill) return null;
+  if (!targetBill) return null;
 
   return (
     <Dialog open={isOpen} onOpenChange={(open) => !open && onClose()}>
@@ -217,84 +250,148 @@ export const PaymentCollectDialog: React.FC<PaymentCollectDialogProps> = ({
             <div className="w-10 h-10 rounded-xl bg-primary/10 text-primary flex items-center justify-center mb-1">
               <CreditCard className="w-5 h-5" />
             </div>
-            <DialogTitle className="text-lg font-bold">Collect Fee Payment</DialogTitle>
+            <DialogTitle className="text-lg font-bold">
+              {isPayAllMode ? 'Collect All Outstanding Dues' : 'Collect Fee Payment'}
+            </DialogTitle>
             <DialogDescription className="text-xs text-muted-foreground">
-              Record payment against Bill #{bill.bill_number}. An official receipt will be generated.
+              {isPayAllMode
+                ? `Record consolidated payment across ${unpaidBills?.length || 0} unpaid/partial billing months.`
+                : `Record payment against Bill #${targetBill.bill_number}. An official receipt will be generated.`}
             </DialogDescription>
           </DialogHeader>
 
           {/* Student & Bill Header Card */}
           <div className="p-3 rounded-lg border bg-muted/30 space-y-2 text-xs">
             <div className="flex justify-between items-center">
-              <span className="font-semibold text-foreground">{bill.student_name}</span>
+              <span className="font-semibold text-foreground">
+                {studentName || targetBill.student_name}
+              </span>
               <Badge variant="outline" className="text-[10px]">
-                {bill.class_name}
+                {className || targetBill.class_name}
               </Badge>
             </div>
-            <div className="text-[11px] text-muted-foreground flex justify-between">
-              <span>{bill.bill_title}</span>
-              <span className="font-mono">{bill.bill_number}</span>
-            </div>
-            {bill.due_date && (
-              <div className="text-[11px] text-muted-foreground flex justify-between">
-                <span>Due Date:</span>
-                <span className="font-medium text-foreground">{formatDualDate(bill.due_date, calendarSystem)}</span>
+            {isPayAllMode ? (
+              <div className="space-y-1.5 pt-1 border-t border-border/40">
+                <div className="text-[11px] text-muted-foreground flex justify-between">
+                  <span className="font-semibold text-foreground">Consolidated Settlement</span>
+                  <span className="font-mono font-medium">{unpaidBills?.length || 0} Invoices</span>
+                </div>
+                {unpaidBills && unpaidBills.length > 0 && (
+                  <div className="max-h-24 overflow-y-auto space-y-1 pr-1 border rounded-md p-1.5 bg-background/50">
+                    {unpaidBills.map((ub) => (
+                      <div key={ub.id} className="flex justify-between items-center text-[10px]">
+                        <span className="text-muted-foreground">
+                          {ub.billing_month || ub.bill_title} (#{ub.bill_number}):
+                        </span>
+                        <span className="font-mono font-bold text-foreground">
+                          NPR {Number(ub.due_amount).toLocaleString('en-IN', { minimumFractionDigits: 2 })}
+                        </span>
+                      </div>
+                    ))}
+                  </div>
+                )}
               </div>
+            ) : (
+              <>
+                <div className="text-[11px] text-muted-foreground flex justify-between">
+                  <span>{targetBill.bill_title}</span>
+                  <span className="font-mono">{targetBill.bill_number}</span>
+                </div>
+                {targetBill.due_date && (
+                  <div className="text-[11px] text-muted-foreground flex justify-between">
+                    <span>Due Date:</span>
+                    <span className="font-medium text-foreground">{formatDualDate(targetBill.due_date, calendarSystem)}</span>
+                  </div>
+                )}
+              </>
             )}
           </div>
 
           {/* Financial Summary Cards */}
           <div className="grid grid-cols-2 sm:grid-cols-3 gap-2 text-xs">
-            {/* 1. Current Month Bill Due */}
-            <div className="p-2.5 rounded-lg border bg-card flex flex-col justify-between">
-              <span className="text-[10px] text-muted-foreground uppercase font-semibold">
-                Current Month Due
-              </span>
-              <span className="text-sm font-bold font-mono text-foreground mt-1">
-                NPR {subtotalAmount.toFixed(2)}
-              </span>
-            </div>
+            {isPayAllMode ? (
+              <>
+                <div className="p-2.5 rounded-lg border bg-card flex flex-col justify-between">
+                  <span className="text-[10px] text-muted-foreground uppercase font-semibold">
+                    Invoices Count
+                  </span>
+                  <span className="text-sm font-bold font-mono text-foreground mt-1">
+                    {unpaidBills?.length || 0} Unpaid
+                  </span>
+                </div>
 
-            {/* 2. Carried Arrears / Prior Dues */}
-            <div className="p-2.5 rounded-lg border bg-card flex flex-col justify-between">
-              <span className="text-[10px] text-muted-foreground uppercase font-semibold">
-                Carried Arrears
-              </span>
-              <span
-                className={`text-sm font-bold font-mono mt-1 ${
-                  previousDueAmount > 0 ? 'text-amber-600 dark:text-amber-400' : 'text-foreground'
-                }`}
-              >
-                NPR {previousDueAmount.toFixed(2)}
-              </span>
-            </div>
+                <div className="p-2.5 rounded-lg border bg-card flex flex-col justify-between">
+                  <span className="text-[10px] text-muted-foreground uppercase font-semibold">
+                    Total Account Due
+                  </span>
+                  <span className="text-sm font-bold font-mono text-rose-600 mt-1">
+                    NPR {dueAmount.toFixed(2)}
+                  </span>
+                </div>
 
-            {/* 3. Late Fee */}
-            <div className="p-2.5 rounded-lg border bg-card flex flex-col justify-between">
-              <span className="text-[10px] text-muted-foreground uppercase font-semibold">
-                Late Fee Penalty
-              </span>
-              <span
-                className={`text-sm font-bold font-mono mt-1 ${
-                  isOverduePastGrace && collectLateFee ? 'text-destructive' : 'text-foreground'
-                }`}
-              >
-                NPR {(isOverduePastGrace && collectLateFee ? lateFeeAmount : 0).toFixed(2)}
-              </span>
-            </div>
+                <div className="p-2.5 rounded-lg border border-primary/30 bg-primary/5 flex flex-col justify-between">
+                  <span className="text-[10px] text-primary uppercase font-bold">
+                    Net Total to Clear
+                  </span>
+                  <span className="text-sm font-bold font-mono text-primary mt-1">
+                    NPR {netPayable.toFixed(2)}
+                  </span>
+                </div>
+              </>
+            ) : (
+              <>
+                {/* 1. Current Month Bill Due */}
+                <div className="p-2.5 rounded-lg border bg-card flex flex-col justify-between">
+                  <span className="text-[10px] text-muted-foreground uppercase font-semibold">
+                    Current Month Due
+                  </span>
+                  <span className="text-sm font-bold font-mono text-foreground mt-1">
+                    NPR {subtotalAmount.toFixed(2)}
+                  </span>
+                </div>
 
-            {/* 4. Net Total to Clear */}
-            <div className="p-2.5 rounded-lg border border-primary/30 bg-primary/5 flex flex-col justify-between">
-              <span className="text-[10px] text-primary uppercase font-bold">
-                Net Total to Clear
-              </span>
-              <span className="text-sm font-bold font-mono text-primary mt-1">
-                NPR {netPayable.toFixed(2)}
-              </span>
-            </div>
+                {/* 2. Carried Arrears / Prior Dues */}
+                <div className="p-2.5 rounded-lg border bg-card flex flex-col justify-between">
+                  <span className="text-[10px] text-muted-foreground uppercase font-semibold">
+                    Carried Arrears
+                  </span>
+                  <span
+                    className={`text-sm font-bold font-mono mt-1 ${
+                      previousDueAmount > 0 ? 'text-amber-600 dark:text-amber-400' : 'text-foreground'
+                    }`}
+                  >
+                    NPR {previousDueAmount.toFixed(2)}
+                  </span>
+                </div>
 
-            {/* 5. Advance Wallet Balance */}
-            <div className="p-2.5 rounded-lg border border-emerald-300/60 bg-emerald-50/50 dark:bg-emerald-950/20 flex flex-col justify-between col-span-2 sm:col-span-2">
+                {/* 3. Late Fee */}
+                <div className="p-2.5 rounded-lg border bg-card flex flex-col justify-between">
+                  <span className="text-[10px] text-muted-foreground uppercase font-semibold">
+                    Late Fee Penalty
+                  </span>
+                  <span
+                    className={`text-sm font-bold font-mono mt-1 ${
+                      isOverduePastGrace && collectLateFee ? 'text-destructive' : 'text-foreground'
+                    }`}
+                  >
+                    NPR {(isOverduePastGrace && collectLateFee ? lateFeeAmount : 0).toFixed(2)}
+                  </span>
+                </div>
+
+                {/* 4. Net Total to Clear */}
+                <div className="p-2.5 rounded-lg border border-primary/30 bg-primary/5 flex flex-col justify-between">
+                  <span className="text-[10px] text-primary uppercase font-bold">
+                    Net Total to Clear
+                  </span>
+                  <span className="text-sm font-bold font-mono text-primary mt-1">
+                    NPR {netPayable.toFixed(2)}
+                  </span>
+                </div>
+              </>
+            )}
+
+            {/* Advance Wallet Balance */}
+            <div className="p-2.5 rounded-lg border border-emerald-300/60 bg-emerald-50/50 dark:bg-emerald-950/20 flex flex-col justify-between col-span-2 sm:col-span-3">
               <span className="text-[10px] text-emerald-800 dark:text-emerald-300 uppercase font-semibold flex items-center gap-1">
                 <Wallet className="w-3 h-3 text-emerald-600 dark:text-emerald-400" />
                 Available Advance Wallet Credit
@@ -514,42 +611,74 @@ export const PaymentCollectDialog: React.FC<PaymentCollectDialogProps> = ({
                 Quick Fill Amount
               </Label>
               <div className="grid grid-cols-1 sm:grid-cols-3 gap-1.5">
-                <button
-                  type="button"
-                  onClick={() => setValue('amount_paid', netPayable, { shouldValidate: true })}
-                  className={`text-xs py-2 px-2.5 rounded-lg border text-center transition-all cursor-pointer font-medium ${
-                    watchedAmount === netPayable
-                      ? 'bg-primary text-primary-foreground border-primary font-bold shadow-xs'
-                      : 'border-border/70 hover:bg-muted/50 text-foreground'
-                  }`}
-                >
-                  Pay Full Balance (NPR {netPayable.toFixed(2)})
-                </button>
-                <button
-                  type="button"
-                  onClick={() => setValue('amount_paid', currentMonthDue, { shouldValidate: true })}
-                  className={`text-xs py-2 px-2.5 rounded-lg border text-center transition-all cursor-pointer font-medium ${
-                    watchedAmount === currentMonthDue && currentMonthDue !== netPayable
-                      ? 'bg-primary text-primary-foreground border-primary font-bold shadow-xs'
-                      : 'border-border/70 hover:bg-muted/50 text-foreground'
-                  }`}
-                >
-                  Pay Current Month Only (NPR {currentMonthDue.toFixed(2)})
-                </button>
-                <button
-                  type="button"
-                  onClick={() => {
-                    const el = document.getElementById('amount_paid');
-                    if (el) el.focus();
-                  }}
-                  className={`text-xs py-2 px-2.5 rounded-lg border text-center transition-all cursor-pointer font-medium ${
-                    watchedAmount !== netPayable && watchedAmount !== currentMonthDue
-                      ? 'bg-muted text-foreground border-border font-bold'
-                      : 'border-border/70 hover:bg-muted/50 text-muted-foreground'
-                  }`}
-                >
-                  Custom Amount
-                </button>
+                {isPayAllMode ? (
+                  <>
+                    <button
+                      type="button"
+                      onClick={() => setValue('amount_paid', netPayable, { shouldValidate: true })}
+                      className={`text-xs py-2 px-2.5 rounded-lg border text-center transition-all cursor-pointer font-medium sm:col-span-2 ${
+                        watchedAmount === netPayable
+                          ? 'bg-primary text-primary-foreground border-primary font-bold shadow-xs'
+                          : 'border-border/70 hover:bg-muted/50 text-foreground'
+                      }`}
+                    >
+                      Pay Full Account Balance (NPR {netPayable.toFixed(2)})
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => {
+                        const el = document.getElementById('amount_paid');
+                        if (el) el.focus();
+                      }}
+                      className={`text-xs py-2 px-2.5 rounded-lg border text-center transition-all cursor-pointer font-medium ${
+                        watchedAmount !== netPayable
+                          ? 'bg-muted text-foreground border-border font-bold'
+                          : 'border-border/70 hover:bg-muted/50 text-muted-foreground'
+                      }`}
+                    >
+                      Custom Amount
+                    </button>
+                  </>
+                ) : (
+                  <>
+                    <button
+                      type="button"
+                      onClick={() => setValue('amount_paid', netPayable, { shouldValidate: true })}
+                      className={`text-xs py-2 px-2.5 rounded-lg border text-center transition-all cursor-pointer font-medium ${
+                        watchedAmount === netPayable
+                          ? 'bg-primary text-primary-foreground border-primary font-bold shadow-xs'
+                          : 'border-border/70 hover:bg-muted/50 text-foreground'
+                      }`}
+                    >
+                      Pay Full Balance (NPR {netPayable.toFixed(2)})
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => setValue('amount_paid', currentMonthDue, { shouldValidate: true })}
+                      className={`text-xs py-2 px-2.5 rounded-lg border text-center transition-all cursor-pointer font-medium ${
+                        watchedAmount === currentMonthDue && currentMonthDue !== netPayable
+                          ? 'bg-primary text-primary-foreground border-primary font-bold shadow-xs'
+                          : 'border-border/70 hover:bg-muted/50 text-foreground'
+                      }`}
+                    >
+                      Pay Current Month Only (NPR {currentMonthDue.toFixed(2)})
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => {
+                        const el = document.getElementById('amount_paid');
+                        if (el) el.focus();
+                      }}
+                      className={`text-xs py-2 px-2.5 rounded-lg border text-center transition-all cursor-pointer font-medium ${
+                        watchedAmount !== netPayable && watchedAmount !== currentMonthDue
+                          ? 'bg-muted text-foreground border-border font-bold'
+                          : 'border-border/70 hover:bg-muted/50 text-muted-foreground'
+                      }`}
+                    >
+                      Custom Amount
+                    </button>
+                  </>
+                )}
               </div>
             </div>
 

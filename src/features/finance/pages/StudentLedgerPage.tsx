@@ -24,6 +24,7 @@ import type { FeeBill, FeePayment } from '../types';
 import { PaymentCollectDialog } from '../components/PaymentCollectDialog';
 import { PrintableBillModal } from '../components/PrintableBillModal';
 import { PrintableReceiptModal } from '../components/PrintableReceiptModal';
+import { PrintableStatementModal } from '../components/PrintableStatementModal';
 import { useCalendarPreferenceStore } from '@/stores/calendarPreferenceStore';
 import { formatDualDate } from '@/features/school-settings/utils/nepaliDate';
 import {
@@ -45,6 +46,8 @@ export const StudentLedgerPage: React.FC = () => {
   const [activeCollectBill, setActiveCollectBill] = useState<FeeBill | null>(null);
   const [activePrintBillId, setActivePrintBillId] = useState<string | null>(null);
   const [activePrintReceiptId, setActivePrintReceiptId] = useState<string | null>(null);
+  const [isPayAllOpen, setIsPayAllOpen] = useState<boolean>(false);
+  const [isPrintStatementOpen, setIsPrintStatementOpen] = useState<boolean>(false);
 
   const recordPaymentMutation = useRecordPayment(activeTenantId);
 
@@ -57,6 +60,13 @@ export const StudentLedgerPage: React.FC = () => {
     if (!ledger?.bills) return [];
     return sortBillsChronologically(ledger.bills, sortOrder);
   }, [ledger?.bills, sortOrder]);
+
+  // Unpaid bills eligible for consolidated waterfall payment
+  const unpaidBills = useMemo(() => {
+    return sortedBills.filter(
+      (b) => Number(b.due_amount) > 0 && b.status !== 'CANCELLED'
+    );
+  }, [sortedBills]);
 
   // Overview summary pills for each billed month
   const summaryPills = useMemo(() => {
@@ -118,13 +128,6 @@ export const StudentLedgerPage: React.FC = () => {
       {/* Header */}
       <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 border-b border-border/40 pb-5">
         <div className="space-y-1">
-          <Link
-            to="/finance/bills"
-            className="inline-flex items-center gap-1.5 text-xs font-semibold text-muted-foreground hover:text-foreground mb-1.5 transition-colors"
-          >
-            <ArrowLeft className="w-3.5 h-3.5" />
-            Back to Bills & Invoices
-          </Link>
           <h1 className="text-xl sm:text-2xl font-bold tracking-tight text-foreground flex items-center gap-2">
             <Coins className="w-6 h-6 text-primary" />
             Student Fee Account Ledger
@@ -134,9 +137,37 @@ export const StudentLedgerPage: React.FC = () => {
           </p>
         </div>
 
-        <div className="flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-primary/10 border border-primary/20 text-xs font-semibold text-primary">
-          <Calendar className="w-3.5 h-3.5 text-primary" />
-          <span>Session: {currentYear?.name || 'Active Session'}</span>
+        <div className="flex items-center gap-2 flex-wrap sm:flex-nowrap">
+          {ledger && (
+            <>
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={() => setIsPrintStatementOpen(true)}
+                className="gap-1.5 h-8 text-xs font-semibold cursor-pointer shadow-2xs"
+                title="Print Consolidated Invoice Statement (Ctrl+P)"
+              >
+                <Printer className="w-3.5 h-3.5" />
+                <span>Print Statement</span>
+              </Button>
+
+              <Button
+                size="sm"
+                onClick={() => setIsPayAllOpen(true)}
+                disabled={totalDue <= 0 || unpaidBills.length === 0}
+                className="gap-1.5 h-8 text-xs font-semibold cursor-pointer shadow-2xs bg-primary text-primary-foreground hover:bg-primary/90 transition-all"
+                title="Collect payment to settle all outstanding months"
+              >
+                <CreditCard className="w-3.5 h-3.5" />
+                <span>Pay All (NPR {totalDue.toLocaleString('en-IN', { minimumFractionDigits: 2 })})</span>
+              </Button>
+            </>
+          )}
+
+          <div className="flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-primary/10 border border-primary/20 text-xs font-semibold text-primary">
+            <Calendar className="w-3.5 h-3.5 text-primary" />
+            <span>Session: {currentYear?.name || 'Active Session'}</span>
+          </div>
         </div>
       </div>
 
@@ -209,6 +240,16 @@ export const StudentLedgerPage: React.FC = () => {
                   NPR {totalDue.toLocaleString('en-IN', { minimumFractionDigits: 2 })}
                 </div>
                 <p className="text-[11px] text-muted-foreground mt-0.5">Payable balance across all bills</p>
+                {totalDue > 0 && unpaidBills.length > 0 && (
+                  <Button
+                    size="sm"
+                    onClick={() => setIsPayAllOpen(true)}
+                    className="w-full mt-2.5 h-7 text-xs font-semibold gap-1.5 cursor-pointer bg-primary text-primary-foreground hover:bg-primary/90"
+                  >
+                    <CreditCard className="w-3.5 h-3.5" />
+                    Pay All Dues
+                  </Button>
+                )}
               </CardContent>
             </Card>
           </div>
@@ -601,7 +642,7 @@ export const StudentLedgerPage: React.FC = () => {
         </div>
       )}
 
-      {/* Collect Payment Dialog */}
+      {/* Collect Single Month Payment Dialog */}
       <PaymentCollectDialog
         isOpen={!!activeCollectBill}
         onClose={() => setActiveCollectBill(null)}
@@ -612,6 +653,45 @@ export const StudentLedgerPage: React.FC = () => {
           setActivePrintReceiptId(payment.id);
         }}
       />
+
+      {/* Collect Pay All Outstanding Dues Dialog */}
+      {ledger && (
+        <PaymentCollectDialog
+          isOpen={isPayAllOpen}
+          onClose={() => setIsPayAllOpen(false)}
+          bill={null}
+          isPayAllMode={true}
+          totalAccountDue={totalDue}
+          unpaidBills={unpaidBills}
+          studentName={ledger.student_name}
+          className={ledger.class_name}
+          tenantId={activeTenantId}
+          onSubmit={async (data) => recordPaymentMutation.mutateAsync(data)}
+          isLoading={recordPaymentMutation.isPending}
+          onPaymentSuccess={(payment: FeePayment) => {
+            setIsPayAllOpen(false);
+            setActivePrintReceiptId(payment.id);
+          }}
+        />
+      )}
+
+      {/* Consolidated Statement & Invoices Modal */}
+      {ledger && (
+        <PrintableStatementModal
+          isOpen={isPrintStatementOpen}
+          onClose={() => setIsPrintStatementOpen(false)}
+          tenantId={activeTenantId}
+          studentId={studentId}
+          studentName={ledger.student_name}
+          className={ledger.class_name}
+          academicYearName={currentYear?.name}
+          bills={sortedBills}
+          payments={ledger.payments}
+          totalBilled={totalBilled}
+          totalPaid={totalPaid}
+          totalDue={totalDue}
+        />
+      )}
 
       {/* Printable Invoice Modal */}
       <PrintableBillModal

@@ -1,4 +1,5 @@
 import rawNepaliDate from 'nepali-date-converter';
+import type { FeeBill } from '../types';
 
 // Handle CJS/ESM interop across Vite bundler and Node
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -673,6 +674,31 @@ export function formatStudentFullName(studentOrBill?: {
     }
   }
   return studentOrBill.student_name?.trim() || 'Student';
+}
+
+export interface MonthDueItem {
+  month: string;
+  dueAmount: number;
+  billNumber: string;
+  billId: string;
+  status: LedgerBillStatus;
+}
+
+/**
+ * Extracts and sorts all unpaid/partial bills to display separate months due.
+ */
+export function extractSeparateMonthsDue(bills?: FeeBill[] | null): MonthDueItem[] {
+  if (!bills || bills.length === 0) return [];
+  const sorted = sortBillsChronologically(bills, 'asc');
+  return sorted
+    .filter((b) => Number(b.due_amount) > 0 && b.status !== 'CANCELLED')
+    .map((b) => ({
+      month: b.billing_month || b.bill_title || 'Fee Invoice',
+      dueAmount: Number(b.due_amount),
+      billNumber: b.bill_number,
+      billId: b.id,
+      status: deriveBillLedgerStatus(b),
+    }));
 }
 
 
