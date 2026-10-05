@@ -84,3 +84,37 @@ export function formatCloneSampleText(
       : `nearest ${roundToNearest} NPR`;
   return `Base fee of NPR ${baseAmount.toLocaleString()} with ${sign} rounded to ${roundingDesc} → NPR ${adjusted.toLocaleString()}`;
 }
+
+export interface SessionCloneBannerState {
+  shouldShowBanner: boolean;
+  hasPreviousSessions: boolean;
+  latestPreviousYearName?: string;
+  totalFeeHeadsCount: number;
+}
+
+export function computeSessionCloneBannerState(params: {
+  totalFeeHeadsCount: number;
+  candidateYears: Array<{ id: string; name: string }>;
+  isLoading: boolean;
+}): SessionCloneBannerState {
+  if (params.isLoading) {
+    return {
+      shouldShowBanner: false,
+      hasPreviousSessions: false,
+      totalFeeHeadsCount: params.totalFeeHeadsCount,
+    };
+  }
+
+  const candidateYears = params.candidateYears || [];
+  const hasPreviousSessions = candidateYears.length > 0;
+  const shouldShowBanner = params.totalFeeHeadsCount === 0;
+  const latestPreviousYearName = candidateYears[0]?.name;
+
+  return {
+    shouldShowBanner,
+    hasPreviousSessions,
+    latestPreviousYearName,
+    totalFeeHeadsCount: params.totalFeeHeadsCount,
+  };
+}
+

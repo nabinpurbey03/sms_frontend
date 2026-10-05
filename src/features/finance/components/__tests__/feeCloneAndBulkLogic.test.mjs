@@ -7,6 +7,7 @@ import {
   formatCloneSampleText,
   ROUNDING_OPTIONS,
   PERCENTAGE_PRESETS,
+  computeSessionCloneBannerState,
 } from '../../utils/feeCloneUtils.ts';
 
 /**
@@ -204,4 +205,63 @@ test('PERCENTAGE_PRESETS and ROUNDING_OPTIONS verify preset values', () => {
   const roundValues = ROUNDING_OPTIONS.map((r) => r.value);
   assert.deepEqual(roundValues, [0, 1, 10]);
 });
+
+test('computeSessionCloneBannerState: returns shouldShowBanner: false when isLoading is true', () => {
+  const result = computeSessionCloneBannerState({
+    totalFeeHeadsCount: 0,
+    candidateYears: [{ id: 'ay-2081', name: '2081 BS' }],
+    isLoading: true,
+  });
+  assert.deepEqual(result, {
+    shouldShowBanner: false,
+    hasPreviousSessions: false,
+    totalFeeHeadsCount: 0,
+  });
+});
+
+test('computeSessionCloneBannerState: empty session with candidate years returns shouldShowBanner: true and latestPreviousYearName', () => {
+  const result = computeSessionCloneBannerState({
+    totalFeeHeadsCount: 0,
+    candidateYears: [
+      { id: 'ay-2081', name: '2081 BS' },
+      { id: 'ay-2080', name: '2080 BS' },
+    ],
+    isLoading: false,
+  });
+  assert.deepEqual(result, {
+    shouldShowBanner: true,
+    hasPreviousSessions: true,
+    latestPreviousYearName: '2081 BS',
+    totalFeeHeadsCount: 0,
+  });
+});
+
+test('computeSessionCloneBannerState: empty session without candidate years (new school) returns shouldShowBanner: true, hasPreviousSessions: false, latestPreviousYearName: undefined', () => {
+  const result = computeSessionCloneBannerState({
+    totalFeeHeadsCount: 0,
+    candidateYears: [],
+    isLoading: false,
+  });
+  assert.deepEqual(result, {
+    shouldShowBanner: true,
+    hasPreviousSessions: false,
+    latestPreviousYearName: undefined,
+    totalFeeHeadsCount: 0,
+  });
+});
+
+test('computeSessionCloneBannerState: session with fees returns shouldShowBanner: false', () => {
+  const result = computeSessionCloneBannerState({
+    totalFeeHeadsCount: 5,
+    candidateYears: [{ id: 'ay-2081', name: '2081 BS' }],
+    isLoading: false,
+  });
+  assert.deepEqual(result, {
+    shouldShowBanner: false,
+    hasPreviousSessions: true,
+    latestPreviousYearName: '2081 BS',
+    totalFeeHeadsCount: 5,
+  });
+});
+
 
