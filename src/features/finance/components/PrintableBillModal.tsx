@@ -11,7 +11,7 @@ import { useBill } from '../hooks';
 import { useAuth } from '@/auth/useAuth';
 import { useCalendarPreferenceStore } from '@/stores/calendarPreferenceStore';
 import { formatDualDate } from '@/features/school-settings/utils/nepaliDate';
-import { numberToWords, isArrearsFeeHead, formatCurrency } from '../utils/cashierUtils';
+import { numberToWords, isArrearsFeeHead, formatCurrency, calculateTotalAccountBalance } from '../utils/cashierUtils';
 
 interface PrintableBillModalProps {
   isOpen: boolean;
@@ -93,6 +93,11 @@ export const PrintableBillModal: React.FC<PrintableBillModalProps> = ({
     bill?.due_date &&
     new Date(bill.due_date) < new Date() &&
     Number(bill.due_amount || 0) > 0;
+
+  const { priorUnpaidTotal, totalAccountDue } = calculateTotalAccountBalance(
+    bill?.due_amount ?? 0,
+    bill?.prior_unpaid_months
+  );
 
   return (
     <>
@@ -322,11 +327,22 @@ export const PrintableBillModal: React.FC<PrintableBillModalProps> = ({
                   <div className="w-full sm:flex-1 space-y-2.5">
                     <div className="p-3 border border-zinc-200 rounded-xs bg-zinc-50">
                       <span className="text-zinc-500 font-bold uppercase text-[10px] block tracking-wide">
-                        Amount in Words (Balance Due):
+                        Amount in Words (This Invoice Due):
                       </span>
                       <span className="font-semibold text-zinc-900 italic text-xs mt-0.5 block">
                         {numberToWords(bill.due_amount)}
                       </span>
+                      {totalAccountDue !== Number(bill.due_amount) && (
+                        <div className="mt-2 pt-2 border-t border-zinc-200 text-xs text-amber-900 font-medium flex justify-between items-center">
+                          <span className="font-semibold">Total Student Account Due:</span>
+                          <span className="font-mono font-bold">
+                            NPR {totalAccountDue.toLocaleString('en-IN', {
+                              minimumFractionDigits: 2,
+                              maximumFractionDigits: 2,
+                            })}
+                          </span>
+                        </div>
+                      )}
                     </div>
 
                     {bill.notes && (
@@ -360,7 +376,7 @@ export const PrintableBillModal: React.FC<PrintableBillModalProps> = ({
                       </div>
                     )}
                     <div className="flex justify-between py-1 border-t border-zinc-300 font-bold text-zinc-900">
-                      <span>Total Billed Payable:</span>
+                      <span>Current Invoice Payable:</span>
                       <span className="font-mono">
                         NPR {Number(bill.total_payable).toLocaleString('en-IN', {
                           minimumFractionDigits: 2,
@@ -403,6 +419,31 @@ export const PrintableBillModal: React.FC<PrintableBillModalProps> = ({
                         })}
                       </span>
                     </div>
+
+                    {bill.prior_unpaid_months && bill.prior_unpaid_months.length > 0 && (
+                      <>
+                        <div className="space-y-1.5 py-2 border-t border-dashed border-zinc-300 text-zinc-700">
+                          <span className="text-[10px] font-bold uppercase tracking-wider text-amber-900 block">
+                            Unpaid Previous Months Breakdown:
+                          </span>
+                          {bill.prior_unpaid_months.map((p, idx) => (
+                            <div key={p.bill_id || idx} className="flex justify-between text-xs text-amber-950 font-medium">
+                              <span>Due amount for {p.billing_month || 'Previous Cycle'}:</span>
+                              <span className="font-mono">+ NPR {Number(p.due_amount).toLocaleString('en-IN', { minimumFractionDigits: 2 })}</span>
+                            </div>
+                          ))}
+                        </div>
+                        <div className="flex justify-between py-1.5 border-t-2 border-zinc-900 font-bold text-xs bg-amber-50/80 px-2 mt-1 border-amber-900/20">
+                          <span className="text-amber-950">Total Outstanding Account Balance:</span>
+                          <span className="font-mono text-rose-700">
+                            NPR {totalAccountDue.toLocaleString('en-IN', {
+                              minimumFractionDigits: 2,
+                              maximumFractionDigits: 2,
+                            })}
+                          </span>
+                        </div>
+                      </>
+                    )}
                   </div>
                 </div>
 

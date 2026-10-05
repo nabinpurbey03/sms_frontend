@@ -15,6 +15,7 @@ import {
   formatCompactCurrency,
   numberToWords,
   getCancelBillEligibility,
+  calculateTotalAccountBalance,
 } from '../../utils/cashierUtils.ts';
 
 // -------------------------------------------------------------------------
@@ -370,5 +371,90 @@ test('getCancelBillEligibility: approves if bill is UNPAID with zero payments an
   const result = getCancelBillEligibility({ status: 'UNPAID', paid_amount: 0 }, true);
   assert.equal(result.canCancel, true);
   assert.equal(result.reason, undefined);
+});
+
+// -------------------------------------------------------------------------
+// 9. Prior Monthly Dues Itemization & Cumulative Account Balance
+// -------------------------------------------------------------------------
+
+test('calculateTotalAccountBalance: sums current cycle due and itemized prior unpaid months', () => {
+  const priorUnpaidMonths = [
+    {
+      bill_id: 'bill-01',
+      bill_number: 'FB-2081-001',
+      billing_month: 'Baishakh',
+      academic_year_name: '2081/82',
+      due_amount: 1500,
+    },
+    {
+      bill_id: 'bill-02',
+      bill_number: 'FB-2081-002',
+      billing_month: 'Jestha',
+      academic_year_name: '2081/82',
+      due_amount: '2250.50',
+    },
+  ];
+
+  const currentDue = 3000;
+  const result = calculateTotalAccountBalance(currentDue, priorUnpaidMonths);
+
+  assert.equal(result.currentInvoiceDue, 3000);
+  assert.equal(result.priorUnpaidTotal, 3750.50);
+  assert.equal(result.totalAccountDue, 6750.50);
+});
+
+test('calculateTotalAccountBalance: returns current due when no prior unpaid months exist', () => {
+  const resEmpty = calculateTotalAccountBalance(4500, []);
+  assert.equal(resEmpty.currentInvoiceDue, 4500);
+  assert.equal(resEmpty.priorUnpaidTotal, 0);
+  assert.equal(resEmpty.totalAccountDue, 4500);
+
+  const resUndefined = calculateTotalAccountBalance('5000.00', undefined);
+  assert.equal(resUndefined.currentInvoiceDue, 5000);
+  assert.equal(resUndefined.priorUnpaidTotal, 0);
+  assert.equal(resUndefined.totalAccountDue, 5000);
+});
+
+test('prior monthly dues itemization: correctly parses and formats itemized breakdown', () => {
+  const sampleBill = {
+    id: 'bill-current',
+    bill_number: 'FB-2081-003',
+    billing_month: 'Ashadh',
+    subtotal_amount: 4000,
+    total_payable: 4000,
+    due_amount: 4000,
+    prior_unpaid_months: [
+      {
+        bill_id: 'b-1',
+        bill_number: 'FB-2081-001',
+        billing_month: 'Baishakh',
+        academic_year_name: '2081/82',
+        due_amount: 1200,
+      },
+      {
+        bill_id: 'b-2',
+        bill_number: 'FB-2081-002',
+        billing_month: 'Jestha',
+        academic_year_name: '2081/82',
+        due_amount: 1800,
+      },
+    ],
+  };
+
+  const totals = calculateTotalAccountBalance(sampleBill.due_amount, sampleBill.prior_unpaid_months);
+  assert.equal(totals.currentInvoiceDue, 4000);
+  assert.equal(totals.priorUnpaidTotal, 3000);
+  assert.equal(totals.totalAccountDue, 7000);
+
+  // Format checks matching invoice presentation
+  const lines = sampleBill.prior_unpaid_months.map((p) => ({
+    label: `Due amount for ${p.billing_month || 'Previous Cycle'}:`,
+    formattedAmount: `+ NPR ${Number(p.due_amount).toLocaleString('en-IN', { minimumFractionDigits: 2 })}`,
+  }));
+
+  assert.deepEqual(lines, [
+    { label: 'Due amount for Baishakh:', formattedAmount: '+ NPR 1,200.00' },
+    { label: 'Due amount for Jestha:', formattedAmount: '+ NPR 1,800.00' },
+  ]);
 });
 

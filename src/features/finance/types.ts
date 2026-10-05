@@ -202,6 +202,14 @@ export interface FeeBillPaymentSummary {
   created_at: string;
 }
 
+export interface PriorMonthDue {
+  bill_id: string;
+  bill_number: string;
+  billing_month?: string;
+  academic_year_name: string;
+  due_amount: number | string;
+}
+
 export interface FeeBill {
   id: string;
   tenant_id: string;
@@ -227,6 +235,7 @@ export interface FeeBill {
   notes?: string | null;
   items: FeeBillItem[];
   payments?: FeeBillPaymentSummary[];
+  prior_unpaid_months?: PriorMonthDue[];
   created_at: string;
 }
 

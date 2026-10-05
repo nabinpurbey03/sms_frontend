@@ -454,3 +454,30 @@ export function getCancelBillEligibility(
   }
   return { canCancel: true };
 }
+
+export interface AccountBalanceSummary {
+  currentInvoiceDue: number;
+  priorUnpaidTotal: number;
+  totalAccountDue: number;
+}
+
+/**
+ * Calculates cumulative student account balance by summing current invoice due amount
+ * with all itemized prior unpaid monthly dues.
+ */
+export function calculateTotalAccountBalance(
+  dueAmount: number | string,
+  priorUnpaidMonths?: Array<{ due_amount: number | string }> | null
+): AccountBalanceSummary {
+  const currentInvoiceDue = Math.max(0, Number(dueAmount) || 0);
+  const priorUnpaidTotal = (priorUnpaidMonths || []).reduce((sum, item) => {
+    return sum + Math.max(0, Number(item?.due_amount) || 0);
+  }, 0);
+  const totalAccountDue = Math.round((currentInvoiceDue + priorUnpaidTotal) * 100) / 100;
+
+  return {
+    currentInvoiceDue,
+    priorUnpaidTotal: Math.round(priorUnpaidTotal * 100) / 100,
+    totalAccountDue,
+  };
+}
