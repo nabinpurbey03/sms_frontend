@@ -13,6 +13,7 @@ import {
   formatCompactNumber,
   formatCompactCurrency,
   numberToWords,
+  getCancelBillEligibility,
 } from '../../utils/cashierUtils.ts';
 
 // -------------------------------------------------------------------------
@@ -307,5 +308,43 @@ test('numberToWords: converts amounts to South Asian English words with Rupees O
   assert.equal(numberToWords(1500000), 'Fifteen Lakh Rupees Only');
   assert.equal(numberToWords(10000000), 'One Crore Rupees Only');
   assert.equal(numberToWords(25000000), 'Two Crore Fifty Lakh Rupees Only');
+});
+
+// -------------------------------------------------------------------------
+// 8. Cancel Bill Eligibility Rules
+// -------------------------------------------------------------------------
+
+test('getCancelBillEligibility: denies if user lacks management permissions', () => {
+  const result = getCancelBillEligibility({ status: 'UNPAID', paid_amount: 0 }, false);
+  assert.equal(result.canCancel, false);
+  assert.match(result.reason, /permission/i);
+});
+
+test('getCancelBillEligibility: denies if bill is null or undefined', () => {
+  const result = getCancelBillEligibility(null, true);
+  assert.equal(result.canCancel, false);
+});
+
+test('getCancelBillEligibility: denies if bill is already CANCELLED', () => {
+  const result = getCancelBillEligibility({ status: 'CANCELLED', paid_amount: 0 }, true);
+  assert.equal(result.canCancel, false);
+  assert.match(result.reason, /already cancelled/i);
+});
+
+test('getCancelBillEligibility: denies if bill has recorded payments (partial or full)', () => {
+  const partialResult = getCancelBillEligibility({ status: 'PARTIAL', paid_amount: 500 }, true);
+  assert.equal(partialResult.canCancel, false);
+  assert.match(partialResult.reason, /recorded payments/i);
+  assert.match(partialResult.reason, /500\.00/);
+
+  const fullResult = getCancelBillEligibility({ status: 'PAID', paid_amount: 5000 }, true);
+  assert.equal(fullResult.canCancel, false);
+  assert.match(fullResult.reason, /recorded payments/i);
+});
+
+test('getCancelBillEligibility: approves if bill is UNPAID with zero payments and user has permission', () => {
+  const result = getCancelBillEligibility({ status: 'UNPAID', paid_amount: 0 }, true);
+  assert.equal(result.canCancel, true);
+  assert.equal(result.reason, undefined);
 });
 

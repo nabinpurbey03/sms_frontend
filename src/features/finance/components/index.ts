@@ -13,3 +13,4 @@ export * from './StudentLevelFeesTab';
 export * from './PaymentCollectDialog';
 export * from './PrintableBillModal';
 export * from './PrintableReceiptModal';
+export * from './CancelBillDialog';

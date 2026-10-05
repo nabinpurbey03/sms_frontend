@@ -348,3 +348,37 @@ export function numberToWords(amount: number | string): string {
     return `${amount} Rupees Only`;
   }
 }
+
+export interface CancelBillEligibility {
+  canCancel: boolean;
+  reason?: string;
+}
+
+/**
+ * Validates whether a fee bill can be cancelled according to domain rules:
+ * 1. User must have administrative / management permissions.
+ * 2. Bill cannot already be CANCELLED.
+ * 3. Bill cannot have recorded payments (paid_amount > 0). If payments exist, receipts must be voided/refunded first.
+ */
+export function getCancelBillEligibility(
+  bill: { status?: string; paid_amount?: number | string } | null | undefined,
+  userCanManage: boolean
+): CancelBillEligibility {
+  if (!bill) {
+    return { canCancel: false, reason: 'No bill selected' };
+  }
+  if (!userCanManage) {
+    return { canCancel: false, reason: 'You do not have permission to cancel bills' };
+  }
+  if (bill.status?.toUpperCase() === 'CANCELLED') {
+    return { canCancel: false, reason: 'Bill is already cancelled' };
+  }
+  const paid = Math.max(0, Number(bill.paid_amount || 0));
+  if (paid > 0) {
+    return {
+      canCancel: false,
+      reason: `Cannot cancel bill with recorded payments (NPR ${paid.toFixed(2)} paid). Void receipts before cancelling.`,
+    };
+  }
+  return { canCancel: true };
+}

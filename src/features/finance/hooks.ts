@@ -467,10 +467,13 @@ export const useCancelBill = (tenantId: string | null) => {
   return useMutation({
     mutationFn: (billId: string) => financeApi.cancelBill(tenantId!, billId),
     onSuccess: () => {
-      toast.success('Bill cancelled');
+      toast.success('Bill cancelled successfully');
       queryClient.invalidateQueries({ queryKey: [BILLS_KEY, tenantId] });
       queryClient.invalidateQueries({ queryKey: [FINANCE_DASHBOARD_KEY, tenantId] });
       queryClient.invalidateQueries({ queryKey: [STUDENT_LEDGER_KEY, tenantId] });
+      queryClient.invalidateQueries({ queryKey: [GENERATED_MONTHS_KEY, tenantId] });
+      queryClient.invalidateQueries({ queryKey: [STUDENT_WALLET_KEY, tenantId] });
+      queryClient.invalidateQueries({ queryKey: [STUDENT_DUES_BREAKDOWN_KEY, tenantId] });
     },
     onError: (err: any) => {
       toast.error(err.response?.data?.message || err.message || 'Failed to cancel bill');

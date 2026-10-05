@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { Link } from '@tanstack/react-router';
 import { useAuth } from '@/auth/useAuth';
+import { hasPermission } from '@/config/permissions';
 import { useCurrentAcademicYear } from '@/features/academic-year/hooks/useCurrentAcademicYear';
 import { useClasses } from '@/features/academic/hooks';
 import {
@@ -20,7 +21,7 @@ import {
   Sparkles,
   CreditCard,
   Printer,
-  Trash2,
+  Ban,
   ExternalLink,
   Loader2,
   Calendar,
@@ -37,11 +38,14 @@ import {
 import { PaymentCollectDialog } from '../components/PaymentCollectDialog';
 import { PrintableBillModal } from '../components/PrintableBillModal';
 import { PrintableReceiptModal } from '../components/PrintableReceiptModal';
+import { CancelBillDialog } from '../components/CancelBillDialog';
+import { getCancelBillEligibility } from '../utils/cashierUtils';
 import { useCalendarPreferenceStore } from '@/stores/calendarPreferenceStore';
 import { formatDate } from '@/features/school-settings/utils/nepaliDate';
 
 export const BillsPage: React.FC = () => {
-  const { activeTenantId } = useAuth();
+  const { activeTenantId, activeRole, user } = useAuth();
+  const canManageFinance = hasPermission(activeRole, 'MANAGE_FINANCE') || !!user?.is_super_admin;
   const { calendarSystem } = useCalendarPreferenceStore();
   const { currentYear } = useCurrentAcademicYear(activeTenantId);
   const { data: classesData } = useClasses(activeTenantId);
@@ -69,6 +73,7 @@ export const BillsPage: React.FC = () => {
   const [activeCollectBill, setActiveCollectBill] = useState<FeeBill | null>(null);
   const [activePrintBillId, setActivePrintBillId] = useState<string | null>(null);
   const [generatedReceiptPaymentId, setGeneratedReceiptPaymentId] = useState<string | null>(null);
+  const [activeCancelBill, setActiveCancelBill] = useState<FeeBill | null>(null);
 
   // Mutations
   const cancelBillMutation = useCancelBill(activeTenantId);
@@ -131,9 +136,13 @@ export const BillsPage: React.FC = () => {
     }
   };
 
-  const handleCancelBill = async (bill: FeeBill) => {
-    if (confirm(`Are you sure you want to cancel bill ${bill.bill_number}?`)) {
-      await cancelBillMutation.mutateAsync(bill.id);
+  const handleConfirmCancelBill = async () => {
+    if (!activeCancelBill) return;
+    try {
+      await cancelBillMutation.mutateAsync(activeCancelBill.id);
+      setActiveCancelBill(null);
+    } catch {
+      // Error is caught and surfaced by useCancelBill mutation onError toast
     }
   };
 
@@ -265,6 +274,7 @@ export const BillsPage: React.FC = () => {
                   const discount = Number(
                     b.discount_amount ?? Math.max(0, Number(b.total_payable) - Number(b.paid_amount) - due)
                   );
+                  const cancelEligibility = getCancelBillEligibility(b, canManageFinance);
 
                   return (
                     <tr key={b.id} className="hover:bg-muted/30 transition-colors">
@@ -338,38 +348,79 @@ export const BillsPage: React.FC = () => {
                       <td className="py-2.5 px-3 text-center">{getStatusBadge(b.status, discount)}</td>
                       <td className="py-2.5 px-3 text-right">
                         <div className="flex items-center justify-end gap-1">
-                          {due > 0 && !isCancelled && (
+                          {due > 0 && !isCancelled && canManageFinance && (
                             <Button
                               size="sm"
                               variant="default"
                               onClick={() => setActiveCollectBill(b)}
-                              className="h-7 text-[11px] gap-1 px-2 cursor-pointer"
+                              className="h-7 text-[11px] gap-1 px-2.5 cursor-pointer shadow-2xs"
                             >
                               <CreditCard className="w-3 h-3" />
                               Pay
                             </Button>
                           )}
 
-                          <Button
-                            size="sm"
-                            variant="ghost"
-                            onClick={() => setActivePrintBillId(b.id)}
-                            className="h-7 text-[11px] gap-1 px-2 cursor-pointer"
-                            title="Print Invoice"
-                          >
-                            <Printer className="w-3 h-3" />
-                          </Button>
+                          <TooltipProvider delayDuration={150}>
+                            <Tooltip>
+                              <TooltipTrigger asChild>
+                                <Button
+                                  size="sm"
+                                  variant="ghost"
+                                  onClick={() => setActivePrintBillId(b.id)}
+                                  className="h-7 w-7 p-0 text-muted-foreground hover:text-foreground cursor-pointer"
+                                  aria-label="Print Invoice"
+                                >
+                                  <Printer className="w-3.5 h-3.5" />
+                                </Button>
+                              </TooltipTrigger>
+                              <TooltipContent side="top" className="text-xs">
+                                Print Invoice
+                              </TooltipContent>
+                            </Tooltip>
+                          </TooltipProvider>
 
-                          {!isPaid && !isCancelled && (
-                            <Button
-                              size="sm"
-                              variant="ghost"
-                              onClick={() => handleCancelBill(b)}
-                              className="h-7 text-[11px] gap-1 px-2 text-destructive hover:text-destructive cursor-pointer"
-                              title="Cancel Bill"
-                            >
-                              <Trash2 className="w-3 h-3" />
-                            </Button>
+                          {canManageFinance && !isCancelled && (
+                            cancelEligibility.canCancel ? (
+                              <TooltipProvider delayDuration={150}>
+                                <Tooltip>
+                                  <TooltipTrigger asChild>
+                                    <Button
+                                      size="sm"
+                                      variant="ghost"
+                                      onClick={() => setActiveCancelBill(b)}
+                                      className="h-7 w-7 p-0 text-muted-foreground hover:text-destructive hover:bg-destructive/10 transition-colors cursor-pointer"
+                                      aria-label={`Cancel Bill ${b.bill_number}`}
+                                    >
+                                      <Ban className="w-3.5 h-3.5" />
+                                    </Button>
+                                  </TooltipTrigger>
+                                  <TooltipContent side="left" className="text-xs">
+                                    Void & Cancel Bill
+                                  </TooltipContent>
+                                </Tooltip>
+                              </TooltipProvider>
+                            ) : (
+                              <TooltipProvider delayDuration={150}>
+                                <Tooltip>
+                                  <TooltipTrigger asChild>
+                                    <span className="inline-block">
+                                      <Button
+                                        size="sm"
+                                        variant="ghost"
+                                        disabled
+                                        className="h-7 w-7 p-0 text-muted-foreground/30 cursor-not-allowed"
+                                        aria-label={cancelEligibility.reason || 'Cannot cancel bill'}
+                                      >
+                                        <Ban className="w-3.5 h-3.5" />
+                                      </Button>
+                                    </span>
+                                  </TooltipTrigger>
+                                  <TooltipContent side="left" className="text-xs max-w-xs">
+                                    {cancelEligibility.reason}
+                                  </TooltipContent>
+                                </Tooltip>
+                              </TooltipProvider>
+                            )
                           )}
                         </div>
                       </td>
@@ -438,6 +489,16 @@ export const BillsPage: React.FC = () => {
         tenantId={activeTenantId}
         paymentId={generatedReceiptPaymentId}
       />
+
+      {/* Cancel Bill Confirmation Dialog */}
+      <CancelBillDialog
+        bill={activeCancelBill}
+        isOpen={!!activeCancelBill}
+        onClose={() => setActiveCancelBill(null)}
+        onConfirm={handleConfirmCancelBill}
+        isPending={cancelBillMutation.isPending}
+      />
     </div>
   );
 };
+
