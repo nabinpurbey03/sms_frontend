@@ -7,7 +7,6 @@ import {
   useBulkAddStudents,
   useDeleteStudent,
   useUpdateStudentStatus,
-  useGraduatedStudents,
 } from '../hooks';
 import type { AcademicStudent, StudentCreateDTO } from '../types';
 import { StudentEnrollGlobalDialog } from '../components/StudentEnrollGlobalDialog';
@@ -92,8 +91,6 @@ export const StudentsPage: React.FC = () => {
     isError,
     refetch,
   } = useAllClassesWithDetails(activeTenantId, currentYearId);
-
-  const { data: graduatedData } = useGraduatedStudents(activeTenantId, { limit: 1 });
 
   const addStudentMutation = useAddStudent();
   const bulkAddMutation = useBulkAddStudents();
@@ -320,41 +317,18 @@ export const StudentsPage: React.FC = () => {
 
   return (
     <div className="space-y-6 pb-12">
-      {/* Page Header with Segmented Roster Switcher */}
-      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
-        <div className="space-y-1">
-          <h1 className="text-xl sm:text-2xl font-bold tracking-tight text-foreground">
-            Student Directory
-          </h1>
-          <p className="text-xs sm:text-sm text-muted-foreground">
-            Manage student enrollments, class assignments, cohort records, and academic status.
-          </p>
-        </div>
-
-        {/* Segmented Roster Switcher */}
-        <div className="flex items-center p-1 bg-muted/60 rounded-xl border border-border/50 text-xs font-medium self-start sm:self-auto shrink-0 shadow-2xs">
-          <div className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-background text-foreground font-semibold shadow-xs">
-            <Users className="w-4 h-4 text-primary" />
-            <span>Active Roster</span>
-            <Badge variant="secondary" className="ml-1 text-[10px] h-4 px-1.5 font-bold">
-              {metrics.active}
-            </Badge>
-          </div>
-          <Link
-            to="/academic/alumni"
-            className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-muted-foreground hover:text-foreground hover:bg-background/50 transition-colors"
-          >
-            <GraduationCap className="w-4 h-4 text-purple-600 dark:text-purple-400" />
-            <span>Alumni Directory</span>
-            <Badge variant="purple" className="ml-1 text-[10px] h-4 px-1.5 font-bold">
-              {graduatedData?.total_graduates ?? 0}
-            </Badge>
-          </Link>
-        </div>
+      {/* Page Header */}
+      <div className="space-y-1">
+        <h1 className="text-xl sm:text-2xl font-bold tracking-tight text-foreground">
+          Student Directory
+        </h1>
+        <p className="text-xs sm:text-sm text-muted-foreground">
+          Manage student enrollments, class assignments, cohort records, and academic status.
+        </p>
       </div>
 
       {/* KPI Stats Cards */}
-      <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-3 sm:gap-4">
+      <div className="grid grid-cols-2 sm:grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4">
         <StatCard
           title="Total Students"
           value={metrics.total}
@@ -386,14 +360,6 @@ export const StudentsPage: React.FC = () => {
           description="Section cohorts"
           variant="blue"
           loading={isLoading}
-        />
-        <StatCard
-          title="Graduated / Alumni"
-          value={graduatedData?.total_graduates ?? 0}
-          icon={GraduationCap}
-          description="Graduated alumni records"
-          variant="purple"
-          onClick={() => navigate({ to: '/academic/alumni' })}
         />
       </div>
 
