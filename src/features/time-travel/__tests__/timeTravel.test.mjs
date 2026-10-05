@@ -311,17 +311,24 @@ test('BatchBilling reactive integration: simulated date shifts recalculate runni
   const runningIdx2 = getCurrentBsMonthIndex(dateJestha);
   assert.equal(runningIdx2, 1);
 
-  // Baishakh is now backlog unbilled, Jestha is running current, Ashadh is upcoming locked!
+  // Under strict sequential billing: Baishakh is next required to bill (AVAILABLE_NEXT),
+  // Jestha is locked pending Baishakh (LOCKED_SEQUENCE), Ashadh is upcoming locked (FUTURE_LOCKED)
   const baishakhStatus2 = computeMonthStatus('Baishakh', runningIdx2, generatedSet);
-  assert.equal(baishakhStatus2.status, 'AVAILABLE_BACKLOG');
+  assert.equal(baishakhStatus2.status, 'AVAILABLE_NEXT');
   assert.equal(baishakhStatus2.isSelectable, true);
 
   const jesthaStatus2 = computeMonthStatus('Jestha', runningIdx2, generatedSet);
-  assert.equal(jesthaStatus2.status, 'AVAILABLE_RUNNING');
-  assert.equal(jesthaStatus2.isSelectable, true);
+  assert.equal(jesthaStatus2.status, 'LOCKED_SEQUENCE');
+  assert.equal(jesthaStatus2.isSelectable, false);
 
   const ashadhStatus2 = computeMonthStatus('Ashadh', runningIdx2, generatedSet);
   assert.equal(ashadhStatus2.status, 'FUTURE_LOCKED');
   assert.equal(ashadhStatus2.isSelectable, false);
+
+  // Once Baishakh is generated, Jestha becomes available as running month
+  generatedSet.add('Baishakh');
+  const jesthaStatus3 = computeMonthStatus('Jestha', runningIdx2, generatedSet);
+  assert.equal(jesthaStatus3.status, 'AVAILABLE_RUNNING');
+  assert.equal(jesthaStatus3.isSelectable, true);
 });
 

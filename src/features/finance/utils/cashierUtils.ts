@@ -104,16 +104,22 @@ export function isArrearsFeeHead(feeName: string): boolean {
   );
 }
 
-export type MonthGenerationStatus =
-  | 'GENERATED'         // Invoiced already -> Faded & Disabled
-  | 'AVAILABLE_RUNNING' // Active running month, unbilled -> Highlighted & Selectable
-  | 'AVAILABLE_BACKLOG' // Past month that was skipped/unbilled -> Selectable
-  | 'FUTURE_LOCKED';    // Month after running month in session -> Faded & Disabled
+export type MonthStatus =
+  | 'GENERATED'
+  | 'AVAILABLE_RUNNING'
+  | 'AVAILABLE_NEXT'
+  | 'LOCKED_SEQUENCE'
+  | 'LOCKED_PAST'
+  | 'FUTURE_LOCKED'
+  | 'AVAILABLE_BACKLOG'; // Transitional compatibility for BatchBillingPage until Task 3
+
+// Legacy alias for backward compatibility
+export type MonthGenerationStatus = MonthStatus;
 
 export interface MonthStatusInfo {
   month: BsMonth;
   index: number;
-  status: MonthGenerationStatus;
+  status: MonthStatus;
   isSelectable: boolean;
   badgeLabel: string;
   tooltipText: string;
@@ -133,8 +139,34 @@ export function getCurrentBsMonthIndex(asOfDate?: Date | string | null): number 
 }
 
 /**
+ * Returns the single next required month in chronological sequence (Baishakh -> Chaitra)
+ * that is unbilled and not beyond the running month, or null if all months up through
+ * the running month are already generated.
+ */
+export function getNextSequentialMonth(
+  runningMonthIndex: number,
+  generatedMonths: Set<string>
+): BsMonth | null {
+  for (let i = 0; i <= runningMonthIndex; i++) {
+    const m = BS_MONTHS[i];
+    if (!generatedMonths.has(m)) {
+      return m;
+    }
+  }
+  return null;
+}
+
+/**
  * Computes availability status, selectable flag, badge label, and tooltip description
  * for a Bikram Sambat month given the running month index and previously generated months.
+ * Enforces strict chronological billing sequence (Baishakh -> Chaitra):
+ * 1. Generated months are marked GENERATED (not selectable).
+ * 2. Unbilled months preceding an already generated month are marked LOCKED_PAST (cannot back-bill).
+ * 3. Unbilled months waiting on an unbilled predecessor are marked LOCKED_SEQUENCE (sequential queue).
+ * 4. The single first ungenerated month is:
+ *    - AVAILABLE_RUNNING if it matches the current running month.
+ *    - AVAILABLE_NEXT if it is before the current running month.
+ *    - FUTURE_LOCKED if it is ahead of the current running month.
  */
 export function computeMonthStatus(
   month: BsMonth,
@@ -143,7 +175,7 @@ export function computeMonthStatus(
 ): MonthStatusInfo {
   const monthIdx = BS_MONTHS.indexOf(month);
 
-  // 1. If generatedMonths.has(month) -> status = 'GENERATED', isSelectable = false, badgeLabel = 'Generated', tooltipText = `${month} invoices have already been generated for this class.`
+  // 1. If already generated -> GENERATED
   if (generatedMonths.has(month)) {
     const tooltipText = `${month} invoices have already been generated for this class.`;
     return {
@@ -157,9 +189,63 @@ export function computeMonthStatus(
     };
   }
 
-  // 2. If monthIdx === runningMonthIndex -> status = 'AVAILABLE_RUNNING', isSelectable = true, badgeLabel = 'Current Month', tooltipText = `${month} is the current running cycle.`
+  // 2. If any subsequent month has already been generated -> LOCKED_PAST (out-of-order back-billing block)
+  const hasSubsequentGenerated = BS_MONTHS.slice(monthIdx + 1).some((m) => generatedMonths.has(m));
+  if (hasSubsequentGenerated) {
+    const tooltipText = `Cannot bill ${month} because subsequent invoices have already been generated for this class.`;
+    return {
+      month,
+      index: monthIdx,
+      status: 'LOCKED_PAST',
+      isSelectable: false,
+      badgeLabel: 'Locked (Past)',
+      tooltipText,
+      description: tooltipText,
+    };
+  }
+
+  // 3. If month is beyond running month -> FUTURE_LOCKED
+  if (monthIdx > runningMonthIndex) {
+    const tooltipText = `${month} is an upcoming month in this academic session.`;
+    return {
+      month,
+      index: monthIdx,
+      status: 'FUTURE_LOCKED',
+      isSelectable: false,
+      badgeLabel: 'Upcoming',
+      tooltipText,
+      description: tooltipText,
+    };
+  }
+
+  // 4. Identify the first ungenerated month in the calendar
+  let firstUngeneratedIdx = -1;
+  for (let i = 0; i < BS_MONTHS.length; i++) {
+    if (!generatedMonths.has(BS_MONTHS[i])) {
+      firstUngeneratedIdx = i;
+      break;
+    }
+  }
+
+  // If this month is NOT the first ungenerated month, it is blocked by an unbilled predecessor -> LOCKED_SEQUENCE
+  if (monthIdx > firstUngeneratedIdx) {
+    const missingPredecessor = BS_MONTHS[firstUngeneratedIdx];
+    const tooltipText = `Sequential billing required. Please generate ${missingPredecessor} first.`;
+    return {
+      month,
+      index: monthIdx,
+      status: 'LOCKED_SEQUENCE',
+      isSelectable: false,
+      badgeLabel: 'Sequence Locked',
+      tooltipText,
+      description: tooltipText,
+    };
+  }
+
+  // 5. This month IS the first ungenerated month:
+  // If it matches the running month -> AVAILABLE_RUNNING
   if (monthIdx === runningMonthIndex) {
-    const tooltipText = `${month} is the current running cycle.`;
+    const tooltipText = `${month} is the current running cycle and ready for generation.`;
     return {
       month,
       index: monthIdx,
@@ -171,28 +257,14 @@ export function computeMonthStatus(
     };
   }
 
-  // 3. If monthIdx < runningMonthIndex -> status = 'AVAILABLE_BACKLOG', isSelectable = true, badgeLabel = 'Unbilled Past', tooltipText = `${month} was not generated yet and can be billed now.`
-  if (monthIdx < runningMonthIndex) {
-    const tooltipText = `${month} was not generated yet and can be billed now.`;
-    return {
-      month,
-      index: monthIdx,
-      status: 'AVAILABLE_BACKLOG',
-      isSelectable: true,
-      badgeLabel: 'Unbilled Past',
-      tooltipText,
-      description: tooltipText,
-    };
-  }
-
-  // 4. If monthIdx > runningMonthIndex -> status = 'FUTURE_LOCKED', isSelectable = false, badgeLabel = 'Upcoming', tooltipText = `${month} is an upcoming month in this academic session.`
-  const tooltipText = `${month} is an upcoming month in this academic session.`;
+  // If it's before running month -> AVAILABLE_NEXT
+  const tooltipText = `${month} is the next required month to bill in chronological sequence.`;
   return {
     month,
     index: monthIdx,
-    status: 'FUTURE_LOCKED',
-    isSelectable: false,
-    badgeLabel: 'Upcoming',
+    status: 'AVAILABLE_NEXT',
+    isSelectable: true,
+    badgeLabel: 'Next to Bill',
     tooltipText,
     description: tooltipText,
   };

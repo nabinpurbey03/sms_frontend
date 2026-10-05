@@ -8,6 +8,7 @@ import {
   calculateNetReceived,
   isArrearsFeeHead,
   computeMonthStatus,
+  getNextSequentialMonth,
   getCurrentBsMonthIndex,
   formatCurrency,
   formatCompactNumber,
@@ -189,42 +190,65 @@ test('batchBillGenerateSchema accepts empty string for optional ad_hoc_fee_amoun
 // 6. Month Generation Status Calculation Utilities
 // -------------------------------------------------------------------------
 
-test('computeMonthStatus: correctly identifies generated, running, backlog, and future months', () => {
-  // Assume running month is Ashwin (index 5)
+test('computeMonthStatus: strict sequential ordering enforces chronological queue', () => {
+  // Running month is Ashwin (index 5)
   const runningIndex = 5;
-  const generated = new Set(['Baishakh', 'Ashadh']);
 
-  // Case 1: Baishakh is generated -> GENERATED, not selectable
-  const baishakh = computeMonthStatus('Baishakh', runningIndex, generated);
-  assert.equal(baishakh.status, 'GENERATED');
-  assert.equal(baishakh.isSelectable, false);
-  assert.equal(baishakh.badgeLabel, 'Generated');
-  assert.equal(baishakh.tooltipText, 'Baishakh invoices have already been generated for this class.');
-  assert.equal(baishakh.index, 0);
+  // Case 1: Fresh session (0 generated months). Only Baishakh (index 0) is selectable!
+  const emptyGen = new Set();
+  const baisEmpty = computeMonthStatus('Baishakh', runningIndex, emptyGen);
+  assert.equal(baisEmpty.status, 'AVAILABLE_NEXT');
+  assert.equal(baisEmpty.isSelectable, true);
+  assert.equal(baisEmpty.badgeLabel, 'Next to Bill');
 
-  // Case 2: Jestha was not generated and is past -> AVAILABLE_BACKLOG, selectable
-  const jestha = computeMonthStatus('Jestha', runningIndex, generated);
-  assert.equal(jestha.status, 'AVAILABLE_BACKLOG');
-  assert.equal(jestha.isSelectable, true);
-  assert.equal(jestha.badgeLabel, 'Unbilled Past');
-  assert.equal(jestha.tooltipText, 'Jestha was not generated yet and can be billed now.');
-  assert.equal(jestha.index, 1);
+  const jesthaEmpty = computeMonthStatus('Jestha', runningIndex, emptyGen);
+  assert.equal(jesthaEmpty.status, 'LOCKED_SEQUENCE');
+  assert.equal(jesthaEmpty.isSelectable, false);
+  assert.equal(jesthaEmpty.badgeLabel, 'Sequence Locked');
+  assert.ok(jesthaEmpty.tooltipText.includes('Baishakh'));
 
-  // Case 3: Ashwin is running month and not generated -> AVAILABLE_RUNNING, selectable
-  const ashwin = computeMonthStatus('Ashwin', runningIndex, generated);
-  assert.equal(ashwin.status, 'AVAILABLE_RUNNING');
-  assert.equal(ashwin.isSelectable, true);
-  assert.equal(ashwin.badgeLabel, 'Current Month');
-  assert.equal(ashwin.tooltipText, 'Ashwin is the current running cycle.');
-  assert.equal(ashwin.index, 5);
+  // Case 2: Baishakh generated. Jestha (index 1) is now Next to Bill.
+  const baisGen = new Set(['Baishakh']);
+  const baisStatus = computeMonthStatus('Baishakh', runningIndex, baisGen);
+  assert.equal(baisStatus.status, 'GENERATED');
+  assert.equal(baisStatus.isSelectable, false);
 
-  // Case 4: Kartik is future month -> FUTURE_LOCKED, not selectable
-  const kartik = computeMonthStatus('Kartik', runningIndex, generated);
-  assert.equal(kartik.status, 'FUTURE_LOCKED');
-  assert.equal(kartik.isSelectable, false);
-  assert.equal(kartik.badgeLabel, 'Upcoming');
-  assert.equal(kartik.tooltipText, 'Kartik is an upcoming month in this academic session.');
-  assert.equal(kartik.index, 6);
+  const jesthaNext = computeMonthStatus('Jestha', runningIndex, baisGen);
+  assert.equal(jesthaNext.status, 'AVAILABLE_NEXT');
+  assert.equal(jesthaNext.isSelectable, true);
+
+  const ashadhLocked = computeMonthStatus('Ashadh', runningIndex, baisGen);
+  assert.equal(ashadhLocked.status, 'LOCKED_SEQUENCE');
+  assert.equal(ashadhLocked.isSelectable, false);
+
+  // Case 3: All past months generated up to running month (Ashwin). Ashwin is AVAILABLE_RUNNING.
+  const caughtUp = new Set(['Baishakh', 'Jestha', 'Ashadh', 'Shrawan', 'Bhadra']);
+  const ashwinRunning = computeMonthStatus('Ashwin', runningIndex, caughtUp);
+  assert.equal(ashwinRunning.status, 'AVAILABLE_RUNNING');
+  assert.equal(ashwinRunning.isSelectable, true);
+  assert.equal(ashwinRunning.badgeLabel, 'Current Month');
+
+  // Case 4: Future month beyond running month is FUTURE_LOCKED.
+  const kartikFuture = computeMonthStatus('Kartik', runningIndex, caughtUp);
+  assert.equal(kartikFuture.status, 'FUTURE_LOCKED');
+  assert.equal(kartikFuture.isSelectable, false);
+
+  // Case 5: Out-of-order legacy scenario (Shrawan generated, Baishakh wasn't). Baishakh is LOCKED_PAST.
+  const legacyGen = new Set(['Shrawan']);
+  const baisLegacy = computeMonthStatus('Baishakh', runningIndex, legacyGen);
+  assert.equal(baisLegacy.status, 'LOCKED_PAST');
+  assert.equal(baisLegacy.isSelectable, false);
+  assert.equal(baisLegacy.badgeLabel, 'Locked (Past)');
+});
+
+test('getNextSequentialMonth: returns exact next month or null when caught up', () => {
+  const runningIndex = 3; // Shrawan
+  assert.equal(getNextSequentialMonth(runningIndex, new Set()), 'Baishakh');
+  assert.equal(getNextSequentialMonth(runningIndex, new Set(['Baishakh'])), 'Jestha');
+  assert.equal(getNextSequentialMonth(runningIndex, new Set(['Baishakh', 'Jestha'])), 'Ashadh');
+  assert.equal(getNextSequentialMonth(runningIndex, new Set(['Baishakh', 'Jestha', 'Ashadh'])), 'Shrawan');
+  // All caught up through Shrawan:
+  assert.equal(getNextSequentialMonth(runningIndex, new Set(['Baishakh', 'Jestha', 'Ashadh', 'Shrawan'])), null);
 });
 
 test('getCurrentBsMonthIndex returns an integer between 0 and 11', () => {
