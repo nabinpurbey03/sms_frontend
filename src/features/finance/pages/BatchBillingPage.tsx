@@ -55,7 +55,6 @@ import {
   Loader2,
   School,
   Info,
-  ArrowLeft,
   Lock,
   Users,
   Coins,
@@ -70,6 +69,9 @@ import {
   ShieldAlert,
   AlertCircle,
   Clock,
+  FilePlus,
+  FileText,
+  ArrowUpRight,
 } from 'lucide-react';
 import { NepaliDatePicker } from '@/components/ui/nepali-date-picker';
 
@@ -355,37 +357,38 @@ export const BatchBillingPage: React.FC = () => {
 
   return (
     <div className="space-y-6 pb-12 max-w-7xl mx-auto">
-      {/* 1. Header & Navigation (Clean, No Duplicate Submit Button) */}
+      {/* 1. Dedicated Page Header */}
       <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 border-b border-border/50 pb-5">
         <div>
-          <div className="flex items-center gap-2 mb-1.5">
-            <Link
-              to="/finance/bills"
-              className="inline-flex items-center gap-1.5 text-xs font-semibold text-muted-foreground hover:text-foreground transition-colors"
-            >
-              <ArrowLeft className="w-3.5 h-3.5" />
-              Back to Bills & Invoices
-            </Link>
-            <span className="text-muted-foreground/40 text-xs">/</span>
-            <span className="text-xs font-medium text-foreground">Monthly Batch Invoicing</span>
-          </div>
           <h1 className="text-xl sm:text-2xl font-bold tracking-tight text-foreground flex items-center gap-2.5">
             <div className="w-8 h-8 rounded-lg bg-primary/10 text-primary flex items-center justify-center shrink-0">
-              <Sparkles className="w-4 h-4" />
+              <FilePlus className="w-4 h-4" />
             </div>
-            Monthly Batch Invoicing Engine
+            Invoice Generation
           </h1>
           <p className="text-xs sm:text-sm text-muted-foreground mt-1 max-w-3xl">
-            Configure and issue class-wide monthly fee invoices across Bikram Sambat months. Unpaid prior arrears are rolled in automatically, and active student credit wallets are applied at billing time.
+            Configure and batch generate monthly fee invoices across Bikram Sambat billing cycles. Prior unpaid dues are itemized automatically, and advance credit balances are applied at invoice creation.
           </p>
         </div>
 
-        {/* Top Header Utilities: Session Badge & Reset Action */}
-        <div className="flex items-center gap-2.5 shrink-0">
+        {/* Top Header Utilities: Session Badge, View Bills shortcut & Reset Action */}
+        <div className="flex flex-wrap items-center gap-2.5 shrink-0">
           <div className="flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-primary/10 border border-primary/20 text-xs font-semibold text-primary">
             <Calendar className="w-3.5 h-3.5 text-primary" />
             <span>Session: {isLoadingYear ? 'Loading...' : currentYear?.name || 'Active Session'}</span>
           </div>
+
+          <Button
+            asChild
+            variant="outline"
+            size="sm"
+            className="text-xs h-8 px-3 gap-1.5 text-muted-foreground hover:text-foreground cursor-pointer"
+          >
+            <Link to="/finance/bills">
+              <FileText className="w-3.5 h-3.5 text-primary" />
+              <span>Bills & Invoices</span>
+            </Link>
+          </Button>
 
           <Tooltip>
             <TooltipTrigger asChild>
@@ -394,20 +397,14 @@ export const BatchBillingPage: React.FC = () => {
                 variant="outline"
                 size="sm"
                 onClick={handleResetForm}
-                className="text-xs h-8 px-2.5 gap-1.5 text-muted-foreground hover:text-foreground"
+                className="text-xs h-8 px-2.5 gap-1.5 text-muted-foreground hover:text-foreground cursor-pointer"
               >
                 <RotateCcw className="w-3.5 h-3.5" />
-                <span className="hidden sm:inline">Reset</span>
+                <span className="hidden sm:inline">Reset Form</span>
               </Button>
             </TooltipTrigger>
             <TooltipContent>Reset form selections to defaults</TooltipContent>
           </Tooltip>
-
-          <Link to="/finance/bills">
-            <Button type="button" variant="ghost" size="sm" className="text-xs h-8 px-2.5 text-muted-foreground hover:text-foreground">
-              Cancel
-            </Button>
-          </Link>
         </div>
       </div>
 
@@ -688,7 +685,7 @@ export const BatchBillingPage: React.FC = () => {
                       value={selectedClassId}
                       onValueChange={(val) => {
                         setSelectedClassId(val);
-                        setValue('class_id', val);
+                        setValue('class_id', val, { shouldValidate: true });
                         setSelectedSectionId('');
                         setValue('section_id', '');
                       }}
@@ -704,6 +701,9 @@ export const BatchBillingPage: React.FC = () => {
                         ))}
                       </SelectContent>
                     </Select>
+                    {errors.class_id && (
+                      <p className="text-[11px] text-destructive">{errors.class_id.message}</p>
+                    )}
                   </div>
 
                   {/* Section Radix Select */}
@@ -1111,13 +1111,21 @@ export const BatchBillingPage: React.FC = () => {
                     )}
                   </Button>
 
-                  <div className="flex items-center justify-between text-[11px] text-muted-foreground px-1">
-                    <span>Target: {selectedClass?.name || 'Class'}</span>
+                  <div className="flex items-center justify-between text-[11px] text-muted-foreground px-1 pt-1">
+                    <span className="truncate">
+                      Target: <strong className="text-foreground">{selectedClass?.name || 'Selected Class'}</strong>
+                      {selectedSectionId && (
+                        <span className="ml-1 text-muted-foreground font-normal">
+                          (Sec {sections.find((s) => s.id === selectedSectionId)?.name || 'Filtered'})
+                        </span>
+                      )}
+                    </span>
                     <Link
                       to="/finance/bills"
-                      className="hover:text-foreground underline underline-offset-2 transition-colors"
+                      className="text-primary hover:text-primary/80 font-medium inline-flex items-center gap-1 transition-colors"
                     >
-                      Cancel & Return
+                      <span>Review Invoices</span>
+                      <ArrowUpRight className="w-3 h-3" />
                     </Link>
                   </div>
                 </div>
