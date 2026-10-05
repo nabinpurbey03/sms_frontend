@@ -408,8 +408,8 @@ export const BatchBillingPage: React.FC = () => {
                   </span>
                 </div>
 
-                {/* 12 BS Month Buttons Grid */}
-                <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-2.5">
+                {/* 12 BS Month Buttons Grid: 4 rows x 3 columns */}
+                <div className="grid grid-cols-2 sm:grid-cols-3 gap-2.5">
                   {monthStatuses.map((info) => {
                     const isSelected = selectedMonth === info.month;
                     const monthNumber = String(info.index + 1).padStart(2, '0');
