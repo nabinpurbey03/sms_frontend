@@ -20,6 +20,7 @@ import { SubjectMasteryBarChart } from '../components/analytics/SubjectMasteryBa
 import { SubjectMasteryTable } from '../components/analytics/SubjectMasteryTable';
 import { CapacityUtilizationView } from '../components/analytics/CapacityUtilizationView';
 import { PlatformBenchmarkScorecard } from '../components/analytics/PlatformBenchmarkScorecard';
+import { GraduatedStudentsTable } from '../components/GraduatedStudentsTable';
 import { TenantRequiredState } from '@/components/common/TenantRequiredState';
 import { EmptyState } from '@/components/common/EmptyState';
 import { Card, CardHeader, CardTitle, CardDescription, CardContent } from '@/components/ui/card';
@@ -79,6 +80,7 @@ export const AcademicAnalyticsPage: React.FC = () => {
   } = useAcademicYears(effectiveTenantId || null);
 
   const [selectedYearId, setSelectedYearId] = useState<string>('');
+  const [activeTab, setActiveTab] = useState<string>('retention');
 
   // Default to current academic year or first year when years load
   useEffect(() => {
@@ -295,7 +297,7 @@ export const AcademicAnalyticsPage: React.FC = () => {
         />
       ) : (
         /* Tabbed Intelligence Interface */
-        <Tabs defaultValue="retention" className="space-y-6">
+        <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-6">
           <TabsList className="flex flex-wrap sm:inline-flex h-auto p-1 bg-muted/80 gap-1 rounded-lg">
             <TabsTrigger value="retention" className="flex items-center gap-2 text-xs sm:text-sm font-medium">
               <TrendingUp className="w-4 h-4" />
@@ -306,12 +308,16 @@ export const AcademicAnalyticsPage: React.FC = () => {
               <span>Attendance &amp; Early Warning</span>
             </TabsTrigger>
             <TabsTrigger value="growth" className="flex items-center gap-2 text-xs sm:text-sm font-medium">
-              <GraduationCap className="w-4 h-4" />
+              <Award className="w-4 h-4" />
               <span>Academic Growth &amp; Mastery</span>
             </TabsTrigger>
             <TabsTrigger value="capacity" className="flex items-center gap-2 text-xs sm:text-sm font-medium">
               <Layers className="w-4 h-4" />
               <span>Capacity &amp; Utilization</span>
+            </TabsTrigger>
+            <TabsTrigger value="graduates" className="flex items-center gap-2 text-xs sm:text-sm font-medium">
+              <GraduationCap className="w-4 h-4 text-purple-600 dark:text-purple-400" />
+              <span>Graduated Students</span>
             </TabsTrigger>
             {isSuperAdmin && (
               <TabsTrigger value="benchmark" className="flex items-center gap-2 text-xs sm:text-sm font-medium">
@@ -361,7 +367,10 @@ export const AcademicAnalyticsPage: React.FC = () => {
             ) : (
               <div className="space-y-6">
                 {/* Cohort Flow Summary Cards */}
-                <CohortFlowSummaryCard data={retentionData} />
+                <CohortFlowSummaryCard
+                  data={retentionData}
+                  onViewGraduates={() => setActiveTab('graduates')}
+                />
 
                 {/* Retention Bar Chart */}
                 <CohortRetentionBarChart metrics={retentionData.grade_breakdown} />
@@ -753,7 +762,33 @@ export const AcademicAnalyticsPage: React.FC = () => {
             />
           </TabsContent>
 
-          {/* TAB 5: Network Benchmark (SuperAdmin only) */}
+          {/* TAB 5: Graduated Students & Alumni Directory */}
+          <TabsContent value="graduates" className="space-y-6 mt-4">
+            <Card className="border border-border/60 bg-gradient-to-r from-purple-500/5 via-primary/5 to-transparent p-4 sm:p-5 shadow-xs">
+              <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+                <div className="flex items-center gap-3">
+                  <div className="w-10 h-10 rounded-xl bg-purple-500/10 text-purple-600 dark:text-purple-400 flex items-center justify-center shrink-0">
+                    <GraduationCap className="w-5 h-5" />
+                  </div>
+                  <div>
+                    <h2 className="text-base font-semibold tracking-tight text-foreground">
+                      Graduated Students &amp; Alumni Directory
+                    </h2>
+                    <p className="text-xs text-muted-foreground">
+                      Historical graduation cohorts, terminal grade completions, and full enrollment transcripts.
+                    </p>
+                  </div>
+                </div>
+              </div>
+            </Card>
+
+            <GraduatedStudentsTable
+              tenantId={effectiveTenantId}
+              initialAcademicYearId={selectedYearId}
+            />
+          </TabsContent>
+
+          {/* TAB 6: Network Benchmark (SuperAdmin only) */}
           {isSuperAdmin && (
             <TabsContent value="benchmark" className="space-y-6 mt-4">
               <PlatformBenchmarkScorecard />

@@ -10,16 +10,19 @@ import {
   Info,
   CalendarCheck2,
 } from 'lucide-react';
+import { cn } from '@/lib/utils';
 import type { AcademicYearRetentionResponse } from '../../types';
 
 interface CohortFlowSummaryCardProps {
   data: AcademicYearRetentionResponse;
   className?: string;
+  onViewGraduates?: () => void;
 }
 
 export const CohortFlowSummaryCard: React.FC<CohortFlowSummaryCardProps> = ({
   data,
   className,
+  onViewGraduates,
 }) => {
   const {
     overall_retention_rate,
@@ -152,11 +155,19 @@ export const CohortFlowSummaryCard: React.FC<CohortFlowSummaryCardProps> = ({
         </Card>
 
         {/* Graduated Cohort */}
-        <Card className="relative overflow-hidden">
+        <Card
+          className={cn(
+            'relative overflow-hidden transition-all',
+            onViewGraduates && 'cursor-pointer hover:border-purple-300 dark:hover:border-purple-800 hover:shadow-xs group'
+          )}
+          onClick={onViewGraduates}
+        >
           <CardContent className="p-5 flex flex-col justify-between h-full">
             <div className="flex items-center justify-between">
-              <span className="text-xs font-medium text-muted-foreground">Graduated Cohort</span>
-              <div className="p-2 rounded-lg bg-sky-500/10 text-sky-600 dark:text-sky-400">
+              <span className="text-xs font-medium text-muted-foreground group-hover:text-foreground transition-colors">
+                Graduated Cohort
+              </span>
+              <div className="p-2 rounded-lg bg-sky-500/10 text-sky-600 dark:text-sky-400 group-hover:bg-purple-500/10 group-hover:text-purple-600 transition-colors">
                 <GraduationCap className="w-4 h-4" />
               </div>
             </div>
@@ -169,9 +180,16 @@ export const CohortFlowSummaryCard: React.FC<CohortFlowSummaryCardProps> = ({
                   {calculatePct(total_graduated)}
                 </span>
               </div>
-              <p className="text-xs text-muted-foreground mt-1">
-                Completed highest terminal grade
-              </p>
+              <div className="flex items-center justify-between mt-1">
+                <p className="text-xs text-muted-foreground">
+                  Completed highest terminal grade
+                </p>
+                {onViewGraduates && total_graduated > 0 && (
+                  <span className="text-[11px] font-semibold text-purple-600 dark:text-purple-400 group-hover:underline flex items-center gap-0.5">
+                    View Roster &rarr;
+                  </span>
+                )}
+              </div>
             </div>
           </CardContent>
         </Card>

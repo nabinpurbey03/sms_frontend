@@ -40,17 +40,28 @@ import { cn } from '@/lib/utils';
 
 interface GraduatedStudentsTableProps {
   tenantId: string | null;
+  initialAcademicYearId?: string | null;
 }
 
-export const GraduatedStudentsTable: React.FC<GraduatedStudentsTableProps> = ({ tenantId }) => {
+export const GraduatedStudentsTable: React.FC<GraduatedStudentsTableProps> = ({
+  tenantId,
+  initialAcademicYearId,
+}) => {
   // Filters & Search
   const [searchQuery, setSearchQuery] = useState('');
   const [debouncedSearch, setDebouncedSearch] = useState('');
-  const [selectedBatchId, setSelectedBatchId] = useState('ALL');
+  const [selectedBatchId, setSelectedBatchId] = useState(initialAcademicYearId || 'ALL');
   const [selectedClassId, setSelectedClassId] = useState('ALL');
 
   // History Dialog State
   const [historyStudent, setHistoryStudent] = useState<AcademicStudent | null>(null);
+
+  // Sync with initialAcademicYearId when updated from parent
+  useEffect(() => {
+    if (initialAcademicYearId) {
+      setSelectedBatchId(initialAcademicYearId);
+    }
+  }, [initialAcademicYearId]);
 
   // Debounce search query by 300ms
   useEffect(() => {
