@@ -40,13 +40,7 @@ import { FeeStructureDialog } from '../components/FeeStructureDialog';
 import { PrintableReceiptModal } from '../components/PrintableReceiptModal';
 import { useCalendarPreferenceStore } from '@/stores/calendarPreferenceStore';
 import { formatDate } from '@/features/school-settings/utils/nepaliDate';
-
-const formatCurrency = (amount: number | string): string => {
-  return `NPR ${Number(amount || 0).toLocaleString('en-IN', {
-    minimumFractionDigits: 2,
-    maximumFractionDigits: 2,
-  })}`;
-};
+import { formatCurrency, formatCompactCurrency } from '../utils/cashierUtils';
 
 const getPaymentMethodBadgeClass = (method: string): string => {
   switch (method?.toUpperCase()) {
@@ -213,11 +207,14 @@ export const FinanceDashboardPage: React.FC = () => {
               </div>
             </CardHeader>
             <CardContent className="p-4 pt-1">
-              <div className="text-xl sm:text-2xl font-bold font-mono text-foreground">
+              <div
+                className="text-xl sm:text-2xl font-bold font-mono text-foreground"
+                title={formatCurrency(monthCollected)}
+              >
                 {isLoadingSummary ? (
                   <Loader2 className="w-5 h-5 animate-spin text-muted-foreground" />
                 ) : (
-                  formatCurrency(monthCollected)
+                  formatCompactCurrency(monthCollected)
                 )}
               </div>
               <div className="flex items-center gap-1.5 mt-1.5">
@@ -241,11 +238,14 @@ export const FinanceDashboardPage: React.FC = () => {
               </div>
             </CardHeader>
             <CardContent className="p-4 pt-1">
-              <div className="text-xl sm:text-2xl font-bold font-mono text-foreground">
+              <div
+                className="text-xl sm:text-2xl font-bold font-mono text-foreground"
+                title={formatCurrency(yearCollected)}
+              >
                 {isLoadingSummary ? (
                   <Loader2 className="w-5 h-5 animate-spin text-muted-foreground" />
                 ) : (
-                  formatCurrency(yearCollected)
+                  formatCompactCurrency(yearCollected)
                 )}
               </div>
               <div className="flex items-center gap-1.5 mt-1.5">
@@ -269,11 +269,14 @@ export const FinanceDashboardPage: React.FC = () => {
               </div>
             </CardHeader>
             <CardContent className="p-4 pt-1">
-              <div className="text-xl sm:text-2xl font-bold font-mono text-rose-600">
+              <div
+                className="text-xl sm:text-2xl font-bold font-mono text-rose-600"
+                title={formatCurrency(outstandingDues)}
+              >
                 {isLoadingSummary ? (
                   <Loader2 className="w-5 h-5 animate-spin text-muted-foreground" />
                 ) : (
-                  formatCurrency(outstandingDues)
+                  formatCompactCurrency(outstandingDues)
                 )}
               </div>
               <div className="flex items-center gap-1.5 mt-1.5">
@@ -340,8 +343,12 @@ export const FinanceDashboardPage: React.FC = () => {
                     Total expected billed revenue vs realized cash flow for this session.
                   </CardDescription>
                 </div>
-                <Badge variant="outline" className="font-mono text-xs">
-                  Total Invoiced: {formatCurrency(totalInvoiced)}
+                <Badge
+                  variant="outline"
+                  className="font-mono text-xs"
+                  title={formatCurrency(totalInvoiced)}
+                >
+                  Total Invoiced: {formatCompactCurrency(totalInvoiced)}
                 </Badge>
               </div>
             </CardHeader>
@@ -378,8 +385,11 @@ export const FinanceDashboardPage: React.FC = () => {
                   <span className="text-[10px] font-bold text-muted-foreground uppercase block">
                     Cash Realized
                   </span>
-                  <span className="text-sm font-bold font-mono text-emerald-600 dark:text-emerald-400 block mt-0.5">
-                    {formatCurrency(yearCollected)}
+                  <span
+                    className="text-sm font-bold font-mono text-emerald-600 dark:text-emerald-400 block mt-0.5"
+                    title={formatCurrency(yearCollected)}
+                  >
+                    {formatCompactCurrency(yearCollected)}
                   </span>
                   <span className="text-[10px] text-muted-foreground">Bank & Cash Inflow</span>
                 </div>
@@ -388,8 +398,11 @@ export const FinanceDashboardPage: React.FC = () => {
                   <span className="text-[10px] font-bold text-muted-foreground uppercase block">
                     Pending Dues
                   </span>
-                  <span className="text-sm font-bold font-mono text-rose-600 dark:text-rose-400 block mt-0.5">
-                    {formatCurrency(outstandingDues)}
+                  <span
+                    className="text-sm font-bold font-mono text-rose-600 dark:text-rose-400 block mt-0.5"
+                    title={formatCurrency(outstandingDues)}
+                  >
+                    {formatCompactCurrency(outstandingDues)}
                   </span>
                   <span className="text-[10px] text-muted-foreground">{defaultersCount} Accounts</span>
                 </div>
@@ -434,16 +447,22 @@ export const FinanceDashboardPage: React.FC = () => {
                   <span className="text-[10px] font-bold text-muted-foreground uppercase block">
                     Recent Collections Total
                   </span>
-                  <span className="text-sm font-bold font-mono text-primary block">
-                    {formatCurrency(recentTotal)}
+                  <span
+                    className="text-sm font-bold font-mono text-primary block"
+                    title={formatCurrency(recentTotal)}
+                  >
+                    {formatCompactCurrency(recentTotal)}
                   </span>
                 </div>
                 <div className="text-right">
                   <span className="text-[10px] font-bold text-muted-foreground uppercase block">
                     Avg. Transaction
                   </span>
-                  <span className="text-sm font-bold font-mono text-foreground block">
-                    {formatCurrency(avgReceipt)}
+                  <span
+                    className="text-sm font-bold font-mono text-foreground block"
+                    title={formatCurrency(avgReceipt)}
+                  >
+                    {formatCompactCurrency(avgReceipt)}
                   </span>
                 </div>
               </div>
@@ -470,8 +489,11 @@ export const FinanceDashboardPage: React.FC = () => {
                         <span className="font-mono text-[10px] opacity-80">
                           ({data.count})
                         </span>
-                        <span className="font-mono text-[11px] font-bold ml-1">
-                          NPR {data.total.toLocaleString('en-IN')}
+                        <span
+                          className="font-mono text-[11px] font-bold ml-1"
+                          title={formatCurrency(data.total)}
+                        >
+                          {formatCompactCurrency(data.total)}
                         </span>
                       </div>
                     ))}
@@ -488,8 +510,8 @@ export const FinanceDashboardPage: React.FC = () => {
             <div className="flex items-start sm:items-center gap-2.5">
               <ShieldAlert className="w-5 h-5 text-amber-600 dark:text-amber-400 shrink-0 mt-0.5 sm:mt-0" />
               <div>
-                <span className="font-bold block">
-                  {defaultersCount} Students have Overdue Fees ({formatCurrency(outstandingDues)} outstanding)
+                <span className="font-bold block" title={formatCurrency(outstandingDues)}>
+                  {defaultersCount} Students have Overdue Fees ({formatCompactCurrency(outstandingDues)} outstanding)
                 </span>
                 <span className="text-amber-800 dark:text-amber-300 text-[11px]">
                   Take proactive recovery measures. Review delinquent student lists, print overdue summaries, or contact guardians.

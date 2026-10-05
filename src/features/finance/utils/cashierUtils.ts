@@ -197,3 +197,64 @@ export function computeMonthStatus(
     description: tooltipText,
   };
 }
+
+/**
+ * Formats full currency with commas and 2 decimal places using en-IN locale.
+ */
+export function formatCurrency(
+  amount: number | string,
+  prefix: string = 'NPR '
+): string {
+  const num = Number(amount || 0);
+  return `${prefix}${num.toLocaleString('en-IN', {
+    minimumFractionDigits: 2,
+    maximumFractionDigits: 2,
+  })}`;
+}
+
+/**
+ * Formats a numeric value into a compact human-readable string:
+ * - >= 1,000,000,000: B (e.g. 1.25B)
+ * - >= 1,000,000: M (e.g. 1.25M, 1M)
+ * - >= 1,000: K (e.g. 12.5K, 450K, 1K)
+ * - < 1,000: standard number formatted with en-IN locale
+ */
+export function formatCompactNumber(amount: number | string): string {
+  const num = Number(amount);
+  if (isNaN(num) || num === 0) return '0';
+
+  const isNegative = num < 0;
+  const abs = Math.abs(num);
+
+  let formatted: string;
+  if (abs >= 1_000_000_000) {
+    formatted = parseFloat((abs / 1_000_000_000).toFixed(2)) + 'B';
+  } else if (abs >= 1_000_000) {
+    formatted = parseFloat((abs / 1_000_000).toFixed(2)) + 'M';
+  } else if (abs >= 1_000) {
+    formatted = parseFloat((abs / 1_000).toFixed(1)) + 'K';
+  } else {
+    formatted = abs.toLocaleString('en-IN', {
+      maximumFractionDigits: 2,
+    });
+  }
+
+  return isNegative ? `-${formatted}` : formatted;
+}
+
+/**
+ * Formats a monetary amount into compact currency notation with K for thousand
+ * and M for million (e.g. 'NPR 12.5K', 'NPR 1.25M').
+ */
+export function formatCompactCurrency(
+  amount: number | string,
+  prefix: string = 'NPR '
+): string {
+  const num = Number(amount);
+  if (isNaN(num) || num === 0) {
+    return `${prefix}0`;
+  }
+  const isNegative = num < 0;
+  const compact = formatCompactNumber(Math.abs(num));
+  return isNegative ? `-${prefix}${compact}` : `${prefix}${compact}`;
+}

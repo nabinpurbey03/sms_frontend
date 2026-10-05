@@ -9,6 +9,9 @@ import {
   isArrearsFeeHead,
   computeMonthStatus,
   getCurrentBsMonthIndex,
+  formatCurrency,
+  formatCompactNumber,
+  formatCompactCurrency,
 } from '../../utils/cashierUtils.ts';
 
 // -------------------------------------------------------------------------
@@ -232,5 +235,63 @@ test('getCurrentBsMonthIndex returns an integer between 0 and 11', () => {
   const jesthaDate = new Date('2026-05-15');
   const jesthaIdx = getCurrentBsMonthIndex(jesthaDate);
   assert.equal(jesthaIdx, 1);
+});
+
+// -------------------------------------------------------------------------
+// 7. Compact Currency Formatting (K for Thousand, M for Million)
+// -------------------------------------------------------------------------
+
+test('formatCompactNumber: correctly formats thousands (K), millions (M), and billions (B)', () => {
+  // Zero / empty / null / NaN
+  assert.equal(formatCompactNumber(0), '0');
+  assert.equal(formatCompactNumber('0'), '0');
+  assert.equal(formatCompactNumber(''), '0');
+  assert.equal(formatCompactNumber(null), '0');
+  assert.equal(formatCompactNumber(undefined), '0');
+
+  // Below 1,000 -> normal number with locale
+  assert.equal(formatCompactNumber(500), '500');
+  assert.equal(formatCompactNumber(750), '750');
+  assert.equal(formatCompactNumber(999), '999');
+
+  // Thousands (K) -> 1 decimal stripped if trailing zero
+  assert.equal(formatCompactNumber(1000), '1K');
+  assert.equal(formatCompactNumber(1500), '1.5K');
+  assert.equal(formatCompactNumber(12000), '12K');
+  assert.equal(formatCompactNumber(12500), '12.5K');
+  assert.equal(formatCompactNumber(450000), '450K');
+  assert.equal(formatCompactNumber('75500'), '75.5K');
+
+  // Millions (M) -> up to 2 decimals stripped if trailing zero
+  assert.equal(formatCompactNumber(1000000), '1M');
+  assert.equal(formatCompactNumber(1200000), '1.2M');
+  assert.equal(formatCompactNumber(1250000), '1.25M');
+  assert.equal(formatCompactNumber(50000000), '50M');
+
+  // Billions (B)
+  assert.equal(formatCompactNumber(1000000000), '1B');
+  assert.equal(formatCompactNumber(2500000000), '2.5B');
+
+  // Negative values
+  assert.equal(formatCompactNumber(-500), '-500');
+  assert.equal(formatCompactNumber(-12500), '-12.5K');
+  assert.equal(formatCompactNumber(-1500000), '-1.5M');
+});
+
+test('formatCompactCurrency: prefixes currency symbol with compact numbers', () => {
+  assert.equal(formatCompactCurrency(0), 'NPR 0');
+  assert.equal(formatCompactCurrency(750), 'NPR 750');
+  assert.equal(formatCompactCurrency(12500), 'NPR 12.5K');
+  assert.equal(formatCompactCurrency(450000), 'NPR 450K');
+  assert.equal(formatCompactCurrency(1250000), 'NPR 1.25M');
+  assert.equal(formatCompactCurrency(1000000), 'NPR 1M');
+  assert.equal(formatCompactCurrency(-12500), '-NPR 12.5K');
+  assert.equal(formatCompactCurrency(2500000, 'Rs. '), 'Rs. 2.5M');
+});
+
+test('formatCurrency: preserves exact 2-decimal precision for receipts and audit ledgers', () => {
+  assert.equal(formatCurrency(0), 'NPR 0.00');
+  assert.equal(formatCurrency(1250.5), 'NPR 1,250.50');
+  assert.equal(formatCurrency(1250000), 'NPR 12,50,000.00');
 });
 
