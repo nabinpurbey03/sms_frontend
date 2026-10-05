@@ -1,4 +1,5 @@
 export * from './CloneFeeStructuresDialog';
+export * from './SessionFeeOnboardingBanner';
 export * from './FeeStructureDialog';
 export * from './BatchBillGenerateDialog';
 export * from './AssignStudentFeeDialog';
