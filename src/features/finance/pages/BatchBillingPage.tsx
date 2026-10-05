@@ -22,6 +22,7 @@ import {
   getDefaultBillTitle,
   calculateBaseMonthlyFee,
   getCurrentBsMonthIndex,
+  getNextSequentialMonth,
   computeMonthStatus,
   type MonthStatusInfo,
 } from '../utils/cashierUtils';
@@ -67,6 +68,8 @@ import {
   RotateCcw,
   Check,
   ShieldAlert,
+  AlertCircle,
+  Clock,
 } from 'lucide-react';
 import { NepaliDatePicker } from '@/components/ui/nepali-date-picker';
 
@@ -176,6 +179,17 @@ export const BatchBillingPage: React.FC = () => {
     return BS_MONTHS.map((m) => computeMonthStatus(m, runningMonthIndex, generatedMonthsSet));
   }, [runningMonthIndex, generatedMonthsSet]);
 
+  // Auto-select next sequential month when class or generated months change
+  const nextEligibleMonth = useMemo(() => {
+    return getNextSequentialMonth(runningMonthIndex, generatedMonthsSet);
+  }, [runningMonthIndex, generatedMonthsSet]);
+
+  const selectedMonthStatus = useMemo(() => {
+    return monthStatuses.find((s) => s.month === selectedMonth);
+  }, [monthStatuses, selectedMonth]);
+
+  const isSelectedMonthSelectable = selectedMonthStatus?.isSelectable ?? false;
+
   // Default Due Date (15 days from effective date)
   const defaultDueDate = useMemo(() => {
     const d = new Date(effectiveDate.getTime() + 15 * 24 * 60 * 60 * 1000);
@@ -216,23 +230,13 @@ export const BatchBillingPage: React.FC = () => {
   // Batch Generation Mutation
   const batchBillMutation = useBatchGenerateBills(activeTenantId);
 
-  // Sync selected month when time travel shifts running month or month status updates
+  // Auto-select next sequential month when class or generated months change
   useEffect(() => {
-    const runningMonth = BS_MONTHS[runningMonthIndex];
-    const status = computeMonthStatus(runningMonth, runningMonthIndex, generatedMonthsSet);
-    if (status.isSelectable) {
-      setSelectedMonth(runningMonth);
-      setValue('billing_month', runningMonth);
-    } else {
-      const preferred =
-        monthStatuses.find((s) => s.status === 'AVAILABLE_RUNNING') ||
-        monthStatuses.find((s) => s.status === 'AVAILABLE_BACKLOG');
-      if (preferred) {
-        setSelectedMonth(preferred.month);
-        setValue('billing_month', preferred.month);
-      }
+    if (nextEligibleMonth) {
+      setSelectedMonth(nextEligibleMonth);
+      setValue('billing_month', nextEligibleMonth);
     }
-  }, [runningMonthIndex, generatedMonthsSet, monthStatuses, setValue]);
+  }, [nextEligibleMonth, setValue]);
 
   // Auto-sync default due date when time travel shifts effective date
   useEffect(() => {
@@ -298,6 +302,10 @@ export const BatchBillingPage: React.FC = () => {
     setValue('ad_hoc_fee_amount', undefined);
     setShowAdHoc(false);
     setValue('fee_structure_ids', allAvailableStructures.map((f) => f.id));
+    if (nextEligibleMonth) {
+      setSelectedMonth(nextEligibleMonth);
+      setValue('billing_month', nextEligibleMonth);
+    }
   };
 
   // Calculations for Estimation & Live Preview
@@ -315,6 +323,9 @@ export const BatchBillingPage: React.FC = () => {
   const estimatedClassTotal = baseMonthlyFeePerStudent * filteredStudents.length;
 
   const onFormSubmit = async (values: BatchBillGenerateFormValues) => {
+    if (!nextEligibleMonth || !isSelectedMonthSelectable) {
+      return;
+    }
     try {
       const formattedData: BatchBillGenerateFormValues = {
         ...values,
@@ -434,66 +445,172 @@ export const BatchBillingPage: React.FC = () => {
                 {/* Visual Status Legend */}
                 <div className="flex flex-wrap items-center gap-1.5 sm:gap-2 text-[11px] pb-1">
                   <span className="text-muted-foreground font-semibold text-[10px] uppercase tracking-wider mr-0.5">Legend:</span>
-                  <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-md bg-blue-500/10 text-blue-700 dark:text-blue-300 border border-blue-500/25 font-medium text-[10px]">
-                    <span className="w-1.5 h-1.5 rounded-full bg-blue-500" />
-                    Current Cycle
-                  </span>
-                  <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-md bg-amber-500/10 text-amber-700 dark:text-amber-300 border border-amber-500/25 font-medium text-[10px]">
-                    <span className="w-1.5 h-1.5 rounded-full bg-amber-500" />
-                    Unbilled Backlog
+                  <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-md bg-primary/15 text-primary border border-primary/30 font-medium text-[10px]">
+                    <Sparkles className="w-2.5 h-2.5" />
+                    Next to Bill / Current
                   </span>
                   <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-md bg-emerald-500/10 text-emerald-700 dark:text-emerald-300 border border-emerald-500/25 font-medium text-[10px]">
                     <CheckCircle2 className="w-2.5 h-2.5 text-emerald-600 dark:text-emerald-400" />
                     Generated
                   </span>
-                  <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-md bg-muted text-muted-foreground border border-border/70 font-medium text-[10px]">
+                  <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-md bg-muted text-muted-foreground border border-dashed border-border/80 font-medium text-[10px]">
                     <Lock className="w-2.5 h-2.5 text-muted-foreground" />
+                    Sequence Locked
+                  </span>
+                  <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-md bg-muted/60 text-muted-foreground border border-border/50 font-medium text-[10px]">
+                    <Clock className="w-2.5 h-2.5 text-muted-foreground" />
                     Upcoming
                   </span>
                 </div>
 
+                {/* Status Alert / Context Banner */}
+                {!nextEligibleMonth ? (
+                  <div className="p-3.5 rounded-xl bg-emerald-500/10 border border-emerald-500/30 text-emerald-800 dark:text-emerald-200 text-xs flex items-center gap-2.5">
+                    <CheckCircle2 className="w-4 h-4 shrink-0 text-emerald-600 dark:text-emerald-400" />
+                    <span>
+                      All class billing is completely up to date through <strong>{BS_MONTHS[runningMonthIndex]}</strong>! No invoices pending generation.
+                    </span>
+                  </div>
+                ) : !isSelectedMonthSelectable ? (
+                  <div className="p-3.5 rounded-xl bg-amber-500/10 border border-amber-500/30 text-amber-800 dark:text-amber-200 text-xs flex items-center justify-between gap-2.5">
+                    <div className="flex items-center gap-2">
+                      <AlertCircle className="w-4 h-4 shrink-0 text-amber-600 dark:text-amber-400" />
+                      <span>
+                        {selectedMonthStatus?.tooltipText || `${selectedMonth} cannot be billed out of sequence.`}
+                        {nextEligibleMonth && (
+                          <> Please proceed with <strong>{nextEligibleMonth}</strong>.</>
+                        )}
+                      </span>
+                    </div>
+                    {nextEligibleMonth && (
+                      <Button
+                        type="button"
+                        variant="outline"
+                        size="sm"
+                        onClick={() => handleMonthChange(nextEligibleMonth)}
+                        className="text-xs h-7 px-2 shrink-0 border-amber-500/40 text-amber-700 dark:text-amber-300 hover:bg-amber-500/20"
+                      >
+                        Select {nextEligibleMonth}
+                      </Button>
+                    )}
+                  </div>
+                ) : null}
+
                 {/* 12 BS Month Buttons Grid: 4 columns x 3 rows for clean calendar quarters */}
                 <div className="grid grid-cols-2 sm:grid-cols-4 gap-2.5">
                   {monthStatuses.map((info) => {
-                    const isSelected = selectedMonth === info.month;
                     const monthNumber = String(info.index + 1).padStart(2, '0');
 
                     let cardClass = '';
+                    let badgeComponent: React.ReactNode = null;
                     let subtitleText = '';
                     let subtitleClass = '';
                     let monthNameClass = '';
                     let monthCodeClass = '';
 
-                    if (isSelected) {
-                      cardClass = 'bg-primary/10 border-primary ring-2 ring-primary/40 shadow-xs cursor-pointer';
-                      monthNameClass = 'text-primary font-bold';
-                      monthCodeClass = 'text-primary font-bold';
-                      subtitleText = 'Selected';
-                      subtitleClass = 'text-primary/90 font-semibold';
-                    } else if (info.status === 'AVAILABLE_RUNNING') {
-                      cardClass = 'bg-card border-blue-500/40 hover:border-blue-500 hover:bg-blue-50/50 dark:hover:bg-blue-950/20 shadow-xs cursor-pointer hover:shadow-sm';
-                      monthNameClass = 'text-foreground font-semibold';
-                      monthCodeClass = 'text-blue-600 dark:text-blue-400 font-semibold';
-                      subtitleText = 'Ready to bill';
-                      subtitleClass = 'text-blue-600 dark:text-blue-400 font-medium';
-                    } else if (info.status === 'AVAILABLE_BACKLOG') {
-                      cardClass = 'bg-card border-border/80 hover:border-primary/50 hover:bg-muted/30 shadow-xs cursor-pointer hover:shadow-sm';
-                      monthNameClass = 'text-foreground font-semibold';
-                      monthCodeClass = 'text-muted-foreground font-semibold';
-                      subtitleText = 'Past unbilled';
-                      subtitleClass = 'text-amber-600 dark:text-amber-400 font-medium';
-                    } else if (info.status === 'GENERATED') {
-                      cardClass = 'bg-emerald-500/[0.04] border-emerald-500/30 dark:bg-emerald-950/15 cursor-not-allowed select-none';
-                      monthNameClass = 'text-foreground/90 font-medium';
-                      monthCodeClass = 'text-emerald-700/80 dark:text-emerald-400/80 font-medium';
-                      subtitleText = 'Bills issued';
-                      subtitleClass = 'text-emerald-700 dark:text-emerald-300 font-medium';
-                    } else {
-                      cardClass = 'bg-muted/25 border-dashed border-border/80 cursor-not-allowed select-none';
-                      monthNameClass = 'text-muted-foreground font-medium';
-                      monthCodeClass = 'text-muted-foreground/80 font-medium';
-                      subtitleText = 'Upcoming cycle';
-                      subtitleClass = 'text-muted-foreground/80 font-normal';
+                    switch (info.status) {
+                      case 'AVAILABLE_NEXT':
+                        cardClass =
+                          'ring-2 ring-primary border-primary bg-primary/10 text-primary shadow-sm';
+                        monthNameClass = 'text-primary font-bold';
+                        monthCodeClass = 'text-primary font-bold';
+                        subtitleText = 'Next to bill';
+                        subtitleClass = 'text-primary/90 font-medium';
+                        badgeComponent = (
+                          <Badge className="text-[9px] px-1.5 py-0 font-semibold gap-0.5 bg-primary text-primary-foreground">
+                            <Sparkles className="w-2.5 h-2.5" />
+                            <span>Next to Bill</span>
+                          </Badge>
+                        );
+                        break;
+
+                      case 'AVAILABLE_RUNNING':
+                        cardClass =
+                          'ring-2 ring-primary/80 border-primary bg-primary/15 text-primary font-bold shadow-sm';
+                        monthNameClass = 'text-primary font-bold';
+                        monthCodeClass = 'text-primary font-bold';
+                        subtitleText = 'Current month';
+                        subtitleClass = 'text-primary/90 font-semibold';
+                        badgeComponent = (
+                          <Badge className="text-[9px] px-1.5 py-0 font-semibold gap-0.5 bg-primary text-primary-foreground">
+                            <Sparkles className="w-2.5 h-2.5" />
+                            <span>Current Month</span>
+                          </Badge>
+                        );
+                        break;
+
+                      case 'LOCKED_SEQUENCE':
+                        cardClass =
+                          'opacity-40 cursor-not-allowed bg-muted/20 border-dashed text-muted-foreground';
+                        monthNameClass = 'text-muted-foreground font-medium';
+                        monthCodeClass = 'text-muted-foreground/80 font-medium';
+                        subtitleText = 'Sequence locked';
+                        subtitleClass = 'text-muted-foreground/80 font-normal';
+                        badgeComponent = (
+                          <Badge
+                            variant="outline"
+                            className="text-[9px] px-1.5 py-0 font-medium text-muted-foreground bg-background/80 border-border/70 flex items-center gap-0.5"
+                          >
+                            <Lock className="w-2.5 h-2.5 text-muted-foreground/80" />
+                            <span>Sequence Locked</span>
+                          </Badge>
+                        );
+                        break;
+
+                      case 'LOCKED_PAST':
+                        cardClass =
+                          'opacity-40 cursor-not-allowed bg-destructive/5 border-destructive/20 text-muted-foreground';
+                        monthNameClass = 'text-muted-foreground font-medium';
+                        monthCodeClass = 'text-muted-foreground/80 font-medium';
+                        subtitleText = 'Locked (past)';
+                        subtitleClass = 'text-destructive/80 font-normal';
+                        badgeComponent = (
+                          <Badge
+                            variant="outline"
+                            className="text-[9px] px-1.5 py-0 font-medium text-destructive/80 bg-destructive/10 border-destructive/30 flex items-center gap-0.5"
+                          >
+                            <AlertCircle className="w-2.5 h-2.5 text-destructive/80" />
+                            <span>Locked (Past)</span>
+                          </Badge>
+                        );
+                        break;
+
+                      case 'GENERATED':
+                        cardClass =
+                          'opacity-75 bg-emerald-500/10 border-emerald-500/30 text-emerald-800 dark:text-emerald-200 cursor-default';
+                        monthNameClass = 'text-emerald-950 dark:text-emerald-100 font-semibold';
+                        monthCodeClass = 'text-emerald-700 dark:text-emerald-300 font-semibold';
+                        subtitleText = 'Invoices issued';
+                        subtitleClass = 'text-emerald-700 dark:text-emerald-300 font-medium';
+                        badgeComponent = (
+                          <Badge
+                            variant="outline"
+                            className="text-[9px] px-1.5 py-0 font-semibold bg-emerald-500/15 text-emerald-800 dark:text-emerald-200 border-emerald-500/35 flex items-center gap-0.5"
+                          >
+                            <CheckCircle2 className="w-2.5 h-2.5 text-emerald-600 dark:text-emerald-400" />
+                            <span>Generated</span>
+                          </Badge>
+                        );
+                        break;
+
+                      case 'FUTURE_LOCKED':
+                      default:
+                        cardClass =
+                          'opacity-30 cursor-not-allowed bg-muted/10 border-border/40 text-muted-foreground';
+                        monthNameClass = 'text-muted-foreground font-medium';
+                        monthCodeClass = 'text-muted-foreground/80 font-medium';
+                        subtitleText = 'Upcoming cycle';
+                        subtitleClass = 'text-muted-foreground/80 font-normal';
+                        badgeComponent = (
+                          <Badge
+                            variant="outline"
+                            className="text-[9px] px-1.5 py-0 font-medium text-muted-foreground bg-background/80 border-border/70 flex items-center gap-0.5"
+                          >
+                            <Clock className="w-2.5 h-2.5 text-muted-foreground/80" />
+                            <span>Upcoming</span>
+                          </Badge>
+                        );
+                        break;
                     }
 
                     return (
@@ -513,35 +630,10 @@ export const BatchBillingPage: React.FC = () => {
                           <span className={`text-[10px] font-mono uppercase ${monthCodeClass}`}>
                             M{monthNumber}
                           </span>
-                          {isSelected ? (
-                            <Badge variant="default" className="text-[9px] px-1.5 py-0 font-semibold gap-0.5">
-                              <Check className="w-2.5 h-2.5" />
-                              <span>Active</span>
-                            </Badge>
-                          ) : info.status === 'GENERATED' ? (
-                            <Badge variant="outline" className="text-[9px] px-1.5 py-0 font-semibold bg-emerald-500/15 text-emerald-800 dark:text-emerald-200 border-emerald-500/35 flex items-center gap-0.5">
-                              <CheckCircle2 className="w-2.5 h-2.5 text-emerald-600 dark:text-emerald-400" />
-                              <span>Done</span>
-                            </Badge>
-                          ) : info.status === 'FUTURE_LOCKED' ? (
-                            <Badge variant="outline" className="text-[9px] px-1.5 py-0 font-medium text-muted-foreground bg-background/80 border-border/70 flex items-center gap-0.5">
-                              <Lock className="w-2.5 h-2.5 text-muted-foreground/80" />
-                              <span>Locked</span>
-                            </Badge>
-                          ) : info.status === 'AVAILABLE_RUNNING' ? (
-                            <Badge variant="outline" className="text-[9px] px-1.5 py-0 font-semibold bg-blue-500/15 text-blue-700 dark:text-blue-300 border-blue-500/30">
-                              Current
-                            </Badge>
-                          ) : (
-                            <Badge variant="secondary" className="text-[9px] px-1.5 py-0 font-medium bg-amber-500/15 text-amber-700 dark:text-amber-300 border border-amber-500/25">
-                              Backlog
-                            </Badge>
-                          )}
+                          {badgeComponent}
                         </div>
                         <div className="space-y-0.5">
-                          <div className={`text-xs ${monthNameClass}`}>
-                            {info.month}
-                          </div>
+                          <div className={`text-xs ${monthNameClass}`}>{info.month}</div>
                           <div className={`text-[10px] leading-tight ${subtitleClass}`}>
                             {subtitleText}
                           </div>
@@ -554,7 +646,7 @@ export const BatchBillingPage: React.FC = () => {
                 <div className="text-[11px] text-muted-foreground bg-muted/40 p-2.5 rounded-xl border border-border/50 flex items-center gap-2">
                   <Info className="w-3.5 h-3.5 shrink-0 text-primary" />
                   <span>
-                    Current active school month: <strong className="text-foreground">{BS_MONTHS[runningMonthIndex]}</strong>. Invoices can be generated for the current cycle or any unbilled past months.
+                    Current active school month: <strong className="text-foreground">{BS_MONTHS[runningMonthIndex]}</strong>. Strict sequential billing requires generating invoices month-by-month in order.
                   </span>
                 </div>
               </CardContent>
@@ -948,6 +1040,7 @@ export const BatchBillingPage: React.FC = () => {
                     System Billing Rules
                   </div>
                   <ul className="list-disc list-inside space-y-1 pl-1">
+                    <li>Strict chronological month billing is enforced (no skipping months).</li>
                     <li>Duplicate bills are strictly blocked to prevent double charging for {selectedMonth}.</li>
                     <li>Individual student facility fees (hostel, bus) are auto-calculated.</li>
                     <li>Student advance credit balances reduce final payable dues.</li>
@@ -956,6 +1049,20 @@ export const BatchBillingPage: React.FC = () => {
 
                 {/* The Single, Definitive Primary Action Button */}
                 <div className="pt-2 space-y-2">
+                  {!nextEligibleMonth && (
+                    <div className="p-3 rounded-xl bg-emerald-500/10 border border-emerald-500/20 text-emerald-800 dark:text-emerald-200 text-xs flex items-center gap-2">
+                      <CheckCircle2 className="w-4 h-4 shrink-0 text-emerald-600 dark:text-emerald-400" />
+                      <span>All class billing is completely up to date through {BS_MONTHS[runningMonthIndex]}!</span>
+                    </div>
+                  )}
+
+                  {!isSelectedMonthSelectable && nextEligibleMonth && (
+                    <div className="p-3 rounded-xl bg-amber-500/10 border border-amber-500/20 text-amber-800 dark:text-amber-200 text-xs flex items-center gap-2">
+                      <AlertCircle className="w-4 h-4 shrink-0 text-amber-600 dark:text-amber-400" />
+                      <span>{selectedMonth} is locked. Next eligible month is {nextEligibleMonth}.</span>
+                    </div>
+                  )}
+
                   {filteredStudents.length === 0 && !isLoadingStudents && (
                     <div className="p-3 rounded-xl bg-destructive/10 border border-destructive/20 text-destructive text-xs flex items-center gap-2">
                       <ShieldAlert className="w-4 h-4 shrink-0 text-destructive" />
@@ -966,13 +1073,28 @@ export const BatchBillingPage: React.FC = () => {
                   <Button
                     type="submit"
                     form="batch-billing-form"
-                    disabled={batchBillMutation.isPending || filteredStudents.length === 0}
+                    disabled={
+                      batchBillMutation.isPending ||
+                      filteredStudents.length === 0 ||
+                      !nextEligibleMonth ||
+                      !isSelectedMonthSelectable
+                    }
                     className="w-full gap-2 h-11 text-xs sm:text-sm font-bold shadow-md cursor-pointer rounded-xl"
                   >
                     {batchBillMutation.isPending ? (
                       <>
                         <Loader2 className="w-4 h-4 animate-spin" />
                         Generating Invoices...
+                      </>
+                    ) : !nextEligibleMonth ? (
+                      <>
+                        <CheckCircle2 className="w-4 h-4" />
+                        Invoices Up To Date
+                      </>
+                    ) : !isSelectedMonthSelectable ? (
+                      <>
+                        <Lock className="w-4 h-4" />
+                        Month Locked ({selectedMonth})
                       </>
                     ) : (
                       <>
