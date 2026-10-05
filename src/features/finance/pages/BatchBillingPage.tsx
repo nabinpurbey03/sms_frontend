@@ -449,15 +449,15 @@ export const BatchBillingPage: React.FC = () => {
                     <Sparkles className="w-2.5 h-2.5" />
                     Next to Bill / Current
                   </span>
-                  <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-md bg-emerald-500/10 text-emerald-700 dark:text-emerald-300 border border-emerald-500/25 font-medium text-[10px]">
+                  <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-md bg-emerald-100/90 dark:bg-emerald-900/60 text-emerald-800 dark:text-emerald-200 border border-emerald-300/80 dark:border-emerald-700/80 font-semibold text-[10px]">
                     <CheckCircle2 className="w-2.5 h-2.5 text-emerald-600 dark:text-emerald-400" />
                     Generated
                   </span>
-                  <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-md bg-muted text-muted-foreground border border-dashed border-border/80 font-medium text-[10px]">
-                    <Lock className="w-2.5 h-2.5 text-muted-foreground" />
+                  <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-md bg-amber-100/80 dark:bg-amber-950/60 text-amber-800 dark:text-amber-300 border border-dashed border-amber-300/80 dark:border-amber-800/80 font-medium text-[10px]">
+                    <Lock className="w-2.5 h-2.5 text-amber-700 dark:text-amber-400" />
                     Sequence Locked
                   </span>
-                  <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-md bg-muted/60 text-muted-foreground border border-border/50 font-medium text-[10px]">
+                  <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-md bg-muted/60 text-muted-foreground border border-border/70 font-medium text-[10px]">
                     <Clock className="w-2.5 h-2.5 text-muted-foreground" />
                     Upcoming
                   </span>
@@ -500,6 +500,7 @@ export const BatchBillingPage: React.FC = () => {
                 <div className="grid grid-cols-2 sm:grid-cols-4 gap-2.5">
                   {monthStatuses.map((info) => {
                     const monthNumber = String(info.index + 1).padStart(2, '0');
+                    const isSelected = selectedMonth === info.month;
 
                     let cardClass = '';
                     let badgeComponent: React.ReactNode = null;
@@ -507,17 +508,28 @@ export const BatchBillingPage: React.FC = () => {
                     let subtitleClass = '';
                     let monthNameClass = '';
                     let monthCodeClass = '';
+                    let ringClass = '';
+
+                    if (isSelected) {
+                      if (info.isSelectable) {
+                        ringClass = 'ring-2 ring-primary ring-offset-2 ring-offset-background';
+                      } else if (info.status === 'GENERATED') {
+                        ringClass = 'ring-2 ring-emerald-500/80 ring-offset-2 ring-offset-background';
+                      } else {
+                        ringClass = 'ring-2 ring-amber-500/80 ring-offset-2 ring-offset-background';
+                      }
+                    }
 
                     switch (info.status) {
                       case 'AVAILABLE_NEXT':
                         cardClass =
-                          'ring-2 ring-primary border-primary bg-primary/10 text-primary shadow-sm';
-                        monthNameClass = 'text-primary font-bold';
+                          'border-primary bg-primary/10 text-primary shadow-xs hover:bg-primary/15 cursor-pointer';
+                        monthNameClass = 'text-primary font-bold text-sm';
                         monthCodeClass = 'text-primary font-bold';
                         subtitleText = 'Next to bill';
                         subtitleClass = 'text-primary/90 font-medium';
                         badgeComponent = (
-                          <Badge className="text-[9px] px-1.5 py-0 font-semibold gap-0.5 bg-primary text-primary-foreground">
+                          <Badge className="text-[9px] px-1.5 py-0 font-semibold gap-0.5 bg-primary text-primary-foreground shadow-xs">
                             <Sparkles className="w-2.5 h-2.5" />
                             <span>Next to Bill</span>
                           </Badge>
@@ -526,13 +538,13 @@ export const BatchBillingPage: React.FC = () => {
 
                       case 'AVAILABLE_RUNNING':
                         cardClass =
-                          'ring-2 ring-primary/80 border-primary bg-primary/15 text-primary font-bold shadow-sm';
-                        monthNameClass = 'text-primary font-bold';
+                          'border-primary bg-primary/15 text-primary font-bold shadow-xs hover:bg-primary/20 cursor-pointer';
+                        monthNameClass = 'text-primary font-bold text-sm';
                         monthCodeClass = 'text-primary font-bold';
                         subtitleText = 'Current month';
                         subtitleClass = 'text-primary/90 font-semibold';
                         badgeComponent = (
-                          <Badge className="text-[9px] px-1.5 py-0 font-semibold gap-0.5 bg-primary text-primary-foreground">
+                          <Badge className="text-[9px] px-1.5 py-0 font-semibold gap-0.5 bg-primary text-primary-foreground shadow-xs">
                             <Sparkles className="w-2.5 h-2.5" />
                             <span>Current Month</span>
                           </Badge>
@@ -541,17 +553,17 @@ export const BatchBillingPage: React.FC = () => {
 
                       case 'LOCKED_SEQUENCE':
                         cardClass =
-                          'opacity-40 cursor-not-allowed bg-muted/20 border-dashed text-muted-foreground';
-                        monthNameClass = 'text-muted-foreground font-medium';
-                        monthCodeClass = 'text-muted-foreground/80 font-medium';
-                        subtitleText = 'Sequence locked';
-                        subtitleClass = 'text-muted-foreground/80 font-normal';
+                          'bg-amber-50/50 dark:bg-amber-950/20 border-dashed border-amber-300/80 dark:border-amber-800/60 hover:bg-amber-50/80 dark:hover:bg-amber-950/40 hover:border-amber-400 cursor-pointer text-foreground';
+                        monthNameClass = 'text-foreground font-semibold text-sm';
+                        monthCodeClass = 'text-amber-800/80 dark:text-amber-400 font-mono font-semibold';
+                        subtitleText = 'Needs earlier month';
+                        subtitleClass = 'text-amber-700 dark:text-amber-400 font-medium';
                         badgeComponent = (
                           <Badge
                             variant="outline"
-                            className="text-[9px] px-1.5 py-0 font-medium text-muted-foreground bg-background/80 border-border/70 flex items-center gap-0.5"
+                            className="text-[9px] px-1.5 py-0 font-medium text-amber-800 dark:text-amber-300 bg-amber-100/90 dark:bg-amber-950/60 border-amber-300/80 dark:border-amber-800/80 flex items-center gap-0.5"
                           >
-                            <Lock className="w-2.5 h-2.5 text-muted-foreground/80" />
+                            <Lock className="w-2.5 h-2.5 text-amber-700 dark:text-amber-400" />
                             <span>Sequence Locked</span>
                           </Badge>
                         );
@@ -559,17 +571,17 @@ export const BatchBillingPage: React.FC = () => {
 
                       case 'LOCKED_PAST':
                         cardClass =
-                          'opacity-40 cursor-not-allowed bg-destructive/5 border-destructive/20 text-muted-foreground';
-                        monthNameClass = 'text-muted-foreground font-medium';
-                        monthCodeClass = 'text-muted-foreground/80 font-medium';
-                        subtitleText = 'Locked (past)';
-                        subtitleClass = 'text-destructive/80 font-normal';
+                          'bg-rose-50/50 dark:bg-rose-950/20 border-dashed border-rose-300/80 dark:border-rose-800/60 hover:bg-rose-50/80 dark:hover:bg-rose-950/40 hover:border-rose-400 cursor-pointer text-foreground';
+                        monthNameClass = 'text-foreground font-semibold text-sm';
+                        monthCodeClass = 'text-rose-800/80 dark:text-rose-400 font-mono font-semibold';
+                        subtitleText = 'Later bill exists';
+                        subtitleClass = 'text-rose-700 dark:text-rose-400 font-medium';
                         badgeComponent = (
                           <Badge
                             variant="outline"
-                            className="text-[9px] px-1.5 py-0 font-medium text-destructive/80 bg-destructive/10 border-destructive/30 flex items-center gap-0.5"
+                            className="text-[9px] px-1.5 py-0 font-medium text-rose-800 dark:text-rose-300 bg-rose-100/90 dark:bg-rose-950/60 border-rose-300/80 dark:border-rose-800/80 flex items-center gap-0.5"
                           >
-                            <AlertCircle className="w-2.5 h-2.5 text-destructive/80" />
+                            <AlertCircle className="w-2.5 h-2.5 text-rose-700 dark:text-rose-400" />
                             <span>Locked (Past)</span>
                           </Badge>
                         );
@@ -577,15 +589,15 @@ export const BatchBillingPage: React.FC = () => {
 
                       case 'GENERATED':
                         cardClass =
-                          'opacity-75 bg-emerald-500/10 border-emerald-500/30 text-emerald-800 dark:text-emerald-200 cursor-default';
-                        monthNameClass = 'text-emerald-950 dark:text-emerald-100 font-semibold';
-                        monthCodeClass = 'text-emerald-700 dark:text-emerald-300 font-semibold';
+                          'bg-emerald-50/70 dark:bg-emerald-950/30 border-emerald-300 dark:border-emerald-800/70 hover:bg-emerald-50/90 dark:hover:bg-emerald-950/50 hover:border-emerald-400 cursor-pointer text-foreground';
+                        monthNameClass = 'text-emerald-950 dark:text-emerald-100 font-bold text-sm';
+                        monthCodeClass = 'text-emerald-700 dark:text-emerald-400 font-mono font-semibold';
                         subtitleText = 'Invoices issued';
-                        subtitleClass = 'text-emerald-700 dark:text-emerald-300 font-medium';
+                        subtitleClass = 'text-emerald-700 dark:text-emerald-400 font-medium';
                         badgeComponent = (
                           <Badge
                             variant="outline"
-                            className="text-[9px] px-1.5 py-0 font-semibold bg-emerald-500/15 text-emerald-800 dark:text-emerald-200 border-emerald-500/35 flex items-center gap-0.5"
+                            className="text-[9px] px-1.5 py-0 font-semibold bg-emerald-100/90 text-emerald-800 dark:bg-emerald-900/60 dark:text-emerald-200 border-emerald-300/80 dark:border-emerald-700/80 flex items-center gap-0.5"
                           >
                             <CheckCircle2 className="w-2.5 h-2.5 text-emerald-600 dark:text-emerald-400" />
                             <span>Generated</span>
@@ -596,17 +608,17 @@ export const BatchBillingPage: React.FC = () => {
                       case 'FUTURE_LOCKED':
                       default:
                         cardClass =
-                          'opacity-30 cursor-not-allowed bg-muted/10 border-border/40 text-muted-foreground';
-                        monthNameClass = 'text-muted-foreground font-medium';
-                        monthCodeClass = 'text-muted-foreground/80 font-medium';
+                          'bg-muted/40 dark:bg-muted/20 border-border/80 hover:bg-muted/60 hover:border-border cursor-pointer text-foreground';
+                        monthNameClass = 'text-foreground/90 font-semibold text-sm';
+                        monthCodeClass = 'text-muted-foreground font-mono font-medium';
                         subtitleText = 'Upcoming cycle';
-                        subtitleClass = 'text-muted-foreground/80 font-normal';
+                        subtitleClass = 'text-muted-foreground font-medium';
                         badgeComponent = (
                           <Badge
                             variant="outline"
-                            className="text-[9px] px-1.5 py-0 font-medium text-muted-foreground bg-background/80 border-border/70 flex items-center gap-0.5"
+                            className="text-[9px] px-1.5 py-0 font-medium text-muted-foreground bg-background border-border flex items-center gap-0.5"
                           >
-                            <Clock className="w-2.5 h-2.5 text-muted-foreground/80" />
+                            <Clock className="w-2.5 h-2.5 text-muted-foreground" />
                             <span>Upcoming</span>
                           </Badge>
                         );
@@ -617,14 +629,9 @@ export const BatchBillingPage: React.FC = () => {
                       <button
                         key={info.month}
                         type="button"
-                        disabled={!info.isSelectable}
-                        onClick={() => {
-                          if (info.isSelectable) {
-                            handleMonthChange(info.month);
-                          }
-                        }}
+                        onClick={() => handleMonthChange(info.month)}
                         title={info.tooltipText}
-                        className={`p-3 rounded-xl border text-left transition-all flex flex-col justify-between min-h-[78px] ${cardClass}`}
+                        className={`p-3 rounded-xl border text-left transition-all flex flex-col justify-between min-h-[82px] ${cardClass} ${ringClass}`}
                       >
                         <div className="flex items-center justify-between w-full mb-1">
                           <span className={`text-[10px] font-mono uppercase ${monthCodeClass}`}>
