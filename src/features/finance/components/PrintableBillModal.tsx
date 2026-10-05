@@ -422,20 +422,20 @@ export const PrintableBillModal: React.FC<PrintableBillModalProps> = ({
 
                     {bill.prior_unpaid_months && bill.prior_unpaid_months.length > 0 && (
                       <>
-                        <div className="space-y-1.5 py-2 border-t border-dashed border-zinc-300 text-zinc-700">
-                          <span className="text-[10px] font-bold uppercase tracking-wider text-amber-900 block">
+                        <div className="space-y-1.5 py-2 border-t border-dashed border-zinc-300 text-zinc-700 print:text-black print:border-zinc-400">
+                          <span className="text-[10px] font-bold uppercase tracking-wider text-amber-900 print:text-black block">
                             Unpaid Previous Months Breakdown:
                           </span>
                           {bill.prior_unpaid_months.map((p, idx) => (
-                            <div key={p.bill_id || idx} className="flex justify-between text-xs text-amber-950 font-medium">
+                            <div key={p.bill_id || idx} className="flex justify-between text-xs text-amber-950 print:text-black font-medium">
                               <span>Due amount for {p.billing_month || 'Previous Cycle'}:</span>
-                              <span className="font-mono">+ NPR {Number(p.due_amount).toLocaleString('en-IN', { minimumFractionDigits: 2 })}</span>
+                              <span className="font-mono print:text-black">+ NPR {Number(p.due_amount).toLocaleString('en-IN', { minimumFractionDigits: 2 })}</span>
                             </div>
                           ))}
                         </div>
-                        <div className="flex justify-between py-1.5 border-t-2 border-zinc-900 font-bold text-xs bg-amber-50/80 px-2 mt-1 border-amber-900/20">
-                          <span className="text-amber-950">Total Outstanding Account Balance:</span>
-                          <span className="font-mono text-rose-700">
+                        <div className="flex justify-between py-1.5 border-t-2 border-zinc-900 font-bold text-xs bg-amber-50/80 print:bg-transparent px-2 mt-1 border-amber-900/20 print:border-zinc-900">
+                          <span className="text-amber-950 print:text-black">Total Outstanding Account Balance:</span>
+                          <span className="font-mono text-rose-700 print:text-black">
                             NPR {totalAccountDue.toLocaleString('en-IN', {
                               minimumFractionDigits: 2,
                               maximumFractionDigits: 2,
