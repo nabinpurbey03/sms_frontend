@@ -29,10 +29,22 @@ import {
   TableHeader,
   TableRow,
 } from '@/components/ui/table';
+import {
+  DropdownMenu,
+  DropdownMenuTrigger,
+  DropdownMenuContent,
+  DropdownMenuItem,
+} from '@/components/ui/dropdown-menu';
+import { useAcademicYears } from '@/features/academic-year/hooks/useAcademicYears';
 import { FeeStructureDialog } from '../components/FeeStructureDialog';
 import { CloneFeeStructuresDialog } from '../components/CloneFeeStructuresDialog';
 import { SchoolFeeHeadsTable } from '../components/SchoolFeeHeadsTable';
 import { StudentLevelFeesTab } from '../components/StudentLevelFeesTab';
+import { SessionFeeOnboardingBanner } from '../components';
+import {
+  computeSessionCloneBannerState,
+  filterAndSortCandidateAcademicYears,
+} from '../utils/feeCloneUtils';
 import {
   Coins,
   Plus,
@@ -44,6 +56,7 @@ import {
   Users,
   GraduationCap,
   Sparkles,
+  MoreHorizontal,
 } from 'lucide-react';
 import type { FeeStructure } from '../types';
 import type { FeeStructureFormValues } from '../schema';
@@ -62,6 +75,11 @@ export const FeeStructuresPage: React.FC = () => {
   const effectiveTenantId = pageTenantId || activeTenantId;
   const { data: effectiveTenant } = useTenant(effectiveTenantId);
   const { currentYear } = useCurrentAcademicYear(effectiveTenantId);
+  const { data: academicYears = [], isLoading: isLoadingYears } = useAcademicYears(effectiveTenantId);
+
+  const candidateYears = useMemo(() => {
+    return filterAndSortCandidateAcademicYears(academicYears, currentYear?.id);
+  }, [academicYears, currentYear?.id]);
 
   // Tab State: 'school' | 'class' | 'student'
   const [activeTab, setActiveTab] = useState<'school' | 'class' | 'student'>('class');
@@ -122,6 +140,16 @@ export const FeeStructuresPage: React.FC = () => {
     () => classOverview.reduce((sum, c) => sum + (c.transport_users_count || 0), 0),
     [classOverview]
   );
+
+  const totalFeeHeadsCount = (schoolFees?.length || 0) + totalClassFeeHeads;
+
+  const bannerState = useMemo(() => {
+    return computeSessionCloneBannerState({
+      totalFeeHeadsCount,
+      candidateYears,
+      isLoading: isLoadingSchoolFees || isLoadingOverview || isLoadingYears,
+    });
+  }, [totalFeeHeadsCount, candidateYears, isLoadingSchoolFees, isLoadingOverview, isLoadingYears]);
 
   const handleSaveFeeStructure = async (values: FeeStructureFormValues) => {
     if (editingFeeStructure) {
@@ -244,15 +272,27 @@ export const FeeStructuresPage: React.FC = () => {
                 <span>Session: {currentYear?.name || 'Active Session'}</span>
               </div>
 
-              <Button
-                variant="outline"
-                size="sm"
-                onClick={() => setIsCloneDialogOpen(true)}
-                className="gap-1.5 cursor-pointer border-border/80 hover:bg-accent"
-              >
-                <CopyPlus className="w-4 h-4 text-purple-600 dark:text-purple-400" />
-                <span>Clone from Previous Session</span>
-              </Button>
+              <DropdownMenu>
+                <DropdownMenuTrigger asChild>
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    className="h-8 w-8 p-0 cursor-pointer border-border/80 hover:bg-accent"
+                    aria-label="More actions"
+                  >
+                    <MoreHorizontal className="w-4 h-4 text-muted-foreground" />
+                  </Button>
+                </DropdownMenuTrigger>
+                <DropdownMenuContent align="end" className="w-56">
+                  <DropdownMenuItem
+                    onClick={() => setIsCloneDialogOpen(true)}
+                    className="cursor-pointer gap-2"
+                  >
+                    <CopyPlus className="w-4 h-4 text-purple-600 dark:text-purple-400" />
+                    <span>Clone from Previous Session</span>
+                  </DropdownMenuItem>
+                </DropdownMenuContent>
+              </DropdownMenu>
 
               <Button
                 size="sm"
@@ -304,6 +344,21 @@ export const FeeStructuresPage: React.FC = () => {
               loading={isLoadingOverview}
             />
           </div>
+
+          {/* Smart Onboarding Banner (when session has 0 fee heads) */}
+          {bannerState.shouldShowBanner && (
+            <SessionFeeOnboardingBanner
+              currentSessionName={currentYear?.name || 'Current Session'}
+              hasPreviousSessions={bannerState.hasPreviousSessions}
+              latestPreviousYearName={bannerState.latestPreviousYearName}
+              onOpenCloneDialog={() => setIsCloneDialogOpen(true)}
+              onAddFeeStructure={() => {
+                setEditingFeeStructure(null);
+                setSelectedClassIdForAdd('');
+                setIsFeeStructureOpen(true);
+              }}
+            />
+          )}
 
           {/* 3-Level Tab Switcher */}
           <div className="flex items-center gap-1.5 p-1 bg-muted/50 rounded-xl border border-border/60 max-w-full overflow-x-auto">
