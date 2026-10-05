@@ -42,7 +42,7 @@ import {
   Building2,
   Percent,
   Plus,
-  Lock,
+  Calendar,
   ArrowLeft,
   Search,
   X,
@@ -379,8 +379,8 @@ export const ClassFeeStructurePage: React.FC = () => {
               variant="outline"
               className="gap-1.5 text-xs font-semibold bg-muted/60 text-muted-foreground border-border/80"
             >
-              <Lock className="w-3 h-3 text-muted-foreground" />
-              <span>Session: {currentYear?.name || 'Active Session'} (Locked)</span>
+              <Calendar className="w-3 h-3 text-muted-foreground" />
+              <span>Session: {currentYear?.name || 'Active Session'}</span>
             </Badge>
           </div>
 

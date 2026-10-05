@@ -23,7 +23,6 @@ import {
   Coins,
   Receipt,
   Printer,
-  Lock,
   Loader2,
   Calendar,
   LayoutDashboard,
@@ -153,17 +152,14 @@ export const FinanceDashboardPage: React.FC = () => {
         </div>
 
         <div className="flex flex-wrap items-center gap-2.5">
-          {/* Locked Academic Session Indicator */}
+          {/* Academic Session Indicator */}
           <div
             className="flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-muted/60 border border-border/60 text-xs font-semibold text-foreground/80 shadow-2xs"
-            title="Finance operations are strictly bound to the active academic session"
+            title="Active academic session"
           >
-            <Lock className="w-3.5 h-3.5 text-primary" />
+            <Calendar className="w-3.5 h-3.5 text-primary" />
             <span>
               Session: {isLoadingYear ? 'Loading...' : currentYear?.name || 'Active Session'}
-            </span>
-            <span className="text-[10px] uppercase tracking-wider text-muted-foreground font-mono">
-              (Locked)
             </span>
           </div>
 

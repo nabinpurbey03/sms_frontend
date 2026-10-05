@@ -9,7 +9,6 @@ import {
   Loader2,
   ShieldAlert,
   CalendarDays,
-  Lock,
   AlertTriangle,
 } from 'lucide-react';
 import { useAuth } from '@/auth/useAuth';
@@ -480,8 +479,8 @@ export const CreateExamPage: React.FC = () => {
                     </div>
                   </div>
                   <div className="flex items-center gap-1.5 text-xs text-muted-foreground bg-background/80 px-2 py-1 rounded-md border border-border/60 shrink-0">
-                    <Lock className="w-3 h-3 text-muted-foreground" />
-                    <span className="text-[11px] font-medium hidden sm:inline">Locked to current year</span>
+                    <CalendarDays className="w-3 h-3 text-muted-foreground" />
+                    <span className="text-[11px] font-medium hidden sm:inline">Active session</span>
                   </div>
                 </div>
               ) : (

@@ -10,7 +10,7 @@ import {
   FileText,
   CreditCard,
   Printer,
-  Lock,
+  Calendar,
   Loader2,
   Receipt,
   ArrowLeft,
@@ -64,8 +64,8 @@ export const StudentLedgerPage: React.FC = () => {
         </div>
 
         <div className="flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-primary/10 border border-primary/20 text-xs font-semibold text-primary">
-          <Lock className="w-3.5 h-3.5 text-primary" />
-          <span>Session: {currentYear?.name || 'Active Session'} (Locked)</span>
+          <Calendar className="w-3.5 h-3.5 text-primary" />
+          <span>Session: {currentYear?.name || 'Active Session'}</span>
         </div>
       </div>
 
