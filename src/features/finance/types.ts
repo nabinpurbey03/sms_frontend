@@ -212,6 +212,7 @@ export interface FeeBill {
   total_payable: number | string;
   paid_amount: number | string;
   due_amount: number | string;
+  discount_amount?: number | string;
   status: BillStatus;
   notes?: string | null;
   items: FeeBillItem[];

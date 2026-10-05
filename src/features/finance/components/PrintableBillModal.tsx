@@ -51,17 +51,24 @@ export const PrintableBillModal: React.FC<PrintableBillModalProps> = ({
     return () => window.removeEventListener('keydown', handleKeyDown);
   }, [isOpen]);
 
-  const getStatusBadge = (status?: string) => {
+  const discountAmount = bill
+    ? Number(
+        bill.discount_amount ??
+          Math.max(0, Number(bill.total_payable) - Number(bill.paid_amount) - Number(bill.due_amount))
+      )
+    : 0;
+
+  const getStatusBadge = (status?: string, discount: number = 0) => {
     switch (status?.toUpperCase()) {
       case 'PAID':
         return {
-          label: 'PAID',
+          label: discount > 0 ? 'PAID (CONCESSION)' : 'PAID',
           className: 'bg-emerald-500/10 text-emerald-700 dark:text-emerald-400 border-emerald-500/30',
           printColor: 'text-emerald-800 border-emerald-600 bg-emerald-50',
         };
       case 'PARTIAL':
         return {
-          label: 'PARTIALLY PAID',
+          label: discount > 0 ? 'PARTIALLY PAID (CONCESSION)' : 'PARTIALLY PAID',
           className: 'bg-amber-500/10 text-amber-700 dark:text-amber-400 border-amber-500/30',
           printColor: 'text-amber-800 border-amber-600 bg-amber-50',
         };
@@ -81,7 +88,7 @@ export const PrintableBillModal: React.FC<PrintableBillModalProps> = ({
     }
   };
 
-  const statusMeta = getStatusBadge(bill?.status);
+  const statusMeta = getStatusBadge(bill?.status, discountAmount);
   const isOverdue =
     bill?.due_date &&
     new Date(bill.due_date) < new Date() &&
@@ -361,6 +368,17 @@ export const PrintableBillModal: React.FC<PrintableBillModalProps> = ({
                         })}
                       </span>
                     </div>
+                    {discountAmount > 0 && (
+                      <div className="flex justify-between py-0.5 text-amber-700 font-medium">
+                        <span>Less: Concession / Counter Waiver:</span>
+                        <span className="font-mono">
+                          - NPR {discountAmount.toLocaleString('en-IN', {
+                            minimumFractionDigits: 2,
+                            maximumFractionDigits: 2,
+                          })}
+                        </span>
+                      </div>
+                    )}
                     {Number(bill.paid_amount) > 0 && (
                       <div className="flex justify-between py-0.5 text-emerald-700 font-medium">
                         <span>Paid to Date:</span>

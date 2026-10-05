@@ -25,8 +25,15 @@ import {
   Loader2,
   Calendar,
   Filter,
+  Tag,
 } from 'lucide-react';
 import type { FeeBill, BillStatus, FeePayment } from '../types';
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipProvider,
+  TooltipTrigger,
+} from '@/components/ui/tooltip';
 import { PaymentCollectDialog } from '../components/PaymentCollectDialog';
 import { PrintableBillModal } from '../components/PrintableBillModal';
 import { PrintableReceiptModal } from '../components/PrintableReceiptModal';
@@ -68,11 +75,53 @@ export const BillsPage: React.FC = () => {
   const recordPaymentMutation = useRecordPayment(activeTenantId);
   const batchBillMutation = useBatchGenerateBills(activeTenantId);
 
-  const getStatusBadge = (status: BillStatus) => {
+  const getStatusBadge = (status: BillStatus, discountAmt: number = 0) => {
     switch (status) {
       case 'PAID':
+        if (discountAmt > 0) {
+          return (
+            <TooltipProvider delayDuration={150}>
+              <Tooltip>
+                <TooltipTrigger asChild>
+                  <span className="inline-flex items-center gap-1 cursor-help">
+                    <Badge variant="success" className="gap-1 pr-1.5 shadow-2xs">
+                      PAID
+                      <span className="text-[8px] font-mono font-bold bg-emerald-700/30 text-emerald-100 dark:text-emerald-200 px-1 py-0.2 rounded-xs uppercase">
+                        DISC
+                      </span>
+                    </Badge>
+                  </span>
+                </TooltipTrigger>
+                <TooltipContent side="top" className="text-xs font-normal">
+                  Fully settled with NPR {discountAmt.toFixed(2)} counter discount.
+                </TooltipContent>
+              </Tooltip>
+            </TooltipProvider>
+          );
+        }
         return <Badge variant="success">PAID</Badge>;
       case 'PARTIAL':
+        if (discountAmt > 0) {
+          return (
+            <TooltipProvider delayDuration={150}>
+              <Tooltip>
+                <TooltipTrigger asChild>
+                  <span className="inline-flex items-center gap-1 cursor-help">
+                    <Badge variant="warning" className="gap-1 pr-1.5 shadow-2xs">
+                      PARTIAL
+                      <span className="text-[8px] font-mono font-bold bg-amber-700/30 text-amber-100 dark:text-amber-200 px-1 py-0.2 rounded-xs uppercase">
+                        DISC
+                      </span>
+                    </Badge>
+                  </span>
+                </TooltipTrigger>
+                <TooltipContent side="top" className="text-xs font-normal">
+                  Partially settled with NPR {discountAmt.toFixed(2)} counter discount.
+                </TooltipContent>
+              </Tooltip>
+            </TooltipProvider>
+          );
+        }
         return <Badge variant="warning">PARTIAL</Badge>;
       case 'CANCELLED':
         return <Badge variant="secondary">CANCELLED</Badge>;
@@ -213,6 +262,9 @@ export const BillsPage: React.FC = () => {
                   const due = Number(b.due_amount);
                   const isPaid = b.status === 'PAID';
                   const isCancelled = b.status === 'CANCELLED';
+                  const discount = Number(
+                    b.discount_amount ?? Math.max(0, Number(b.total_payable) - Number(b.paid_amount) - due)
+                  );
 
                   return (
                     <tr key={b.id} className="hover:bg-muted/30 transition-colors">
@@ -242,15 +294,48 @@ export const BillsPage: React.FC = () => {
                       <td className="py-2.5 px-3 text-right font-mono font-medium">
                         {Number(b.total_payable).toFixed(2)}
                       </td>
-                      <td className="py-2.5 px-3 text-right font-mono text-emerald-600 font-medium">
-                        {Number(b.paid_amount).toFixed(2)}
+                      <td className="py-2.5 px-3 text-right font-mono">
+                        {discount > 0 ? (
+                          <TooltipProvider delayDuration={150}>
+                            <Tooltip>
+                              <TooltipTrigger asChild>
+                                <div className="inline-flex flex-col items-end cursor-help group">
+                                  <span className="text-emerald-600 dark:text-emerald-400 font-medium">
+                                    {Number(b.paid_amount).toFixed(2)}
+                                  </span>
+                                  <span className="inline-flex items-center gap-0.5 text-[10px] font-medium text-amber-600 dark:text-amber-400 bg-amber-50 dark:bg-amber-950/60 border border-amber-200 dark:border-amber-800/60 px-1 py-0.2 rounded-xs mt-0.5">
+                                    <Tag className="w-2.5 h-2.5" />
+                                    -{discount.toFixed(2)}
+                                  </span>
+                                </div>
+                              </TooltipTrigger>
+                              <TooltipContent side="left" className="text-xs space-y-1 p-2.5 shadow-md">
+                                <p className="font-semibold border-b border-border/50 pb-1">Payment & Discount Breakdown</p>
+                                <div className="grid grid-cols-2 gap-x-3 text-[11px]">
+                                  <span className="text-muted-foreground">Total Payable:</span>
+                                  <span className="font-mono text-right">NPR {Number(b.total_payable).toFixed(2)}</span>
+                                  <span className="text-amber-600 dark:text-amber-400 font-medium">Discount / Waived:</span>
+                                  <span className="font-mono text-right text-amber-600 dark:text-amber-400 font-medium">- NPR {discount.toFixed(2)}</span>
+                                  <span className="text-emerald-600 dark:text-emerald-400 font-medium">Net Cash Paid:</span>
+                                  <span className="font-mono text-right text-emerald-600 dark:text-emerald-400 font-medium">NPR {Number(b.paid_amount).toFixed(2)}</span>
+                                  <span className="text-muted-foreground pt-1 border-t border-border/40">Balance Due:</span>
+                                  <span className="font-mono text-right pt-1 border-t border-border/40 font-bold">NPR {due.toFixed(2)}</span>
+                                </div>
+                              </TooltipContent>
+                            </Tooltip>
+                          </TooltipProvider>
+                        ) : (
+                          <span className="text-emerald-600 dark:text-emerald-400 font-medium">
+                            {Number(b.paid_amount).toFixed(2)}
+                          </span>
+                        )}
                       </td>
                       <td className="py-2.5 px-3 text-right font-mono font-bold">
                         <span className={due > 0 ? 'text-destructive' : 'text-muted-foreground'}>
                           {due.toFixed(2)}
                         </span>
                       </td>
-                      <td className="py-2.5 px-3 text-center">{getStatusBadge(b.status)}</td>
+                      <td className="py-2.5 px-3 text-center">{getStatusBadge(b.status, discount)}</td>
                       <td className="py-2.5 px-3 text-right">
                         <div className="flex items-center justify-end gap-1">
                           {due > 0 && !isCancelled && (
