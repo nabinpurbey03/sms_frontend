@@ -739,15 +739,6 @@ export const useCapacityUtilization = (
   });
 };
 
-export const usePlatformBenchmark = (options?: { enabled?: boolean }) => {
-  return useQuery({
-    queryKey: [ACADEMIC_ANALYTICS_QUERY_KEY, 'platform_benchmark'],
-    queryFn: () => academicApi.getPlatformBenchmark(),
-    enabled: options?.enabled ?? true,
-    staleTime: 1000 * 60 * 5,
-  });
-};
-
 export const useGraduatedStudents = (
   tenantId: string | null,
   params?: {

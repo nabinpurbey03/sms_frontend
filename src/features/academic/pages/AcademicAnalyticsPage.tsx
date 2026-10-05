@@ -19,7 +19,6 @@ import { TermGrowthAreaChart } from '../components/analytics/TermGrowthAreaChart
 import { SubjectMasteryBarChart } from '../components/analytics/SubjectMasteryBarChart';
 import { SubjectMasteryTable } from '../components/analytics/SubjectMasteryTable';
 import { CapacityUtilizationView } from '../components/analytics/CapacityUtilizationView';
-import { PlatformBenchmarkScorecard } from '../components/analytics/PlatformBenchmarkScorecard';
 import { GraduatedStudentsTable } from '../components/GraduatedStudentsTable';
 import { TenantRequiredState } from '@/components/common/TenantRequiredState';
 import { EmptyState } from '@/components/common/EmptyState';
@@ -59,7 +58,6 @@ import {
   Award,
   BookOpen,
   Layers,
-  Globe,
 } from 'lucide-react';
 
 export const AcademicAnalyticsPage: React.FC = () => {
@@ -319,12 +317,6 @@ export const AcademicAnalyticsPage: React.FC = () => {
               <GraduationCap className="w-4 h-4 text-purple-600 dark:text-purple-400" />
               <span>Graduated Students</span>
             </TabsTrigger>
-            {isSuperAdmin && (
-              <TabsTrigger value="benchmark" className="flex items-center gap-2 text-xs sm:text-sm font-medium">
-                <Globe className="w-4 h-4" />
-                <span>Network Benchmark</span>
-              </TabsTrigger>
-            )}
           </TabsList>
 
           {/* TAB 1: Retention & Progression */}
@@ -787,13 +779,6 @@ export const AcademicAnalyticsPage: React.FC = () => {
               initialAcademicYearId={selectedYearId}
             />
           </TabsContent>
-
-          {/* TAB 6: Network Benchmark (SuperAdmin only) */}
-          {isSuperAdmin && (
-            <TabsContent value="benchmark" className="space-y-6 mt-4">
-              <PlatformBenchmarkScorecard />
-            </TabsContent>
-          )}
         </Tabs>
       )}
     </div>

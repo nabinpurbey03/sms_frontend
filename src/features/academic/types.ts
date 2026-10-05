@@ -305,27 +305,6 @@ export interface CapacityUtilizationResponse {
   sections_breakdown: SectionCapacityMetric[];
 }
 
-export interface SchoolBenchmarkCardDTO {
-  tenant_id: string;
-  school_name: string;
-  domain_name?: string | null;
-  active_students_count: number;
-  total_classes_count: number;
-  total_sections_count: number;
-  attendance_rate_pct?: number | null;
-  retention_rate_pct?: number | null;
-  average_gpa?: number | null;
-  performance_tier: 'Top Tier' | 'Strong' | 'Average' | 'Requires Support';
-}
-
-export interface PlatformNetworkBenchmarkResponse {
-  total_schools_evaluated: number;
-  platform_average_attendance: number;
-  platform_average_retention: number;
-  platform_total_students: number;
-  schools_ranked: SchoolBenchmarkCardDTO[];
-}
-
 export interface GraduatedStudentDTO {
   student_id: string;
   first_name: string;
