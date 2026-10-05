@@ -7,6 +7,10 @@ import {
   History,
   X,
   Filter,
+  MoreHorizontal,
+  Copy,
+  Phone,
+  PhoneCall,
 } from 'lucide-react';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
@@ -20,6 +24,13 @@ import {
   TableHeader,
   TableRow,
 } from '@/components/ui/table';
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuSeparator,
+  DropdownMenuTrigger,
+} from '@/components/ui/dropdown-menu';
 import { useAcademicYears } from '@/features/academic-year/hooks';
 import { useClasses, useGraduatedStudents } from '../hooks';
 import type { AcademicStudent, GraduatedStudentDTO } from '../types';
@@ -92,6 +103,13 @@ export const GraduatedStudentsTable: React.FC<GraduatedStudentsTableProps> = ({ 
     }
   };
 
+  const handleCopy = (text: string, message: string) => {
+    if (typeof navigator !== 'undefined' && navigator.clipboard?.writeText) {
+      navigator.clipboard.writeText(text).catch(() => {});
+    }
+    toast.success(message);
+  };
+
   // CSV Export Handler
   const handleExportCSV = () => {
     if (!graduates.length) {
@@ -157,7 +175,7 @@ export const GraduatedStudentsTable: React.FC<GraduatedStudentsTableProps> = ({ 
               <button
                 type="button"
                 onClick={() => setSearchQuery('')}
-                className="absolute right-2.5 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground"
+                className="absolute right-2.5 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground cursor-pointer"
               >
                 <X className="w-3.5 h-3.5" />
               </button>
@@ -194,8 +212,46 @@ export const GraduatedStudentsTable: React.FC<GraduatedStudentsTableProps> = ({ 
           </div>
         </div>
 
+        {/* Graduating Batch Quick-Filter Chips */}
+        <div className="flex items-center gap-1.5 overflow-x-auto no-scrollbar py-1">
+          <span className="text-xs font-semibold text-muted-foreground whitespace-nowrap mr-1 flex items-center gap-1">
+            <GraduationCap className="w-3.5 h-3.5" />
+            <span>Batches:</span>
+          </span>
+          <button
+            type="button"
+            onClick={() => setSelectedBatchId('ALL')}
+            className={cn(
+              'px-3 py-1 rounded-full text-xs font-medium whitespace-nowrap transition-colors cursor-pointer border',
+              selectedBatchId === 'ALL'
+                ? 'bg-primary text-primary-foreground shadow-2xs border-primary'
+                : 'bg-muted/40 hover:bg-muted text-muted-foreground hover:text-foreground border-border/50'
+            )}
+          >
+            All Batches
+          </button>
+          {academicYears.map((yr) => {
+            const isActive = selectedBatchId === yr.id;
+            return (
+              <button
+                key={yr.id}
+                type="button"
+                onClick={() => setSelectedBatchId(yr.id)}
+                className={cn(
+                  'px-3 py-1 rounded-full text-xs font-medium whitespace-nowrap transition-colors cursor-pointer border',
+                  isActive
+                    ? 'bg-primary text-primary-foreground shadow-2xs border-primary'
+                    : 'bg-muted/40 hover:bg-muted text-muted-foreground hover:text-foreground border-border/50'
+                )}
+              >
+                {yr.name}
+              </button>
+            );
+          })}
+        </div>
+
         {/* Dropdown Filters Row */}
-        <div className="flex flex-wrap items-center gap-2 pt-1 border-t border-border/50 text-xs">
+        <div className="flex flex-wrap items-center gap-2 pt-2 border-t border-border/50 text-xs">
           <div className="flex items-center gap-1.5 text-muted-foreground mr-1">
             <Filter className="w-3.5 h-3.5" />
             <span className="font-semibold">Filter by:</span>
@@ -298,9 +354,17 @@ export const GraduatedStudentsTable: React.FC<GraduatedStudentsTableProps> = ({ 
                             <span className="font-semibold text-xs text-foreground truncate">
                               {fullName}
                             </span>
-                            <span className="text-[10px] text-muted-foreground font-mono truncate">
-                              ID: {student.student_id.slice(0, 8)}
-                            </span>
+                            <div className="flex items-center gap-1.5 text-[10px] text-muted-foreground font-mono">
+                              <span className="truncate">ID: {student.student_id.slice(0, 8)}</span>
+                              <button
+                                type="button"
+                                onClick={() => handleCopy(student.student_id, 'Student ID copied to clipboard')}
+                                className="text-muted-foreground hover:text-foreground cursor-pointer transition-colors"
+                                title="Copy full Student ID"
+                              >
+                                <Copy className="w-2.5 h-2.5" />
+                              </button>
+                            </div>
                           </div>
                         </div>
                       </TableCell>
@@ -339,9 +403,17 @@ export const GraduatedStudentsTable: React.FC<GraduatedStudentsTableProps> = ({ 
                               </span>
                             )}
                             {student.parent_phone && (
-                              <span className="text-muted-foreground text-[11px]">
-                                {student.parent_phone}
-                              </span>
+                              <div className="flex items-center gap-1.5 text-muted-foreground text-[11px]">
+                                <span>{student.parent_phone}</span>
+                                <button
+                                  type="button"
+                                  onClick={() => handleCopy(student.parent_phone!, 'Parent phone copied to clipboard')}
+                                  className="text-muted-foreground hover:text-foreground cursor-pointer transition-colors"
+                                  title="Copy parent phone"
+                                >
+                                  <Copy className="w-2.5 h-2.5" />
+                                </button>
+                              </div>
                             )}
                           </div>
                         ) : (
@@ -362,24 +434,90 @@ export const GraduatedStudentsTable: React.FC<GraduatedStudentsTableProps> = ({ 
 
                       {/* Actions */}
                       <TableCell className="text-right">
-                        <Button
-                          variant="ghost"
-                          size="sm"
-                          onClick={() =>
-                            setHistoryStudent({
-                              id: student.student_id,
-                              tenant_id: tenantId || '',
-                              first_name: student.first_name,
-                              middle_name: student.middle_name,
-                              last_name: student.last_name,
-                              status: 'GRADUATED',
-                            } as AcademicStudent)
-                          }
-                          className="h-8 gap-1.5 text-xs text-muted-foreground hover:text-primary"
-                        >
-                          <History className="w-3.5 h-3.5" />
-                          <span className="hidden sm:inline">View Academic History</span>
-                        </Button>
+                        <div className="flex items-center justify-end gap-1">
+                          <Button
+                            variant="ghost"
+                            size="sm"
+                            onClick={() =>
+                              setHistoryStudent({
+                                id: student.student_id,
+                                tenant_id: tenantId || '',
+                                first_name: student.first_name,
+                                middle_name: student.middle_name,
+                                last_name: student.last_name,
+                                status: 'GRADUATED',
+                              } as AcademicStudent)
+                            }
+                            className="h-8 gap-1.5 text-xs text-muted-foreground hover:text-primary cursor-pointer"
+                            title="View Academic History"
+                          >
+                            <History className="w-3.5 h-3.5" />
+                            <span className="hidden sm:inline">Timeline</span>
+                          </Button>
+
+                          <DropdownMenu>
+                            <DropdownMenuTrigger asChild>
+                              <Button
+                                variant="ghost"
+                                size="icon"
+                                className="h-8 w-8 text-muted-foreground hover:text-foreground cursor-pointer"
+                                title="Quick actions"
+                              >
+                                <MoreHorizontal className="w-4 h-4" />
+                                <span className="sr-only">More actions</span>
+                              </Button>
+                            </DropdownMenuTrigger>
+                            <DropdownMenuContent align="end" className="w-48">
+                              <DropdownMenuItem
+                                onClick={() =>
+                                  setHistoryStudent({
+                                    id: student.student_id,
+                                    tenant_id: tenantId || '',
+                                    first_name: student.first_name,
+                                    middle_name: student.middle_name,
+                                    last_name: student.last_name,
+                                    status: 'GRADUATED',
+                                  } as AcademicStudent)
+                                }
+                                className="cursor-pointer gap-2 text-xs"
+                              >
+                                <History className="w-3.5 h-3.5 text-primary" />
+                                <span>Timeline History</span>
+                              </DropdownMenuItem>
+
+                              <DropdownMenuItem
+                                onClick={() =>
+                                  handleCopy(student.student_id, 'Student ID copied to clipboard')
+                                }
+                                className="cursor-pointer gap-2 text-xs"
+                              >
+                                <Copy className="w-3.5 h-3.5 text-muted-foreground" />
+                                <span>Copy Student ID</span>
+                              </DropdownMenuItem>
+
+                              {student.parent_phone && (
+                                <>
+                                  <DropdownMenuSeparator />
+                                  <DropdownMenuItem
+                                    onClick={() =>
+                                      handleCopy(student.parent_phone!, 'Parent phone copied to clipboard')
+                                    }
+                                    className="cursor-pointer gap-2 text-xs"
+                                  >
+                                    <Phone className="w-3.5 h-3.5 text-emerald-600" />
+                                    <span>Copy Parent Phone</span>
+                                  </DropdownMenuItem>
+                                  <DropdownMenuItem asChild className="cursor-pointer gap-2 text-xs">
+                                    <a href={`tel:${student.parent_phone}`}>
+                                      <PhoneCall className="w-3.5 h-3.5 text-blue-600" />
+                                      <span>Call Parent</span>
+                                    </a>
+                                  </DropdownMenuItem>
+                                </>
+                              )}
+                            </DropdownMenuContent>
+                          </DropdownMenu>
+                        </div>
                       </TableCell>
                     </TableRow>
                   );
