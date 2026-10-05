@@ -34,6 +34,21 @@ import { Badge } from '@/components/ui/badge';
 import { Checkbox } from '@/components/ui/checkbox';
 import { Tooltip, TooltipTrigger, TooltipContent } from '@/components/ui/tooltip';
 import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from '@/components/ui/select';
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from '@/components/ui/dialog';
+import {
   Sparkles,
   Calendar,
   Loader2,
@@ -49,6 +64,9 @@ import {
   CalendarDays,
   Plus,
   X,
+  RotateCcw,
+  Check,
+  ShieldAlert,
 } from 'lucide-react';
 import { NepaliDatePicker } from '@/components/ui/nepali-date-picker';
 
@@ -72,6 +90,9 @@ export const BatchBillingPage: React.FC = () => {
 
   // Inline Ad-Hoc Fee State
   const [showAdHoc, setShowAdHoc] = useState<boolean>(false);
+
+  // Fee Filter State (All, School, Class)
+  const [feeFilter, setFeeFilter] = useState<'ALL' | 'SCHOOL' | 'CLASS'>('ALL');
 
   // Class & Section Selection State
   const [selectedClassId, setSelectedClassId] = useState<string>('');
@@ -132,6 +153,12 @@ export const BatchBillingPage: React.FC = () => {
   const allAvailableStructures = useMemo(() => {
     return [...schoolFees, ...classFees];
   }, [schoolFees, classFees]);
+
+  const displayedStructures = useMemo(() => {
+    if (feeFilter === 'SCHOOL') return schoolFees;
+    if (feeFilter === 'CLASS') return classFees;
+    return allAvailableStructures;
+  }, [feeFilter, schoolFees, classFees, allAvailableStructures]);
 
   // Query student-level assigned fees (hostel, custom tutoring, etc.)
   const { data: studentAssignedFeesData } = useStudentFeeAssignments(
@@ -258,6 +285,21 @@ export const BatchBillingPage: React.FC = () => {
     }
   };
 
+  const handleResetForm = () => {
+    if (classes.length > 0) {
+      setSelectedClassId(classes[0].id);
+      setValue('class_id', classes[0].id);
+    }
+    setSelectedSectionId('');
+    setValue('section_id', '');
+    setValue('due_date', defaultDueDate);
+    setValue('notes', '');
+    setValue('ad_hoc_fee_name', '');
+    setValue('ad_hoc_fee_amount', undefined);
+    setShowAdHoc(false);
+    setValue('fee_structure_ids', allAvailableStructures.map((f) => f.id));
+  };
+
   // Calculations for Estimation & Live Preview
   const selectedClass = classes.find((c) => c.id === selectedClassId);
   const selectedStructures = allAvailableStructures.filter((s) =>
@@ -301,8 +343,8 @@ export const BatchBillingPage: React.FC = () => {
   };
 
   return (
-    <div className="space-y-6 pb-8 max-w-7xl mx-auto">
-      {/* 1. Header & Navigation */}
+    <div className="space-y-6 pb-12 max-w-7xl mx-auto">
+      {/* 1. Header & Navigation (Clean, No Duplicate Submit Button) */}
       <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 border-b border-border/50 pb-5">
         <div>
           <div className="flex items-center gap-2 mb-1.5">
@@ -316,83 +358,85 @@ export const BatchBillingPage: React.FC = () => {
             <span className="text-muted-foreground/40 text-xs">/</span>
             <span className="text-xs font-medium text-foreground">Monthly Batch Invoicing</span>
           </div>
-          <h1 className="text-2xl font-bold tracking-tight text-foreground flex items-center gap-2.5">
-            <div className="w-8 h-8 rounded-lg bg-primary/10 text-primary flex items-center justify-center">
+          <h1 className="text-xl sm:text-2xl font-bold tracking-tight text-foreground flex items-center gap-2.5">
+            <div className="w-8 h-8 rounded-lg bg-primary/10 text-primary flex items-center justify-center shrink-0">
               <Sparkles className="w-4 h-4" />
             </div>
             Monthly Batch Invoicing Engine
           </h1>
-          <p className="text-xs sm:text-sm text-muted-foreground mt-1">
-            Generate monthly fee bills for any of the 12 Bikram Sambat months with automatic rolling arrears integration and student advance wallet credit deductions.
+          <p className="text-xs sm:text-sm text-muted-foreground mt-1 max-w-3xl">
+            Configure and issue class-wide monthly fee invoices across Bikram Sambat months. Unpaid prior arrears are rolled in automatically, and active student credit wallets are applied at billing time.
           </p>
         </div>
 
-        <div className="flex items-center gap-2.5">
-          <div className="hidden sm:flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-primary/10 border border-primary/20 text-xs font-semibold text-primary">
-            <Lock className="w-3.5 h-3.5 text-primary" />
+        {/* Top Header Utilities: Session Badge & Reset Action */}
+        <div className="flex items-center gap-2.5 shrink-0">
+          <div className="flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-primary/10 border border-primary/20 text-xs font-semibold text-primary">
+            <Calendar className="w-3.5 h-3.5 text-primary" />
             <span>Session: {isLoadingYear ? 'Loading...' : currentYear?.name || 'Active Session'}</span>
           </div>
 
+          <Tooltip>
+            <TooltipTrigger asChild>
+              <Button
+                type="button"
+                variant="outline"
+                size="sm"
+                onClick={handleResetForm}
+                className="text-xs h-8 px-2.5 gap-1.5 text-muted-foreground hover:text-foreground"
+              >
+                <RotateCcw className="w-3.5 h-3.5" />
+                <span className="hidden sm:inline">Reset</span>
+              </Button>
+            </TooltipTrigger>
+            <TooltipContent>Reset form selections to defaults</TooltipContent>
+          </Tooltip>
+
           <Link to="/finance/bills">
-            <Button type="button" variant="outline" size="sm" className="text-xs">
+            <Button type="button" variant="ghost" size="sm" className="text-xs h-8 px-2.5 text-muted-foreground hover:text-foreground">
               Cancel
             </Button>
           </Link>
-
-          <Button
-            type="submit"
-            form="batch-billing-form"
-            size="sm"
-            disabled={batchBillMutation.isPending || filteredStudents.length === 0}
-            className="text-xs font-bold gap-1.5 shadow-xs cursor-pointer"
-          >
-            {batchBillMutation.isPending ? (
-              <>
-                <Loader2 className="w-3.5 h-3.5 animate-spin" />
-                Generating...
-              </>
-            ) : (
-              <>
-                <Sparkles className="w-3.5 h-3.5" />
-                Generate {selectedMonth} Invoices
-              </>
-            )}
-          </Button>
         </div>
       </div>
 
       <form id="batch-billing-form" onSubmit={handleSubmit(onFormSubmit)} className="space-y-6">
         <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 items-start">
           {/* ======================================================== */}
-          {/* LEFT COLUMN: CONFIGURATION CONTROLS (7 COLS)              */}
+          {/* LEFT COLUMN: WORKBENCH CONTROLS (7 COLS)                 */}
           {/* ======================================================== */}
           <div className="lg:col-span-7 space-y-6">
             {/* Step 1: 12 BS Months Selector */}
-            <Card className="border-border/60 shadow-xs">
-              <CardHeader className="p-4 sm:p-5 pb-3">
-                <div className="flex items-center justify-between">
-                  <div className="space-y-1">
-                    <CardTitle className="text-sm sm:text-base font-bold flex items-center gap-2">
-                      <CalendarDays className="w-4 h-4 text-primary" />
-                      1. Select Billing Month (Bikram Sambat)
-                    </CardTitle>
-                    <CardDescription className="text-xs">
-                      Pick the Nepali calendar month to invoice. Standard monthly fees will be charged for this cycle.
+            <Card className="border-border/70 shadow-xs rounded-2xl overflow-hidden bg-card">
+              <CardHeader className="p-4 sm:p-5 pb-3 bg-muted/20 border-b border-border/40">
+                <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2">
+                  <div className="space-y-0.5">
+                    <div className="flex items-center gap-2">
+                      <span className="w-5 h-5 rounded-full bg-primary/15 text-primary text-[11px] font-bold flex items-center justify-center">
+                        1
+                      </span>
+                      <CardTitle className="text-sm sm:text-base font-bold text-foreground">
+                        Select Billing Month (Bikram Sambat)
+                      </CardTitle>
+                    </div>
+                    <CardDescription className="text-xs text-muted-foreground ml-7">
+                      Standard monthly fees and automatic facility charges will apply to this cycle.
                     </CardDescription>
                   </div>
-                  <Badge variant="outline" className="gap-1 font-mono text-[11px] bg-primary/5 text-primary border-primary/20">
+                  <Badge variant="outline" className="self-start sm:self-auto gap-1 font-mono text-[11px] bg-primary/5 text-primary border-primary/30 px-2.5 py-0.5 font-semibold">
                     <Calendar className="w-3 h-3" />
-                    {selectedMonth}
+                    Target: {selectedMonth}
                   </Badge>
                 </div>
               </CardHeader>
-              <CardContent className="p-4 sm:p-5 pt-2 space-y-4">
+
+              <CardContent className="p-4 sm:p-5 pt-3 space-y-4">
                 {/* Visual Status Legend */}
                 <div className="flex flex-wrap items-center gap-1.5 sm:gap-2 text-[11px] pb-1">
-                  <span className="text-muted-foreground font-medium text-[10px] uppercase tracking-wider mr-0.5">Status:</span>
+                  <span className="text-muted-foreground font-semibold text-[10px] uppercase tracking-wider mr-0.5">Legend:</span>
                   <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-md bg-blue-500/10 text-blue-700 dark:text-blue-300 border border-blue-500/25 font-medium text-[10px]">
                     <span className="w-1.5 h-1.5 rounded-full bg-blue-500" />
-                    Current / Ready
+                    Current Cycle
                   </span>
                   <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-md bg-amber-500/10 text-amber-700 dark:text-amber-300 border border-amber-500/25 font-medium text-[10px]">
                     <span className="w-1.5 h-1.5 rounded-full bg-amber-500" />
@@ -408,13 +452,12 @@ export const BatchBillingPage: React.FC = () => {
                   </span>
                 </div>
 
-                {/* 12 BS Month Buttons Grid: 4 rows x 3 columns */}
-                <div className="grid grid-cols-2 sm:grid-cols-3 gap-2.5">
+                {/* 12 BS Month Buttons Grid: 4 columns x 3 rows for clean calendar quarters */}
+                <div className="grid grid-cols-2 sm:grid-cols-4 gap-2.5">
                   {monthStatuses.map((info) => {
                     const isSelected = selectedMonth === info.month;
                     const monthNumber = String(info.index + 1).padStart(2, '0');
 
-                    // Surface and border classes strictly avoiding container-level opacity
                     let cardClass = '';
                     let subtitleText = '';
                     let subtitleClass = '';
@@ -422,7 +465,7 @@ export const BatchBillingPage: React.FC = () => {
                     let monthCodeClass = '';
 
                     if (isSelected) {
-                      cardClass = 'bg-primary/10 border-primary ring-2 ring-primary/30 shadow-xs cursor-pointer';
+                      cardClass = 'bg-primary/10 border-primary ring-2 ring-primary/40 shadow-xs cursor-pointer';
                       monthNameClass = 'text-primary font-bold';
                       monthCodeClass = 'text-primary font-bold';
                       subtitleText = 'Selected';
@@ -446,7 +489,6 @@ export const BatchBillingPage: React.FC = () => {
                       subtitleText = 'Bills issued';
                       subtitleClass = 'text-emerald-700 dark:text-emerald-300 font-medium';
                     } else {
-                      // FUTURE_LOCKED
                       cardClass = 'bg-muted/25 border-dashed border-border/80 cursor-not-allowed select-none';
                       monthNameClass = 'text-muted-foreground font-medium';
                       monthCodeClass = 'text-muted-foreground/80 font-medium';
@@ -465,7 +507,7 @@ export const BatchBillingPage: React.FC = () => {
                           }
                         }}
                         title={info.tooltipText}
-                        className={`p-3 rounded-xl border text-left transition-all flex flex-col justify-between min-h-[76px] ${cardClass}`}
+                        className={`p-3 rounded-xl border text-left transition-all flex flex-col justify-between min-h-[78px] ${cardClass}`}
                       >
                         <div className="flex items-center justify-between w-full mb-1">
                           <span className={`text-[10px] font-mono uppercase ${monthCodeClass}`}>
@@ -473,18 +515,18 @@ export const BatchBillingPage: React.FC = () => {
                           </span>
                           {isSelected ? (
                             <Badge variant="default" className="text-[9px] px-1.5 py-0 font-semibold gap-0.5">
-                              <CheckCircle2 className="w-2.5 h-2.5" />
+                              <Check className="w-2.5 h-2.5" />
                               <span>Active</span>
                             </Badge>
                           ) : info.status === 'GENERATED' ? (
                             <Badge variant="outline" className="text-[9px] px-1.5 py-0 font-semibold bg-emerald-500/15 text-emerald-800 dark:text-emerald-200 border-emerald-500/35 flex items-center gap-0.5">
                               <CheckCircle2 className="w-2.5 h-2.5 text-emerald-600 dark:text-emerald-400" />
-                              <span>Generated</span>
+                              <span>Done</span>
                             </Badge>
                           ) : info.status === 'FUTURE_LOCKED' ? (
                             <Badge variant="outline" className="text-[9px] px-1.5 py-0 font-medium text-muted-foreground bg-background/80 border-border/70 flex items-center gap-0.5">
                               <Lock className="w-2.5 h-2.5 text-muted-foreground/80" />
-                              <span>Upcoming</span>
+                              <span>Locked</span>
                             </Badge>
                           ) : info.status === 'AVAILABLE_RUNNING' ? (
                             <Badge variant="outline" className="text-[9px] px-1.5 py-0 font-semibold bg-blue-500/15 text-blue-700 dark:text-blue-300 border-blue-500/30">
@@ -492,7 +534,7 @@ export const BatchBillingPage: React.FC = () => {
                             </Badge>
                           ) : (
                             <Badge variant="secondary" className="text-[9px] px-1.5 py-0 font-medium bg-amber-500/15 text-amber-700 dark:text-amber-300 border border-amber-500/25">
-                              Unbilled
+                              Backlog
                             </Badge>
                           )}
                         </div>
@@ -509,72 +551,90 @@ export const BatchBillingPage: React.FC = () => {
                   })}
                 </div>
 
-                <div className="text-[11px] text-muted-foreground bg-muted/40 p-2.5 rounded-lg border border-border/50 flex items-center gap-2">
+                <div className="text-[11px] text-muted-foreground bg-muted/40 p-2.5 rounded-xl border border-border/50 flex items-center gap-2">
                   <Info className="w-3.5 h-3.5 shrink-0 text-primary" />
                   <span>
-                    Running month: <strong className="text-foreground">{BS_MONTHS[runningMonthIndex]}</strong>. You can generate invoices for the running month and any past unbilled months.
+                    Current active school month: <strong className="text-foreground">{BS_MONTHS[runningMonthIndex]}</strong>. Invoices can be generated for the current cycle or any unbilled past months.
                   </span>
                 </div>
               </CardContent>
             </Card>
 
-            {/* Step 2: Target Class, Section & Dates */}
-            <Card className="border-border/60 shadow-xs">
-              <CardHeader className="p-4 sm:p-5 pb-3">
-                <CardTitle className="text-sm sm:text-base font-bold flex items-center gap-2">
-                  <School className="w-4 h-4 text-primary" />
-                  2. Target Class & Terms
-                </CardTitle>
-                <CardDescription className="text-xs">
-                  Choose the target student cohort and set payment due terms.
-                </CardDescription>
+            {/* Step 2: Target Cohort & Terms (Radix Accessible Selects) */}
+            <Card className="border-border/70 shadow-xs rounded-2xl overflow-hidden bg-card">
+              <CardHeader className="p-4 sm:p-5 pb-3 bg-muted/20 border-b border-border/40">
+                <div className="space-y-0.5">
+                  <div className="flex items-center gap-2">
+                    <span className="w-5 h-5 rounded-full bg-primary/15 text-primary text-[11px] font-bold flex items-center justify-center">
+                      2
+                    </span>
+                    <CardTitle className="text-sm sm:text-base font-bold text-foreground">
+                      Target Cohort & Payment Terms
+                    </CardTitle>
+                  </div>
+                  <CardDescription className="text-xs text-muted-foreground ml-7">
+                    Choose the target class and configure due date and statement memo.
+                  </CardDescription>
+                </div>
               </CardHeader>
-              <CardContent className="p-4 sm:p-5 pt-2 space-y-4">
+
+              <CardContent className="p-4 sm:p-5 pt-3 space-y-4">
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                  {/* Class Selector */}
+                  {/* Class Level Radix Select */}
                   <div className="space-y-1.5">
-                    <Label className="text-xs font-semibold">
-                      Class Level <span className="text-destructive">*</span>
+                    <Label className="text-xs font-semibold text-foreground">
+                      Target Class <span className="text-destructive">*</span>
                     </Label>
-                    <select
+                    <Select
                       value={selectedClassId}
-                      onChange={(e) => {
-                        setSelectedClassId(e.target.value);
-                        setValue('class_id', e.target.value);
+                      onValueChange={(val) => {
+                        setSelectedClassId(val);
+                        setValue('class_id', val);
                         setSelectedSectionId('');
                         setValue('section_id', '');
                       }}
-                      className="w-full text-xs h-9 rounded-md border border-input bg-background px-3 py-1 text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/40 cursor-pointer"
                     >
-                      {classes.map((cls) => (
-                        <option key={cls.id} value={cls.id}>
-                          {cls.name}
-                        </option>
-                      ))}
-                    </select>
+                      <SelectTrigger className="w-full h-9 text-xs bg-background">
+                        <SelectValue placeholder="Select class..." />
+                      </SelectTrigger>
+                      <SelectContent>
+                        {classes.map((cls) => (
+                          <SelectItem key={cls.id} value={cls.id} className="text-xs">
+                            {cls.name}
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
                   </div>
 
-                  {/* Section Selector */}
+                  {/* Section Radix Select */}
                   <div className="space-y-1.5">
-                    <Label className="text-xs font-semibold">Section (Optional)</Label>
-                    <select
-                      value={selectedSectionId}
-                      onChange={(e) => {
-                        setSelectedSectionId(e.target.value);
-                        setValue('section_id', e.target.value);
+                    <Label className="text-xs font-semibold text-foreground">Section Filter</Label>
+                    <Select
+                      value={selectedSectionId || 'ALL'}
+                      onValueChange={(val) => {
+                        const secId = val === 'ALL' ? '' : val;
+                        setSelectedSectionId(secId);
+                        setValue('section_id', secId);
                       }}
-                      className="w-full text-xs h-9 rounded-md border border-input bg-background px-3 py-1 text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/40 cursor-pointer"
                     >
-                      <option value="">All Sections ({filteredStudents.length} students)</option>
-                      {sections.map((sec) => (
-                        <option key={sec.id} value={sec.id}>
-                          Section {sec.name}
-                        </option>
-                      ))}
-                    </select>
+                      <SelectTrigger className="w-full h-9 text-xs bg-background">
+                        <SelectValue placeholder="All Sections" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="ALL" className="text-xs">
+                          All Sections ({allStudents.length} Students)
+                        </SelectItem>
+                        {sections.map((sec) => (
+                          <SelectItem key={sec.id} value={sec.id} className="text-xs">
+                            Section {sec.name}
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
                   </div>
 
-                  {/* Due Date */}
+                  {/* Payment Due Date */}
                   <div>
                     <NepaliDatePicker
                       id="due_date"
@@ -588,58 +648,53 @@ export const BatchBillingPage: React.FC = () => {
 
                   {/* Invoice Memo / Notes */}
                   <div className="space-y-1.5">
-                    <Label className="text-xs font-semibold">Invoice Notes / Memo</Label>
+                    <Label className="text-xs font-semibold text-foreground">Statement Memo / Notes</Label>
                     <Input
-                      placeholder="Optional remarks printed on invoice..."
+                      placeholder="e.g., Pay on or before 15th to avoid late penalty"
                       {...register('notes')}
-                      className="text-xs h-9"
+                      className="text-xs h-9 bg-background"
                     />
                   </div>
                 </div>
               </CardContent>
             </Card>
 
-            {/* Step 3: Fee Structures to Apply */}
-            <Card className="border-border/60 shadow-xs">
-              <CardHeader className="p-4 sm:p-5 pb-3">
-                <div className="flex items-center justify-between">
-                  <div>
-                    <CardTitle className="text-sm sm:text-base font-bold flex items-center gap-2">
-                      <Coins className="w-4 h-4 text-primary" />
-                      3. Fee Structures to Include ({selectedStructures.length}/{allAvailableStructures.length})
-                    </CardTitle>
-                    <CardDescription className="text-xs">
-                      School-level and class-level fee heads to be charged for {selectedMonth}.
+            {/* Step 3: Fee Structures to Include & Ad-hoc */}
+            <Card className="border-border/70 shadow-xs rounded-2xl overflow-hidden bg-card">
+              <CardHeader className="p-4 sm:p-5 pb-3 bg-muted/20 border-b border-border/40">
+                <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+                  <div className="space-y-0.5">
+                    <div className="flex items-center gap-2">
+                      <span className="w-5 h-5 rounded-full bg-primary/15 text-primary text-[11px] font-bold flex items-center justify-center">
+                        3
+                      </span>
+                      <CardTitle className="text-sm sm:text-base font-bold text-foreground">
+                        Fee Structures to Charge ({selectedStructures.length}/{allAvailableStructures.length})
+                      </CardTitle>
+                    </div>
+                    <CardDescription className="text-xs text-muted-foreground ml-7">
+                      Active fee heads included in {selectedMonth}&apos;s billing statement.
                     </CardDescription>
                   </div>
-                  <div className="flex items-center gap-2">
-                    <Tooltip>
-                      <TooltipTrigger asChild>
-                        <Button
-                          type="button"
-                          variant={showAdHoc ? 'secondary' : 'outline'}
-                          size="sm"
-                          onClick={() => {
-                            if (showAdHoc && !watchedAdHocAmount && !watchedAdHocName) {
-                              setShowAdHoc(false);
-                            } else {
-                              setShowAdHoc(!showAdHoc);
-                            }
-                          }}
-                          className="text-[11px] h-7 px-2 gap-1 cursor-pointer"
-                        >
-                          <Plus className="w-3.5 h-3.5 text-primary" />
-                          <span>Ad-Hoc Fee</span>
-                        </Button>
-                      </TooltipTrigger>
-                      <TooltipContent>Optional Class-Level Ad-Hoc Charge</TooltipContent>
-                    </Tooltip>
+
+                  {/* Quick Controls */}
+                  <div className="flex items-center gap-2 self-start sm:self-auto">
+                    <Button
+                      type="button"
+                      variant={showAdHoc ? 'secondary' : 'outline'}
+                      size="sm"
+                      onClick={() => setShowAdHoc(!showAdHoc)}
+                      className="text-[11px] h-7 px-2.5 gap-1 font-medium cursor-pointer"
+                    >
+                      <Plus className="w-3.5 h-3.5 text-primary" />
+                      <span>{showAdHoc ? 'Hide Ad-Hoc' : '+ Ad-Hoc Fee'}</span>
+                    </Button>
                     <Button
                       type="button"
                       variant="ghost"
                       size="sm"
                       onClick={handleSelectAll}
-                      className="text-[11px] h-7 px-2"
+                      className="text-[11px] h-7 px-2 text-muted-foreground hover:text-foreground"
                     >
                       Select All
                     </Button>
@@ -648,20 +703,22 @@ export const BatchBillingPage: React.FC = () => {
                       variant="ghost"
                       size="sm"
                       onClick={handleDeselectAll}
-                      className="text-[11px] h-7 px-2"
+                      className="text-[11px] h-7 px-2 text-muted-foreground hover:text-foreground"
                     >
                       Clear
                     </Button>
                   </div>
                 </div>
               </CardHeader>
-              <CardContent className="p-4 sm:p-5 pt-2 space-y-3">
+
+              <CardContent className="p-4 sm:p-5 pt-3 space-y-4">
+                {/* Optional Ad-hoc Fee Drawer */}
                 {(showAdHoc || watchedAdHocAmount > 0 || Boolean(watchedAdHocName)) && (
-                  <div className="p-3 rounded-xl border border-dashed border-primary/40 bg-primary/5 space-y-2.5 animate-in fade-in duration-150">
+                  <div className="p-3.5 rounded-xl border border-dashed border-primary/50 bg-primary/5 space-y-2.5 animate-in fade-in duration-150">
                     <div className="flex items-center justify-between">
                       <div className="flex items-center gap-1.5 text-xs font-semibold text-primary">
                         <Sparkles className="w-3.5 h-3.5" />
-                        <span>Optional Class-Level Ad-Hoc Charge</span>
+                        <span>Optional Class-Level Ad-Hoc Addition</span>
                       </div>
                       <Button
                         type="button"
@@ -680,9 +737,9 @@ export const BatchBillingPage: React.FC = () => {
                     </div>
                     <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                       <div className="space-y-1">
-                        <Label className="text-xs font-semibold">Fee Title</Label>
+                        <Label className="text-xs font-semibold text-foreground">Charge Title</Label>
                         <Input
-                          placeholder="e.g., Monthly Assessment Fee"
+                          placeholder="e.g., Annual Sports Day Fee"
                           {...register('ad_hoc_fee_name')}
                           className="text-xs h-8 bg-card"
                         />
@@ -691,7 +748,7 @@ export const BatchBillingPage: React.FC = () => {
                         )}
                       </div>
                       <div className="space-y-1">
-                        <Label className="text-xs font-semibold">Amount (NPR)</Label>
+                        <Label className="text-xs font-semibold text-foreground">Amount (NPR)</Label>
                         <Input
                           type="number"
                           step="any"
@@ -707,18 +764,56 @@ export const BatchBillingPage: React.FC = () => {
                   </div>
                 )}
 
+                {/* Filter Chips: All, School, Class */}
+                <div className="flex items-center gap-1.5 border-b border-border/40 pb-2">
+                  <span className="text-[10px] uppercase font-bold text-muted-foreground mr-1">Filter:</span>
+                  <button
+                    type="button"
+                    onClick={() => setFeeFilter('ALL')}
+                    className={`px-2.5 py-1 rounded-lg text-xs font-medium transition-all ${
+                      feeFilter === 'ALL'
+                        ? 'bg-primary text-primary-foreground font-semibold shadow-xs'
+                        : 'text-muted-foreground hover:bg-muted/50'
+                    }`}
+                  >
+                    All ({allAvailableStructures.length})
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => setFeeFilter('SCHOOL')}
+                    className={`px-2.5 py-1 rounded-lg text-xs font-medium transition-all ${
+                      feeFilter === 'SCHOOL'
+                        ? 'bg-primary text-primary-foreground font-semibold shadow-xs'
+                        : 'text-muted-foreground hover:bg-muted/50'
+                    }`}
+                  >
+                    School-Wide ({schoolFees.length})
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => setFeeFilter('CLASS')}
+                    className={`px-2.5 py-1 rounded-lg text-xs font-medium transition-all ${
+                      feeFilter === 'CLASS'
+                        ? 'bg-primary text-primary-foreground font-semibold shadow-xs'
+                        : 'text-muted-foreground hover:bg-muted/50'
+                    }`}
+                  >
+                    Class-Specific ({classFees.length})
+                  </button>
+                </div>
+
                 {isLoadingSchoolFees || isLoadingClassFees ? (
                   <div className="flex items-center justify-center p-6 text-muted-foreground text-xs gap-2">
                     <Loader2 className="w-4 h-4 animate-spin" />
                     Loading fee structures...
                   </div>
-                ) : allAvailableStructures.length === 0 ? (
-                  <div className="p-6 text-center text-muted-foreground text-xs border border-dashed rounded-lg">
-                    No active fee structures found for this class or school.
+                ) : displayedStructures.length === 0 ? (
+                  <div className="p-6 text-center text-muted-foreground text-xs border border-dashed rounded-xl bg-muted/10">
+                    No active fee structures found for this category.
                   </div>
                 ) : (
                   <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5 max-h-72 overflow-y-auto pr-1">
-                    {allAvailableStructures.map((structure) => {
+                    {displayedStructures.map((structure) => {
                       const isSelected = watchedFeeStructureIds.includes(structure.id);
                       const isSchoolLevel = structure.fee_level === 'SCHOOL';
 
@@ -726,10 +821,10 @@ export const BatchBillingPage: React.FC = () => {
                         <div
                           key={structure.id}
                           onClick={() => handleToggleStructure(structure.id)}
-                          className={`p-3 rounded-lg border text-left transition-all cursor-pointer flex items-start gap-2.5 ${
+                          className={`p-3 rounded-xl border text-left transition-all cursor-pointer flex items-start gap-2.5 ${
                             isSelected
-                              ? 'border-primary/50 bg-primary/5'
-                              : 'border-border/60 hover:bg-muted/30 opacity-75'
+                              ? 'border-primary bg-primary/5 ring-1 ring-primary/30'
+                              : 'border-border/60 hover:bg-muted/30 opacity-70'
                           }`}
                         >
                           <Checkbox
@@ -744,9 +839,9 @@ export const BatchBillingPage: React.FC = () => {
                               </span>
                               <Badge
                                 variant={isSchoolLevel ? 'default' : 'secondary'}
-                                className="text-[9px] px-1 py-0 uppercase shrink-0"
+                                className="text-[9px] px-1 py-0 uppercase shrink-0 font-medium"
                               >
-                                {isSchoolLevel ? 'School-Wide' : 'Class-Level'}
+                                {isSchoolLevel ? 'School' : 'Class'}
                               </Badge>
                             </div>
                             <div className="flex items-center justify-between text-[11px] text-muted-foreground">
@@ -761,88 +856,110 @@ export const BatchBillingPage: React.FC = () => {
                     })}
                   </div>
                 )}
+
+                {/* Subtotal Pill */}
+                <div className="p-2.5 rounded-xl bg-muted/40 border border-border/50 flex items-center justify-between text-xs">
+                  <span className="text-muted-foreground">Base Fee Total (Per Student):</span>
+                  <span className="font-mono font-bold text-foreground">
+                    {formatCurrency(baseMonthlyFeePerStudent)}
+                  </span>
+                </div>
               </CardContent>
             </Card>
           </div>
 
           {/* ======================================================== */}
-          {/* RIGHT COLUMN: COHORT PREVIEW & AUDIT SUMMARY (5 COLS)     */}
+          {/* RIGHT COLUMN: COHORT PREVIEW & LAUNCHPAD (5 COLS)         */}
           {/* ======================================================== */}
           <div className="lg:col-span-5 space-y-6 lg:sticky lg:top-6 self-start">
-            {/* Live Financial Impact Summary */}
-            <Card className="border-primary/30 bg-primary/5 shadow-xs overflow-hidden">
-              <div className="p-4 sm:p-5 border-b border-primary/20 space-y-1">
-                <span className="text-[10px] font-bold uppercase tracking-wider text-primary">
-                  Billing Cohort Projection • {selectedMonth}
-                </span>
-                <h3 className="text-base font-bold text-foreground">
-                  {selectedClass?.name || 'Selected Class'} ({filteredStudents.length} Students)
-                </h3>
+            {/* Live Financial Impact Summary - The Sole Primary Action Center */}
+            <Card className="border-primary/40 bg-card shadow-sm rounded-2xl overflow-hidden">
+              {/* Header with Title and Month Pill */}
+              <div className="p-4 sm:p-5 border-b border-border/40 bg-primary/5 flex items-center justify-between gap-2">
+                <div>
+                  <span className="text-[10px] font-bold uppercase tracking-wider text-primary block">
+                    Financial Projection
+                  </span>
+                  <h3 className="text-base font-bold text-foreground mt-0.5">
+                    {selectedClass?.name || 'Selected Class'} • {selectedMonth}
+                  </h3>
+                </div>
+                <Badge variant="outline" className="font-mono text-xs px-2.5 py-1 bg-background text-primary border-primary/30">
+                  {filteredStudents.length} Students
+                </Badge>
               </div>
 
               <div className="p-4 sm:p-5 space-y-4">
+                {/* 2 Top KPI Tiles */}
                 <div className="grid grid-cols-2 gap-3">
-                  <div className="p-3 rounded-xl bg-background border border-border/60">
-                    <span className="text-[10px] uppercase font-bold text-muted-foreground">
-                      Base Fee Per Student
+                  <div className="p-3 rounded-xl bg-muted/20 border border-border/60">
+                    <span className="text-[10px] uppercase font-bold text-muted-foreground block">
+                      Fee / Student
                     </span>
                     <div className="text-base font-bold font-mono text-foreground mt-0.5">
                       {formatCurrency(baseMonthlyFeePerStudent)}
                     </div>
-                    <span className="text-[10px] text-muted-foreground">For {selectedMonth}</span>
+                    <span className="text-[10px] text-muted-foreground">Standard base</span>
                   </div>
 
-                  <div className="p-3 rounded-xl bg-background border border-border/60">
-                    <span className="text-[10px] uppercase font-bold text-muted-foreground">
-                      Target Students
+                  <div className="p-3 rounded-xl bg-muted/20 border border-border/60">
+                    <span className="text-[10px] uppercase font-bold text-muted-foreground block">
+                      Cohort Size
                     </span>
                     <div className="text-base font-bold font-mono text-foreground mt-0.5">
                       {filteredStudents.length}
                     </div>
-                    <span className="text-[10px] text-muted-foreground">Enrolled active</span>
+                    <span className="text-[10px] text-muted-foreground">Active enrolled</span>
                   </div>
                 </div>
 
-                <div className="p-3.5 rounded-xl bg-background border border-border/60 space-y-2">
+                {/* Financial Ledger Breakdown */}
+                <div className="p-3.5 rounded-xl bg-muted/30 border border-border/60 space-y-2">
                   <div className="flex items-center justify-between text-xs">
-                    <span className="text-muted-foreground">Gross Base Generation:</span>
-                    <span className="font-mono font-bold">{formatCurrency(estimatedClassTotal)}</span>
+                    <span className="text-muted-foreground">Gross Invoicing Projection:</span>
+                    <span className="font-mono font-bold text-foreground">{formatCurrency(estimatedClassTotal)}</span>
                   </div>
                   <div className="flex items-center justify-between text-xs text-emerald-600 dark:text-emerald-400">
                     <span className="flex items-center gap-1">
                       <TrendingDown className="w-3.5 h-3.5" />
-                      Advance Wallet Deductions:
+                      Advance Wallet Credits:
                     </span>
-                    <span className="font-mono font-bold">Auto-applied per student</span>
+                    <span className="font-mono font-semibold">Auto-applied at issue</span>
+                  </div>
+                  <div className="flex items-center justify-between text-xs text-amber-600 dark:text-amber-400">
+                    <span className="flex items-center gap-1">
+                      <CalendarDays className="w-3.5 h-3.5" />
+                      Rolling Unpaid Arrears:
+                    </span>
+                    <span className="font-mono font-semibold">Auto-itemized</span>
                   </div>
                   <div className="pt-2 border-t border-border/60 flex items-center justify-between text-xs font-bold text-foreground">
                     <span>Estimated Net Billing:</span>
-                    <span className="font-mono text-primary text-sm">
+                    <span className="font-mono text-primary text-base">
                       ~{formatCurrency(estimatedClassTotal)}
                     </span>
                   </div>
                 </div>
 
                 {/* Important Audit Rules Callout */}
-                <div className="p-3 rounded-lg bg-muted/40 border border-border/50 space-y-1.5 text-[11px] text-muted-foreground">
+                <div className="p-3 rounded-xl bg-muted/40 border border-border/50 space-y-1.5 text-[11px] text-muted-foreground">
                   <div className="flex items-center gap-1.5 font-semibold text-foreground">
                     <Info className="w-3.5 h-3.5 text-primary" />
-                    Monthly Invoicing Rules
+                    System Billing Rules
                   </div>
                   <ul className="list-disc list-inside space-y-1 pl-1">
-                    <li>Duplicate generation is strictly locked to prevent double receivables for {selectedMonth}.</li>
-                    <li>Individual student facility fees (hostel, bus) are auto-calculated for the month.</li>
-                    <li>Advance credits in student wallets will automatically reduce net payable.</li>
-                    <li>Rolling arrears from previous months will be automatically itemized.</li>
+                    <li>Duplicate bills are strictly blocked to prevent double charging for {selectedMonth}.</li>
+                    <li>Individual student facility fees (hostel, bus) are auto-calculated.</li>
+                    <li>Student advance credit balances reduce final payable dues.</li>
                   </ul>
                 </div>
 
-                {/* Primary Batch Generation Action */}
-                <div className="pt-3 border-t border-primary/20 space-y-3">
+                {/* The Single, Definitive Primary Action Button */}
+                <div className="pt-2 space-y-2">
                   {filteredStudents.length === 0 && !isLoadingStudents && (
-                    <div className="p-3 rounded-lg bg-muted text-muted-foreground text-xs flex items-center gap-2">
-                      <Info className="w-4 h-4 shrink-0 text-amber-500" />
-                      <span>Please select a class with enrolled students to generate invoices.</span>
+                    <div className="p-3 rounded-xl bg-destructive/10 border border-destructive/20 text-destructive text-xs flex items-center gap-2">
+                      <ShieldAlert className="w-4 h-4 shrink-0 text-destructive" />
+                      <span>Select a class with active enrolled students to generate invoices.</span>
                     </div>
                   )}
 
@@ -850,7 +967,7 @@ export const BatchBillingPage: React.FC = () => {
                     type="submit"
                     form="batch-billing-form"
                     disabled={batchBillMutation.isPending || filteredStudents.length === 0}
-                    className="w-full gap-2 h-11 text-xs sm:text-sm font-bold shadow-md cursor-pointer"
+                    className="w-full gap-2 h-11 text-xs sm:text-sm font-bold shadow-md cursor-pointer rounded-xl"
                   >
                     {batchBillMutation.isPending ? (
                       <>
@@ -878,42 +995,43 @@ export const BatchBillingPage: React.FC = () => {
               </div>
             </Card>
 
-            {/* Student Pre-Billing Roster Table */}
-            <Card className="border-border/60 shadow-xs">
-              <CardHeader className="p-4 sm:p-5 pb-3">
+            {/* Student Pre-Billing Roster Table Preview */}
+            <Card className="border-border/70 shadow-xs rounded-2xl overflow-hidden bg-card">
+              <CardHeader className="p-4 sm:p-5 pb-3 bg-muted/20 border-b border-border/40">
                 <div className="flex items-center justify-between gap-2">
                   <div>
-                    <CardTitle className="text-sm font-bold flex items-center gap-1.5">
+                    <CardTitle className="text-sm font-bold flex items-center gap-1.5 text-foreground">
                       <Users className="w-4 h-4 text-primary" />
                       Student Roster Preview ({filteredStudents.length})
                     </CardTitle>
-                    <CardDescription className="text-xs">
-                      Students who will receive an invoice in this batch.
+                    <CardDescription className="text-xs text-muted-foreground">
+                      Students enrolled in this cohort receiving an invoice.
                     </CardDescription>
                   </div>
                 </div>
                 <div className="relative mt-2">
                   <Search className="w-3.5 h-3.5 absolute left-2.5 top-2.5 text-muted-foreground" />
                   <Input
-                    placeholder="Filter student by name or roll #..."
+                    placeholder="Search by student name or roll #..."
                     value={studentSearch}
                     onChange={(e) => setStudentSearch(e.target.value)}
-                    className="text-xs h-8 pl-8"
+                    className="text-xs h-8 pl-8 bg-background"
                   />
                 </div>
               </CardHeader>
-              <CardContent className="p-4 sm:p-5 pt-0">
+
+              <CardContent className="p-4 sm:p-5 pt-2">
                 {isLoadingStudents ? (
                   <div className="p-8 text-center text-xs text-muted-foreground flex items-center justify-center gap-2">
                     <Loader2 className="w-4 h-4 animate-spin" />
                     Loading cohort roster...
                   </div>
                 ) : filteredStudents.length === 0 ? (
-                  <div className="p-6 text-center text-xs text-muted-foreground border border-dashed rounded-lg">
-                    No active students found in this class/section.
+                  <div className="p-6 text-center text-xs text-muted-foreground border border-dashed rounded-xl bg-muted/10">
+                    No active students found in this class/section filter.
                   </div>
                 ) : (
-                  <div className="max-h-80 overflow-y-auto pr-1 space-y-1.5 divide-y divide-border/30">
+                  <div className="max-h-72 overflow-y-auto pr-1 space-y-1.5 divide-y divide-border/30">
                     {filteredStudents.map((st: any, index: number) => {
                       const studentSpecificFees = studentAssignedFees.filter(
                         (a: any) => a.student_id === st.id
@@ -937,7 +1055,7 @@ export const BatchBillingPage: React.FC = () => {
                             <div className="text-[10px] text-muted-foreground flex items-center gap-2 mt-0.5">
                               <span>Sec {st.section_name || 'N/A'}</span>
                               {hasCustomFees && (
-                                <Badge variant="outline" className="text-[9px] px-1 py-0 text-primary border-primary/30">
+                                <Badge variant="outline" className="text-[9px] px-1 py-0 text-primary border-primary/30 font-medium">
                                   +{studentSpecificFees.length} Facilities
                                 </Badge>
                               )}
@@ -961,60 +1079,64 @@ export const BatchBillingPage: React.FC = () => {
         </div>
       </form>
 
-      {/* Success Modal */}
-      {isSuccessModalOpen && generationSummary && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-xs p-4">
-          <Card className="max-w-md w-full border-border shadow-xl p-6 text-center space-y-4 animate-in fade-in zoom-in-95">
+      {/* Accessible Success Dialog (Replaces custom fixed div) */}
+      <Dialog open={isSuccessModalOpen} onOpenChange={setIsSuccessModalOpen}>
+        <DialogContent className="sm:max-w-md text-center p-6 space-y-4">
+          <DialogHeader className="space-y-2">
             <div className="w-12 h-12 rounded-full bg-emerald-500/10 text-emerald-600 flex items-center justify-center mx-auto">
               <CheckCircle2 className="w-6 h-6" />
             </div>
-            <div className="space-y-1">
-              <h3 className="text-lg font-bold text-foreground">Invoices Generated Successfully!</h3>
-              <p className="text-xs text-muted-foreground">
-                Monthly billing for {generationSummary.month} was created for {generationSummary.className}.
-              </p>
-            </div>
+            <DialogTitle className="text-lg font-bold text-center text-foreground">
+              Invoices Generated Successfully!
+            </DialogTitle>
+            <DialogDescription className="text-xs text-center text-muted-foreground">
+              Monthly billing statements for {generationSummary?.month} were successfully generated for {generationSummary?.className}.
+            </DialogDescription>
+          </DialogHeader>
 
-            <div className="p-3.5 rounded-xl bg-muted/40 border border-border/50 text-xs space-y-2 text-left font-mono">
+          {generationSummary && (
+            <div className="p-3.5 rounded-xl bg-muted/40 border border-border/50 text-xs space-y-2 text-left font-mono my-2">
               <div className="flex justify-between">
-                <span className="text-muted-foreground font-sans">Total Invoices:</span>
-                <span className="font-bold">{generationSummary.count}</span>
+                <span className="text-muted-foreground font-sans">Total Invoices Created:</span>
+                <span className="font-bold text-foreground">{generationSummary.count}</span>
               </div>
               <div className="flex justify-between">
                 <span className="text-muted-foreground font-sans">Billing Month:</span>
-                <span className="font-bold text-primary">{generationSummary.month}</span>
+                <span className="font-bold text-primary font-sans">{generationSummary.month}</span>
               </div>
               <div className="flex justify-between">
                 <span className="text-muted-foreground font-sans">Total Billed:</span>
                 <span className="font-bold text-primary">{formatCurrency(generationSummary.totalPayable)}</span>
               </div>
             </div>
+          )}
 
-            <div className="flex items-center gap-2 pt-2">
-              <Button
-                variant="outline"
-                size="sm"
-                className="flex-1 text-xs"
-                onClick={() => {
-                  setIsSuccessModalOpen(false);
-                }}
-              >
-                Generate Another Class
-              </Button>
-              <Button
-                size="sm"
-                className="flex-1 text-xs font-semibold"
-                onClick={() => {
-                  setIsSuccessModalOpen(false);
-                  navigate({ to: '/finance/bills' });
-                }}
-              >
-                View Bills Table
-              </Button>
-            </div>
-          </Card>
-        </div>
-      )}
+          <DialogFooter className="flex sm:flex-row gap-2 pt-2">
+            <Button
+              type="button"
+              variant="outline"
+              size="sm"
+              className="flex-1 text-xs"
+              onClick={() => {
+                setIsSuccessModalOpen(false);
+              }}
+            >
+              Generate Another Class
+            </Button>
+            <Button
+              type="button"
+              size="sm"
+              className="flex-1 text-xs font-semibold"
+              onClick={() => {
+                setIsSuccessModalOpen(false);
+                navigate({ to: '/finance/bills' });
+              }}
+            >
+              View Bills Table
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 };
