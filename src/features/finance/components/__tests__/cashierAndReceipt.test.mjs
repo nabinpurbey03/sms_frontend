@@ -16,6 +16,11 @@ import {
   numberToWords,
   getCancelBillEligibility,
   calculateTotalAccountBalance,
+  deriveBillLedgerStatus,
+  isBillPayable,
+  getBillMonthIndex,
+  sortBillsChronologically,
+  generateMonthlyLedgerSummary,
 } from '../../utils/cashierUtils.ts';
 
 // -------------------------------------------------------------------------
@@ -457,4 +462,144 @@ test('prior monthly dues itemization: correctly parses and formats itemized brea
     { label: 'Due amount for Jestha:', formattedAmount: '+ NPR 1,800.00' },
   ]);
 });
+
+// -------------------------------------------------------------------------
+// 10. Student Ledger Month-by-Month Status & Independent Monthly Settlement
+// -------------------------------------------------------------------------
+
+test('deriveBillLedgerStatus derives PAID, PARTIAL, UNPAID, and CANCELLED correctly', () => {
+  // 1. Settled bill with due_amount === 0 -> PAID
+  const fullyPaidBill = {
+    status: 'PAID',
+    total_payable: 3500,
+    paid_amount: 3500,
+    due_amount: 0,
+  };
+  assert.equal(deriveBillLedgerStatus(fullyPaidBill), 'PAID');
+
+  // Also when due_amount is 0 even if raw status is lowercase or legacy
+  const zeroDueBill = {
+    status: 'ISSUED',
+    total_payable: 4000,
+    paid_amount: 4000,
+    due_amount: 0,
+  };
+  assert.equal(deriveBillLedgerStatus(zeroDueBill), 'PAID');
+
+  // 2. Partial bill with paid > 0 and due > 0 -> PARTIAL
+  const partialBill = {
+    status: 'PARTIAL',
+    total_payable: 5000,
+    paid_amount: 2000,
+    due_amount: 3000,
+  };
+  assert.equal(deriveBillLedgerStatus(partialBill), 'PARTIAL');
+
+  // 3. Unpaid bill with paid === 0 and due > 0 -> UNPAID
+  const unpaidBill = {
+    status: 'UNPAID',
+    total_payable: 5000,
+    paid_amount: 0,
+    due_amount: 5000,
+  };
+  assert.equal(deriveBillLedgerStatus(unpaidBill), 'UNPAID');
+
+  // 4. Cancelled bill -> CANCELLED regardless of due
+  const cancelledBill = {
+    status: 'CANCELLED',
+    total_payable: 5000,
+    paid_amount: 0,
+    due_amount: 5000,
+  };
+  assert.equal(deriveBillLedgerStatus(cancelledBill), 'CANCELLED');
+});
+
+test('isBillPayable identifies payable bills vs settled / cancelled bills', () => {
+  // Unpaid bill with positive due -> payable
+  assert.equal(isBillPayable({ status: 'UNPAID', due_amount: 3000 }), true);
+
+  // Partial bill with positive due -> payable
+  assert.equal(isBillPayable({ status: 'PARTIAL', due_amount: 1500 }), true);
+
+  // Settled bill with 0 due -> NOT payable
+  assert.equal(isBillPayable({ status: 'PAID', due_amount: 0 }), false);
+
+  // Cancelled bill even with non-zero due -> NOT payable
+  assert.equal(isBillPayable({ status: 'CANCELLED', due_amount: 3000 }), false);
+
+  // Null or undefined -> NOT payable
+  assert.equal(isBillPayable(null), false);
+  assert.equal(isBillPayable(undefined), false);
+});
+
+test('sortBillsChronologically sorts bills from Baishakh to Chaitra', () => {
+  const bills = [
+    { id: '3', billing_month: 'Ashadh', issue_date: '2026-07-01' },
+    { id: '1', billing_month: 'Baishakh', issue_date: '2026-05-01' },
+    { id: '12', billing_month: 'Chaitra', issue_date: '2027-04-01' },
+    { id: '2', billing_month: 'Jestha', issue_date: '2026-06-01' },
+  ];
+
+  const sortedAsc = sortBillsChronologically(bills, 'asc');
+  assert.deepEqual(
+    sortedAsc.map((b) => b.billing_month),
+    ['Baishakh', 'Jestha', 'Ashadh', 'Chaitra']
+  );
+
+  const sortedDesc = sortBillsChronologically(bills, 'desc');
+  assert.deepEqual(
+    sortedDesc.map((b) => b.billing_month),
+    ['Chaitra', 'Ashadh', 'Jestha', 'Baishakh']
+  );
+});
+
+test('generateMonthlyLedgerSummary creates compact overview pills with exact formatting', () => {
+  const bills = [
+    {
+      id: 'b-1',
+      bill_number: 'BILL-001',
+      billing_month: 'Baishakh',
+      total_payable: 3000,
+      paid_amount: 3000,
+      due_amount: 0,
+      status: 'PAID',
+    },
+    {
+      id: 'b-2',
+      bill_number: 'BILL-002',
+      billing_month: 'Jestha',
+      total_payable: 3000,
+      paid_amount: 0,
+      due_amount: 3000,
+      status: 'UNPAID',
+    },
+    {
+      id: 'b-3',
+      bill_number: 'BILL-003',
+      billing_month: 'Ashadh',
+      total_payable: 5000,
+      paid_amount: 0,
+      due_amount: 5000,
+      status: 'UNPAID',
+    },
+  ];
+
+  const pills = generateMonthlyLedgerSummary(bills);
+  assert.equal(pills.length, 3);
+
+  // Exact strings matching the prompt/brief:
+  // M01 Baishakh: PAID, M02 Jestha: DUE NPR 3,000, M03 Ashadh: DUE NPR 5,000
+  assert.equal(pills[0].displayText, 'M01 Baishakh: PAID');
+  assert.equal(pills[0].status, 'PAID');
+  assert.equal(pills[0].monthCode, 'M01');
+
+  assert.equal(pills[1].displayText, 'M02 Jestha: DUE NPR 3,000');
+  assert.equal(pills[1].status, 'UNPAID');
+  assert.equal(pills[1].dueAmount, 3000);
+
+  assert.equal(pills[2].displayText, 'M03 Ashadh: DUE NPR 5,000');
+  assert.equal(pills[2].status, 'UNPAID');
+  assert.equal(pills[2].dueAmount, 5000);
+});
+
 

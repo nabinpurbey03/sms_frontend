@@ -481,3 +481,170 @@ export function calculateTotalAccountBalance(
     totalAccountDue,
   };
 }
+
+// -------------------------------------------------------------------------
+// 10. Student Ledger Month-by-Month Status & Chronological Settlement
+// -------------------------------------------------------------------------
+
+export type LedgerBillStatus = 'PAID' | 'PARTIAL' | 'UNPAID' | 'CANCELLED';
+
+/**
+ * Derives month-by-month bill status for the student ledger:
+ * - CANCELLED: Explicitly cancelled bills
+ * - PAID: Bills with due_amount <= 0 or status === 'PAID'
+ * - PARTIAL: Bills with paid_amount > 0 and due_amount > 0
+ * - UNPAID: Bills with paid_amount === 0 and due_amount > 0
+ */
+export function deriveBillLedgerStatus(bill: {
+  status?: string;
+  due_amount?: number | string;
+  paid_amount?: number | string;
+} | null | undefined): LedgerBillStatus {
+  if (!bill) return 'UNPAID';
+  if (bill.status?.toUpperCase() === 'CANCELLED') {
+    return 'CANCELLED';
+  }
+  const due = Math.max(0, Number(bill.due_amount ?? 0));
+  const paid = Math.max(0, Number(bill.paid_amount ?? 0));
+
+  if (due <= 0 || bill.status?.toUpperCase() === 'PAID') {
+    return 'PAID';
+  }
+  if (paid > 0 && due > 0) {
+    return 'PARTIAL';
+  }
+  return 'UNPAID';
+}
+
+/**
+ * Identifies if a bill is currently payable (has remaining balance due and is not cancelled).
+ */
+export function isBillPayable(bill: {
+  status?: string;
+  due_amount?: number | string;
+} | null | undefined): boolean {
+  if (!bill) return false;
+  if (bill.status?.toUpperCase() === 'CANCELLED') return false;
+  const due = Number(bill.due_amount ?? 0);
+  return due > 0;
+}
+
+/**
+ * Resolves the 0-11 BS Month index for a bill by checking billing_month, then bill_title.
+ */
+export function getBillMonthIndex(bill: {
+  billing_month?: string | null;
+  bill_title?: string | null;
+} | null | undefined): number {
+  if (!bill) return -1;
+  if (bill.billing_month) {
+    const idx = (BS_MONTHS as readonly string[]).indexOf(bill.billing_month);
+    if (idx !== -1) return idx;
+  }
+  if (bill.bill_title) {
+    for (let i = 0; i < BS_MONTHS.length; i++) {
+      if (bill.bill_title.includes(BS_MONTHS[i])) {
+        return i;
+      }
+    }
+  }
+  return -1;
+}
+
+/**
+ * Sorts bills chronologically (Baishakh -> Chaitra) or reverse chronologically.
+ */
+export function sortBillsChronologically<T extends {
+  billing_month?: string | null;
+  bill_title?: string | null;
+  issue_date?: string | null;
+  created_at?: string | null;
+}>(bills: T[], order: 'asc' | 'desc' = 'asc'): T[] {
+  return [...bills].sort((a, b) => {
+    const idxA = getBillMonthIndex(a);
+    const idxB = getBillMonthIndex(b);
+
+    let comparison = 0;
+    if (idxA !== -1 && idxB !== -1) {
+      comparison = idxA - idxB;
+    } else if (idxA !== -1) {
+      comparison = -1;
+    } else if (idxB !== -1) {
+      comparison = 1;
+    } else {
+      const dateA = a.issue_date || a.created_at || '';
+      const dateB = b.issue_date || b.created_at || '';
+      comparison = dateA.localeCompare(dateB);
+    }
+
+    return order === 'asc' ? comparison : -comparison;
+  });
+}
+
+export interface MonthSummaryPill {
+  month: string;
+  monthIndex: number;
+  monthCode: string;
+  billId?: string;
+  billNumber?: string;
+  status: LedgerBillStatus;
+  dueAmount: number;
+  paidAmount: number;
+  totalPayable: number;
+  displayText: string;
+}
+
+/**
+ * Generates compact overview pills showing which months are Paid vs Pending
+ * e.g. "M01 Baishakh: PAID", "M02 Jestha: DUE NPR 3,000", "M03 Ashadh: DUE NPR 5,000"
+ */
+export function generateMonthlyLedgerSummary<T extends {
+  id?: string;
+  bill_number?: string;
+  billing_month?: string | null;
+  bill_title?: string | null;
+  due_amount?: number | string;
+  paid_amount?: number | string;
+  total_payable?: number | string;
+  status?: string;
+  issue_date?: string | null;
+  created_at?: string | null;
+}>(bills: T[]): MonthSummaryPill[] {
+  const sorted = sortBillsChronologically(bills, 'asc');
+  const pills: MonthSummaryPill[] = [];
+
+  for (const bill of sorted) {
+    const monthIdx = getBillMonthIndex(bill);
+    const monthName = bill.billing_month || (monthIdx !== -1 ? BS_MONTHS[monthIdx] : 'Bill');
+    const monthCode = monthIdx !== -1 ? `M${String(monthIdx + 1).padStart(2, '0')}` : 'M--';
+    const status = deriveBillLedgerStatus(bill);
+    const due = Math.max(0, Number(bill.due_amount ?? 0));
+    const paid = Math.max(0, Number(bill.paid_amount ?? 0));
+    const payable = Math.max(0, Number(bill.total_payable ?? 0));
+
+    let displayText: string;
+    if (status === 'PAID') {
+      displayText = `${monthCode} ${monthName}: PAID`;
+    } else if (status === 'CANCELLED') {
+      displayText = `${monthCode} ${monthName}: CANCELLED`;
+    } else {
+      displayText = `${monthCode} ${monthName}: DUE NPR ${Math.round(due).toLocaleString('en-IN')}`;
+    }
+
+    pills.push({
+      month: monthName,
+      monthIndex: monthIdx,
+      monthCode,
+      billId: bill.id,
+      billNumber: bill.bill_number,
+      status,
+      dueAmount: due,
+      paidAmount: paid,
+      totalPayable: payable,
+      displayText,
+    });
+  }
+
+  return pills;
+}
+
