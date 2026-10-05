@@ -387,22 +387,71 @@ export const BatchBillingPage: React.FC = () => {
                 </div>
               </CardHeader>
               <CardContent className="p-4 sm:p-5 pt-2 space-y-4">
+                {/* Visual Status Legend */}
+                <div className="flex flex-wrap items-center gap-1.5 sm:gap-2 text-[11px] pb-1">
+                  <span className="text-muted-foreground font-medium text-[10px] uppercase tracking-wider mr-0.5">Status:</span>
+                  <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-md bg-blue-500/10 text-blue-700 dark:text-blue-300 border border-blue-500/25 font-medium text-[10px]">
+                    <span className="w-1.5 h-1.5 rounded-full bg-blue-500" />
+                    Current / Ready
+                  </span>
+                  <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-md bg-amber-500/10 text-amber-700 dark:text-amber-300 border border-amber-500/25 font-medium text-[10px]">
+                    <span className="w-1.5 h-1.5 rounded-full bg-amber-500" />
+                    Unbilled Backlog
+                  </span>
+                  <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-md bg-emerald-500/10 text-emerald-700 dark:text-emerald-300 border border-emerald-500/25 font-medium text-[10px]">
+                    <CheckCircle2 className="w-2.5 h-2.5 text-emerald-600 dark:text-emerald-400" />
+                    Generated
+                  </span>
+                  <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-md bg-muted text-muted-foreground border border-border/70 font-medium text-[10px]">
+                    <Lock className="w-2.5 h-2.5 text-muted-foreground" />
+                    Upcoming
+                  </span>
+                </div>
+
                 {/* 12 BS Month Buttons Grid */}
-                <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-2">
+                <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-2.5">
                   {monthStatuses.map((info) => {
                     const isSelected = selectedMonth === info.month;
                     const monthNumber = String(info.index + 1).padStart(2, '0');
 
-                    // Styles based on status
+                    // Surface and border classes strictly avoiding container-level opacity
                     let cardClass = '';
-                    if (info.status === 'GENERATED') {
-                      cardClass = 'opacity-45 bg-muted/20 border-border/40 cursor-not-allowed select-none';
-                    } else if (info.status === 'FUTURE_LOCKED') {
-                      cardClass = 'opacity-35 bg-muted/10 border-border/30 cursor-not-allowed select-none';
-                    } else if (isSelected) {
-                      cardClass = 'border-primary bg-primary/10 shadow-xs ring-2 ring-primary/25 font-bold cursor-pointer';
+                    let subtitleText = '';
+                    let subtitleClass = '';
+                    let monthNameClass = '';
+                    let monthCodeClass = '';
+
+                    if (isSelected) {
+                      cardClass = 'bg-primary/10 border-primary ring-2 ring-primary/30 shadow-xs cursor-pointer';
+                      monthNameClass = 'text-primary font-bold';
+                      monthCodeClass = 'text-primary font-bold';
+                      subtitleText = 'Selected';
+                      subtitleClass = 'text-primary/90 font-semibold';
+                    } else if (info.status === 'AVAILABLE_RUNNING') {
+                      cardClass = 'bg-card border-blue-500/40 hover:border-blue-500 hover:bg-blue-50/50 dark:hover:bg-blue-950/20 shadow-xs cursor-pointer hover:shadow-sm';
+                      monthNameClass = 'text-foreground font-semibold';
+                      monthCodeClass = 'text-blue-600 dark:text-blue-400 font-semibold';
+                      subtitleText = 'Ready to bill';
+                      subtitleClass = 'text-blue-600 dark:text-blue-400 font-medium';
+                    } else if (info.status === 'AVAILABLE_BACKLOG') {
+                      cardClass = 'bg-card border-border/80 hover:border-primary/50 hover:bg-muted/30 shadow-xs cursor-pointer hover:shadow-sm';
+                      monthNameClass = 'text-foreground font-semibold';
+                      monthCodeClass = 'text-muted-foreground font-semibold';
+                      subtitleText = 'Past unbilled';
+                      subtitleClass = 'text-amber-600 dark:text-amber-400 font-medium';
+                    } else if (info.status === 'GENERATED') {
+                      cardClass = 'bg-emerald-500/[0.04] border-emerald-500/30 dark:bg-emerald-950/15 cursor-not-allowed select-none';
+                      monthNameClass = 'text-foreground/90 font-medium';
+                      monthCodeClass = 'text-emerald-700/80 dark:text-emerald-400/80 font-medium';
+                      subtitleText = 'Bills issued';
+                      subtitleClass = 'text-emerald-700 dark:text-emerald-300 font-medium';
                     } else {
-                      cardClass = 'border-border/60 hover:border-border hover:bg-muted/40 text-muted-foreground cursor-pointer';
+                      // FUTURE_LOCKED
+                      cardClass = 'bg-muted/25 border-dashed border-border/80 cursor-not-allowed select-none';
+                      monthNameClass = 'text-muted-foreground font-medium';
+                      monthCodeClass = 'text-muted-foreground/80 font-medium';
+                      subtitleText = 'Upcoming cycle';
+                      subtitleClass = 'text-muted-foreground/80 font-normal';
                     }
 
                     return (
@@ -416,38 +465,44 @@ export const BatchBillingPage: React.FC = () => {
                           }
                         }}
                         title={info.tooltipText}
-                        className={`p-2.5 rounded-xl border text-left transition-all flex flex-col justify-between ${cardClass}`}
+                        className={`p-3 rounded-xl border text-left transition-all flex flex-col justify-between min-h-[76px] ${cardClass}`}
                       >
                         <div className="flex items-center justify-between w-full mb-1">
-                          <span className={`text-[10px] font-mono uppercase font-semibold ${isSelected ? 'text-primary' : 'text-muted-foreground'}`}>
+                          <span className={`text-[10px] font-mono uppercase ${monthCodeClass}`}>
                             M{monthNumber}
                           </span>
-                          {info.status === 'GENERATED' && (
-                            <Badge variant="outline" className="text-[9px] px-1 py-0 font-medium bg-emerald-500/10 text-emerald-700 dark:text-emerald-300 border-emerald-500/20 flex items-center gap-0.5">
-                              <CheckCircle2 className="w-2.5 h-2.5 text-emerald-500" />
+                          {isSelected ? (
+                            <Badge variant="default" className="text-[9px] px-1.5 py-0 font-semibold gap-0.5">
+                              <CheckCircle2 className="w-2.5 h-2.5" />
+                              <span>Active</span>
+                            </Badge>
+                          ) : info.status === 'GENERATED' ? (
+                            <Badge variant="outline" className="text-[9px] px-1.5 py-0 font-semibold bg-emerald-500/15 text-emerald-800 dark:text-emerald-200 border-emerald-500/35 flex items-center gap-0.5">
+                              <CheckCircle2 className="w-2.5 h-2.5 text-emerald-600 dark:text-emerald-400" />
                               <span>Generated</span>
                             </Badge>
-                          )}
-                          {info.status === 'FUTURE_LOCKED' && (
-                            <Badge variant="outline" className="text-[9px] px-1 py-0 font-medium text-muted-foreground bg-muted/40 flex items-center gap-0.5">
-                              <Lock className="w-2.5 h-2.5" />
+                          ) : info.status === 'FUTURE_LOCKED' ? (
+                            <Badge variant="outline" className="text-[9px] px-1.5 py-0 font-medium text-muted-foreground bg-background/80 border-border/70 flex items-center gap-0.5">
+                              <Lock className="w-2.5 h-2.5 text-muted-foreground/80" />
                               <span>Upcoming</span>
                             </Badge>
-                          )}
-                          {info.status === 'AVAILABLE_RUNNING' && !isSelected && (
-                            <Badge variant="outline" className="text-[9px] px-1 py-0 font-medium bg-blue-500/10 text-blue-600 dark:text-blue-400 border-blue-500/20">
+                          ) : info.status === 'AVAILABLE_RUNNING' ? (
+                            <Badge variant="outline" className="text-[9px] px-1.5 py-0 font-semibold bg-blue-500/15 text-blue-700 dark:text-blue-300 border-blue-500/30">
                               Current
                             </Badge>
-                          )}
-                          {info.status === 'AVAILABLE_BACKLOG' && !isSelected && (
-                            <Badge variant="secondary" className="text-[9px] px-1 py-0 font-medium">
+                          ) : (
+                            <Badge variant="secondary" className="text-[9px] px-1.5 py-0 font-medium bg-amber-500/15 text-amber-700 dark:text-amber-300 border border-amber-500/25">
                               Unbilled
                             </Badge>
                           )}
-                          {isSelected && <CheckCircle2 className="w-3.5 h-3.5 text-primary shrink-0" />}
                         </div>
-                        <div className={`text-xs ${isSelected ? 'text-primary font-bold' : info.isSelectable ? 'text-foreground font-medium' : 'text-muted-foreground'}`}>
-                          {info.month}
+                        <div className="space-y-0.5">
+                          <div className={`text-xs ${monthNameClass}`}>
+                            {info.month}
+                          </div>
+                          <div className={`text-[10px] leading-tight ${subtitleClass}`}>
+                            {subtitleText}
+                          </div>
                         </div>
                       </button>
                     );
