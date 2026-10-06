@@ -19,11 +19,13 @@ import {
   Clock,
   AlertCircle,
   ArrowUpDown,
+  Layers,
 } from 'lucide-react';
 import type { FeeBill, FeePayment } from '../types';
 import { PaymentCollectDialog } from '../components/PaymentCollectDialog';
 import { PrintableBillModal } from '../components/PrintableBillModal';
 import { PrintableReceiptModal } from '../components/PrintableReceiptModal';
+import { PrintableConsolidatedReceiptModal } from '../components/PrintableConsolidatedReceiptModal';
 import { PrintableStatementModal } from '../components/PrintableStatementModal';
 import { useCalendarPreferenceStore } from '@/stores/calendarPreferenceStore';
 import { formatDualDate } from '@/features/school-settings/utils/nepaliDate';
@@ -46,6 +48,7 @@ export const StudentLedgerPage: React.FC = () => {
   const [activeCollectBill, setActiveCollectBill] = useState<FeeBill | null>(null);
   const [activePrintBillId, setActivePrintBillId] = useState<string | null>(null);
   const [activePrintReceiptId, setActivePrintReceiptId] = useState<string | null>(null);
+  const [activeConsolidatedReceiptId, setActiveConsolidatedReceiptId] = useState<string | null>(null);
   const [isPayAllOpen, setIsPayAllOpen] = useState<boolean>(false);
   const [isPrintStatementOpen, setIsPrintStatementOpen] = useState<boolean>(false);
 
@@ -76,15 +79,23 @@ export const StudentLedgerPage: React.FC = () => {
 
   // Helper to find receipt for a settled bill
   const getBillReceipt = (bill: FeeBill) => {
-    if (bill.payments && bill.payments.length > 0) {
-      const latest = bill.payments[bill.payments.length - 1];
-      return { id: latest.id, receipt_number: latest.receipt_number };
-    }
     const payment = ledger?.payments?.find(
       (p) => (p.bill_id && p.bill_id === bill.id) || (p.bill_number && p.bill_number === bill.bill_number)
     );
     if (payment) {
-      return { id: payment.id, receipt_number: payment.receipt_number };
+      return {
+        id: payment.id,
+        receipt_number: payment.receipt_number,
+        payment_group_id: payment.payment_group_id || null,
+      };
+    }
+    if (bill.payments && bill.payments.length > 0) {
+      const latest = bill.payments[bill.payments.length - 1];
+      return {
+        id: latest.id,
+        receipt_number: latest.receipt_number,
+        payment_group_id: null,
+      };
     }
     return null;
   };
@@ -422,16 +433,29 @@ export const StudentLedgerPage: React.FC = () => {
                                 Pay Month
                               </Button>
                             ) : matchingReceipt ? (
-                              <Button
-                                size="sm"
-                                variant="outline"
-                                onClick={() => setActivePrintReceiptId(matchingReceipt.id)}
-                                className="h-7 text-xs gap-1 px-2 text-emerald-700 dark:text-emerald-400 border-emerald-200 dark:border-emerald-800 hover:bg-emerald-50 dark:hover:bg-emerald-950/50 cursor-pointer"
-                                title={`View Receipt ${matchingReceipt.receipt_number}`}
-                              >
-                                <Receipt className="w-3.5 h-3.5" />
-                                Receipt
-                              </Button>
+                              matchingReceipt.payment_group_id ? (
+                                <Button
+                                  size="sm"
+                                  variant="outline"
+                                  onClick={() => setActiveConsolidatedReceiptId(matchingReceipt.payment_group_id!)}
+                                  className="h-7 text-xs gap-1 px-2 text-emerald-800 dark:text-emerald-300 border-emerald-300 hover:bg-emerald-50 dark:hover:bg-emerald-950/50 cursor-pointer"
+                                  title="View Unified Consolidated Pay All Receipt"
+                                >
+                                  <Layers className="w-3.5 h-3.5 text-emerald-600" />
+                                  Consolidated
+                                </Button>
+                              ) : (
+                                <Button
+                                  size="sm"
+                                  variant="outline"
+                                  onClick={() => setActivePrintReceiptId(matchingReceipt.id)}
+                                  className="h-7 text-xs gap-1 px-2 text-emerald-700 dark:text-emerald-400 border-emerald-200 dark:border-emerald-800 hover:bg-emerald-50 dark:hover:bg-emerald-950/50 cursor-pointer"
+                                  title={`View Receipt ${matchingReceipt.receipt_number}`}
+                                >
+                                  <Receipt className="w-3.5 h-3.5" />
+                                  Receipt
+                                </Button>
+                              )
                             ) : (
                               <span className="inline-flex items-center gap-1 text-[11px] text-emerald-600 dark:text-emerald-400 px-1 py-0.5">
                                 <CheckCircle2 className="w-3.5 h-3.5" />
@@ -534,16 +558,29 @@ export const StudentLedgerPage: React.FC = () => {
                                       Pay Month
                                     </Button>
                                   ) : matchingReceipt ? (
-                                    <Button
-                                      size="sm"
-                                      variant="outline"
-                                      onClick={() => setActivePrintReceiptId(matchingReceipt.id)}
-                                      className="h-7 text-[11px] gap-1 px-2 text-emerald-700 dark:text-emerald-400 border-emerald-200 dark:border-emerald-800 hover:bg-emerald-50 dark:hover:bg-emerald-950/50 cursor-pointer"
-                                      title={`View Receipt ${matchingReceipt.receipt_number}`}
-                                    >
-                                      <Receipt className="w-3 h-3" />
-                                      Receipt
-                                    </Button>
+                                    matchingReceipt.payment_group_id ? (
+                                      <Button
+                                        size="sm"
+                                        variant="outline"
+                                        onClick={() => setActiveConsolidatedReceiptId(matchingReceipt.payment_group_id!)}
+                                        className="h-7 text-[11px] gap-1 px-2 text-emerald-800 dark:text-emerald-300 border-emerald-300 hover:bg-emerald-50 dark:hover:bg-emerald-950/50 cursor-pointer"
+                                        title="View Unified Consolidated Pay All Receipt"
+                                      >
+                                        <Layers className="w-3 h-3 text-emerald-600" />
+                                        Consolidated
+                                      </Button>
+                                    ) : (
+                                      <Button
+                                        size="sm"
+                                        variant="outline"
+                                        onClick={() => setActivePrintReceiptId(matchingReceipt.id)}
+                                        className="h-7 text-[11px] gap-1 px-2 text-emerald-700 dark:text-emerald-400 border-emerald-200 dark:border-emerald-800 hover:bg-emerald-50 dark:hover:bg-emerald-950/50 cursor-pointer"
+                                        title={`View Receipt ${matchingReceipt.receipt_number}`}
+                                      >
+                                        <Receipt className="w-3 h-3" />
+                                        Receipt
+                                      </Button>
+                                    )
                                   ) : (
                                     <span className="inline-flex items-center gap-1 text-[11px] text-emerald-600 dark:text-emerald-400 px-1 py-0.5">
                                       <CheckCircle2 className="w-3 h-3" />
@@ -602,7 +639,18 @@ export const StudentLedgerPage: React.FC = () => {
                       {ledger.payments.map((p) => (
                         <tr key={p.id} className="hover:bg-muted/30 transition-colors">
                           <td className="py-2.5 px-4 font-mono font-bold text-foreground">
-                            {p.receipt_number}
+                            <div className="flex items-center gap-1.5 flex-wrap">
+                              <span>{p.receipt_number}</span>
+                              {p.payment_group_id && (
+                                <Badge
+                                  variant="outline"
+                                  className="text-[9px] px-1.5 py-0 font-medium text-emerald-700 bg-emerald-50 dark:bg-emerald-950/60 dark:text-emerald-300 border-emerald-300 font-mono"
+                                  title={`Pay All Group: ${p.payment_group_id}`}
+                                >
+                                  Pay All
+                                </Badge>
+                              )}
+                            </div>
                           </td>
                           <td className="py-2.5 px-4 font-mono text-muted-foreground">{p.bill_number}</td>
                           <td className="py-2.5 px-4">
@@ -621,15 +669,40 @@ export const StudentLedgerPage: React.FC = () => {
                             NPR {Number(p.amount_paid).toFixed(2)}
                           </td>
                           <td className="py-2.5 px-4 text-right">
-                            <Button
-                              variant="ghost"
-                              size="sm"
-                              onClick={() => setActivePrintReceiptId(p.id)}
-                              className="h-7 text-xs gap-1 cursor-pointer"
-                            >
-                              <Printer className="w-3.5 h-3.5" />
-                              Receipt
-                            </Button>
+                            {p.payment_group_id ? (
+                              <div className="flex items-center justify-end gap-1.5">
+                                <Button
+                                  variant="outline"
+                                  size="sm"
+                                  onClick={() => setActiveConsolidatedReceiptId(p.payment_group_id!)}
+                                  className="h-7 text-xs gap-1 cursor-pointer border-emerald-300 text-emerald-800 dark:text-emerald-300 hover:bg-emerald-50 dark:hover:bg-emerald-950/50"
+                                  title="View Unified Consolidated Receipt for all bills paid in this transaction"
+                                >
+                                  <Layers className="w-3.5 h-3.5 text-emerald-600" />
+                                  Consolidated
+                                </Button>
+                                <Button
+                                  variant="ghost"
+                                  size="sm"
+                                  onClick={() => setActivePrintReceiptId(p.id)}
+                                  className="h-7 text-xs gap-1 cursor-pointer text-muted-foreground hover:text-foreground"
+                                  title="View Single Bill Receipt"
+                                >
+                                  <Printer className="w-3.5 h-3.5" />
+                                  Single
+                                </Button>
+                              </div>
+                            ) : (
+                              <Button
+                                variant="ghost"
+                                size="sm"
+                                onClick={() => setActivePrintReceiptId(p.id)}
+                                className="h-7 text-xs gap-1 cursor-pointer"
+                              >
+                                <Printer className="w-3.5 h-3.5" />
+                                Receipt
+                              </Button>
+                            )}
                           </td>
                         </tr>
                       ))}
@@ -670,7 +743,11 @@ export const StudentLedgerPage: React.FC = () => {
           isLoading={recordPaymentMutation.isPending}
           onPaymentSuccess={(payment: FeePayment) => {
             setIsPayAllOpen(false);
-            setActivePrintReceiptId(payment.id);
+            if (payment.payment_group_id || payment.is_consolidated) {
+              setActiveConsolidatedReceiptId(payment.payment_group_id || payment.id);
+            } else {
+              setActivePrintReceiptId(payment.id);
+            }
           }}
         />
       )}
@@ -701,12 +778,20 @@ export const StudentLedgerPage: React.FC = () => {
         billId={activePrintBillId}
       />
 
-      {/* Printable Receipt Modal */}
+      {/* Printable Single Receipt Modal */}
       <PrintableReceiptModal
         isOpen={!!activePrintReceiptId}
         onClose={() => setActivePrintReceiptId(null)}
         tenantId={activeTenantId}
         paymentId={activePrintReceiptId}
+      />
+
+      {/* Printable Consolidated Receipt Modal */}
+      <PrintableConsolidatedReceiptModal
+        isOpen={!!activeConsolidatedReceiptId}
+        onClose={() => setActiveConsolidatedReceiptId(null)}
+        tenantId={activeTenantId}
+        identifier={activeConsolidatedReceiptId}
       />
     </div>
   );
