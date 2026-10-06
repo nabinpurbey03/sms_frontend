@@ -23,6 +23,9 @@ import {
   generateMonthlyLedgerSummary,
   formatStudentFullName,
   extractSeparateMonthsDue,
+  filterApplicableBatchFeeStructures,
+  evaluateBatchFeeStructureEligibility,
+  getEligibleBatchFeeStructureIds,
 } from '../../utils/cashierUtils.ts';
 
 // -------------------------------------------------------------------------
@@ -708,6 +711,68 @@ test('extractSeparateMonthsDue: extracts, sorts chronologically, and itemizes un
   assert.equal(result[1].billNumber, 'FB-2082-002');
   assert.equal(result[1].status, 'PARTIAL');
 });
+
+// -------------------------------------------------------------------------
+// 12. Batch Billing Fee Structure Frequency Filtering
+// -------------------------------------------------------------------------
+
+test('filterApplicableBatchFeeStructures: allows YEARLY in Baishakh and rejects ONE_TIME', () => {
+  const structures = [
+    { id: 'fs-1', name: 'Monthly Tuition', frequency: 'MONTHLY', amount: 3000 },
+    { id: 'fs-2', name: 'Annual Development Fee', frequency: 'YEARLY', amount: 5000 },
+    { id: 'fs-3', name: 'Admission Fee', frequency: 'ONE_TIME', amount: 10000 },
+  ];
+
+  const evaluated = filterApplicableBatchFeeStructures('Baishakh', structures);
+  assert.equal(evaluated.length, 3);
+
+  // Monthly Tuition is eligible
+  assert.equal(evaluated[0].isEligible, true);
+  assert.equal(evaluated[0].structure.id, 'fs-1');
+
+  // Annual Development Fee is eligible in Baishakh
+  assert.equal(evaluated[1].isEligible, true);
+  assert.equal(evaluated[1].structure.id, 'fs-2');
+  assert.equal(evaluated[1].badgeLabel, 'Annual Fee');
+
+  // Admission Fee (ONE_TIME) is ineligible
+  assert.equal(evaluated[2].isEligible, false);
+  assert.equal(evaluated[2].structure.id, 'fs-3');
+  assert.equal(evaluated[2].badgeLabel, 'Admission Only');
+  assert.match(evaluated[2].disabledReason, /one-time admission fees cannot be billed/i);
+
+  const eligibleIds = getEligibleBatchFeeStructureIds('Baishakh', structures);
+  assert.deepEqual(eligibleIds, ['fs-1', 'fs-2']);
+});
+
+test('filterApplicableBatchFeeStructures: rejects YEARLY and ONE_TIME in non-Baishakh months', () => {
+  const structures = [
+    { id: 'fs-1', name: 'Monthly Tuition', frequency: 'MONTHLY', amount: 3000 },
+    { id: 'fs-2', name: 'Annual Development Fee', frequency: 'YEARLY', amount: 5000 },
+    { id: 'fs-3', name: 'Admission Fee', frequency: 'ONE_TIME', amount: 10000 },
+  ];
+
+  for (const month of ['Jestha', 'Ashadh', 'Chaitra']) {
+    const evaluated = filterApplicableBatchFeeStructures(month, structures);
+    assert.equal(evaluated.length, 3);
+
+    // Monthly Tuition is eligible
+    assert.equal(evaluated[0].isEligible, true);
+
+    // Annual Development Fee is ineligible outside Baishakh
+    assert.equal(evaluated[1].isEligible, false);
+    assert.equal(evaluated[1].badgeLabel, 'Yearly (Baishakh Only)');
+    assert.match(evaluated[1].disabledReason, /annual fees can only be billed in baishakh/i);
+
+    // Admission Fee is ineligible
+    assert.equal(evaluated[2].isEligible, false);
+    assert.equal(evaluated[2].badgeLabel, 'Admission Only');
+
+    const eligibleIds = getEligibleBatchFeeStructureIds(month, structures);
+    assert.deepEqual(eligibleIds, ['fs-1']);
+  }
+});
+
 
 
 

@@ -701,4 +701,74 @@ export function extractSeparateMonthsDue(bills?: FeeBill[] | null): MonthDueItem
     }));
 }
 
+export interface BatchFeeStructureEligibility<T = unknown> {
+  structure: T;
+  isEligible: boolean;
+  disabledReason?: string;
+  badgeLabel?: string;
+}
+
+/**
+ * Evaluates whether a fee structure is eligible for batch billing in a given Nepali month.
+ * - MONTHLY: Eligible every month.
+ * - YEARLY: Eligible ONLY in Baishakh (Month 1).
+ * - ONE_TIME: Never eligible in batch billing (admission/individual invoice only).
+ */
+export function evaluateBatchFeeStructureEligibility<T extends { frequency?: string; name?: string }>(
+  billingMonth: string,
+  structure: T
+): BatchFeeStructureEligibility<T> {
+  const normMonth = (billingMonth || '').trim().toLowerCase();
+  const isBaishakh = normMonth === 'baishakh' || normMonth.startsWith('baishakh ');
+  const freq = (structure.frequency || 'MONTHLY').toUpperCase();
+
+  if (freq === 'ONE_TIME') {
+    return {
+      structure,
+      isEligible: false,
+      disabledReason: 'One-time admission fees cannot be billed in monthly batch invoices.',
+      badgeLabel: 'Admission Only',
+    };
+  }
+
+  if (freq === 'YEARLY' && !isBaishakh) {
+    return {
+      structure,
+      isEligible: false,
+      disabledReason: 'Annual fees can only be billed in Baishakh (Month 1).',
+      badgeLabel: 'Yearly (Baishakh Only)',
+    };
+  }
+
+  return {
+    structure,
+    isEligible: true,
+    badgeLabel: freq === 'YEARLY' ? 'Annual Fee' : undefined,
+  };
+}
+
+/**
+ * Filters and marks fee structures with eligibility metadata for batch billing.
+ */
+export function filterApplicableBatchFeeStructures<T extends { frequency?: string; name?: string }>(
+  billingMonth: string,
+  structures: T[]
+): BatchFeeStructureEligibility<T>[] {
+  if (!structures) return [];
+  return structures.map((s) => evaluateBatchFeeStructureEligibility(billingMonth, s));
+}
+
+/**
+ * Returns strictly the IDs of structures eligible for batch billing in the given month.
+ */
+export function getEligibleBatchFeeStructureIds<T extends { id: string; frequency?: string; name?: string }>(
+  billingMonth: string,
+  structures: T[]
+): string[] {
+  return filterApplicableBatchFeeStructures(billingMonth, structures)
+    .filter((res) => res.isEligible)
+    .map((res) => res.structure.id);
+}
+
+
 
