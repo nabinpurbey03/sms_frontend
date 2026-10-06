@@ -61,21 +61,37 @@ A production-grade, domain-aligned **React 19 Single Page Application (SPA)** fo
   - **Per-Session Header Injection & TanStack Invalidation ([`TimeTravelContext.tsx`](file:///E:/SSUP/frontend/src/features/time-travel/TimeTravelContext.tsx))**: Stores active simulated date in `sessionStorage` (`ssup_simulated_date`) and injects the `X-Simulated-Date` header across all Axios requests. Dynamically invalidates React Query caches (`bills`, `dashboard`, `academic-years`, `stats`) upon date shift.
   - **Reactive Batch Billing Integration ([`BatchBillingPage.tsx`](file:///E:/SSUP/frontend/src/features/finance/pages/BatchBillingPage.tsx))**: Seamlessly recalculates the running BS month, due date defaults, and 12-month generation statuses in real-time as the simulated date shifts.
   - **Production Kill-Switch & Role Gate**: Toolbar and banner are completely stripped from DOM when `VITE_ENABLE_TIME_TRAVEL !== 'true'` or when logged-in user is not `SUPER_ADMIN`.
-- **Hardened Finance Module: 12 BS Month Billing, Student Facilities & POS Cashier Counter**:
-  - **12 Bikram Sambat Month Batch Billing ([`BatchBillGenerateDialog.tsx`](file:///E:/SSUP/frontend/src/features/finance/components/BatchBillGenerateDialog.tsx))**:
-    - Complete migration from quarterly billing to 12 Bikram Sambat months (`Baishakh` through `Chaitra`).
-    - Dynamic bill title preview (`{Month} Fee Bill ({Session})`), Nepali month selector, duplicate generation prevention alert, and live 1x monthly fee head aggregation preview without quarterly multipliers.
-  - **Level-3 Student Facilities Dialog & Class Badges ([`ManageStudentFacilitiesDialog.tsx`](file:///E:/SSUP/frontend/src/features/finance/components/ManageStudentFacilitiesDialog.tsx), [`ClassFeeStructurePage.tsx`](file:///E:/SSUP/frontend/src/features/finance/pages/ClassFeeStructurePage.tsx))**:
-    - Dedicated student facilities management modal for assigning individualized recurring fee heads (Hostel, Tutoring/Coaching, Transport overrides, Special Labs) directly to students.
-    - Responsive facility pill badges on the class fee structure table showing active services with category color chips and NPR amounts.
-    - Dynamic baseline calculation showing base tuition, transport, active facilities, and scholarship deductions.
-  - **Cashier POS Counter & Quick Fill Presets ([`CollectPaymentPage.tsx`](file:///E:/SSUP/frontend/src/features/finance/pages/CollectPaymentPage.tsx), [`PaymentCollectDialog.tsx`](file:///E:/SSUP/frontend/src/features/finance/components/PaymentCollectDialog.tsx))**:
-    - High-efficiency cashier payment counter with intelligent quick-fill preset chips: **"Full Balance"** (total remaining due including arrears) and **"Current Month Only"** (excludes prior rolling arrears).
-    - Real-time counter discount calculator (Percentage % or Flat NPR) reducing net cash required.
-    - Dynamic late fee penalty detection with warning banner, overdue days counter, and cashier collect/waive toggle.
-  - **Audit-Proof Printable Receipt Documents ([`PrintableReceiptModal.tsx`](file:///E:/SSUP/frontend/src/features/finance/components/PrintableReceiptModal.tsx))**:
-    - High-fidelity printable cash counter receipts formatted for standard thermal POS or A4 printouts.
-    - Features unique receipt numbers (`RCP-{tenant}-{year}-{seq}`), itemized line item breakdown (current month heads, rolling arrears from previous months, late fee assessments, and counter discounts), payment method, cashier attribution, and automated number-to-words NPR currency representation.
+- **Comprehensive Finance Module: 360° Student Ledger, Sequential Billing, POS Cashier & Multi-Document Receipts**:
+  - **360° Student Financial Ledger & Multi-Document Printing ([`StudentLedgerPage.tsx`](file:///E:/SSUP/frontend/src/features/finance/pages/StudentLedgerPage.tsx))**:
+    - Centralized student account hub (`/finance/ledger/$studentId`) featuring financial KPIs (Total Billed, Total Paid, Balance Due) and interactive 12-month Bikram Sambat status pills (`M01 Baishakh: PAID`, `M02 Jestha: DUE NPR ...`). Clicking any unpaid pill opens an instant payment collection modal for that specific month.
+    - Responsive layout with automatic dual-mode rendering: stacked cards on mobile (`< md`) and high-density tabular ledger on desktop (`md+`) with chronological sort toggles (earliest vs latest).
+    - **Consolidated "Pay All Dues" Waterfall Settlement**: 1-click multi-bill settlement modal distributing payment chronologically across all outstanding invoices in a single transaction via `apply_waterfall: true` with unified `payment_group_id` tracking.
+    - **Unified Multi-Document Printing Suite**:
+      - **Consolidated Group Receipt ([`PrintableConsolidatedReceiptModal.tsx`](file:///E:/SSUP/frontend/src/features/finance/components/PrintableConsolidatedReceiptModal.tsx))**: Official bilingual receipt (*एकमुष्ठ शुल्क भुक्तानी रसिद*) itemizing all settled monthly invoices, per-bill allocations, remaining student account balance, English number-to-words NPR conversion, cashier attribution, and `Ctrl+P` / `Cmd+P` shortcut.
+      - **Annual Student Statement ([`PrintableStatementModal.tsx`](file:///E:/SSUP/frontend/src/features/finance/components/PrintableStatementModal.tsx))**: Official full-year account statement (*वार्षिक शुल्क हिसाब विवरण*) with chronological bills ledger, payment receipts ledger, separate overdue months breakdown, and account balances.
+      - **Itemized Printable Invoices ([`PrintableBillModal.tsx`](file:///E:/SSUP/frontend/src/features/finance/components/PrintableBillModal.tsx))**: Official billing invoice itemizing current month fee heads alongside prior unpaid months (`Due amount for Baishakh`, `Due amount for Jestha`) to display cumulative account due without collapsing intra-session bills.
+  - **Full-Page Batch Invoicing & Strict Sequential Month Engine ([`BatchBillingPage.tsx`](file:///E:/SSUP/frontend/src/features/finance/pages/BatchBillingPage.tsx))**:
+    - Full-page invoice generation hub (`/finance/batch-billing`) elevated to a premier sidebar tab ("Invoice Generation").
+    - **Strict Sequential Month Engine**: Enforces chronological Baishakh→Chaitra billing with 6 discrete lock states (`GENERATED`, `AVAILABLE_RUNNING`, `AVAILABLE_NEXT`, `LOCKED_SEQUENCE`, `LOCKED_PAST`, `FUTURE_LOCKED`) via `computeMonthStatus` and `getNextSequentialMonth`, preventing skipped months and out-of-order retro-billing.
+    - **Fee Frequency Semantics**: Automatic head eligibility filtering enforcing `MONTHLY` heads across all months, `YEARLY` heads strictly in Baishakh (`Yearly (Baishakh Only)` badge), and excluding `ONE_TIME` admission heads from batch billing.
+    - **Inline Ad-Hoc Fee Injection**: Cashiers can add custom on-the-fly fee items (`ad_hoc_fee_name`, `ad_hoc_fee_amount`) directly into a class batch run without pre-configuring fee structures.
+    - **Live Class Roster Preview**: Displays student list, section chips, baseline fees, and facility add-ons with reactive recalculation during Time Travel date shifts.
+  - **Dedicated Parent Fee Portal ([`ParentFeeStatusPage.tsx`](file:///E:/SSUP/frontend/src/features/finance/pages/ParentFeeStatusPage.tsx))**:
+    - Dedicated parent portal route (`/finance/my-children-fees`) accessible under "My Children's Fees" in the sidebar navigation.
+    - Multi-child aggregated KPIs (Total Billed, Total Paid, Balance Due), individual child overview cards, complete invoice history, and 1-click modal access to official bills and single/multi-payment receipts via dropdown.
+  - **Cashier POS Counter, Smart Presets & Wallet Restorations ([`PaymentCollectDialog.tsx`](file:///E:/SSUP/frontend/src/features/finance/components/PaymentCollectDialog.tsx), [`CancelBillDialog.tsx`](file:///E:/SSUP/frontend/src/features/finance/components/CancelBillDialog.tsx))**:
+    - High-efficiency modal-driven cashier payment counter embedded directly within the Student Ledger and Bills registry.
+    - Smart quick-fill presets: "Pay Full Balance" vs "Current Month Only" (auto-collapsed when no prior arrears exist) and "Custom Amount".
+    - Segmented counter discount / waiver toggle: "No Discount", "Percentage", and "Fixed Amount" with live net payable calculations.
+    - Dynamic late fee penalty detection with grace period counter, warning banner, and collect/waive toggle.
+    - **Bill Cancellation & Wallet Protection ([`CancelBillDialog.tsx`](file:///E:/SSUP/frontend/src/features/finance/components/CancelBillDialog.tsx))**: Safely cancels unpaid bills while automatically restoring applied advance wallet credits to the student's wallet balance; strictly denies cancellation for bills with recorded payments.
+  - **Level-3 Student Facilities & Bulk Assignment ([`ManageStudentFacilitiesDialog.tsx`](file:///E:/SSUP/frontend/src/features/finance/components/ManageStudentFacilitiesDialog.tsx), [`BulkAssignFacilityDialog.tsx`](file:///E:/SSUP/frontend/src/features/finance/components/BulkAssignFacilityDialog.tsx))**:
+    - Dedicated dialogs for assigning individualized recurring fee heads (Hostel, Tutoring/Coaching, Transport overrides, Special Labs) directly to students.
+    - **Bulk Facility Assignment ([`BulkAssignFacilityDialog.tsx`](file:///E:/SSUP/frontend/src/features/finance/components/BulkAssignFacilityDialog.tsx))**: Assigns facilities across multiple students simultaneously via `PRESET` or `CUSTOM` modes.
+    - Facility pill badges on class fee structure tables showing active services with category color chips and NPR amounts.
+  - **Financial Analytics Hub & Dedicated Accountant Dashboard ([`FinanceDashboardPage.tsx`](file:///E:/SSUP/frontend/src/features/finance/pages/FinanceDashboardPage.tsx))**:
+    - Role-adaptive dashboard automatically serving as the home view for users with the `ACCOUNTANT` role.
+    - KPI analytics suite (This Month Collection, Year Revenue, Total Outstanding Dues, Collection Efficiency %), Revenue Realization bar, Payment Channels distribution, Defaulter callout banner, and Recent Collections ledger.
 - **Finance Module: Multi-Class Fee Assignment & Year-to-Year Fee Structure Cloning**:
   - **Multi-Class Batch Fee Assignment ([`FeeStructureDialog.tsx`](file:///E:/SSUP/frontend/src/features/finance/components/FeeStructureDialog.tsx))**:
     - Extends the class-level fee configuration modal with a **Batch Assignment (Multiple Classes)** toggle mode.
@@ -87,6 +103,8 @@ A production-grade, domain-aligned **React 19 Single Page Application (SPA)** fo
     - **Rounding Engine**: Configurable rounding options: Round to nearest 10 NPR (`Default`), Round to nearest 1 NPR (Integer), or Exact cents/paisa.
     - **Granular Scope Selection**: Checkboxes for Universal School Fees, Class-Specific Fees, and Student Presets with validation requiring at least one scope.
     - **Non-Destructive Safety**: Conflict-safe cloning that preserves existing target fee structures, safely ignores unmatched legacy classes, and provides detailed toast notifications of cloned and skipped counts.
+  - **Session Fee Onboarding Banner ([`SessionFeeOnboardingBanner.tsx`](file:///E:/SSUP/frontend/src/features/finance/components/SessionFeeOnboardingBanner.tsx))**:
+    - High-visibility onboarding banner guiding administrators to configure fees for a newly activated academic session with 1-click clone actions.
 - **UI/UX Modernization & Design System Upgrade (Phases 1–5)**:
   - **Global Command Palette (`Cmd+K` / `Ctrl+K`)**: Fast accessible command palette modal ([`CommandPalette.tsx`](file:///E:/SSUP/frontend/src/components/layout/CommandPalette.tsx)) featuring role-aware page navigation, live keyword filtering, keyboard arrows/enter support, and direct actions (theme and calendar system toggles).
   - **Interactive Notification Popover ([`NotificationPopover.tsx`](file:///E:/SSUP/frontend/src/components/layout/NotificationPopover.tsx))**: Replaced the static header bell icon with a real-time notification popover displaying today's classroom attendance pending prompts (with 1-click navigation to mark attendance), upcoming calendar events, and "Mark all as read" dismiss controls.
@@ -198,7 +216,7 @@ A production-grade, domain-aligned **React 19 Single Page Application (SPA)** fo
 | **School Settings** | Centralized hub for academic sessions & rollovers, tenant-configurable weekly academic days (Sun-Fri, Mon-Fri, etc.), academic calendar events & official holidays, and school branding profile. |
 | **Academic Management** | Class catalog with auto-provisioned Section A; 20-student eligibility check before sequential section expansion; single & bulk student enrollment (CSV/XLSX template download); subjects management. |
 | **Attendance Tracking** | Daily section attendance checklist with batch toggle actions (Mark All Present/Absent); Class Teacher verification; date range section reports; linked child reports for parents; multi-level dashboard summary. |
-| **Financial Management** | 3-level fee architecture (School, Class, Student Facilities), 12 Bikram Sambat monthly batch billing, rolling arrears itemization, year-to-year fee cloning, cashier POS payment counter with quick fill presets and late fee warning, and audit-proof printable receipts. |
+| **Financial Management** | 3-level fee architecture (School, Class, Student Facilities), 12 Bikram Sambat sequential monthly billing with 6 lock states, 360° student financial ledger with month status pills, 1-click consolidated "Pay All" waterfall settlement, audit-proof single & consolidated printable receipts, annual student statements, parent fee portal, year-to-year fee cloning, cashier POS counter with smart presets & dynamic late fee waiver, and bill cancellation with wallet credit restoration. |
 | **Modern Component System** | Accessible **shadcn/ui** design tokens built on Tailwind CSS v4, Radix UI primitives, Lucide icons, and Sonner toast notifications. |
 
 ---
@@ -608,10 +626,14 @@ frontend/
     │   │   └── utils/                # attendanceStatus.ts (local date, marked checks, duty resolution)
     │   ├── examination/              # Exams, grading & report cards
     │   ├── members/                  # School member directory & parent-student links
-    │   ├── finance/                  # 3-level fees, bulk assignment, cloning, batch billing & payments
-    │   │   ├── pages/                # FeeStructuresPage, BillingPage, PaymentsPage
-    │   │   ├── components/           # FeeStructureDialog, CloneFeeStructuresDialog, BatchBillGenerateDialog
-    │   │   └── hooks/                # useFeeStructures, useCloneFeeStructures, useBulkClassFeeStructures
+    │   ├── finance/                  # 3-level fees, sequential billing, 360° ledger, POS cashier & receipts
+    │   │   ├── pages/                # FinanceDashboardPage, BatchBillingPage, BillsPage, StudentLedgerPage, ParentFeeStatusPage, TransactionsPage, FeeStructuresPage, ClassFeeStructurePage
+    │   │   ├── components/           # PaymentCollectDialog, PrintableReceiptModal, PrintableConsolidatedReceiptModal, PrintableStatementModal, PrintableBillModal, CancelBillDialog, FeeStructureDialog, CloneFeeStructuresDialog, BulkAssignFacilityDialog, SessionFeeOnboardingBanner
+    │   │   ├── utils/                # cashierUtils.ts (BS billing, POS math, sequential locks), lateFeeUtils.ts, feeCloneUtils.ts, studentFacilityUtils.ts
+    │   │   ├── hooks.ts              # 17 query hooks + 13 mutation hooks (class overview, ledger, receipts, billing)
+    │   │   ├── api.ts                # 24 typed Axios endpoints (/api/v1/finance/*)
+    │   │   ├── schema.ts             # Zod validation schemas for fee structures, billing runs & collections
+    │   │   └── types.ts              # TypeScript domain types & DTOs (~485 lines)
     │   └── time-travel/              # Simulated date sandbox toolbar, banner, context & utilities
     │       ├── components/           # TimeTravelToolbar, TimeTravelBanner
     │       ├── TimeTravelContext.tsx # Context provider with sessionStorage sync & React Query invalidation
