@@ -28,7 +28,7 @@ import { PrintableReceiptModal } from '../components/PrintableReceiptModal';
 import { PrintableConsolidatedReceiptModal } from '../components/PrintableConsolidatedReceiptModal';
 import { PrintableStatementModal } from '../components/PrintableStatementModal';
 import { useCalendarPreferenceStore } from '@/stores/calendarPreferenceStore';
-import { formatDualDate } from '@/features/school-settings/utils/nepaliDate';
+import { formatDate, formatDualDate } from '@/features/school-settings/utils/nepaliDate';
 import {
   deriveBillLedgerStatus,
   sortBillsChronologically,
@@ -387,15 +387,11 @@ export const StudentLedgerPage: React.FC = () => {
                         <div className="grid grid-cols-2 gap-2 text-xs py-2 border-y border-border/40">
                           <div>
                             <span className="text-muted-foreground text-[11px] block">Issue Date</span>
-                            <span className="font-medium text-foreground">
-                              {formatDualDate(b.issue_date, calendarSystem)}
-                            </span>
+                            <span className="font-medium text-foreground cursor-default" title={formatDualDate(b.issue_date, calendarSystem)}>{formatDate(b.issue_date, calendarSystem)}</span>
                           </div>
                           <div>
                             <span className="text-muted-foreground text-[11px] block">Due Date</span>
-                            <span className="font-medium text-foreground">
-                              {formatDualDate(b.due_date, calendarSystem)}
-                            </span>
+                            <span className="font-medium text-foreground cursor-default" title={formatDualDate(b.due_date, calendarSystem)}>{formatDate(b.due_date, calendarSystem)}</span>
                           </div>
                           <div>
                             <span className="text-muted-foreground text-[11px] block">Payable</span>
@@ -521,12 +517,8 @@ export const StudentLedgerPage: React.FC = () => {
                                   </div>
                                 </div>
                               </td>
-                              <td className="py-2.5 px-3 text-muted-foreground whitespace-nowrap">
-                                {formatDualDate(b.issue_date, calendarSystem)}
-                              </td>
-                              <td className="py-2.5 px-3 text-muted-foreground whitespace-nowrap">
-                                {formatDualDate(b.due_date, calendarSystem)}
-                              </td>
+                              <td className="py-2.5 px-3 text-muted-foreground whitespace-nowrap"><span className="cursor-default" title={formatDualDate(b.issue_date, calendarSystem)}>{formatDate(b.issue_date, calendarSystem)}</span></td>
+                              <td className="py-2.5 px-3 text-muted-foreground whitespace-nowrap"><span className="cursor-default" title={formatDualDate(b.due_date, calendarSystem)}>{formatDate(b.due_date, calendarSystem)}</span></td>
                               <td className="py-2.5 px-3 text-right font-mono">
                                 {Number(b.subtotal_amount).toFixed(2)}
                               </td>
@@ -661,9 +653,7 @@ export const StudentLedgerPage: React.FC = () => {
                           <td className="py-2.5 px-4 font-mono text-muted-foreground">
                             {p.transaction_reference || '—'}
                           </td>
-                          <td className="py-2.5 px-4 text-muted-foreground whitespace-nowrap">
-                            {formatDualDate(p.payment_date, calendarSystem)}
-                          </td>
+                          <td className="py-2.5 px-4 text-muted-foreground whitespace-nowrap"><span className="cursor-default" title={formatDualDate(p.payment_date, calendarSystem)}>{formatDate(p.payment_date, calendarSystem)}</span></td>
                           <td className="py-2.5 px-4 text-muted-foreground">{p.received_by_name || 'Cashier'}</td>
                           <td className="py-2.5 px-4 text-right font-mono font-bold text-foreground">
                             NPR {Number(p.amount_paid).toFixed(2)}
