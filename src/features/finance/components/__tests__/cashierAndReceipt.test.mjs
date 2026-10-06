@@ -828,3 +828,30 @@ test('Consolidated Receipt: validates allocations structure and multi-bill settl
   assert.equal(Number(consolidatedDoc.total_amount_paid), 5500);
   assert.equal(Number(consolidatedDoc.total_account_balance_remaining), 500);
 });
+
+// -------------------------------------------------------------------------
+// 20. Student Ledger Calendar Selection Date Formatting
+// -------------------------------------------------------------------------
+
+test('Student Ledger: formatDate respects calendarSystem selection (BS vs AD)', async () => {
+  const { formatDate, formatDualDate } = await import('../../../school-settings/utils/nepaliDate.ts');
+  const sampleIsoDate = '2026-04-15';
+
+  // BS Mode: returns only Nepali date without Gregorian parentheses
+  const bsResult = formatDate(sampleIsoDate, 'BS');
+  assert.equal(bsResult.includes('('), false, 'BS output must not contain bracketed date');
+  assert.equal(bsResult.includes('2083'), true, 'BS output must contain Bikram Sambat year');
+  assert.equal(bsResult.includes('Baisakh'), true, 'BS output must contain Nepali month name');
+
+  // AD Mode: returns only Gregorian date without Nepali parentheses
+  const adResult = formatDate(sampleIsoDate, 'AD');
+  assert.equal(adResult.includes('('), false, 'AD output must not contain bracketed date');
+  assert.equal(adResult.includes('2026'), true, 'AD output must contain Gregorian year');
+  assert.equal(adResult.includes('Apr'), true, 'AD output must contain Gregorian month');
+
+  // Hover Tooltip: formatDualDate provides full context
+  const bsDual = formatDualDate(sampleIsoDate, 'BS');
+  assert.equal(bsDual.includes('('), true, 'Dual date contains secondary calendar in brackets');
+  assert.equal(bsDual.includes('Apr 15, 2026'), true);
+});
+
