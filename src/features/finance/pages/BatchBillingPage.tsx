@@ -25,6 +25,8 @@ import {
   getNextSequentialMonth,
   computeMonthStatus,
   type MonthStatusInfo,
+  evaluateBatchFeeStructureEligibility,
+  getEligibleBatchFeeStructureIds,
 } from '../utils/cashierUtils';
 import { useTimeTravel } from '@/features/time-travel/TimeTravelContext';
 import { Card, CardHeader, CardTitle, CardDescription, CardContent } from '@/components/ui/card';
@@ -159,6 +161,10 @@ export const BatchBillingPage: React.FC = () => {
     return [...schoolFees, ...classFees];
   }, [schoolFees, classFees]);
 
+  const eligibleStructureIds = useMemo(() => {
+    return new Set(getEligibleBatchFeeStructureIds(selectedMonth, allAvailableStructures));
+  }, [selectedMonth, allAvailableStructures]);
+
   const displayedStructures = useMemo(() => {
     if (feeFilter === 'SCHOOL') return schoolFees;
     if (feeFilter === 'CLASS') return classFees;
@@ -253,27 +259,29 @@ export const BatchBillingPage: React.FC = () => {
     }
   }, [classes, selectedClassId, setValue]);
 
-  // Auto-select all available fee structures when class or fee structures load
+  // Auto-select eligible fee structures when class, fee structures, or month load
   useEffect(() => {
     if (allAvailableStructures.length > 0) {
-      setValue(
-        'fee_structure_ids',
-        allAvailableStructures.map((f) => f.id)
-      );
+      const eligibleIds = getEligibleBatchFeeStructureIds(selectedMonth, allAvailableStructures);
+      setValue('fee_structure_ids', eligibleIds);
     }
-  }, [allAvailableStructures, setValue]);
+  }, [allAvailableStructures, selectedMonth, setValue]);
 
-  // Handle month selection
+  // Handle month selection & auto-prune ineligible fee structures
   const handleMonthChange = (month: BsMonth) => {
     setSelectedMonth(month);
     setValue('billing_month', month);
+
+    // Prune structures that are no longer eligible in the new month
+    const newlyEligibleIds = new Set(getEligibleBatchFeeStructureIds(month, allAvailableStructures));
+    const currentSelected = watch('fee_structure_ids') || [];
+    const pruned = currentSelected.filter((id) => newlyEligibleIds.has(id));
+    setValue('fee_structure_ids', pruned);
   };
 
   const handleSelectAll = () => {
-    setValue(
-      'fee_structure_ids',
-      allAvailableStructures.map((f) => f.id)
-    );
+    const eligibleIds = getEligibleBatchFeeStructureIds(selectedMonth, allAvailableStructures);
+    setValue('fee_structure_ids', eligibleIds);
   };
 
   const handleDeselectAll = () => {
@@ -281,6 +289,7 @@ export const BatchBillingPage: React.FC = () => {
   };
 
   const handleToggleStructure = (id: string) => {
+    if (!eligibleStructureIds.has(id)) return;
     if (watchedFeeStructureIds.includes(id)) {
       setValue(
         'fee_structure_ids',
@@ -303,7 +312,8 @@ export const BatchBillingPage: React.FC = () => {
     setValue('ad_hoc_fee_name', '');
     setValue('ad_hoc_fee_amount', undefined);
     setShowAdHoc(false);
-    setValue('fee_structure_ids', allAvailableStructures.map((f) => f.id));
+    const targetMonth = nextEligibleMonth || selectedMonth;
+    setValue('fee_structure_ids', getEligibleBatchFeeStructureIds(targetMonth, allAvailableStructures));
     if (nextEligibleMonth) {
       setSelectedMonth(nextEligibleMonth);
       setValue('billing_month', nextEligibleMonth);
@@ -768,11 +778,13 @@ export const BatchBillingPage: React.FC = () => {
                         3
                       </span>
                       <CardTitle className="text-sm sm:text-base font-bold text-foreground">
-                        Fee Structures to Charge ({selectedStructures.length}/{allAvailableStructures.length})
+                        Fee Structures to Charge ({selectedStructures.length}/{eligibleStructureIds.size})
                       </CardTitle>
                     </div>
                     <CardDescription className="text-xs text-muted-foreground ml-7">
-                      Active fee heads included in {selectedMonth}&apos;s billing statement.
+                      {selectedMonth === 'Baishakh'
+                        ? 'Active monthly and annual fee heads included in Baishakh billing statement.'
+                        : `Active monthly fee heads included in ${selectedMonth}'s billing statement (yearly & one-time fees restricted).`}
                     </CardDescription>
                   </div>
 
@@ -915,20 +927,30 @@ export const BatchBillingPage: React.FC = () => {
                     {displayedStructures.map((structure) => {
                       const isSelected = watchedFeeStructureIds.includes(structure.id);
                       const isSchoolLevel = structure.fee_level === 'SCHOOL';
+                      const eligibility = evaluateBatchFeeStructureEligibility(selectedMonth, structure);
+                      const isEligible = eligibility.isEligible;
 
                       return (
                         <div
                           key={structure.id}
-                          onClick={() => handleToggleStructure(structure.id)}
-                          className={`p-3 rounded-xl border text-left transition-all cursor-pointer flex items-start gap-2.5 ${
-                            isSelected
-                              ? 'border-primary bg-primary/5 ring-1 ring-primary/30'
-                              : 'border-border/60 hover:bg-muted/30 opacity-70'
+                          onClick={() => {
+                            if (isEligible) handleToggleStructure(structure.id);
+                          }}
+                          title={eligibility.disabledReason}
+                          className={`p-3 rounded-xl border text-left transition-all flex items-start gap-2.5 ${
+                            !isEligible
+                              ? 'border-border/40 bg-muted/20 opacity-50 cursor-not-allowed'
+                              : isSelected
+                              ? 'border-primary bg-primary/5 ring-1 ring-primary/30 cursor-pointer'
+                              : 'border-border/60 hover:bg-muted/30 opacity-70 cursor-pointer'
                           }`}
                         >
                           <Checkbox
-                            checked={isSelected}
-                            onCheckedChange={() => handleToggleStructure(structure.id)}
+                            checked={isEligible && isSelected}
+                            disabled={!isEligible}
+                            onCheckedChange={() => {
+                              if (isEligible) handleToggleStructure(structure.id);
+                            }}
                             className="mt-0.5"
                           />
                           <div className="flex-1 min-w-0">
@@ -936,12 +958,26 @@ export const BatchBillingPage: React.FC = () => {
                               <span className="text-xs font-semibold text-foreground truncate">
                                 {structure.name}
                               </span>
-                              <Badge
-                                variant={isSchoolLevel ? 'default' : 'secondary'}
-                                className="text-[9px] px-1 py-0 uppercase shrink-0 font-medium"
-                              >
-                                {isSchoolLevel ? 'School' : 'Class'}
-                              </Badge>
+                              <div className="flex items-center gap-1 shrink-0">
+                                {eligibility.badgeLabel && (
+                                  <Badge
+                                    variant="outline"
+                                    className={`text-[9px] px-1 py-0 uppercase font-medium ${
+                                      !isEligible
+                                        ? 'border-amber-400/80 text-amber-700 dark:text-amber-300 bg-amber-50 dark:bg-amber-950/40'
+                                        : 'border-primary/40 text-primary bg-primary/10'
+                                    }`}
+                                  >
+                                    {eligibility.badgeLabel}
+                                  </Badge>
+                                )}
+                                <Badge
+                                  variant={isSchoolLevel ? 'default' : 'secondary'}
+                                  className="text-[9px] px-1 py-0 uppercase font-medium"
+                                >
+                                  {isSchoolLevel ? 'School' : 'Class'}
+                                </Badge>
+                              </div>
                             </div>
                             <div className="flex items-center justify-between text-[11px] text-muted-foreground">
                               <span className="capitalize">{structure.frequency.toLowerCase()}</span>
@@ -949,6 +985,11 @@ export const BatchBillingPage: React.FC = () => {
                                 {formatCurrency(structure.amount)}
                               </span>
                             </div>
+                            {!isEligible && eligibility.disabledReason && (
+                              <p className="text-[10px] text-amber-700 dark:text-amber-400 mt-1 leading-tight">
+                                {eligibility.disabledReason}
+                              </p>
+                            )}
                           </div>
                         </div>
                       );
