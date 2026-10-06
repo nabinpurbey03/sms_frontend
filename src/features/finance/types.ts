@@ -318,10 +318,23 @@ export interface FeePaymentCreateDTO {
   late_fee_waived?: boolean;
 }
 
+export interface PaymentAllocation {
+  payment_id: string;
+  receipt_number: string;
+  bill_id: string;
+  bill_number: string;
+  billing_month?: string | null;
+  bill_title: string;
+  amount_allocated: number | string;
+  remaining_due_after: number | string;
+  status: string;
+}
+
 export interface FeePayment {
   id: string;
   tenant_id: string;
   receipt_number: string;
+  payment_group_id?: string | null;
   bill_id: string;
   bill_number?: string;
   student_id: string;
@@ -340,6 +353,9 @@ export interface FeePayment {
   payment_date: string;
   received_by_name?: string | null;
   remarks?: string | null;
+  allocations?: PaymentAllocation[];
+  is_consolidated?: boolean;
+  total_transaction_amount?: number | string | null;
   created_at: string;
 }
 
@@ -375,6 +391,30 @@ export interface ReceiptDocument {
   received_by_name?: string | null;
   amount_in_words: string;
   remarks?: string | null;
+}
+
+export interface ConsolidatedReceiptDocument {
+  consolidated_receipt_number: string;
+  school_name: string;
+  school_address?: string | null;
+  school_phone?: string | null;
+  school_email?: string | null;
+  school_logo_url?: string | null;
+  payment_date: string;
+  student_name: string;
+  class_name: string;
+  section_name?: string | null;
+  roll_number?: number | null;
+  parent_name?: string | null;
+  parent_phone?: string | null;
+  payment_method: string;
+  transaction_reference?: string | null;
+  remarks?: string | null;
+  received_by_name?: string | null;
+  allocations: PaymentAllocation[];
+  total_amount_paid: number | string;
+  amount_in_words: string;
+  total_account_balance_remaining: number | string;
 }
 
 export interface StudentLedgerResponse {

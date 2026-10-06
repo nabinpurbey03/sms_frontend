@@ -773,6 +773,58 @@ test('filterApplicableBatchFeeStructures: rejects YEARLY and ONE_TIME in non-Bai
   }
 });
 
+// -------------------------------------------------------------------------
+// 19. Consolidated Pay All Receipt Data Model & Structure Contracts
+// -------------------------------------------------------------------------
 
+test('Consolidated Receipt: validates allocations structure and multi-bill settlement math', () => {
+  const consolidatedDoc = {
+    consolidated_receipt_number: 'CREC-2081-0001',
+    school_name: 'Kathmandu Model School',
+    school_address: 'Bagbazar, Kathmandu',
+    payment_date: '2026-05-15',
+    student_name: 'Aayush Shrestha',
+    class_name: 'Grade 6',
+    section_name: 'A',
+    payment_method: 'CASH',
+    remarks: 'Pay all outstanding dues',
+    allocations: [
+      {
+        payment_id: 'pay-1',
+        receipt_number: 'REC-2081-0001',
+        bill_id: 'bill-1',
+        bill_number: 'BILL-001',
+        billing_month: 'Baishakh',
+        bill_title: 'Baishakh Fee Bill',
+        amount_allocated: '3000.00',
+        remaining_due_after: '0.00',
+        status: 'PAID',
+      },
+      {
+        payment_id: 'pay-2',
+        receipt_number: 'REC-2081-0002',
+        bill_id: 'bill-2',
+        bill_number: 'BILL-002',
+        billing_month: 'Jestha',
+        bill_title: 'Jestha Fee Bill',
+        amount_allocated: '2500.00',
+        remaining_due_after: '500.00',
+        status: 'PARTIAL',
+      },
+    ],
+    total_amount_paid: '5500.00',
+    amount_in_words: 'Five Thousand Five Hundred Rupees Only',
+    total_account_balance_remaining: '500.00',
+  };
 
+  assert.equal(consolidatedDoc.consolidated_receipt_number.startsWith('CREC-'), true);
+  assert.equal(consolidatedDoc.allocations.length, 2);
 
+  const sumAllocated = consolidatedDoc.allocations.reduce(
+    (acc, curr) => acc + Number(curr.amount_allocated),
+    0
+  );
+  assert.equal(sumAllocated, 5500);
+  assert.equal(Number(consolidatedDoc.total_amount_paid), 5500);
+  assert.equal(Number(consolidatedDoc.total_account_balance_remaining), 500);
+});

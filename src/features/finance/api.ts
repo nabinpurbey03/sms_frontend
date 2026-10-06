@@ -22,6 +22,7 @@ import type {
   FeePaymentCreateDTO,
   FeePaymentFilters,
   ReceiptDocument,
+  ConsolidatedReceiptDocument,
   StudentLedgerResponse,
   FinanceDashboardSummary,
   FinanceClassOverview,
@@ -211,6 +212,13 @@ export const financeApi = {
     paymentId: string
   ): Promise<ReceiptDocument> => {
     return apiClient.get(`/finance/tenants/${tenantId}/payments/${paymentId}/receipt`);
+  },
+
+  getConsolidatedReceiptDocument: async (
+    tenantId: string,
+    identifier: string
+  ): Promise<ConsolidatedReceiptDocument> => {
+    return apiClient.get(`/finance/tenants/${tenantId}/receipts/consolidated/${identifier}`);
   },
 
   getStudentLedger: async (

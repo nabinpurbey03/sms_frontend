@@ -29,6 +29,7 @@ export const BILLS_KEY = 'finance_bills';
 export const BILL_KEY = 'finance_bill';
 export const PAYMENTS_KEY = 'finance_payments';
 export const RECEIPT_KEY = 'finance_receipt';
+export const CONSOLIDATED_RECEIPT_KEY = 'finance_consolidated_receipt';
 export const STUDENT_LEDGER_KEY = 'student_ledger';
 export const FINANCE_CLASS_OVERVIEW_KEY = 'finance_class_overview';
 export const PARENT_CHILDREN_FEES_KEY = 'parent_children_fees';
@@ -206,6 +207,14 @@ export const useReceiptDocument = (tenantId: string | null, paymentId: string | 
     queryKey: [RECEIPT_KEY, tenantId, paymentId],
     queryFn: () => financeApi.getReceiptDocument(tenantId!, paymentId!),
     enabled: !!tenantId && !!paymentId,
+  });
+};
+
+export const useConsolidatedReceiptDocument = (tenantId: string | null, identifier: string | null) => {
+  return useQuery({
+    queryKey: [CONSOLIDATED_RECEIPT_KEY, tenantId, identifier],
+    queryFn: () => financeApi.getConsolidatedReceiptDocument(tenantId!, identifier!),
+    enabled: !!tenantId && !!identifier,
   });
 };
 
