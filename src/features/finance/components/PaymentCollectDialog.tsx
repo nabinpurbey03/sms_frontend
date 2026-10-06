@@ -20,6 +20,8 @@ import {
   Wallet,
   Percent,
   ArrowDownRight,
+  Banknote,
+  Ban,
 } from 'lucide-react';
 import { useAuth } from '@/auth/useAuth';
 import { useStudentDuesBreakdown, useBillLateFee } from '../hooks';
@@ -30,7 +32,7 @@ import {
 } from '../utils/lateFeeUtils';
 import { calculateQuickFillAmounts } from '../utils/cashierUtils';
 import { useCalendarPreferenceStore } from '@/stores/calendarPreferenceStore';
-import { formatDualDate } from '@/features/school-settings/utils/nepaliDate';
+import { formatDate, formatDualDate } from '@/features/school-settings/utils/nepaliDate';
 import { NepaliDatePicker } from '@/components/ui/nepali-date-picker';
 import {
   paymentCollectSchema,
@@ -38,6 +40,14 @@ import {
   type PaymentCollectInputValues,
 } from '../schema';
 import type { FeeBill, FeePayment, StudentDuesBreakdown } from '../types';
+
+const formatNpr = (val: number | string | undefined | null): string => {
+  const num = Number(val || 0);
+  return num.toLocaleString('en-IN', {
+    minimumFractionDigits: 2,
+    maximumFractionDigits: 2,
+  });
+};
 
 interface PaymentCollectDialogProps {
   isOpen: boolean;
@@ -263,15 +273,15 @@ export const PaymentCollectDialog: React.FC<PaymentCollectDialogProps> = ({
           {/* Student & Bill Header Card */}
           <div className="p-3 rounded-lg border bg-muted/30 space-y-2 text-xs">
             <div className="flex justify-between items-center">
-              <span className="font-semibold text-foreground">
+              <span className="font-semibold text-foreground text-sm">
                 {studentName || targetBill.student_name}
               </span>
-              <Badge variant="outline" className="text-[10px]">
+              <Badge variant="outline" className="text-[10px] font-medium">
                 {className || targetBill.class_name}
               </Badge>
             </div>
             {isPayAllMode ? (
-              <div className="space-y-1.5 pt-1 border-t border-border/40">
+              <div className="space-y-1.5 pt-1.5 border-t border-border/40">
                 <div className="text-[11px] text-muted-foreground flex justify-between">
                   <span className="font-semibold text-foreground">Consolidated Settlement</span>
                   <span className="font-mono font-medium">{unpaidBills?.length || 0} Invoices</span>
@@ -283,8 +293,8 @@ export const PaymentCollectDialog: React.FC<PaymentCollectDialogProps> = ({
                         <span className="text-muted-foreground">
                           {ub.billing_month || ub.bill_title} (#{ub.bill_number}):
                         </span>
-                        <span className="font-mono font-bold text-foreground">
-                          NPR {Number(ub.due_amount).toLocaleString('en-IN', { minimumFractionDigits: 2 })}
+                        <span className="font-mono font-bold tabular-nums text-foreground">
+                          NPR {formatNpr(ub.due_amount)}
                         </span>
                       </div>
                     ))}
@@ -292,18 +302,30 @@ export const PaymentCollectDialog: React.FC<PaymentCollectDialogProps> = ({
                 )}
               </div>
             ) : (
-              <>
-                <div className="text-[11px] text-muted-foreground flex justify-between">
-                  <span>{targetBill.bill_title}</span>
-                  <span className="font-mono">{targetBill.bill_number}</span>
+              <div className="space-y-1.5 pt-1 border-t border-border/40">
+                <div className="text-[11px] text-muted-foreground flex justify-between items-center">
+                  <div className="flex items-center gap-1.5">
+                    <span className="font-medium text-foreground">{targetBill.bill_title}</span>
+                    {targetBill.billing_month && (
+                      <Badge variant="secondary" className="text-[10px] py-0 px-1.5 font-semibold">
+                        {targetBill.billing_month}
+                      </Badge>
+                    )}
+                  </div>
+                  <span className="font-mono font-medium text-muted-foreground">#{targetBill.bill_number}</span>
                 </div>
                 {targetBill.due_date && (
-                  <div className="text-[11px] text-muted-foreground flex justify-between">
+                  <div className="text-[11px] text-muted-foreground flex justify-between items-center">
                     <span>Due Date:</span>
-                    <span className="font-medium text-foreground">{formatDualDate(targetBill.due_date, calendarSystem)}</span>
+                    <span
+                      className="font-medium text-foreground cursor-help"
+                      title={formatDualDate(targetBill.due_date, calendarSystem)}
+                    >
+                      {formatDate(targetBill.due_date, calendarSystem)}
+                    </span>
                   </div>
                 )}
-              </>
+              </div>
             )}
           </div>
 
@@ -315,7 +337,7 @@ export const PaymentCollectDialog: React.FC<PaymentCollectDialogProps> = ({
                   <span className="text-[10px] text-muted-foreground uppercase font-semibold">
                     Invoices Count
                   </span>
-                  <span className="text-sm font-bold font-mono text-foreground mt-1">
+                  <span className="text-sm font-bold font-mono tabular-nums text-foreground mt-1">
                     {unpaidBills?.length || 0} Unpaid
                   </span>
                 </div>
@@ -324,17 +346,17 @@ export const PaymentCollectDialog: React.FC<PaymentCollectDialogProps> = ({
                   <span className="text-[10px] text-muted-foreground uppercase font-semibold">
                     Total Account Due
                   </span>
-                  <span className="text-sm font-bold font-mono text-rose-600 mt-1">
-                    NPR {dueAmount.toFixed(2)}
+                  <span className="text-sm font-bold font-mono tabular-nums text-rose-600 dark:text-rose-400 mt-1">
+                    NPR {formatNpr(dueAmount)}
                   </span>
                 </div>
 
-                <div className="p-2.5 rounded-lg border border-primary/30 bg-primary/5 flex flex-col justify-between">
+                <div className="p-2.5 rounded-lg border border-primary/40 bg-primary/10 dark:bg-primary/20 flex flex-col justify-between shadow-2xs">
                   <span className="text-[10px] text-primary uppercase font-bold">
                     Net Total to Clear
                   </span>
-                  <span className="text-sm font-bold font-mono text-primary mt-1">
-                    NPR {netPayable.toFixed(2)}
+                  <span className="text-sm font-extrabold font-mono tabular-nums text-primary mt-1">
+                    NPR {formatNpr(netPayable)}
                   </span>
                 </div>
               </>
@@ -345,8 +367,8 @@ export const PaymentCollectDialog: React.FC<PaymentCollectDialogProps> = ({
                   <span className="text-[10px] text-muted-foreground uppercase font-semibold">
                     Current Month Due
                   </span>
-                  <span className="text-sm font-bold font-mono text-foreground mt-1">
-                    NPR {subtotalAmount.toFixed(2)}
+                  <span className="text-sm font-bold font-mono tabular-nums text-foreground mt-1">
+                    NPR {formatNpr(subtotalAmount)}
                   </span>
                 </div>
 
@@ -356,11 +378,11 @@ export const PaymentCollectDialog: React.FC<PaymentCollectDialogProps> = ({
                     Carried Arrears
                   </span>
                   <span
-                    className={`text-sm font-bold font-mono mt-1 ${
-                      previousDueAmount > 0 ? 'text-amber-600 dark:text-amber-400' : 'text-foreground'
+                    className={`text-sm font-bold font-mono tabular-nums mt-1 ${
+                      previousDueAmount > 0 ? 'text-amber-600 dark:text-amber-400' : 'text-muted-foreground font-medium'
                     }`}
                   >
-                    NPR {previousDueAmount.toFixed(2)}
+                    NPR {formatNpr(previousDueAmount)}
                   </span>
                 </div>
 
@@ -370,36 +392,48 @@ export const PaymentCollectDialog: React.FC<PaymentCollectDialogProps> = ({
                     Late Fee Penalty
                   </span>
                   <span
-                    className={`text-sm font-bold font-mono mt-1 ${
-                      isOverduePastGrace && collectLateFee ? 'text-destructive' : 'text-foreground'
+                    className={`text-sm font-bold font-mono tabular-nums mt-1 ${
+                      isOverduePastGrace && collectLateFee ? 'text-destructive' : 'text-muted-foreground font-medium'
                     }`}
                   >
-                    NPR {(isOverduePastGrace && collectLateFee ? lateFeeAmount : 0).toFixed(2)}
+                    NPR {formatNpr(isOverduePastGrace && collectLateFee ? lateFeeAmount : 0)}
                   </span>
                 </div>
 
                 {/* 4. Net Total to Clear */}
-                <div className="p-2.5 rounded-lg border border-primary/30 bg-primary/5 flex flex-col justify-between">
+                <div className="p-2.5 rounded-lg border border-primary/40 bg-primary/10 dark:bg-primary/20 flex flex-col justify-between shadow-2xs">
                   <span className="text-[10px] text-primary uppercase font-bold">
                     Net Total to Clear
                   </span>
-                  <span className="text-sm font-bold font-mono text-primary mt-1">
-                    NPR {netPayable.toFixed(2)}
+                  <span className="text-sm font-extrabold font-mono tabular-nums text-primary mt-1">
+                    NPR {formatNpr(netPayable)}
                   </span>
                 </div>
               </>
             )}
 
             {/* Advance Wallet Balance */}
-            <div className="p-2.5 rounded-lg border border-emerald-300/60 bg-emerald-50/50 dark:bg-emerald-950/20 flex flex-col justify-between col-span-2 sm:col-span-3">
-              <span className="text-[10px] text-emerald-800 dark:text-emerald-300 uppercase font-semibold flex items-center gap-1">
-                <Wallet className="w-3 h-3 text-emerald-600 dark:text-emerald-400" />
-                Available Advance Wallet Credit
-              </span>
-              <span className="text-sm font-bold font-mono text-emerald-700 dark:text-emerald-300 mt-1">
-                NPR {advanceWalletBalance.toFixed(2)}
-              </span>
-            </div>
+            {advanceWalletBalance > 0 ? (
+              <div className="p-2.5 rounded-lg border border-emerald-300/80 bg-emerald-50 dark:bg-emerald-950/30 flex items-center justify-between col-span-2 sm:col-span-3">
+                <span className="text-[11px] text-emerald-800 dark:text-emerald-300 font-semibold flex items-center gap-1.5">
+                  <Wallet className="w-3.5 h-3.5 text-emerald-600 dark:text-emerald-400" />
+                  Available Advance Wallet Credit
+                </span>
+                <span className="text-sm font-bold font-mono tabular-nums text-emerald-700 dark:text-emerald-300">
+                  NPR {formatNpr(advanceWalletBalance)}
+                </span>
+              </div>
+            ) : (
+              <div className="p-2 rounded-lg border border-border/50 bg-muted/20 flex items-center justify-between col-span-2 sm:col-span-3 text-[11px] text-muted-foreground">
+                <span className="flex items-center gap-1.5">
+                  <Wallet className="w-3.5 h-3.5 text-muted-foreground" />
+                  Advance Wallet Credit
+                </span>
+                <span className="font-mono tabular-nums font-medium">
+                  NPR 0.00
+                </span>
+              </div>
+            )}
           </div>
 
           {/* Overdue Late Fee Notice & Waiver Toggle */}
@@ -469,30 +503,31 @@ export const PaymentCollectDialog: React.FC<PaymentCollectDialogProps> = ({
                       : 'text-muted-foreground hover:text-foreground'
                   }`}
                 >
-                  None
+                  No Discount
                 </button>
                 <button
                   type="button"
                   onClick={() => handleDiscountModeChange('PERCENT')}
-                  className={`text-xs py-1.5 px-3 rounded-md font-medium transition-all flex items-center justify-center gap-1 cursor-pointer ${
+                  className={`text-xs py-1.5 px-3 rounded-md font-medium transition-all flex items-center justify-center gap-1.5 cursor-pointer ${
                     discountType === 'PERCENT'
                       ? 'bg-background text-foreground shadow-xs border border-border/40 font-bold text-primary'
                       : 'text-muted-foreground hover:text-foreground'
                   }`}
                 >
-                  <Percent className="w-3 h-3" />
-                  <span>% Percent</span>
+                  <Percent className="w-3.5 h-3.5" />
+                  <span>Percentage</span>
                 </button>
                 <button
                   type="button"
                   onClick={() => handleDiscountModeChange('FIXED')}
-                  className={`text-xs py-1.5 px-3 rounded-md font-medium transition-all flex items-center justify-center gap-1 cursor-pointer ${
+                  className={`text-xs py-1.5 px-3 rounded-md font-medium transition-all flex items-center justify-center gap-1.5 cursor-pointer ${
                     discountType === 'FIXED'
                       ? 'bg-background text-foreground shadow-xs border border-border/40 font-bold text-primary'
                       : 'text-muted-foreground hover:text-foreground'
                   }`}
                 >
-                  <span>Fixed NPR</span>
+                  <Banknote className="w-3.5 h-3.5" />
+                  <span>Fixed Amount</span>
                 </button>
               </div>
             </div>
@@ -501,7 +536,7 @@ export const PaymentCollectDialog: React.FC<PaymentCollectDialogProps> = ({
             {discountType === 'PERCENT' && (
               <div className="space-y-1.5 animate-in fade-in duration-150">
                 <Label htmlFor="discount_rate" className="text-xs font-semibold flex items-center justify-between">
-                  <span>Discount Percentage (%)</span>
+                  <span>Discount Percentage</span>
                   <span className="text-[10px] text-muted-foreground font-normal">0% - 100%</span>
                 </Label>
                 <div className="relative">
@@ -512,7 +547,7 @@ export const PaymentCollectDialog: React.FC<PaymentCollectDialogProps> = ({
                     min="0"
                     max="100"
                     placeholder="e.g. 10"
-                    className="text-xs h-9 pr-7 font-mono font-medium"
+                    className="text-xs h-9 pr-8 font-mono font-medium"
                     {...register('discount_rate', {
                       valueAsNumber: true,
                       onChange: (e) => {
@@ -527,7 +562,7 @@ export const PaymentCollectDialog: React.FC<PaymentCollectDialogProps> = ({
                       },
                     })}
                   />
-                  <span className="absolute right-2.5 top-1/2 -translate-y-1/2 text-xs font-bold text-muted-foreground pointer-events-none">
+                  <span className="absolute right-3 top-1/2 -translate-y-1/2 text-xs font-bold text-muted-foreground pointer-events-none">
                     %
                   </span>
                 </div>
@@ -543,11 +578,11 @@ export const PaymentCollectDialog: React.FC<PaymentCollectDialogProps> = ({
                 <Label htmlFor="discount_amount" className="text-xs font-semibold flex items-center justify-between">
                   <span>Fixed Discount Amount (NPR)</span>
                   <span className="text-[10px] text-muted-foreground font-normal">
-                    Max NPR {dueAmount.toFixed(2)}
+                    Max NPR {formatNpr(dueAmount)}
                   </span>
                 </Label>
                 <div className="relative">
-                  <span className="absolute left-2.5 top-1/2 -translate-y-1/2 text-[11px] font-bold text-muted-foreground pointer-events-none">
+                  <span className="absolute left-3 top-1/2 -translate-y-1/2 text-xs font-bold font-mono text-muted-foreground pointer-events-none">
                     NPR
                   </span>
                   <Input
@@ -557,7 +592,7 @@ export const PaymentCollectDialog: React.FC<PaymentCollectDialogProps> = ({
                     min="0"
                     max={dueAmount}
                     placeholder="0.00"
-                    className="text-xs h-9 pl-11 font-mono font-medium"
+                    className="text-xs h-9 pl-12 font-mono font-medium"
                     {...register('discount_amount', {
                       valueAsNumber: true,
                       onChange: (e) => {
@@ -583,21 +618,21 @@ export const PaymentCollectDialog: React.FC<PaymentCollectDialogProps> = ({
               <div className="p-2.5 rounded-lg border border-border/60 bg-muted/20 text-xs space-y-1.5 animate-in fade-in duration-150">
                 <div className="flex justify-between text-muted-foreground text-[11px]">
                   <span>Bill Balance Due:</span>
-                  <span className="font-mono">NPR {dueAmount.toFixed(2)}</span>
+                  <span className="font-mono tabular-nums">NPR {formatNpr(dueAmount)}</span>
                 </div>
                 <div className="flex justify-between text-emerald-600 dark:text-emerald-400 text-[11px] font-medium">
                   <span>
-                    Discount ({discountType === 'PERCENT' ? `${discountRate || 0}%` : 'Fixed NPR'}):
+                    Discount ({discountType === 'PERCENT' ? `${discountRate || 0}%` : 'Fixed Amount'}):
                   </span>
-                  <span className="font-mono">-NPR {liveDiscountAmt.toFixed(2)}</span>
+                  <span className="font-mono tabular-nums font-bold">-NPR {formatNpr(liveDiscountAmt)}</span>
                 </div>
                 <div className="flex justify-between pt-1 border-t border-border/50 font-bold text-foreground">
                   <span className="flex items-center gap-1">
                     <ArrowDownRight className="w-3.5 h-3.5 text-primary" />
                     <span>Net Payable:</span>
                   </span>
-                  <span className="font-mono text-primary text-sm font-bold">
-                    NPR {netPayable.toFixed(2)}
+                  <span className="font-mono tabular-nums text-primary text-sm font-bold">
+                    NPR {formatNpr(netPayable)}
                   </span>
                 </div>
               </div>
@@ -622,7 +657,7 @@ export const PaymentCollectDialog: React.FC<PaymentCollectDialogProps> = ({
                           : 'border-border/70 hover:bg-muted/50 text-foreground'
                       }`}
                     >
-                      Pay Full Account Balance (NPR {netPayable.toFixed(2)})
+                      Pay Full Account Balance (NPR {formatNpr(netPayable)})
                     </button>
                     <button
                       type="button"
@@ -639,7 +674,7 @@ export const PaymentCollectDialog: React.FC<PaymentCollectDialogProps> = ({
                       Custom Amount
                     </button>
                   </>
-                ) : (
+                ) : currentMonthDue < netPayable ? (
                   <>
                     <button
                       type="button"
@@ -650,7 +685,7 @@ export const PaymentCollectDialog: React.FC<PaymentCollectDialogProps> = ({
                           : 'border-border/70 hover:bg-muted/50 text-foreground'
                       }`}
                     >
-                      Pay Full Balance (NPR {netPayable.toFixed(2)})
+                      Pay Full Balance (NPR {formatNpr(netPayable)})
                     </button>
                     <button
                       type="button"
@@ -661,7 +696,7 @@ export const PaymentCollectDialog: React.FC<PaymentCollectDialogProps> = ({
                           : 'border-border/70 hover:bg-muted/50 text-foreground'
                       }`}
                     >
-                      Pay Current Month Only (NPR {currentMonthDue.toFixed(2)})
+                      Current Month Only (NPR {formatNpr(currentMonthDue)})
                     </button>
                     <button
                       type="button"
@@ -678,6 +713,34 @@ export const PaymentCollectDialog: React.FC<PaymentCollectDialogProps> = ({
                       Custom Amount
                     </button>
                   </>
+                ) : (
+                  <>
+                    <button
+                      type="button"
+                      onClick={() => setValue('amount_paid', netPayable, { shouldValidate: true })}
+                      className={`text-xs py-2 px-2.5 rounded-lg border text-center transition-all cursor-pointer font-medium sm:col-span-2 ${
+                        watchedAmount === netPayable
+                          ? 'bg-primary text-primary-foreground border-primary font-bold shadow-xs'
+                          : 'border-border/70 hover:bg-muted/50 text-foreground'
+                      }`}
+                    >
+                      Pay Full Due (NPR {formatNpr(netPayable)})
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => {
+                        const el = document.getElementById('amount_paid');
+                        if (el) el.focus();
+                      }}
+                      className={`text-xs py-2 px-2.5 rounded-lg border text-center transition-all cursor-pointer font-medium ${
+                        watchedAmount !== netPayable
+                          ? 'bg-muted text-foreground border-border font-bold'
+                          : 'border-border/70 hover:bg-muted/50 text-muted-foreground'
+                      }`}
+                    >
+                      Custom Amount
+                    </button>
+                  </>
                 )}
               </div>
             </div>
@@ -687,15 +750,20 @@ export const PaymentCollectDialog: React.FC<PaymentCollectDialogProps> = ({
               <Label htmlFor="amount_paid" className="text-xs font-semibold">
                 Amount Received (NPR) <span className="text-destructive">*</span>
               </Label>
-              <Input
-                id="amount_paid"
-                type="number"
-                step="0.01"
-                min="0.01"
-                placeholder="0.00"
-                className="text-sm font-mono font-bold h-10"
-                {...register('amount_paid', { valueAsNumber: true })}
-              />
+              <div className="relative">
+                <span className="absolute left-3 top-1/2 -translate-y-1/2 text-xs font-bold font-mono text-muted-foreground pointer-events-none">
+                  NPR
+                </span>
+                <Input
+                  id="amount_paid"
+                  type="number"
+                  step="0.01"
+                  min="0.01"
+                  placeholder="0.00"
+                  className="pl-13 text-sm font-mono font-bold h-10 tracking-tight"
+                  {...register('amount_paid', { valueAsNumber: true })}
+                />
+              </div>
               {errors.amount_paid && (
                 <p className="text-destructive text-[11px] font-medium">{errors.amount_paid.message}</p>
               )}
@@ -703,7 +771,7 @@ export const PaymentCollectDialog: React.FC<PaymentCollectDialogProps> = ({
               {/* Partial Payment Notice */}
               {watchedAmount > 0 && watchedAmount < netPayable && (
                 <p className="text-[11px] text-amber-600 dark:text-amber-400 font-medium">
-                  Partial payment: NPR {remainingAfterPayment.toFixed(2)} will remain due.
+                  Partial payment: NPR {formatNpr(remainingAfterPayment)} will remain due.
                 </p>
               )}
 
@@ -716,7 +784,7 @@ export const PaymentCollectDialog: React.FC<PaymentCollectDialogProps> = ({
                     <p className="text-[11px] text-blue-800 dark:text-blue-200 leading-relaxed">
                       Excess of{' '}
                       <span className="font-mono font-bold text-blue-950 dark:text-blue-100">
-                        NPR {(watchedAmount - netPayable).toFixed(2)}
+                        NPR {formatNpr(watchedAmount - netPayable)}
                       </span>{' '}
                       will be deposited into student's advance wallet and deducted automatically from the next monthly invoice.
                     </p>
@@ -745,12 +813,12 @@ export const PaymentCollectDialog: React.FC<PaymentCollectDialogProps> = ({
                 <select
                   id="payment_method"
                   {...register('payment_method')}
-                  className="w-full h-9 rounded-md border border-input bg-background px-3 py-1 text-xs shadow-xs focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring"
+                  className="w-full h-9 rounded-md border border-input bg-background px-3 py-1 text-xs font-medium shadow-xs focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring cursor-pointer"
                 >
                   <option value="CASH">Cash</option>
                   <option value="BANK_TRANSFER">Bank Transfer / ConnectIPS</option>
                   <option value="CHEQUE">Cheque</option>
-                  <option value="OTHER">Other</option>
+                  <option value="OTHER">Other / Digital Wallet</option>
                 </select>
                 {errors.payment_method && (
                   <p className="text-destructive text-[11px] font-medium">{errors.payment_method.message}</p>

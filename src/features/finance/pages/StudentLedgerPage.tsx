@@ -710,6 +710,8 @@ export const StudentLedgerPage: React.FC = () => {
         isOpen={!!activeCollectBill}
         onClose={() => setActiveCollectBill(null)}
         bill={activeCollectBill}
+        studentName={ledger?.student_name}
+        className={ledger?.class_name}
         onSubmit={async (data) => recordPaymentMutation.mutateAsync(data)}
         isLoading={recordPaymentMutation.isPending}
         onPaymentSuccess={(payment: FeePayment) => {
