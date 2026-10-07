@@ -1,5 +1,5 @@
 import React, { useState, useMemo } from 'react';
-import { useNavigate, Link } from '@tanstack/react-router';
+import { useNavigate } from '@tanstack/react-router';
 import { toast } from 'sonner';
 import {
   ArrowLeft,
@@ -42,14 +42,6 @@ import {
   AccordionTrigger,
   AccordionContent,
 } from '@/components/ui/accordion';
-import {
-  Breadcrumb,
-  BreadcrumbList,
-  BreadcrumbItem,
-  BreadcrumbLink,
-  BreadcrumbPage,
-  BreadcrumbSeparator,
-} from '@/components/ui/breadcrumb';
 import { TenantRequiredState } from '@/components/common/TenantRequiredState';
 import {
   ExamSubjectConfigList,
@@ -457,22 +449,9 @@ export const CreateExamPage: React.FC = () => {
   }
 
   return (
-    <form onSubmit={handleSubmit} className="space-y-6 max-w-5xl mx-auto pb-12">
-      {/* Header & Breadcrumb */}
-      <div className="space-y-3 border-b pb-5">
-        <Breadcrumb>
-          <BreadcrumbList>
-            <BreadcrumbItem>
-              <BreadcrumbLink asChild>
-                <Link to={'/examination/exams' as any}>Examinations</Link>
-              </BreadcrumbLink>
-            </BreadcrumbItem>
-            <BreadcrumbSeparator />
-            <BreadcrumbItem>
-              <BreadcrumbPage>Create Examination</BreadcrumbPage>
-            </BreadcrumbItem>
-          </BreadcrumbList>
-        </Breadcrumb>
+    <form onSubmit={handleSubmit} className="space-y-6 pb-16">
+      {/* Page Header */}
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 border-b pb-5">
         <div>
           <h1 className="text-2xl font-bold tracking-tight text-foreground">
             Create New Examination
@@ -482,6 +461,16 @@ export const CreateExamPage: React.FC = () => {
             for grading.
           </p>
         </div>
+        <Button
+          type="button"
+          variant="outline"
+          size="sm"
+          onClick={() => navigate({ to: '/examination/exams' as any })}
+          className="self-start sm:self-auto gap-2"
+        >
+          <ArrowLeft className="w-4 h-4" />
+          Back to Examinations
+        </Button>
       </div>
 
       {/* Card 1: Exam Details */}
@@ -641,118 +630,124 @@ export const CreateExamPage: React.FC = () => {
         </CardContent>
       </Card>
 
-      {/* Card 2: Subject Marks & Teacher Assignment */}
-      <Card>
-        <CardHeader className="pb-4">
-          <CardTitle className="text-lg flex items-center gap-2">
-            <GraduationCap className="w-5 h-5 text-primary" />
-            <span>Subject Marks & Teacher Assignment</span>
-          </CardTitle>
-          <CardDescription>
-            Configure passing marks and designate faculty members responsible for
-            entering scores.
-          </CardDescription>
-        </CardHeader>
-        <CardContent>
-          {selectedClassIds.length === 0 ? (
-            <div className="flex flex-col items-center justify-center p-8 text-center border rounded-xl bg-muted/20 border-dashed">
-              <BookOpen className="w-8 h-8 text-muted-foreground/60 mb-2" />
-              <p className="text-sm font-medium text-foreground">
-                No Classes Selected
-              </p>
-              <p className="text-xs text-muted-foreground mt-0.5">
-                Select one or more classes above to configure subject marks and teacher
-                assignments.
-              </p>
-            </div>
-          ) : (
-            <Accordion
-              type="multiple"
-              value={openAccordionIds}
-              onValueChange={setOpenAccordionIds}
-              className="w-full space-y-3"
-            >
-              {selectedClassIds.map((classId) => {
-                const cls = classes.find((c) => c.id === classId);
-                const classConfigs = classSubjectConfigs[classId] || [];
-                if (!cls) return null;
-
-                const includedSubjects = classConfigs.filter((s) => s.included);
-                const includedCount = includedSubjects.length;
-                const totalMarks = includedSubjects.reduce(
-                  (acc, s) => acc + (s.fullMark || 0),
-                  0
-                );
-                const hasMissingTeacher = includedSubjects.some(
-                  (s) => !s.assignedTeacherId
-                );
-                const hasMarkError = includedSubjects.some((s) => Boolean(s.error));
-
-                return (
-                  <AccordionItem
-                    key={classId}
-                    value={classId}
-                    className="border rounded-lg bg-card/60 px-4"
-                  >
-                    <AccordionTrigger className="hover:no-underline py-4">
-                      <div className="flex flex-1 flex-wrap items-center justify-between gap-2.5 mr-3 text-left">
-                        <div className="flex items-center gap-2 min-w-0">
-                          <GraduationCap className="w-4 h-4 text-primary shrink-0" />
-                          <span className="font-semibold text-foreground truncate">
-                            {cls.name}
-                          </span>
-                        </div>
-                        <div className="flex flex-wrap items-center gap-2">
-                          <Badge variant="secondary" className="text-xs font-normal">
-                            {includedCount} of {classConfigs.length} included
-                          </Badge>
-                          <Badge variant="outline" className="text-xs font-medium">
-                            Total {totalMarks} Marks
-                          </Badge>
-                          {hasMissingTeacher && (
-                            <Badge
-                              variant="outline"
-                              className="text-xs border-amber-500/40 bg-amber-500/10 text-amber-700 dark:text-amber-400 flex items-center gap-1 font-medium"
-                            >
-                              <AlertTriangle className="w-3 h-3 shrink-0" />
-                              Missing Teacher
-                            </Badge>
-                          )}
-                          {hasMarkError && (
-                            <Badge
-                              variant="destructive"
-                              className="text-xs flex items-center gap-1 font-medium"
-                            >
-                              <AlertTriangle className="w-3 h-3 shrink-0" />
-                              Review Marks
-                            </Badge>
-                          )}
-                        </div>
-                      </div>
-                    </AccordionTrigger>
-                    <AccordionContent className="pt-2 pb-4">
-                      {classConfigs.length === 0 ? (
-                        <div className="text-sm text-muted-foreground text-center p-4 border rounded-lg bg-muted/20 border-dashed">
-                          No subjects found for this class. Add subjects in Academic &gt; Subjects first.
-                        </div>
-                      ) : (
-                        <ExamSubjectConfigList
-                          configs={classConfigs}
-                          teachers={teacherList}
-                          onChange={(configs) =>
-                            handleSubjectConfigsChange(classId, configs)
-                          }
-                          disabled={isSubmitting}
-                        />
-                      )}
-                    </AccordionContent>
-                  </AccordionItem>
-                );
-              })}
-            </Accordion>
+      {/* Section 2: Subject Marks & Teacher Assignment */}
+      <div className="space-y-4">
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2">
+          <div>
+            <h2 className="text-lg font-semibold tracking-tight text-foreground flex items-center gap-2">
+              <GraduationCap className="w-5 h-5 text-primary" />
+              <span>Subject Marks & Teacher Assignment</span>
+            </h2>
+            <p className="text-sm text-muted-foreground mt-0.5">
+              Configure passing marks and designate faculty members responsible for
+              entering scores.
+            </p>
+          </div>
+          {selectedClassIds.length > 0 && (
+            <Badge variant="secondary" className="self-start sm:self-auto text-xs font-medium">
+              {selectedClassIds.length} {selectedClassIds.length === 1 ? 'class' : 'classes'} selected
+            </Badge>
           )}
-        </CardContent>
-      </Card>
+        </div>
+
+        {selectedClassIds.length === 0 ? (
+          <div className="flex flex-col items-center justify-center p-8 text-center border rounded-xl bg-card border-dashed">
+            <BookOpen className="w-8 h-8 text-muted-foreground/60 mb-2" />
+            <p className="text-sm font-medium text-foreground">
+              No Classes Selected
+            </p>
+            <p className="text-xs text-muted-foreground mt-0.5">
+              Select one or more classes above to configure subject marks and teacher
+              assignments.
+            </p>
+          </div>
+        ) : (
+          <Accordion
+            type="multiple"
+            value={openAccordionIds}
+            onValueChange={setOpenAccordionIds}
+            className="w-full space-y-3"
+          >
+            {selectedClassIds.map((classId) => {
+              const cls = classes.find((c) => c.id === classId);
+              const classConfigs = classSubjectConfigs[classId] || [];
+              if (!cls) return null;
+
+              const includedSubjects = classConfigs.filter((s) => s.included);
+              const includedCount = includedSubjects.length;
+              const totalMarks = includedSubjects.reduce(
+                (acc, s) => acc + (s.fullMark || 0),
+                0
+              );
+              const hasMissingTeacher = includedSubjects.some(
+                (s) => !s.assignedTeacherId
+              );
+              const hasMarkError = includedSubjects.some((s) => Boolean(s.error));
+
+              return (
+                <AccordionItem
+                  key={classId}
+                  value={classId}
+                  className="border rounded-xl bg-card overflow-hidden shadow-2xs"
+                >
+                  <AccordionTrigger className="hover:no-underline px-4 sm:px-5 py-3.5 transition-colors hover:bg-muted/30 [&[data-state=open]]:border-b">
+                    <div className="flex flex-1 flex-wrap items-center justify-between gap-2.5 mr-3 text-left">
+                      <div className="flex items-center gap-2 min-w-0">
+                        <GraduationCap className="w-4 h-4 text-primary shrink-0" />
+                        <span className="font-semibold text-foreground truncate">
+                          {cls.name}
+                        </span>
+                      </div>
+                      <div className="flex flex-wrap items-center gap-2">
+                        <Badge variant="secondary" className="text-xs font-normal">
+                          {includedCount} of {classConfigs.length} included
+                        </Badge>
+                        <Badge variant="outline" className="text-xs font-medium">
+                          Total {totalMarks} Marks
+                        </Badge>
+                        {hasMissingTeacher && (
+                          <Badge
+                            variant="outline"
+                            className="text-xs border-amber-500/40 bg-amber-500/10 text-amber-700 dark:text-amber-400 flex items-center gap-1 font-medium"
+                          >
+                            <AlertTriangle className="w-3 h-3 shrink-0" />
+                            Missing Teacher
+                          </Badge>
+                        )}
+                        {hasMarkError && (
+                          <Badge
+                            variant="destructive"
+                            className="text-xs flex items-center gap-1 font-medium"
+                          >
+                            <AlertTriangle className="w-3 h-3 shrink-0" />
+                            Review Marks
+                          </Badge>
+                        )}
+                      </div>
+                    </div>
+                  </AccordionTrigger>
+                  <AccordionContent className="p-0">
+                    {classConfigs.length === 0 ? (
+                      <div className="text-sm text-muted-foreground text-center p-6 bg-muted/10">
+                        No subjects found for this class. Add subjects in Academic &gt; Subjects first.
+                      </div>
+                    ) : (
+                      <ExamSubjectConfigList
+                        configs={classConfigs}
+                        teachers={teacherList}
+                        onChange={(configs) =>
+                          handleSubjectConfigsChange(classId, configs)
+                        }
+                        disabled={isSubmitting}
+                      />
+                    )}
+                  </AccordionContent>
+                </AccordionItem>
+              );
+            })}
+          </Accordion>
+        )}
+      </div>
 
       {/* Footer / Action Bar */}
       <div className="flex items-center justify-end gap-3 pt-4 border-t">

@@ -160,10 +160,10 @@ export const ExamSubjectConfigList: React.FC<ExamSubjectConfigListProps> = ({
   }
 
   return (
-    <div className="space-y-4">
+    <div>
       {/* Real-time validation error banner */}
       {hasAnyError && (
-        <div className="rounded-lg border border-destructive/30 bg-destructive/10 p-3 text-destructive text-sm flex items-center gap-2 font-medium">
+        <div className="m-4 mb-3 rounded-lg border border-destructive/30 bg-destructive/10 p-3 text-destructive text-sm flex items-center gap-2 font-medium">
           <AlertCircle className="w-4 h-4 shrink-0" />
           <span>
             Pass mark cannot exceed full mark, and full marks must be at least 1. Please review highlighted subjects.
@@ -171,8 +171,8 @@ export const ExamSubjectConfigList: React.FC<ExamSubjectConfigListProps> = ({
         </div>
       )}
 
-      {/* Batch Preset Bar */}
-      <div className="flex flex-wrap items-center justify-between gap-2.5 p-3 rounded-xl border bg-muted/30">
+      {/* Batch Preset Bar (Flush Toolbar Header) */}
+      <div className="flex flex-wrap items-center justify-between gap-2.5 px-4 sm:px-5 py-2.5 bg-muted/20 border-b">
         <div className="flex items-center gap-2 text-xs font-semibold text-foreground">
           <SlidersHorizontal className="w-4 h-4 text-primary" />
           <span>Quick Apply Presets to Included Subjects ({includedCount}):</span>
@@ -199,7 +199,7 @@ export const ExamSubjectConfigList: React.FC<ExamSubjectConfigListProps> = ({
       </div>
 
       {/* Desktop View (>= md): Comprehensive Table */}
-      <div className="hidden md:block rounded-xl border bg-card overflow-hidden shadow-sm">
+      <div className="hidden md:block">
         <div className="overflow-x-auto">
           <Table className="min-w-[880px]">
             <TableHeader>
@@ -592,7 +592,7 @@ export const ExamSubjectConfigList: React.FC<ExamSubjectConfigListProps> = ({
       </div>
 
       {/* Mobile View (< md): Comprehensive Card List */}
-      <div className="md:hidden space-y-3">
+      <div className="md:hidden p-4 space-y-3 bg-muted/10">
         {configs.map((item, index) => {
           const isExcluded = !item.included;
           const hasError = !!item.error;
