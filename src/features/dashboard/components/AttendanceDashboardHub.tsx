@@ -234,6 +234,23 @@ export const AttendanceDashboardHub: React.FC = () => {
     { enabled: !!activeTenantId && isAdminOrOfficeAdmin && timeframe !== 'today' }
   );
 
+  const rollingStartDate = useMemo(() => getDateDaysAgo(7), []);
+
+  const {
+    data: todayRollingReport,
+    isLoading: isTodayRollingLoading,
+    refetch: refetchTodayRolling,
+  } = useSchoolAttendanceReport(
+    activeTenantId,
+    rollingStartDate,
+    selectedDate,
+    { enabled: !!activeTenantId && isAdminOrOfficeAdmin && timeframe === 'today' }
+  );
+
+  const rollingDailyRecords = useMemo(() => {
+    return todayRollingReport?.daily_stats || [];
+  }, [todayRollingReport]);
+
   const { data: schoolClasses = [] } = useAllClassesWithDetails(!isParent ? activeTenantId : null);
 
   // Queries for Teacher
@@ -331,6 +348,7 @@ export const AttendanceDashboardHub: React.FC = () => {
     if (timeframe === 'today') {
       refetchDailyStatus();
       refetchSummary();
+      refetchTodayRolling();
     } else {
       refetchSchoolReport();
     }
@@ -617,46 +635,74 @@ export const AttendanceDashboardHub: React.FC = () => {
             </Card>
           </div>
 
-          {/* Today mode: 1/3 Attendance Breakdown Donut on left, 2/3 Daily Section Submission Status on right */}
+          {/* Today mode: 1/3 Attendance Breakdown Donut on left, 2/3 Recent 7-Day Trend on right */}
           {!isRange && (
-            <div className="grid grid-cols-1 lg:grid-cols-3 gap-4 sm:gap-6 items-start">
-              {/* Left 1/3: Attendance Breakdown Donut Chart */}
-              <div className="lg:col-span-1">
-                <Card className="border-border/60 rounded-xl overflow-hidden shadow-2xs">
-                  <CardHeader className="p-5 pb-2">
-                    <div className="flex items-center justify-between">
-                      <CardTitle className="text-sm font-semibold">Attendance Breakdown</CardTitle>
-                      <Badge variant="outline" className="font-mono text-[10px] px-2 py-0.5">
-                        {selectedDate === todayStr ? 'Today' : selectedDate}
-                      </Badge>
-                    </div>
-                    <CardDescription className="text-xs">
-                      Student distribution across roll call statuses
-                    </CardDescription>
-                  </CardHeader>
+            <>
+              <div className="grid grid-cols-1 lg:grid-cols-3 gap-4 sm:gap-6 items-stretch">
+                {/* Left 1/3: Attendance Breakdown Donut Chart */}
+                <div className="lg:col-span-1">
+                  <Card className="border-border/60 rounded-xl overflow-hidden shadow-2xs h-full flex flex-col justify-between">
+                    <CardHeader className="p-5 pb-2">
+                      <div className="flex items-center justify-between">
+                        <CardTitle className="text-sm font-semibold">Attendance Breakdown</CardTitle>
+                        <Badge variant="outline" className="font-mono text-[10px] px-2 py-0.5">
+                          {selectedDate === todayStr ? 'Today' : selectedDate}
+                        </Badge>
+                      </div>
+                      <CardDescription className="text-xs">
+                        Student distribution across roll call statuses
+                      </CardDescription>
+                    </CardHeader>
 
-                  <CardContent className="p-5 pt-0 flex flex-col items-center justify-center">
-                    <div className="w-full flex items-center justify-center py-2">
-                      <DonutChart
-                        data={[
-                          { name: 'Present', value: totalPresent, color: '#10b981' },
-                          { name: 'Absent', value: totalAbsent, color: '#f43f5e' },
-                          {
-                            name: 'Unmarked',
-                            value: Math.max(0, totalEnrolled - totalPresent - totalAbsent),
-                            color: '#94a3b8',
-                          },
-                        ]}
-                        centerValue={`${presenceRate != null ? presenceRate.toFixed(0) : '—'}%`}
-                        centerLabel="Attendance"
-                      />
-                    </div>
-                  </CardContent>
-                </Card>
+                    <CardContent className="p-5 pt-0 flex flex-col items-center justify-center flex-1">
+                      <div className="w-full flex items-center justify-center py-2">
+                        <DonutChart
+                          data={[
+                            { name: 'Present', value: totalPresent, color: '#10b981' },
+                            { name: 'Absent', value: totalAbsent, color: '#f43f5e' },
+                            {
+                              name: 'Unmarked',
+                              value: Math.max(0, totalEnrolled - totalPresent - totalAbsent),
+                              color: '#94a3b8',
+                            },
+                          ]}
+                          centerValue={`${presenceRate != null ? presenceRate.toFixed(0) : '—'}%`}
+                          centerLabel="Attendance"
+                        />
+                      </div>
+                    </CardContent>
+                  </Card>
+                </div>
+
+                {/* Right 2/3: Recent Attendance Trend (Rolling 7-Day) */}
+                <div className="lg:col-span-2">
+                  <ChartCard
+                    title="Recent Attendance Trend"
+                    description="Rolling 7-day school-wide attendance rate"
+                    isLoading={isTodayRollingLoading}
+                    isEmpty={!rollingDailyRecords || rollingDailyRecords.length === 0}
+                    className="border-border/60 rounded-xl overflow-hidden shadow-2xs h-full flex flex-col justify-between"
+                  >
+                    <TrendAreaChart
+                      data={rollingDailyRecords.map((record: DailySchoolAttendanceItem) => ({
+                        date: new Intl.DateTimeFormat('en-US', { month: 'short', day: 'numeric' }).format(new Date(record.date)),
+                        rate:
+                          record.total_students > 0
+                            ? Number(((record.present_count / record.total_students) * 100).toFixed(1))
+                            : (record.attendance_percentage ?? 0),
+                      }))}
+                      dataKey="rate"
+                      xAxisKey="date"
+                      color="#10b981"
+                      valueFormatter={(v: number) => `${v.toFixed(1)}%`}
+                      height={220}
+                    />
+                  </ChartCard>
+                </div>
               </div>
 
-              {/* Right 2/3: Daily Section Submission Status */}
-              <div className="lg:col-span-2">
+              {/* Daily Section Submission Status - Full Width */}
+              <div className="mt-4 sm:mt-6">
                 <Card className="border-border/60 rounded-xl overflow-hidden shadow-2xs">
                 <CardHeader className="p-5 pb-3">
                   <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
@@ -877,7 +923,7 @@ export const AttendanceDashboardHub: React.FC = () => {
                 </CardContent>
               </Card>
             </div>
-          </div>
+          </>
         )}
 
           {/* Range mode: Trend chart + class comparison + heatmap */}
