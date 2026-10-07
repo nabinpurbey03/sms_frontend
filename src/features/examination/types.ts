@@ -287,6 +287,306 @@ export function applyPresetToSubject<T extends {
 }
 
 // ==========================================
+// Dual-Component Grading & Student Row Types
+// ==========================================
+
+export interface StudentGradingRow {
+  studentId: string;
+  studentName: string;
+  sectionId?: string | null;
+  sectionName?: string | null;
+  theoryScore: number | null;
+  isTheoryAbsent: boolean;
+  practicalScore: number | null;
+  isPracticalAbsent: boolean;
+  score: number | null; // Total derived obtained
+  isAbsent: boolean; // True if both absent (or theory absent if no practical)
+}
+
+export interface EvaluateStudentResultParams {
+  hasPractical: boolean;
+  theoryScore: number | null;
+  isTheoryAbsent: boolean;
+  theoryPassMark: number;
+  practicalScore: number | null;
+  isPracticalAbsent: boolean;
+  practicalPassMark: number;
+  passMark?: number;
+}
+
+export interface StudentResultEvaluation {
+  status:
+    | 'Pass'
+    | 'Fail'
+    | 'Fail (TH)'
+    | 'Fail (PR)'
+    | 'TH Absent'
+    | 'PR Absent'
+    | 'Absent (0)'
+    | 'Absent'
+    | 'Pending';
+  variant: 'success' | 'destructive' | 'secondary';
+  tooltip?: string;
+  isPass: boolean;
+}
+
+export function evaluateStudentResult(
+  params: EvaluateStudentResultParams
+): StudentResultEvaluation {
+  const {
+    hasPractical,
+    theoryScore,
+    isTheoryAbsent,
+    theoryPassMark,
+    practicalScore,
+    isPracticalAbsent,
+    practicalPassMark,
+    passMark,
+  } = params;
+
+  if (hasPractical) {
+    // Both absent
+    if (isTheoryAbsent && isPracticalAbsent) {
+      return {
+        status: 'Absent (0)',
+        variant: 'destructive',
+        tooltip: 'Student absent for both theory and practical exams',
+        isPass: false,
+      };
+    }
+    // Theory absent only
+    if (isTheoryAbsent) {
+      return {
+        status: 'TH Absent',
+        variant: 'destructive',
+        tooltip: 'Theory absent',
+        isPass: false,
+      };
+    }
+    // Practical absent only
+    if (isPracticalAbsent) {
+      return {
+        status: 'PR Absent',
+        variant: 'destructive',
+        tooltip: 'Practical absent',
+        isPass: false,
+      };
+    }
+    // Missing / pending scores
+    const isTheoryMissing =
+      theoryScore === null ||
+      theoryScore === undefined ||
+      isNaN(Number(theoryScore));
+    const isPracticalMissing =
+      practicalScore === null ||
+      practicalScore === undefined ||
+      isNaN(Number(practicalScore));
+
+    if (isTheoryMissing || isPracticalMissing) {
+      return {
+        status: 'Pending',
+        variant: 'secondary',
+        tooltip: 'Scores not yet entered',
+        isPass: false,
+      };
+    }
+
+    const thNum = Number(theoryScore);
+    const prNum = Number(practicalScore);
+    const thPass = thNum >= Number(theoryPassMark);
+    const prPass = prNum >= Number(practicalPassMark);
+
+    if (thPass && prPass) {
+      return {
+        status: 'Pass',
+        variant: 'success',
+        isPass: true,
+      };
+    }
+    if (!thPass && !prPass) {
+      return {
+        status: 'Fail',
+        variant: 'destructive',
+        tooltip: 'Both theory and practical scores below pass mark',
+        isPass: false,
+      };
+    }
+    if (!thPass) {
+      return {
+        status: 'Fail (TH)',
+        variant: 'destructive',
+        tooltip: 'Theory score below pass mark',
+        isPass: false,
+      };
+    }
+    return {
+      status: 'Fail (PR)',
+      variant: 'destructive',
+      tooltip: 'Practical score below pass mark',
+      isPass: false,
+    };
+  }
+
+  // Without practical
+  if (isTheoryAbsent) {
+    return {
+      status: 'Absent',
+      variant: 'destructive',
+      tooltip: 'Student absent',
+      isPass: false,
+    };
+  }
+
+  const isMissing =
+    theoryScore === null ||
+    theoryScore === undefined ||
+    isNaN(Number(theoryScore));
+
+  if (isMissing) {
+    return {
+      status: 'Pending',
+      variant: 'secondary',
+      tooltip: 'Score not yet entered',
+      isPass: false,
+    };
+  }
+
+  const scoreNum = Number(theoryScore);
+  const threshold = Number(passMark ?? theoryPassMark);
+  if (scoreNum >= threshold) {
+    return {
+      status: 'Pass',
+      variant: 'success',
+      isPass: true,
+    };
+  }
+  return {
+    status: 'Fail',
+    variant: 'destructive',
+    tooltip: 'Score below pass mark',
+    isPass: false,
+  };
+}
+
+export function deriveStudentScore(
+  row: {
+    theoryScore?: number | null;
+    isTheoryAbsent?: boolean;
+    practicalScore?: number | null;
+    isPracticalAbsent?: boolean;
+  },
+  hasPractical: boolean
+): number | null {
+  if (!hasPractical) {
+    if (row.isTheoryAbsent) return 0;
+    return row.theoryScore !== null &&
+      row.theoryScore !== undefined &&
+      !isNaN(Number(row.theoryScore))
+      ? Number(row.theoryScore)
+      : null;
+  }
+
+  if (row.isTheoryAbsent && row.isPracticalAbsent) return 0;
+
+  const th = row.isTheoryAbsent
+    ? 0
+    : row.theoryScore !== null &&
+      row.theoryScore !== undefined &&
+      !isNaN(Number(row.theoryScore))
+    ? Number(row.theoryScore)
+    : null;
+
+  const pr = row.isPracticalAbsent
+    ? 0
+    : row.practicalScore !== null &&
+      row.practicalScore !== undefined &&
+      !isNaN(Number(row.practicalScore))
+    ? Number(row.practicalScore)
+    : null;
+
+  if (th === null && pr === null) return null;
+  return (th ?? 0) + (pr ?? 0);
+}
+
+export function buildStudentScorePayload(
+  row: StudentGradingRow,
+  hasPractical: boolean
+): StudentScoreItemDTO {
+  const isTheoryAbsent = Boolean(row.isTheoryAbsent);
+  const isPracticalAbsent = hasPractical ? Boolean(row.isPracticalAbsent) : false;
+
+  const theoryScore = isTheoryAbsent ? 0 : row.theoryScore;
+  const practicalScore = hasPractical
+    ? (isPracticalAbsent ? 0 : row.practicalScore)
+    : 0;
+
+  const totalScore =
+    (isTheoryAbsent ? 0 : (row.theoryScore ?? 0)) +
+    (hasPractical ? (isPracticalAbsent ? 0 : (row.practicalScore ?? 0)) : 0);
+
+  const isAbsent = isTheoryAbsent && (hasPractical ? isPracticalAbsent : true);
+
+  return {
+    student_id: row.studentId,
+    theory_score: theoryScore,
+    is_theory_absent: isTheoryAbsent,
+    practical_score: practicalScore,
+    is_practical_absent: isPracticalAbsent,
+    score: totalScore,
+    is_absent: isAbsent,
+  };
+}
+
+export function validateStudentScoreBounds(
+  row: {
+    studentName?: string;
+    theoryScore: number | null;
+    isTheoryAbsent?: boolean;
+    practicalScore: number | null;
+    isPracticalAbsent?: boolean;
+    score?: number | null;
+    isAbsent?: boolean;
+  },
+  options: {
+    hasPractical: boolean;
+    theoryFullMark: number;
+    practicalFullMark: number;
+    fullMark: number;
+  }
+): string | undefined {
+  const name = row.studentName || 'Student';
+
+  if (options.hasPractical) {
+    if (!row.isTheoryAbsent && row.theoryScore !== null && row.theoryScore !== undefined) {
+      const th = Number(row.theoryScore);
+      if (isNaN(th) || th < 0 || th > options.theoryFullMark) {
+        return `${name} has an invalid Theory score (${row.theoryScore}). Must be between 0 and ${options.theoryFullMark}.`;
+      }
+    }
+    if (!row.isPracticalAbsent && row.practicalScore !== null && row.practicalScore !== undefined) {
+      const pr = Number(row.practicalScore);
+      if (isNaN(pr) || pr < 0 || pr > options.practicalFullMark) {
+        return `${name} has an invalid Practical score (${row.practicalScore}). Must be between 0 and ${options.practicalFullMark}.`;
+      }
+    }
+  } else {
+    const raw =
+      row.theoryScore !== null && row.theoryScore !== undefined
+        ? row.theoryScore
+        : row.score;
+    if (!row.isTheoryAbsent && !row.isAbsent && raw !== null && raw !== undefined) {
+      const s = Number(raw);
+      const limit = options.theoryFullMark || options.fullMark;
+      if (isNaN(s) || s < 0 || s > limit) {
+        return `${name} has an invalid score (${raw}). Must be between 0 and ${limit}.`;
+      }
+    }
+  }
+
+  return undefined;
+}
+
+// ==========================================
 // School Results & Examination Analytics Types
 // ==========================================
 

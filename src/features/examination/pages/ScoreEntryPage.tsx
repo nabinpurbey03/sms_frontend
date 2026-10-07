@@ -24,6 +24,12 @@ import {
   useSubmitExamSubject,
 } from '@/features/examination/hooks';
 import type { StudentScoreItemDTO } from '@/features/examination/types';
+import {
+  deriveStudentScore,
+  evaluateStudentResult,
+  buildStudentScorePayload,
+  validateStudentScoreBounds,
+} from '@/features/examination/types';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Card } from '@/components/ui/card';
@@ -96,7 +102,15 @@ export const ScoreEntryPage: React.FC = () => {
 
   // Local state for edits
   const [localGrades, setLocalGrades] = useState<
-    Record<string, { score: number | null; isAbsent: boolean }>
+    Record<
+      string,
+      {
+        theoryScore: number | null;
+        isTheoryAbsent: boolean;
+        practicalScore: number | null;
+        isPracticalAbsent: boolean;
+      }
+    >
   >({});
   const [selectedSectionId, setSelectedSectionId] = useState<string>('ALL');
   const [isSaving, setIsSaving] = useState<boolean>(false);
@@ -114,37 +128,173 @@ export const ScoreEntryPage: React.FC = () => {
     );
   }, [subjectsList, examSubjectId]);
 
-  // Handle score change
-  const handleScoreChange = (studentId: string, score: number | null) => {
-    setLocalGrades((prev) => ({
-      ...prev,
-      [studentId]: {
-        score,
-        isAbsent: false,
-      },
-    }));
+  // Subject constants
+  const hasPractical = Boolean(subject?.has_practical);
+  const theoryFullMark = Number(
+    subject?.theory_full_mark ?? subject?.full_mark ?? 100
+  );
+  const theoryPassMark = Number(
+    subject?.theory_pass_mark ?? subject?.pass_mark ?? 40
+  );
+  const practicalFullMark = Number(subject?.practical_full_mark ?? 0);
+  const practicalPassMark = Number(subject?.practical_pass_mark ?? 0);
+  const fullMark = Number(
+    subject?.full_mark ??
+      (hasPractical ? theoryFullMark + practicalFullMark : theoryFullMark)
+  );
+  const passMark = Number(
+    subject?.pass_mark ??
+      (hasPractical ? theoryPassMark + practicalPassMark : theoryPassMark)
+  );
+  const isLocked = !isPrivileged && subject?.status === 'SUBMITTED';
+
+  const rawStudents = review?.students;
+
+  const getInitialStudentState = (studentId: string) => {
+    const st = rawStudents?.find((s) => s.student_id === studentId);
+    const existing = subject
+      ? st?.subject_scores[subject.subject_id] ||
+        st?.subject_scores[subject.id]
+      : undefined;
+
+    if (!existing) {
+      return {
+        theoryScore: null,
+        isTheoryAbsent: false,
+        practicalScore: null,
+        isPracticalAbsent: false,
+      };
+    }
+
+    if (hasPractical) {
+      return {
+        theoryScore:
+          existing.theory_score !== null && existing.theory_score !== undefined
+            ? Number(existing.theory_score)
+            : null,
+        isTheoryAbsent: Boolean(
+          existing.is_theory_absent ?? existing.is_absent ?? false
+        ),
+        practicalScore:
+          existing.practical_score !== null &&
+          existing.practical_score !== undefined
+            ? Number(existing.practical_score)
+            : null,
+        isPracticalAbsent: Boolean(existing.is_practical_absent ?? false),
+      };
+    }
+
+    const raw =
+      existing.theory_score !== null && existing.theory_score !== undefined
+        ? existing.theory_score
+        : existing.score;
+
+    return {
+      theoryScore: raw !== null && raw !== undefined ? Number(raw) : null,
+      isTheoryAbsent: Boolean(
+        existing.is_theory_absent ?? existing.is_absent ?? false
+      ),
+      practicalScore: null,
+      isPracticalAbsent: false,
+    };
   };
 
-  // Handle absent toggle
-  const handleAbsentToggle = (studentId: string, isAbsent: boolean) => {
+  // Handle theory score change
+  const handleTheoryScoreChange = (studentId: string, score: number | null) => {
     setLocalGrades((prev) => {
-      const prevScore = prev[studentId]?.score;
-      const score = isAbsent
-        ? 0
-        : (prevScore === 0 ? null : (prevScore ?? null));
-
+      const cur = prev[studentId] ?? getInitialStudentState(studentId);
       return {
         ...prev,
         [studentId]: {
-          score,
-          isAbsent,
+          ...cur,
+          theoryScore: score,
+          isTheoryAbsent: false,
         },
       };
     });
   };
 
+  // Handle theory absent toggle
+  const handleTheoryAbsentToggle = (studentId: string, isAbsent: boolean) => {
+    setLocalGrades((prev) => {
+      const cur = prev[studentId] ?? getInitialStudentState(studentId);
+      return {
+        ...prev,
+        [studentId]: {
+          ...cur,
+          isTheoryAbsent: isAbsent,
+          theoryScore: isAbsent
+            ? 0
+            : cur.theoryScore === 0
+            ? null
+            : cur.theoryScore,
+        },
+      };
+    });
+  };
+
+  // Handle practical score change
+  const handlePracticalScoreChange = (
+    studentId: string,
+    score: number | null
+  ) => {
+    setLocalGrades((prev) => {
+      const cur = prev[studentId] ?? getInitialStudentState(studentId);
+      return {
+        ...prev,
+        [studentId]: {
+          ...cur,
+          practicalScore: score,
+          isPracticalAbsent: false,
+        },
+      };
+    });
+  };
+
+  // Handle practical absent toggle
+  const handlePracticalAbsentToggle = (
+    studentId: string,
+    isAbsent: boolean
+  ) => {
+    setLocalGrades((prev) => {
+      const cur = prev[studentId] ?? getInitialStudentState(studentId);
+      return {
+        ...prev,
+        [studentId]: {
+          ...cur,
+          isPracticalAbsent: isAbsent,
+          practicalScore: isAbsent
+            ? 0
+            : cur.practicalScore === 0
+            ? null
+            : cur.practicalScore,
+        },
+      };
+    });
+  };
+
+  // Fill max practical marks for present students
+  const handleFillMaxPractical = () => {
+    if (!hasPractical || isLocked) return;
+    setLocalGrades((prev) => {
+      const next = { ...prev };
+      for (const st of rawStudents ?? []) {
+        const cur = next[st.student_id] ?? getInitialStudentState(st.student_id);
+        if (!cur.isPracticalAbsent) {
+          next[st.student_id] = {
+            ...cur,
+            practicalScore: practicalFullMark,
+          };
+        }
+      }
+      return next;
+    });
+    toast.success('Practical Marks Filled', {
+      description: `Filled all present students with maximum practical marks (${practicalFullMark}).`,
+    });
+  };
+
   // Map students to StudentGradingRow
-  const rawStudents = review?.students;
   const studentRows: StudentGradingRow[] = useMemo(() => {
     if (!rawStudents) return [];
 
@@ -158,27 +308,75 @@ export const ScoreEntryPage: React.FC = () => {
           st.subject_scores[subject.id]
         : undefined;
 
-      const rawScore: any =
-        local !== undefined ? local.score : (existing?.score ?? null);
-      const score =
-        rawScore !== null && rawScore !== undefined && rawScore !== ''
-          ? Number(rawScore)
-          : null;
-      const isAbsent =
-        local !== undefined
-          ? local.isAbsent
-          : (existing?.is_absent ?? false);
+      let theoryScore: number | null = null;
+      let isTheoryAbsent = false;
+      let practicalScore: number | null = null;
+      let isPracticalAbsent = false;
+
+      if (local !== undefined) {
+        theoryScore = local.theoryScore;
+        isTheoryAbsent = local.isTheoryAbsent;
+        practicalScore = local.practicalScore;
+        isPracticalAbsent = local.isPracticalAbsent;
+      } else if (existing) {
+        if (hasPractical) {
+          theoryScore =
+            existing.theory_score !== null &&
+            existing.theory_score !== undefined
+              ? Number(existing.theory_score)
+              : null;
+          isTheoryAbsent = Boolean(
+            existing.is_theory_absent ?? existing.is_absent ?? false
+          );
+          practicalScore =
+            existing.practical_score !== null &&
+            existing.practical_score !== undefined
+              ? Number(existing.practical_score)
+              : null;
+          isPracticalAbsent = Boolean(existing.is_practical_absent ?? false);
+        } else {
+          const raw =
+            existing.theory_score !== null &&
+            existing.theory_score !== undefined
+              ? existing.theory_score
+              : existing.score;
+          theoryScore = raw !== null && raw !== undefined ? Number(raw) : null;
+          isTheoryAbsent = Boolean(
+            existing.is_theory_absent ?? existing.is_absent ?? false
+          );
+          practicalScore = null;
+          isPracticalAbsent = false;
+        }
+      }
+
+      const isAbsent = hasPractical
+        ? isTheoryAbsent && isPracticalAbsent
+        : isTheoryAbsent;
+
+      const derivedScore = deriveStudentScore(
+        {
+          theoryScore,
+          isTheoryAbsent,
+          practicalScore,
+          isPracticalAbsent,
+        },
+        hasPractical
+      );
 
       return {
         studentId: st.student_id,
         studentName: fullName,
         sectionId: st.section_id,
         sectionName: st.section_name,
-        score,
+        theoryScore,
+        isTheoryAbsent,
+        practicalScore,
+        isPracticalAbsent,
+        score: derivedScore,
         isAbsent,
       };
     });
-  }, [rawStudents, localGrades, subject]);
+  }, [rawStudents, localGrades, subject, hasPractical]);
 
   // Unique sections for filter tabs
   const sections = useMemo(() => {
@@ -198,19 +396,30 @@ export const ScoreEntryPage: React.FC = () => {
     return studentRows.filter((r) => r.sectionId === selectedSectionId);
   }, [studentRows, selectedSectionId]);
 
-  // Subject constants & counters
-  const fullMark = Number(subject?.full_mark ?? 100);
-  const passMark = Number(subject?.pass_mark ?? 40);
-  const isLocked = !isPrivileged && subject?.status === 'SUBMITTED';
-
   const totalStudents = studentRows.length;
   const absentCount = studentRows.filter((r) => r.isAbsent).length;
-  const gradedCount = studentRows.filter(
-    (r) => r.isAbsent || r.score !== null
-  ).length;
-  const passCount = studentRows.filter(
-    (r) => !r.isAbsent && r.score !== null && Number(r.score) >= passMark
-  ).length;
+  const gradedCount = studentRows.filter((r) => {
+    if (hasPractical) {
+      const thDone = r.isTheoryAbsent || r.theoryScore !== null;
+      const prDone = r.isPracticalAbsent || r.practicalScore !== null;
+      return thDone && prDone;
+    }
+    return r.isTheoryAbsent || r.theoryScore !== null || r.score !== null;
+  }).length;
+
+  const passCount = studentRows.filter((r) => {
+    const evalResult = evaluateStudentResult({
+      hasPractical,
+      theoryScore: r.theoryScore,
+      isTheoryAbsent: r.isTheoryAbsent,
+      theoryPassMark,
+      practicalScore: r.practicalScore,
+      isPracticalAbsent: r.isPracticalAbsent,
+      practicalPassMark,
+      passMark,
+    });
+    return evalResult.isPass;
+  }).length;
 
   // Tenant Guard
   if (!activeTenantId) {
@@ -257,15 +466,17 @@ export const ScoreEntryPage: React.FC = () => {
     );
   }
 
-  // ReBAC Guard:
-  // If user is Teacher and not admin, verify assigned_teacher_id === user?.id
+  // ReBAC Guard
   const isAssignedTeacher = Boolean(
     subject.assigned_teacher_id &&
       user?.id &&
       subject.assigned_teacher_id === user.id
   );
 
-  if (!can('ENTER_EXAM_SCORES') || (isTeacher && !isPrivileged && !isAssignedTeacher)) {
+  if (
+    !can('ENTER_EXAM_SCORES') ||
+    (isTeacher && !isPrivileged && !isAssignedTeacher)
+  ) {
     return (
       <div className="flex flex-col items-center justify-center min-h-[400px] p-6 text-center">
         <Card className="max-w-md w-full p-6 text-center space-y-4">
@@ -290,28 +501,33 @@ export const ScoreEntryPage: React.FC = () => {
     );
   }
 
+  const validateScores = (): boolean => {
+    for (const r of studentRows) {
+      const err = validateStudentScoreBounds(r, {
+        hasPractical,
+        theoryFullMark,
+        practicalFullMark,
+        fullMark,
+      });
+      if (err) {
+        toast.error('Validation Error', {
+          description: err,
+        });
+        return false;
+      }
+    }
+    return true;
+  };
+
   // Action: Save Draft
   const handleSaveDraft = async () => {
     if (!activeTenantId || !subject || isLocked || isSaving) return;
 
-    // Validate scores bounds
-    const invalidRow = studentRows.find((r) => {
-      if (r.isAbsent || r.score === null) return false;
-      const s = Number(r.score);
-      return isNaN(s) || s < 0 || s > fullMark;
-    });
-    if (invalidRow) {
-      toast.error('Validation Error', {
-        description: `Student ${invalidRow.studentName} has an invalid score. Must be between 0 and ${fullMark}.`,
-      });
-      return;
-    }
+    if (!validateScores()) return;
 
-    const payload: StudentScoreItemDTO[] = studentRows.map((r) => ({
-      student_id: r.studentId,
-      score: r.isAbsent ? 0 : (r.score !== null ? Number(r.score) : null),
-      is_absent: r.isAbsent,
-    }));
+    const payload: StudentScoreItemDTO[] = studentRows.map((r) =>
+      buildStudentScorePayload(r, hasPractical)
+    );
 
     setIsSaving(true);
     try {
@@ -331,24 +547,11 @@ export const ScoreEntryPage: React.FC = () => {
   const handleSubmitFinal = async () => {
     if (!activeTenantId || !subject || isLocked || isSubmitting) return;
 
-    // Validate scores bounds
-    const invalidRow = studentRows.find((r) => {
-      if (r.isAbsent || r.score === null) return false;
-      const s = Number(r.score);
-      return isNaN(s) || s < 0 || s > fullMark;
-    });
-    if (invalidRow) {
-      toast.error('Validation Error', {
-        description: `Student ${invalidRow.studentName} has an invalid score. Must be between 0 and ${fullMark}.`,
-      });
-      return;
-    }
+    if (!validateScores()) return;
 
-    const payload: StudentScoreItemDTO[] = studentRows.map((r) => ({
-      student_id: r.studentId,
-      score: r.isAbsent ? 0 : (r.score !== null ? Number(r.score) : null),
-      is_absent: r.isAbsent,
-    }));
+    const payload: StudentScoreItemDTO[] = studentRows.map((r) =>
+      buildStudentScorePayload(r, hasPractical)
+    );
 
     setIsSubmitting(true);
     try {
@@ -386,14 +589,19 @@ export const ScoreEntryPage: React.FC = () => {
               <BreadcrumbSeparator />
               <BreadcrumbItem>
                 <BreadcrumbLink asChild>
-                  <Link to={'/examination/exams/$examId/review' as any} params={{ examId } as any}>
+                  <Link
+                    to={'/examination/exams/$examId/review' as any}
+                    params={{ examId } as any}
+                  >
                     {review.exam.name}
                   </Link>
                 </BreadcrumbLink>
               </BreadcrumbItem>
               <BreadcrumbSeparator />
               <BreadcrumbItem>
-                <BreadcrumbPage>{subject.subject_name} Score Entry</BreadcrumbPage>
+                <BreadcrumbPage>
+                  {subject.subject_name} Score Entry
+                </BreadcrumbPage>
               </BreadcrumbItem>
             </BreadcrumbList>
           </Breadcrumb>
@@ -474,13 +682,23 @@ export const ScoreEntryPage: React.FC = () => {
 
       {/* Subject Criteria Badges & Quick Stat Counters */}
       <div className="space-y-3">
-        <div className="flex items-center gap-2">
+        <div className="flex flex-wrap items-center gap-2">
           <Badge variant="outline" className="text-xs">
             Full Mark: {fullMark}
           </Badge>
           <Badge variant="outline" className="text-xs">
             Pass Mark: {passMark}
           </Badge>
+          {hasPractical && (
+            <>
+              <Badge variant="secondary" className="text-xs">
+                Theory: {theoryFullMark} (Pass: {theoryPassMark})
+              </Badge>
+              <Badge variant="secondary" className="text-xs">
+                Practical: {practicalFullMark} (Pass: {practicalPassMark})
+              </Badge>
+            </>
+          )}
         </div>
 
         <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
@@ -580,11 +798,19 @@ export const ScoreEntryPage: React.FC = () => {
       {/* Teacher Grading Table */}
       <TeacherScoreEntryTable
         students={visibleStudents}
+        hasPractical={hasPractical}
+        theoryFullMark={theoryFullMark}
+        theoryPassMark={theoryPassMark}
+        practicalFullMark={practicalFullMark}
+        practicalPassMark={practicalPassMark}
         fullMark={fullMark}
         passMark={passMark}
         isLocked={isLocked}
-        onScoreChange={handleScoreChange}
-        onAbsentToggle={handleAbsentToggle}
+        onTheoryScoreChange={handleTheoryScoreChange}
+        onTheoryAbsentToggle={handleTheoryAbsentToggle}
+        onPracticalScoreChange={handlePracticalScoreChange}
+        onPracticalAbsentToggle={handlePracticalAbsentToggle}
+        onFillMaxPractical={handleFillMaxPractical}
       />
 
       {/* Confirmation Dialog for Final Submission */}
