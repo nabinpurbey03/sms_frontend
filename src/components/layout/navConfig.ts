@@ -31,7 +31,6 @@ export type NavCategory =
   | 'Finance'
   | 'Academics'
   | 'Attendance'
-  | 'Examinations'
   | 'Teacher Desk'
   | 'Parent Portal';
 
@@ -151,6 +150,14 @@ export const getNavItems = (ctx: NavPermissionsContext): NavItem[] => [
     category: 'Academics',
   },
   {
+    label: 'Examinations',
+    href: '/examination/exams',
+    icon: GraduationCap,
+    description: 'Create and manage academic assessments.',
+    show: ctx.can('MANAGE_EXAMS') || ctx.can('ENTER_EXAM_SCORES'),
+    category: 'Academics',
+  },
+  {
     label: 'Analytics',
     href: '/academic/analytics',
     icon: TrendingUp,
@@ -175,14 +182,6 @@ export const getNavItems = (ctx: NavPermissionsContext): NavItem[] => [
     description: 'View and export attendance records.',
     show: ctx.can('VIEW_ATTENDANCE_REPORTS') && !ctx.isParent && !ctx.isTeacher,
     category: 'Attendance',
-  },
-  {
-    label: 'Examinations',
-    href: '/examination/exams',
-    icon: GraduationCap,
-    description: 'Create and manage academic assessments.',
-    show: ctx.can('MANAGE_EXAMS') || ctx.can('ENTER_EXAM_SCORES'),
-    category: 'Examinations',
   },
   {
     label: 'My Teaching Duties',
@@ -279,10 +278,9 @@ export const NAV_CATEGORY_ORDER: Record<NavCategory, number> = {
   Administration: 20,
   Academics: 30,
   Attendance: 40,
-  Examinations: 50,
-  'Teacher Desk': 60,
-  'Parent Portal': 70,
-  Finance: 80,
+  'Teacher Desk': 50,
+  'Parent Portal': 60,
+  Finance: 70,
 };
 
 export const groupNavItemsByCategory = (navItems: NavItem[]): Record<string, NavItem[]> => {

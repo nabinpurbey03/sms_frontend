@@ -78,4 +78,33 @@ test('getBreadcrumbs resolves Finance > Bills & Invoices > Student Ledger for st
   assert.equal(crumbs[2].label, 'Student Ledger');
 });
 
+test('navConfig places Examinations inside Academics category between Teacher Assignments and Analytics', () => {
+  const ctx = createMockCtx({
+    can: (perm) =>
+      perm === 'VIEW_CLASSES_SUBJECTS' ||
+      perm === 'VIEW_SECTIONS_STUDENTS' ||
+      perm === 'ASSIGN_TEACHERS' ||
+      perm === 'MANAGE_EXAMS' ||
+      perm === 'MANAGE_TENANT_SETTINGS',
+  });
+  const items = getNavItems(ctx);
+
+  const examItem = items.find((item) => item.href === '/examination/exams');
+  assert.ok(examItem, 'Examinations item should exist');
+  assert.equal(examItem.label, 'Examinations');
+  assert.equal(examItem.category, 'Academics');
+
+  const academicsItems = items.filter((item) => item.category === 'Academics');
+  const teacherAssignIndex = academicsItems.findIndex((item) => item.href === '/academic/assignments');
+  const examIndex = academicsItems.findIndex((item) => item.href === '/examination/exams');
+  const analyticsIndex = academicsItems.findIndex((item) => item.href === '/academic/analytics');
+
+  assert.ok(teacherAssignIndex !== -1, 'Teacher Assignments should be in Academics');
+  assert.ok(examIndex !== -1, 'Examinations should be in Academics');
+  assert.ok(analyticsIndex !== -1, 'Analytics should be in Academics');
+
+  assert.equal(examIndex, teacherAssignIndex + 1, 'Examinations should be immediately below Teacher Assignments');
+  assert.equal(analyticsIndex, examIndex + 1, 'Analytics should be immediately below Examinations');
+});
+
 
