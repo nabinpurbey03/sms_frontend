@@ -927,6 +927,7 @@ export const useCleanupEmptySections = () => {
       queryClient.invalidateQueries({ queryKey: ['all-classes-details', variables.tenantId] });
       queryClient.invalidateQueries({ queryKey: ['classes', variables.tenantId] });
       queryClient.invalidateQueries({ queryKey: ['daily-attendance-status'] });
+      queryClient.invalidateQueries({ queryKey: ['attendance-summary'] });
     },
   });
 };
