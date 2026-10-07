@@ -1,6 +1,6 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import { getNavItems, isNavItemActive, getBreadcrumbs } from '../navConfig.ts';
+import { getNavItems, isNavItemActive, getBreadcrumbs, groupNavItemsByCategory } from '../navConfig.ts';
 
 function createMockCtx(overrides = {}) {
   return {
@@ -105,6 +105,29 @@ test('navConfig places Examinations inside Academics category between Teacher As
 
   assert.equal(examIndex, teacherAssignIndex + 1, 'Examinations should be immediately below Teacher Assignments');
   assert.equal(analyticsIndex, examIndex + 1, 'Analytics should be immediately below Examinations');
+});
+
+test('groupNavItemsByCategory orders Attendance section above Academics section in the sidebar', () => {
+  const ctx = createMockCtx({
+    can: (perm) =>
+      perm === 'VIEW_CLASSES_SUBJECTS' ||
+      perm === 'VIEW_SECTIONS_STUDENTS' ||
+      perm === 'MARK_ATTENDANCE' ||
+      perm === 'VIEW_ATTENDANCE_REPORTS',
+  });
+  const items = getNavItems(ctx);
+  const grouped = groupNavItemsByCategory(items);
+  const categories = Object.keys(grouped);
+
+  const attendanceIndex = categories.indexOf('Attendance');
+  const academicsIndex = categories.indexOf('Academics');
+
+  assert.ok(attendanceIndex !== -1, 'Attendance category should be present');
+  assert.ok(academicsIndex !== -1, 'Academics category should be present');
+  assert.ok(
+    attendanceIndex < academicsIndex,
+    `Attendance (index ${attendanceIndex}) should appear above Academics (index ${academicsIndex})`
+  );
 });
 
 

@@ -29,8 +29,8 @@ export type NavCategory =
   | 'Overview'
   | 'Administration'
   | 'Finance'
-  | 'Academics'
   | 'Attendance'
+  | 'Academics'
   | 'Teacher Desk'
   | 'Parent Portal';
 
@@ -118,6 +118,22 @@ export const getNavItems = (ctx: NavPermissionsContext): NavItem[] => [
     category: 'Administration',
   },
   {
+    label: 'Mark Attendance',
+    href: '/attendance/mark',
+    icon: CalendarCheck,
+    description: 'Record daily student attendance.',
+    show: ctx.can('MARK_ATTENDANCE') && !ctx.isParent,
+    category: 'Attendance',
+  },
+  {
+    label: 'Attendance Reports',
+    href: '/attendance/reports',
+    icon: FileSpreadsheet,
+    description: 'View and export attendance records.',
+    show: ctx.can('VIEW_ATTENDANCE_REPORTS') && !ctx.isParent && !ctx.isTeacher,
+    category: 'Attendance',
+  },
+  {
     label: 'Classes & Sections',
     href: '/academic/classes',
     icon: BookOpen,
@@ -166,22 +182,6 @@ export const getNavItems = (ctx: NavPermissionsContext): NavItem[] => [
       (ctx.isSuperAdmin || ctx.can('MANAGE_TENANT_SETTINGS') || ctx.can('VIEW_TENANT_SETTINGS')) &&
       ctx.activeRole !== 'ACCOUNTANT',
     category: 'Academics',
-  },
-  {
-    label: 'Mark Attendance',
-    href: '/attendance/mark',
-    icon: CalendarCheck,
-    description: 'Record daily student attendance.',
-    show: ctx.can('MARK_ATTENDANCE') && !ctx.isParent,
-    category: 'Attendance',
-  },
-  {
-    label: 'Attendance Reports',
-    href: '/attendance/reports',
-    icon: FileSpreadsheet,
-    description: 'View and export attendance records.',
-    show: ctx.can('VIEW_ATTENDANCE_REPORTS') && !ctx.isParent && !ctx.isTeacher,
-    category: 'Attendance',
   },
   {
     label: 'My Teaching Duties',
@@ -276,8 +276,8 @@ export const getNavItems = (ctx: NavPermissionsContext): NavItem[] => [
 export const NAV_CATEGORY_ORDER: Record<NavCategory, number> = {
   Overview: 10,
   Administration: 20,
-  Academics: 30,
-  Attendance: 40,
+  Attendance: 30,
+  Academics: 40,
   'Teacher Desk': 50,
   'Parent Portal': 60,
   Finance: 70,
