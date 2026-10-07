@@ -104,27 +104,37 @@ export const PlatformRankingsSection: React.FC = () => {
           </div>
 
           {/* Limit Toggle: Top 5 / Top 10 */}
-          <div className="flex items-center gap-1 bg-muted/60 p-1 rounded-lg border shrink-0 self-start sm:self-auto">
+          <div
+            role="tablist"
+            aria-label="Ranking limit"
+            className="flex items-center gap-1 bg-muted/60 dark:bg-muted/30 p-1 rounded-xl border border-border/80 shrink-0 self-start sm:self-auto shadow-2xs"
+          >
             <button
               type="button"
+              role="tab"
+              aria-selected={limit === 5}
               onClick={() => setLimit(5)}
               className={cn(
-                'px-2.5 py-1 text-xs font-semibold rounded-md transition-all',
+                'px-3 py-1 text-xs font-semibold rounded-lg transition-all duration-150 cursor-pointer select-none',
+                'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/40',
                 limit === 5
-                  ? 'bg-background text-foreground shadow-sm'
-                  : 'text-muted-foreground hover:text-foreground'
+                  ? 'bg-background text-foreground font-bold shadow-xs border border-border/90 dark:bg-card dark:border-primary/40 dark:shadow-md'
+                  : 'text-muted-foreground hover:text-foreground hover:bg-background/60 hover:border-border/40 border border-transparent'
               )}
             >
               Top 5
             </button>
             <button
               type="button"
+              role="tab"
+              aria-selected={limit === 10}
               onClick={() => setLimit(10)}
               className={cn(
-                'px-2.5 py-1 text-xs font-semibold rounded-md transition-all',
+                'px-3 py-1 text-xs font-semibold rounded-lg transition-all duration-150 cursor-pointer select-none',
+                'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/40',
                 limit === 10
-                  ? 'bg-background text-foreground shadow-sm'
-                  : 'text-muted-foreground hover:text-foreground'
+                  ? 'bg-background text-foreground font-bold shadow-xs border border-border/90 dark:bg-card dark:border-primary/40 dark:shadow-md'
+                  : 'text-muted-foreground hover:text-foreground hover:bg-background/60 hover:border-border/40 border border-transparent'
               )}
             >
               Top 10

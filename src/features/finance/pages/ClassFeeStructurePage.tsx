@@ -442,7 +442,7 @@ export const ClassFeeStructurePage: React.FC = () => {
       <div
         role="tablist"
         aria-label="Class fee tabs"
-        className="p-1 rounded-xl bg-muted/40 border border-border/60 inline-flex flex-wrap gap-1 max-w-full overflow-x-auto"
+        className="p-1.5 rounded-2xl bg-muted/60 dark:bg-muted/30 border border-border/80 inline-flex flex-wrap items-center gap-1.5 max-w-full overflow-x-auto shadow-2xs"
       >
         <button
           type="button"
@@ -450,15 +450,24 @@ export const ClassFeeStructurePage: React.FC = () => {
           aria-selected={activeTab === 'students'}
           onClick={() => setActiveTab('students')}
           className={cn(
-            'px-3.5 py-1.5 text-xs font-semibold rounded-lg transition-all cursor-pointer flex items-center gap-2 whitespace-nowrap',
+            'px-3.5 py-2 text-xs font-semibold rounded-xl transition-all duration-150 cursor-pointer flex items-center gap-2 whitespace-nowrap select-none',
+            'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/40',
             activeTab === 'students'
-              ? 'bg-card text-foreground shadow-xs font-bold'
-              : 'text-muted-foreground hover:text-foreground hover:bg-card/50'
+              ? 'bg-background text-foreground font-bold shadow-xs border border-border/90 dark:bg-card dark:border-primary/40 dark:shadow-md'
+              : 'text-muted-foreground hover:text-foreground hover:bg-background/60 hover:border-border/40 border border-transparent'
           )}
         >
-          <Users className="w-3.5 h-3.5 text-primary" />
-          <span>Student Fee Profiles & Transport</span>
-          <Badge variant="secondary" className="text-[10px] px-1.5 py-0 font-bold ml-1">
+          <Users className={cn('w-3.5 h-3.5 transition-colors', activeTab === 'students' ? 'text-primary' : 'text-muted-foreground')} />
+          <span>Student Fee Profiles &amp; Transport</span>
+          <Badge
+            variant={activeTab === 'students' ? 'default' : 'outline'}
+            className={cn(
+              'text-[10px] px-1.5 py-0 font-bold ml-0.5 transition-colors',
+              activeTab === 'students'
+                ? 'bg-primary text-primary-foreground'
+                : 'bg-muted/60 text-muted-foreground border-border/60'
+            )}
+          >
             {allStudents.length}
           </Badge>
         </button>
@@ -469,15 +478,24 @@ export const ClassFeeStructurePage: React.FC = () => {
           aria-selected={activeTab === 'structures'}
           onClick={() => setActiveTab('structures')}
           className={cn(
-            'px-3.5 py-1.5 text-xs font-semibold rounded-lg transition-all cursor-pointer flex items-center gap-2 whitespace-nowrap',
+            'px-3.5 py-2 text-xs font-semibold rounded-xl transition-all duration-150 cursor-pointer flex items-center gap-2 whitespace-nowrap select-none',
+            'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/40',
             activeTab === 'structures'
-              ? 'bg-card text-foreground shadow-xs font-bold'
-              : 'text-muted-foreground hover:text-foreground hover:bg-card/50'
+              ? 'bg-background text-foreground font-bold shadow-xs border border-border/90 dark:bg-card dark:border-primary/40 dark:shadow-md'
+              : 'text-muted-foreground hover:text-foreground hover:bg-background/60 hover:border-border/40 border border-transparent'
           )}
         >
-          <Coins className="w-3.5 h-3.5 text-amber-500" />
-          <span>Fee Structure & Rates</span>
-          <Badge variant="secondary" className="text-[10px] px-1.5 py-0 font-bold ml-1">
+          <Coins className={cn('w-3.5 h-3.5 transition-colors', activeTab === 'structures' ? 'text-amber-500' : 'text-muted-foreground')} />
+          <span>Fee Structure &amp; Rates</span>
+          <Badge
+            variant={activeTab === 'structures' ? 'default' : 'outline'}
+            className={cn(
+              'text-[10px] px-1.5 py-0 font-bold ml-0.5 transition-colors',
+              activeTab === 'structures'
+                ? 'bg-primary text-primary-foreground'
+                : 'bg-muted/60 text-muted-foreground border-border/60'
+            )}
+          >
             {classFees.length}
           </Badge>
         </button>

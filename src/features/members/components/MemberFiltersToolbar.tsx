@@ -67,39 +67,45 @@ export const MemberFiltersToolbar: React.FC<MemberFiltersToolbarProps> = ({
         {/* Right side actions */}
         <div className="flex items-center gap-2 flex-wrap sm:flex-nowrap">
           {/* Status selector */}
-          <div className="flex items-center rounded-lg border border-border/70 p-0.5 bg-muted/40">
+          <div role="tablist" aria-label="Member Status Filter" className="flex items-center rounded-xl border border-border/80 p-1 bg-muted/60 dark:bg-muted/30 shadow-2xs gap-1">
             <button
               type="button"
+              role="tab"
+              aria-selected={statusFilter === 'ALL'}
               onClick={() => onStatusChange('ALL')}
               className={cn(
-                'px-2.5 py-1 text-xs font-medium rounded-md transition-colors cursor-pointer select-none',
+                'px-3 py-1.5 text-xs font-semibold rounded-lg transition-all duration-150 cursor-pointer select-none border',
                 statusFilter === 'ALL'
-                  ? 'bg-background text-foreground shadow-2xs font-semibold'
-                  : 'text-muted-foreground hover:text-foreground'
+                  ? 'bg-background text-foreground font-bold shadow-xs border-border/90 dark:bg-card dark:border-primary/40'
+                  : 'border-transparent text-muted-foreground hover:text-foreground hover:bg-background/60 hover:border-border/40'
               )}
             >
               All
             </button>
             <button
               type="button"
+              role="tab"
+              aria-selected={statusFilter === 'ACTIVE'}
               onClick={() => onStatusChange('ACTIVE')}
               className={cn(
-                'px-2.5 py-1 text-xs font-medium rounded-md transition-colors cursor-pointer select-none',
+                'px-3 py-1.5 text-xs font-semibold rounded-lg transition-all duration-150 cursor-pointer select-none border',
                 statusFilter === 'ACTIVE'
-                  ? 'bg-background text-foreground shadow-2xs font-semibold'
-                  : 'text-muted-foreground hover:text-foreground'
+                  ? 'bg-background text-foreground font-bold shadow-xs border-border/90 dark:bg-card dark:border-primary/40'
+                  : 'border-transparent text-muted-foreground hover:text-foreground hover:bg-background/60 hover:border-border/40'
               )}
             >
               Active
             </button>
             <button
               type="button"
+              role="tab"
+              aria-selected={statusFilter === 'INACTIVE'}
               onClick={() => onStatusChange('INACTIVE')}
               className={cn(
-                'px-2.5 py-1 text-xs font-medium rounded-md transition-colors cursor-pointer select-none',
+                'px-3 py-1.5 text-xs font-semibold rounded-lg transition-all duration-150 cursor-pointer select-none border',
                 statusFilter === 'INACTIVE'
-                  ? 'bg-background text-foreground shadow-2xs font-semibold'
-                  : 'text-muted-foreground hover:text-foreground'
+                  ? 'bg-background text-foreground font-bold shadow-xs border-border/90 dark:bg-card dark:border-primary/40'
+                  : 'border-transparent text-muted-foreground hover:text-foreground hover:bg-background/60 hover:border-border/40'
               )}
             >
               Inactive

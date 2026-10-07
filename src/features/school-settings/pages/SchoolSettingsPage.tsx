@@ -160,7 +160,7 @@ export const SchoolSettingsPage: React.FC = () => {
         className="space-y-4"
       >
         <div className="overflow-x-auto no-scrollbar -mx-1 px-1 py-0.5">
-          <TabsList className="h-auto p-1.5 bg-muted/60 dark:bg-muted/30 border border-border/60 rounded-2xl inline-flex w-full sm:w-auto max-w-full gap-1 shadow-2xs">
+          <TabsList className="h-auto p-1.5 bg-muted/60 dark:bg-muted/30 border border-border/80 rounded-2xl inline-flex w-full sm:w-auto max-w-full gap-1.5 shadow-2xs">
             {TABS.map((tab) => {
               const Icon = tab.icon;
               const isActive = currentTab === tab.id;
@@ -170,9 +170,9 @@ export const SchoolSettingsPage: React.FC = () => {
                   key={tab.id}
                   value={tab.id}
                   className={cn(
-                    'group relative flex items-center gap-2.5 px-4 py-2 text-sm rounded-xl transition-all duration-200 shrink-0 cursor-pointer select-none',
-                    'text-muted-foreground hover:text-foreground',
-                    'data-[state=active]:bg-background data-[state=active]:text-foreground data-[state=active]:shadow-xs data-[state=active]:border-border/60 data-[state=active]:font-semibold',
+                    'group relative flex items-center gap-2.5 px-4 py-2 text-sm rounded-xl transition-all duration-150 shrink-0 cursor-pointer select-none border border-transparent',
+                    'text-muted-foreground hover:text-foreground hover:bg-background/60 hover:border-border/40',
+                    'data-[state=active]:bg-background data-[state=active]:text-foreground data-[state=active]:shadow-xs data-[state=active]:border-border/90 dark:data-[state=active]:bg-card dark:data-[state=active]:border-primary/40 dark:data-[state=active]:shadow-md data-[state=active]:font-bold',
                     'focus-visible:ring-2 focus-visible:ring-primary/40 focus-visible:outline-none'
                   )}
                 >

@@ -15,6 +15,7 @@ import { toast } from 'sonner';
 import { useMembers } from '@/features/members/hooks';
 import { useAssignClassTeacher, useAssignSubjectTeacher } from '../hooks';
 import type { ClassWithDetails } from '../types';
+import { cn } from '@/lib/utils';
 
 interface AssignTeacherDialogProps {
   isOpen: boolean;
@@ -149,26 +150,38 @@ export const AssignTeacherDialog: React.FC<AssignTeacherDialogProps> = ({
         </DialogHeader>
 
         {/* Mode Selector Tabs */}
-        <div className="grid grid-cols-2 gap-1 p-1 bg-muted rounded-xl text-xs font-semibold">
+        <div
+          role="tablist"
+          aria-label="Teacher assignment role"
+          className="grid grid-cols-2 gap-1 p-1 bg-muted/60 dark:bg-muted/30 rounded-xl border border-border/80 text-xs font-semibold shadow-2xs"
+        >
           <button
             type="button"
+            role="tab"
+            aria-selected={mode === 'subject'}
             onClick={() => setMode('subject')}
-            className={`py-1.5 rounded-lg transition-all ${
+            className={cn(
+              'py-2 px-3 rounded-lg transition-all duration-150 cursor-pointer select-none text-center',
+              'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/40',
               mode === 'subject'
-                ? 'bg-card text-foreground shadow-xs font-bold'
-                : 'text-muted-foreground hover:text-foreground'
-            }`}
+                ? 'bg-background text-foreground font-bold shadow-xs border border-border/90 dark:bg-card dark:border-primary/40 dark:shadow-md'
+                : 'text-muted-foreground hover:text-foreground hover:bg-background/60 hover:border-border/40 border border-transparent'
+            )}
           >
             Subject Teacher
           </button>
           <button
             type="button"
+            role="tab"
+            aria-selected={mode === 'class_teacher'}
             onClick={() => setMode('class_teacher')}
-            className={`py-1.5 rounded-lg transition-all ${
+            className={cn(
+              'py-2 px-3 rounded-lg transition-all duration-150 cursor-pointer select-none text-center',
+              'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/40',
               mode === 'class_teacher'
-                ? 'bg-card text-foreground shadow-xs font-bold'
-                : 'text-muted-foreground hover:text-foreground'
-            }`}
+                ? 'bg-background text-foreground font-bold shadow-xs border border-border/90 dark:bg-card dark:border-primary/40 dark:shadow-md'
+                : 'text-muted-foreground hover:text-foreground hover:bg-background/60 hover:border-border/40 border border-transparent'
+            )}
           >
             Class Teacher
           </button>

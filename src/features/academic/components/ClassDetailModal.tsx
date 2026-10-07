@@ -37,6 +37,7 @@ import {
 import { StudentAddDialog } from './StudentAddDialog';
 import { SectionAddDialog } from './SectionAddDialog';
 import type { ClassWithDetails, AcademicStudent, AcademicSubject, AcademicSection } from '../types';
+import { cn } from '@/lib/utils';
 
 interface ClassDetailModalProps {
   cls: ClassWithDetails | null;
@@ -212,11 +213,12 @@ export const ClassDetailModal: React.FC<ClassDetailModalProps> = ({
                           key={sec.id}
                           type="button"
                           onClick={() => setSelectedSectionId(sec.id)}
-                          className={`px-3 py-1 text-xs rounded-lg font-semibold transition-all cursor-pointer ${
+                          className={cn(
+                            'px-3 py-1.5 text-xs rounded-lg font-semibold transition-all cursor-pointer select-none border',
                             isSelected
-                              ? 'bg-primary text-primary-foreground shadow-xs'
-                              : 'bg-muted/70 text-muted-foreground hover:bg-muted hover:text-foreground'
-                          }`}
+                              ? 'bg-primary text-primary-foreground border-primary shadow-xs font-bold'
+                              : 'bg-muted/50 border-border/70 text-muted-foreground hover:bg-muted hover:text-foreground hover:border-border'
+                          )}
                         >
                           Section {sec.name} ({sec.student_count ?? 0})
                         </button>

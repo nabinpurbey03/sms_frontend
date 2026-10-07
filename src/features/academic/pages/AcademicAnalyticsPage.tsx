@@ -296,8 +296,8 @@ export const AcademicAnalyticsPage: React.FC = () => {
       ) : (
         /* Tabbed Intelligence Interface */
         <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-6">
-          <TabsList className="flex flex-wrap sm:inline-flex h-auto p-1 bg-muted/80 gap-1 rounded-lg">
-            <TabsTrigger value="retention" className="flex items-center gap-2 text-xs sm:text-sm font-medium">
+          <TabsList className="flex flex-wrap sm:inline-flex h-auto p-1.5 bg-muted/60 dark:bg-muted/30 border border-border/80 gap-1.5 rounded-2xl shadow-2xs">
+            <TabsTrigger value="retention" className="flex items-center gap-2 text-xs sm:text-sm font-semibold">
               <TrendingUp className="w-4 h-4" />
               <span>Cohort Retention &amp; Progression</span>
             </TabsTrigger>

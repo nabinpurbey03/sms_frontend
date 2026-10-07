@@ -521,7 +521,7 @@ export const ClassDetailPage: React.FC = () => {
       <div
         role="tablist"
         aria-label="Class navigation tabs"
-        className="p-1 rounded-xl bg-muted/40 border border-border/60 inline-flex flex-wrap gap-1 max-w-full overflow-x-auto"
+        className="p-1.5 rounded-2xl bg-muted/60 dark:bg-muted/30 border border-border/80 inline-flex flex-wrap items-center gap-1.5 max-w-full overflow-x-auto shadow-2xs"
       >
         <button
           type="button"
@@ -529,15 +529,24 @@ export const ClassDetailPage: React.FC = () => {
           aria-selected={activeTab === 'roster'}
           onClick={() => setActiveTab('roster')}
           className={cn(
-            'px-3 py-1.5 text-xs font-semibold rounded-lg transition-all cursor-pointer flex items-center gap-1.5 whitespace-nowrap',
+            'px-3.5 py-2 text-xs font-semibold rounded-xl transition-all duration-150 cursor-pointer flex items-center gap-2 whitespace-nowrap select-none',
+            'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/40',
             activeTab === 'roster'
-              ? 'bg-card text-foreground shadow-xs font-bold'
-              : 'text-muted-foreground hover:text-foreground hover:bg-card/50'
+              ? 'bg-background text-foreground font-bold shadow-xs border border-border/90 dark:bg-card dark:border-primary/40 dark:shadow-md'
+              : 'text-muted-foreground hover:text-foreground hover:bg-background/60 hover:border-border/40 border border-transparent'
           )}
         >
-          <Users className="w-3.5 h-3.5 text-primary" />
+          <Users className={cn('w-3.5 h-3.5 transition-colors', activeTab === 'roster' ? 'text-primary' : 'text-muted-foreground')} />
           <span>Section Rosters</span>
-          <Badge variant="secondary" className="text-[10px] px-1.5 py-0 font-bold ml-1">
+          <Badge
+            variant={activeTab === 'roster' ? 'default' : 'outline'}
+            className={cn(
+              'text-[10px] px-1.5 py-0 font-bold ml-0.5 transition-colors',
+              activeTab === 'roster'
+                ? 'bg-primary text-primary-foreground'
+                : 'bg-muted/60 text-muted-foreground border-border/60'
+            )}
+          >
             {cls.students.length}
           </Badge>
         </button>
@@ -548,15 +557,24 @@ export const ClassDetailPage: React.FC = () => {
           aria-selected={activeTab === 'subjects'}
           onClick={() => setActiveTab('subjects')}
           className={cn(
-            'px-3 py-1.5 text-xs font-semibold rounded-lg transition-all cursor-pointer flex items-center gap-1.5 whitespace-nowrap',
+            'px-3.5 py-2 text-xs font-semibold rounded-xl transition-all duration-150 cursor-pointer flex items-center gap-2 whitespace-nowrap select-none',
+            'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/40',
             activeTab === 'subjects'
-              ? 'bg-card text-foreground shadow-xs font-bold'
-              : 'text-muted-foreground hover:text-foreground hover:bg-card/50'
+              ? 'bg-background text-foreground font-bold shadow-xs border border-border/90 dark:bg-card dark:border-primary/40 dark:shadow-md'
+              : 'text-muted-foreground hover:text-foreground hover:bg-background/60 hover:border-border/40 border border-transparent'
           )}
         >
-          <BookOpen className="w-3.5 h-3.5 text-blue-500" />
+          <BookOpen className={cn('w-3.5 h-3.5 transition-colors', activeTab === 'subjects' ? 'text-blue-500' : 'text-muted-foreground')} />
           <span>Curriculum Subjects</span>
-          <Badge variant="secondary" className="text-[10px] px-1.5 py-0 font-bold ml-1">
+          <Badge
+            variant={activeTab === 'subjects' ? 'default' : 'outline'}
+            className={cn(
+              'text-[10px] px-1.5 py-0 font-bold ml-0.5 transition-colors',
+              activeTab === 'subjects'
+                ? 'bg-primary text-primary-foreground'
+                : 'bg-muted/60 text-muted-foreground border-border/60'
+            )}
+          >
             {cls.subjects.length}
           </Badge>
         </button>
@@ -568,16 +586,25 @@ export const ClassDetailPage: React.FC = () => {
             aria-selected={activeTab === 'assignments'}
             onClick={() => setActiveTab('assignments')}
             className={cn(
-              'px-3 py-1.5 text-xs font-semibold rounded-lg transition-all cursor-pointer flex items-center gap-1.5 whitespace-nowrap',
+              'px-3.5 py-2 text-xs font-semibold rounded-xl transition-all duration-150 cursor-pointer flex items-center gap-2 whitespace-nowrap select-none',
+              'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/40',
               activeTab === 'assignments'
-                ? 'bg-card text-foreground shadow-xs font-bold'
-                : 'text-muted-foreground hover:text-foreground hover:bg-card/50'
+                ? 'bg-background text-foreground font-bold shadow-xs border border-border/90 dark:bg-card dark:border-primary/40 dark:shadow-md'
+                : 'text-muted-foreground hover:text-foreground hover:bg-background/60 hover:border-border/40 border border-transparent'
             )}
           >
-            <UserCheck className="w-3.5 h-3.5 text-emerald-500" />
+            <UserCheck className={cn('w-3.5 h-3.5 transition-colors', activeTab === 'assignments' ? 'text-emerald-500' : 'text-muted-foreground')} />
             <span>Teacher Assignments</span>
             {classAssignments.length > 0 && (
-              <Badge variant="secondary" className="text-[10px] px-1.5 py-0 font-bold ml-1">
+              <Badge
+                variant={activeTab === 'assignments' ? 'default' : 'outline'}
+                className={cn(
+                  'text-[10px] px-1.5 py-0 font-bold ml-0.5 transition-colors',
+                  activeTab === 'assignments'
+                    ? 'bg-primary text-primary-foreground'
+                    : 'bg-muted/60 text-muted-foreground border-border/60'
+                )}
+              >
                 {classAssignments.length}
               </Badge>
             )}
@@ -591,13 +618,14 @@ export const ClassDetailPage: React.FC = () => {
             aria-selected={activeTab === 'expansion'}
             onClick={() => setActiveTab('expansion')}
             className={cn(
-              'px-3 py-1.5 text-xs font-semibold rounded-lg transition-all cursor-pointer flex items-center gap-1.5 whitespace-nowrap',
+              'px-3.5 py-2 text-xs font-semibold rounded-xl transition-all duration-150 cursor-pointer flex items-center gap-2 whitespace-nowrap select-none',
+              'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/40',
               activeTab === 'expansion'
-                ? 'bg-card text-foreground shadow-xs font-bold'
-                : 'text-muted-foreground hover:text-foreground hover:bg-card/50'
+                ? 'bg-background text-foreground font-bold shadow-xs border border-border/90 dark:bg-card dark:border-primary/40 dark:shadow-md'
+                : 'text-muted-foreground hover:text-foreground hover:bg-background/60 hover:border-border/40 border border-transparent'
             )}
           >
-            <Layers className="w-3.5 h-3.5 text-indigo-500" />
+            <Layers className={cn('w-3.5 h-3.5 transition-colors', activeTab === 'expansion' ? 'text-indigo-500' : 'text-muted-foreground')} />
             <span>20-Student Expansion</span>
           </button>
         )}
@@ -608,14 +636,15 @@ export const ClassDetailPage: React.FC = () => {
           aria-selected={activeTab === 'notices'}
           onClick={() => setActiveTab('notices')}
           className={cn(
-            'px-3 py-1.5 text-xs font-semibold rounded-lg transition-all cursor-pointer flex items-center gap-1.5 whitespace-nowrap',
+            'px-3.5 py-2 text-xs font-semibold rounded-xl transition-all duration-150 cursor-pointer flex items-center gap-2 whitespace-nowrap select-none',
+            'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/40',
             activeTab === 'notices'
-              ? 'bg-card text-foreground shadow-xs font-bold'
-              : 'text-muted-foreground hover:text-foreground hover:bg-card/50'
+              ? 'bg-background text-foreground font-bold shadow-xs border border-border/90 dark:bg-card dark:border-primary/40 dark:shadow-md'
+              : 'text-muted-foreground hover:text-foreground hover:bg-background/60 hover:border-border/40 border border-transparent'
           )}
         >
-          <Bell className="w-3.5 h-3.5 text-amber-500" />
-          <span>Noticeboard & Homework</span>
+          <Bell className={cn('w-3.5 h-3.5 transition-colors', activeTab === 'notices' ? 'text-amber-500' : 'text-muted-foreground')} />
+          <span>Noticeboard &amp; Homework</span>
         </button>
       </div>
 
@@ -635,11 +664,12 @@ export const ClassDetailPage: React.FC = () => {
                       key={sec.id}
                       type="button"
                       onClick={() => setSelectedSectionId(sec.id)}
-                      className={`px-3 py-1 text-xs rounded-lg font-semibold transition-all cursor-pointer ${
+                      className={cn(
+                        'px-3 py-1.5 text-xs rounded-lg font-semibold transition-all cursor-pointer select-none border',
                         isSelected
-                          ? 'bg-primary text-primary-foreground shadow-xs'
-                          : 'bg-muted/70 text-muted-foreground hover:bg-muted hover:text-foreground'
-                      }`}
+                          ? 'bg-primary text-primary-foreground border-primary shadow-xs font-bold'
+                          : 'bg-muted/50 border-border/70 text-muted-foreground hover:bg-muted hover:text-foreground hover:border-border'
+                      )}
                     >
                       Section {sec.name} ({sec.student_count ?? 0})
                     </button>

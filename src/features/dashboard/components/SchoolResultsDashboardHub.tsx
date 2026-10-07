@@ -785,8 +785,8 @@ export const SchoolResultsDashboardHub: React.FC<SchoolResultsDashboardHubProps>
         {/* 5. Tab Navigation & Contents */}
         <Tabs defaultValue="classes" className="space-y-4">
           <div className="flex flex-col sm:flex-row sm:items-center justify-between border-b pb-2 gap-2">
-            <TabsList className="w-full sm:w-auto grid grid-cols-2 sm:grid-cols-4 h-auto p-1">
-              <TabsTrigger value="classes" className="gap-1.5 py-1.5 text-xs">
+            <TabsList className="w-full sm:w-auto grid grid-cols-2 sm:grid-cols-4 h-auto p-1.5 bg-muted/60 dark:bg-muted/30 border border-border/80 gap-1 rounded-2xl shadow-2xs">
+              <TabsTrigger value="classes" className="gap-1.5 py-1.5 text-xs font-semibold">
                 <GraduationCap className="h-4 w-4" />
                 Classes
                 <Badge variant="secondary" className="ml-1 text-[10px] px-1.5 py-0">

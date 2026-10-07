@@ -321,81 +321,95 @@ export const StudentLevelFeesTab: React.FC<StudentLevelFeesTabProps> = ({ tenant
             Filter:
           </span>
 
-          <button
-            type="button"
-            onClick={() => setFilterFacility('ALL')}
-            className={`px-2.5 py-1 rounded-md font-medium transition-all cursor-pointer ${
-              filterFacility === 'ALL'
-                ? 'bg-card text-foreground shadow-2xs font-bold border border-border'
-                : 'text-muted-foreground hover:text-foreground hover:bg-muted/50'
-            }`}
-          >
-            All Students ({students.length})
-          </button>
+          <div role="tablist" aria-label="Facility filter" className="inline-flex flex-wrap items-center gap-1 p-1 rounded-xl bg-muted/60 dark:bg-muted/30 border border-border/80 shadow-2xs">
+            <button
+              type="button"
+              role="tab"
+              aria-selected={filterFacility === 'ALL'}
+              onClick={() => setFilterFacility('ALL')}
+              className={`px-2.5 py-1 rounded-lg font-medium transition-all duration-150 cursor-pointer select-none border ${
+                filterFacility === 'ALL'
+                  ? 'bg-background text-foreground shadow-xs font-bold border-border/90 dark:bg-card dark:border-primary/40'
+                  : 'border-transparent text-muted-foreground hover:text-foreground hover:bg-background/60 hover:border-border/40'
+              }`}
+            >
+              All Students ({students.length})
+            </button>
 
-          <button
-            type="button"
-            onClick={() => setFilterFacility('TRANSPORT')}
-            className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded-md font-medium transition-all cursor-pointer ${
-              filterFacility === 'TRANSPORT'
-                ? 'bg-emerald-600 text-white shadow-2xs font-bold'
-                : 'text-muted-foreground hover:text-foreground hover:bg-muted/50'
-            }`}
-          >
-            <Bus className="w-3 h-3" />
-            <span>Transport Users ({facilityCounts.transport})</span>
-          </button>
+            <button
+              type="button"
+              role="tab"
+              aria-selected={filterFacility === 'TRANSPORT'}
+              onClick={() => setFilterFacility('TRANSPORT')}
+              className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg font-medium transition-all duration-150 cursor-pointer select-none border ${
+                filterFacility === 'TRANSPORT'
+                  ? 'bg-emerald-600 text-white shadow-xs font-bold border-emerald-500'
+                  : 'border-transparent text-muted-foreground hover:text-emerald-700 dark:hover:text-emerald-400 hover:bg-emerald-500/10 hover:border-emerald-500/30'
+              }`}
+            >
+              <Bus className="w-3 h-3" />
+              <span>Transport Users ({facilityCounts.transport})</span>
+            </button>
 
-          <button
-            type="button"
-            onClick={() => setFilterFacility('HOSTEL')}
-            className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded-md font-medium transition-all cursor-pointer ${
-              filterFacility === 'HOSTEL'
-                ? 'bg-indigo-600 text-white shadow-2xs font-bold'
-                : 'text-muted-foreground hover:text-foreground hover:bg-muted/50'
-            }`}
-          >
-            <Building2 className="w-3 h-3" />
-            <span>Hostel Residents ({facilityCounts.hostel})</span>
-          </button>
+            <button
+              type="button"
+              role="tab"
+              aria-selected={filterFacility === 'HOSTEL'}
+              onClick={() => setFilterFacility('HOSTEL')}
+              className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg font-medium transition-all duration-150 cursor-pointer select-none border ${
+                filterFacility === 'HOSTEL'
+                  ? 'bg-indigo-600 text-white shadow-xs font-bold border-indigo-500'
+                  : 'border-transparent text-muted-foreground hover:text-indigo-700 dark:hover:text-indigo-400 hover:bg-indigo-500/10 hover:border-indigo-500/30'
+              }`}
+            >
+              <Building2 className="w-3 h-3" />
+              <span>Hostel Residents ({facilityCounts.hostel})</span>
+            </button>
 
-          <button
-            type="button"
-            onClick={() => setFilterFacility('CANTEEN')}
-            className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded-md font-medium transition-all cursor-pointer ${
-              filterFacility === 'CANTEEN'
-                ? 'bg-amber-600 text-white shadow-2xs font-bold'
-                : 'text-muted-foreground hover:text-foreground hover:bg-muted/50'
-            }`}
-          >
-            <Utensils className="w-3 h-3" />
-            <span>Canteen / Meals ({facilityCounts.canteen})</span>
-          </button>
+            <button
+              type="button"
+              role="tab"
+              aria-selected={filterFacility === 'CANTEEN'}
+              onClick={() => setFilterFacility('CANTEEN')}
+              className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg font-medium transition-all duration-150 cursor-pointer select-none border ${
+                filterFacility === 'CANTEEN'
+                  ? 'bg-amber-600 text-white shadow-xs font-bold border-amber-500'
+                  : 'border-transparent text-muted-foreground hover:text-amber-700 dark:hover:text-amber-400 hover:bg-amber-500/10 hover:border-amber-500/30'
+              }`}
+            >
+              <Utensils className="w-3 h-3" />
+              <span>Canteen / Meals ({facilityCounts.canteen})</span>
+            </button>
 
-          <button
-            type="button"
-            onClick={() => setFilterFacility('COACHING')}
-            className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded-md font-medium transition-all cursor-pointer ${
-              filterFacility === 'COACHING'
-                ? 'bg-purple-600 text-white shadow-2xs font-bold'
-                : 'text-muted-foreground hover:text-foreground hover:bg-muted/50'
-            }`}
-          >
-            <Trophy className="w-3 h-3" />
-            <span>Activities & Coaching ({facilityCounts.coaching})</span>
-          </button>
+            <button
+              type="button"
+              role="tab"
+              aria-selected={filterFacility === 'COACHING'}
+              onClick={() => setFilterFacility('COACHING')}
+              className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg font-medium transition-all duration-150 cursor-pointer select-none border ${
+                filterFacility === 'COACHING'
+                  ? 'bg-purple-600 text-white shadow-xs font-bold border-purple-500'
+                  : 'border-transparent text-muted-foreground hover:text-purple-700 dark:hover:text-purple-400 hover:bg-purple-500/10 hover:border-purple-500/30'
+              }`}
+            >
+              <Trophy className="w-3 h-3" />
+              <span>Activities & Coaching ({facilityCounts.coaching})</span>
+            </button>
 
-          <button
-            type="button"
-            onClick={() => setFilterFacility('CUSTOM')}
-            className={`px-2.5 py-1 rounded-md font-medium transition-all cursor-pointer ${
-              filterFacility === 'CUSTOM'
-                ? 'bg-card text-foreground shadow-2xs font-bold border border-border'
-                : 'text-muted-foreground hover:text-foreground hover:bg-muted/50'
-            }`}
-          >
-            Any Subscribed Facility ({facilityCounts.custom})
-          </button>
+            <button
+              type="button"
+              role="tab"
+              aria-selected={filterFacility === 'CUSTOM'}
+              onClick={() => setFilterFacility('CUSTOM')}
+              className={`px-2.5 py-1 rounded-lg font-medium transition-all duration-150 cursor-pointer select-none border ${
+                filterFacility === 'CUSTOM'
+                  ? 'bg-background text-foreground shadow-xs font-bold border-border/90 dark:bg-card dark:border-primary/40'
+                  : 'border-transparent text-muted-foreground hover:text-foreground hover:bg-background/60 hover:border-border/40'
+              }`}
+            >
+              Any Subscribed Facility ({facilityCounts.custom})
+            </button>
+          </div>
         </div>
 
         <div className="text-xs text-muted-foreground">

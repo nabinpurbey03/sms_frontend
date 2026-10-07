@@ -256,78 +256,90 @@ export const PlatformUsersPage: React.FC = () => {
           </div>
           
           <div className="flex items-center gap-3 text-sm flex-wrap">
-            <div className="flex items-center rounded-lg border border-border/70 p-0.5 bg-muted/40">
+            <div role="tablist" aria-label="Status filter" className="flex items-center rounded-xl border border-border/80 p-1 bg-muted/60 dark:bg-muted/30 shadow-2xs gap-1">
               <button
                 type="button"
+                role="tab"
+                aria-selected={statusFilter === 'all'}
                 onClick={() => { setStatusFilter('all'); setPage(1); }}
                 className={cn(
-                  'px-2.5 py-1 text-xs font-medium rounded-md transition-colors cursor-pointer select-none',
+                  'px-3 py-1.5 text-xs font-semibold rounded-lg transition-all duration-150 cursor-pointer select-none border',
                   statusFilter === 'all'
-                    ? 'bg-background text-foreground shadow-2xs font-semibold'
-                    : 'text-muted-foreground hover:text-foreground'
+                    ? 'bg-background text-foreground font-bold shadow-xs border-border/90 dark:bg-card dark:border-primary/40'
+                    : 'border-transparent text-muted-foreground hover:text-foreground hover:bg-background/60 hover:border-border/40'
                 )}
               >
                 All
               </button>
               <button
                 type="button"
+                role="tab"
+                aria-selected={statusFilter === 'active'}
                 onClick={() => { setStatusFilter('active'); setPage(1); }}
                 className={cn(
-                  'px-2.5 py-1 text-xs font-medium rounded-md transition-colors cursor-pointer select-none',
+                  'px-3 py-1.5 text-xs font-semibold rounded-lg transition-all duration-150 cursor-pointer select-none border',
                   statusFilter === 'active'
-                    ? 'bg-background text-foreground shadow-2xs font-semibold'
-                    : 'text-muted-foreground hover:text-foreground'
+                    ? 'bg-background text-foreground font-bold shadow-xs border-border/90 dark:bg-card dark:border-primary/40'
+                    : 'border-transparent text-muted-foreground hover:text-foreground hover:bg-background/60 hover:border-border/40'
                 )}
               >
                 Active
               </button>
               <button
                 type="button"
+                role="tab"
+                aria-selected={statusFilter === 'inactive'}
                 onClick={() => { setStatusFilter('inactive'); setPage(1); }}
                 className={cn(
-                  'px-2.5 py-1 text-xs font-medium rounded-md transition-colors cursor-pointer select-none',
+                  'px-3 py-1.5 text-xs font-semibold rounded-lg transition-all duration-150 cursor-pointer select-none border',
                   statusFilter === 'inactive'
-                    ? 'bg-background text-foreground shadow-2xs font-semibold'
-                    : 'text-muted-foreground hover:text-foreground'
+                    ? 'bg-background text-foreground font-bold shadow-xs border-border/90 dark:bg-card dark:border-primary/40'
+                    : 'border-transparent text-muted-foreground hover:text-foreground hover:bg-background/60 hover:border-border/40'
                 )}
               >
                 Inactive
               </button>
             </div>
 
-            <div className="flex items-center rounded-lg border border-border/70 p-0.5 bg-muted/40 hidden sm:flex">
+            <div role="tablist" aria-label="Role filter" className="flex items-center rounded-xl border border-border/80 p-1 bg-muted/60 dark:bg-muted/30 shadow-2xs gap-1 hidden sm:flex">
               <button
                 type="button"
+                role="tab"
+                aria-selected={roleFilter === 'all'}
                 onClick={() => { setRoleFilter('all'); setPage(1); }}
                 className={cn(
-                  'px-2.5 py-1 text-xs font-medium rounded-md transition-colors cursor-pointer select-none',
+                  'px-3 py-1.5 text-xs font-semibold rounded-lg transition-all duration-150 cursor-pointer select-none border',
                   roleFilter === 'all'
-                    ? 'bg-background text-foreground shadow-2xs font-semibold'
-                    : 'text-muted-foreground hover:text-foreground'
+                    ? 'bg-background text-foreground font-bold shadow-xs border-border/90 dark:bg-card dark:border-primary/40'
+                    : 'border-transparent text-muted-foreground hover:text-foreground hover:bg-background/60 hover:border-border/40'
                 )}
               >
                 Any Role
               </button>
               <button
                 type="button"
+                role="tab"
+                aria-selected={roleFilter === 'super_admin'}
                 onClick={() => { setRoleFilter('super_admin'); setPage(1); }}
                 className={cn(
-                  'px-2.5 py-1 text-xs font-medium rounded-md transition-colors cursor-pointer select-none',
+                  'px-3 py-1.5 text-xs font-semibold rounded-lg transition-all duration-150 cursor-pointer select-none border',
                   roleFilter === 'super_admin'
-                    ? 'bg-background text-foreground shadow-2xs font-semibold'
-                    : 'text-muted-foreground hover:text-foreground'
+                    ? 'bg-background text-foreground font-bold shadow-xs border-border/90 dark:bg-card dark:border-primary/40'
+                    : 'border-transparent text-muted-foreground hover:text-foreground hover:bg-background/60 hover:border-border/40'
                 )}
               >
                 Platform Admins
               </button>
               <button
                 type="button"
+                role="tab"
+                aria-selected={roleFilter === 'user'}
                 onClick={() => { setRoleFilter('user'); setPage(1); }}
                 className={cn(
-                  'px-2.5 py-1 text-xs font-medium rounded-md transition-colors cursor-pointer select-none',
+                  'px-3 py-1.5 text-xs font-semibold rounded-lg transition-all duration-150 cursor-pointer select-none border',
                   roleFilter === 'user'
-                    ? 'bg-background text-foreground shadow-2xs font-semibold'
-                    : 'text-muted-foreground hover:text-foreground'
+                    ? 'bg-background text-foreground font-bold shadow-xs border-border/90 dark:bg-card dark:border-primary/40'
+                    : 'border-transparent text-muted-foreground hover:text-foreground hover:bg-background/60 hover:border-border/40'
                 )}
               >
                 Users

@@ -30,6 +30,7 @@ import {
 } from 'lucide-react';
 import { useFeeStructures, useBulkAssignStudentFees } from '../hooks';
 import type { FeeCategory, FeeFrequency } from '../types';
+import { cn } from '@/lib/utils';
 
 interface BulkAssignFacilityDialogProps {
   isOpen: boolean;
@@ -112,22 +113,38 @@ export const BulkAssignFacilityDialog: React.FC<BulkAssignFacilityDialogProps> =
           {/* Mode Switcher */}
           <div className="flex items-center justify-between pb-1 border-b border-border/60">
             <span className="text-xs font-semibold text-muted-foreground">Facility Source:</span>
-            <div className="inline-flex items-center p-0.5 rounded-lg bg-muted text-xs">
+            <div
+              role="tablist"
+              aria-label="Facility source mode"
+              className="inline-flex items-center p-1 rounded-xl bg-muted/60 dark:bg-muted/30 border border-border/80 text-xs shadow-2xs gap-1"
+            >
               <button
                 type="button"
+                role="tab"
+                aria-selected={mode === 'PRESET'}
                 onClick={() => setMode('PRESET')}
-                className={`px-2.5 py-1 rounded-md font-semibold text-xs transition-all cursor-pointer ${
-                  mode === 'PRESET' ? 'bg-card text-foreground shadow-2xs' : 'text-muted-foreground'
-                }`}
+                className={cn(
+                  'px-3 py-1.5 rounded-lg font-semibold text-xs transition-all duration-150 cursor-pointer select-none',
+                  'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/40',
+                  mode === 'PRESET'
+                    ? 'bg-background text-foreground font-bold shadow-xs border border-border/90 dark:bg-card dark:border-primary/40 dark:shadow-md'
+                    : 'text-muted-foreground hover:text-foreground hover:bg-background/60 hover:border-border/40 border border-transparent'
+                )}
               >
                 School Presets
               </button>
               <button
                 type="button"
+                role="tab"
+                aria-selected={mode === 'CUSTOM'}
                 onClick={() => setMode('CUSTOM')}
-                className={`px-2.5 py-1 rounded-md font-semibold text-xs transition-all cursor-pointer ${
-                  mode === 'CUSTOM' ? 'bg-card text-foreground shadow-2xs' : 'text-muted-foreground'
-                }`}
+                className={cn(
+                  'px-3 py-1.5 rounded-lg font-semibold text-xs transition-all duration-150 cursor-pointer select-none',
+                  'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/40',
+                  mode === 'CUSTOM'
+                    ? 'bg-background text-foreground font-bold shadow-xs border border-border/90 dark:bg-card dark:border-primary/40 dark:shadow-md'
+                    : 'text-muted-foreground hover:text-foreground hover:bg-background/60 hover:border-border/40 border border-transparent'
+                )}
               >
                 Custom Entry
               </button>

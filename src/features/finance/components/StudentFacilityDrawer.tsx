@@ -42,6 +42,7 @@ import {
 import { getTransportDisplayMeta } from '../utils/studentFacilityUtils';
 import type { AcademicStudent } from '@/features/academic/types';
 import type { FeeCategory, FeeFrequency, StudentTransportProfile } from '../types';
+import { cn } from '@/lib/utils';
 
 interface StudentFacilityDrawerProps {
   isOpen: boolean;
@@ -396,22 +397,38 @@ export const StudentFacilityDrawer: React.FC<StudentFacilityDrawerProps> = ({
               </h4>
 
               {/* Mode switch */}
-              <div className="inline-flex items-center p-0.5 rounded-lg bg-muted text-xs">
+              <div
+                role="tablist"
+                aria-label="Facility enrollment mode"
+                className="inline-flex items-center p-1 rounded-xl bg-muted/60 dark:bg-muted/30 border border-border/80 text-xs shadow-2xs gap-1"
+              >
                 <button
                   type="button"
+                  role="tab"
+                  aria-selected={enrollMode === 'PRESET'}
                   onClick={() => setEnrollMode('PRESET')}
-                  className={`px-2 py-0.5 rounded-md font-semibold text-[11px] transition-all cursor-pointer ${
-                    enrollMode === 'PRESET' ? 'bg-card text-foreground shadow-2xs' : 'text-muted-foreground'
-                  }`}
+                  className={cn(
+                    'px-2.5 py-1 rounded-lg font-semibold text-xs transition-all duration-150 cursor-pointer select-none',
+                    'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/40',
+                    enrollMode === 'PRESET'
+                      ? 'bg-background text-foreground font-bold shadow-xs border border-border/90 dark:bg-card dark:border-primary/40 dark:shadow-md'
+                      : 'text-muted-foreground hover:text-foreground hover:bg-background/60 hover:border-border/40 border border-transparent'
+                  )}
                 >
                   From Presets
                 </button>
                 <button
                   type="button"
+                  role="tab"
+                  aria-selected={enrollMode === 'CUSTOM'}
                   onClick={() => setEnrollMode('CUSTOM')}
-                  className={`px-2 py-0.5 rounded-md font-semibold text-[11px] transition-all cursor-pointer ${
-                    enrollMode === 'CUSTOM' ? 'bg-card text-foreground shadow-2xs' : 'text-muted-foreground'
-                  }`}
+                  className={cn(
+                    'px-2.5 py-1 rounded-lg font-semibold text-xs transition-all duration-150 cursor-pointer select-none',
+                    'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/40',
+                    enrollMode === 'CUSTOM'
+                      ? 'bg-background text-foreground font-bold shadow-xs border border-border/90 dark:bg-card dark:border-primary/40 dark:shadow-md'
+                      : 'text-muted-foreground hover:text-foreground hover:bg-background/60 hover:border-border/40 border border-transparent'
+                  )}
                 >
                   Custom
                 </button>

@@ -28,6 +28,7 @@ import { CalendarEventDialog } from './CalendarEventDialog';
 import { AcademicCalendarGrid } from './AcademicCalendarGrid';
 import { formatDualDateRange } from '../utils/nepaliDate';
 import { useCalendarPreferenceStore } from '@/stores/calendarPreferenceStore';
+import { cn } from '@/lib/utils';
 import type { AcademicCalendarEvent, CalendarEventType, CalendarEventFilterParams } from '../types';
 
 interface AcademicCalendarViewProps {
@@ -312,16 +313,17 @@ export const AcademicCalendarView: React.FC<AcademicCalendarViewProps> = ({
               )}
 
               {/* Calendar System Switcher */}
-              <div className="flex items-center gap-1 bg-muted p-1 rounded-lg border border-border">
+              <div role="group" aria-label="Calendar system switcher" className="flex items-center gap-1 bg-muted/60 dark:bg-muted/30 p-1 rounded-xl border border-border/80 shadow-2xs">
                 <button
                   type="button"
                   onClick={() => setCalendarSystem('BS')}
                   aria-pressed={calendarSystem === 'BS'}
-                  className={`h-7 px-2.5 text-xs rounded-md font-medium transition-colors cursor-pointer ${
+                  className={cn(
+                    'h-7 px-2.5 text-xs rounded-lg font-medium transition-all duration-150 cursor-pointer select-none border',
                     calendarSystem === 'BS'
-                      ? 'bg-background text-foreground font-bold shadow-2xs'
-                      : 'text-muted-foreground hover:text-foreground'
-                  }`}
+                      ? 'bg-background text-foreground font-bold shadow-xs border-border/90 dark:bg-card dark:border-primary/40'
+                      : 'border-transparent text-muted-foreground hover:bg-background/60 hover:text-foreground hover:border-border/40'
+                  )}
                 >
                   BS
                 </button>
@@ -329,38 +331,47 @@ export const AcademicCalendarView: React.FC<AcademicCalendarViewProps> = ({
                   type="button"
                   onClick={() => setCalendarSystem('AD')}
                   aria-pressed={calendarSystem === 'AD'}
-                  className={`h-7 px-2.5 text-xs rounded-md font-medium transition-colors cursor-pointer ${
+                  className={cn(
+                    'h-7 px-2.5 text-xs rounded-lg font-medium transition-all duration-150 cursor-pointer select-none border',
                     calendarSystem === 'AD'
-                      ? 'bg-background text-foreground font-bold shadow-2xs'
-                      : 'text-muted-foreground hover:text-foreground'
-                  }`}
+                      ? 'bg-background text-foreground font-bold shadow-xs border-border/90 dark:bg-card dark:border-primary/40'
+                      : 'border-transparent text-muted-foreground hover:bg-background/60 hover:text-foreground hover:border-border/40'
+                  )}
                 >
                   AD
                 </button>
               </div>
 
               {/* List / Month Grid Toggle */}
-              <div className="flex items-center gap-1 bg-muted p-1 rounded-lg border border-border">
-                <Button
+              <div role="group" aria-label="Calendar view switcher" className="flex items-center gap-1 bg-muted/60 dark:bg-muted/30 p-1 rounded-xl border border-border/80 shadow-2xs">
+                <button
                   type="button"
-                  variant={viewMode === 'list' ? 'secondary' : 'ghost'}
-                  size="sm"
+                  aria-pressed={viewMode === 'list'}
                   onClick={() => setViewMode('list')}
-                  className="h-7 text-xs px-2.5 font-medium shadow-2xs"
+                  className={cn(
+                    'h-7 text-xs px-2.5 font-medium rounded-lg inline-flex items-center transition-all duration-150 cursor-pointer select-none border',
+                    viewMode === 'list'
+                      ? 'bg-background text-foreground font-bold shadow-xs border-border/90 dark:bg-card dark:border-primary/40'
+                      : 'border-transparent text-muted-foreground hover:bg-background/60 hover:text-foreground hover:border-border/40'
+                  )}
                 >
-                  <List className="w-3.5 h-3.5 mr-1.5" />
+                  <List className={cn('w-3.5 h-3.5 mr-1.5 transition-colors', viewMode === 'list' ? 'text-primary' : 'text-muted-foreground')} />
                   List View
-                </Button>
-                <Button
+                </button>
+                <button
                   type="button"
-                  variant={viewMode === 'calendar' ? 'secondary' : 'ghost'}
-                  size="sm"
+                  aria-pressed={viewMode === 'calendar'}
                   onClick={() => setViewMode('calendar')}
-                  className="h-7 text-xs px-2.5 font-medium shadow-2xs"
+                  className={cn(
+                    'h-7 text-xs px-2.5 font-medium rounded-lg inline-flex items-center transition-all duration-150 cursor-pointer select-none border',
+                    viewMode === 'calendar'
+                      ? 'bg-background text-foreground font-bold shadow-xs border-border/90 dark:bg-card dark:border-primary/40'
+                      : 'border-transparent text-muted-foreground hover:bg-background/60 hover:text-foreground hover:border-border/40'
+                  )}
                 >
-                  <Calendar className="w-3.5 h-3.5 mr-1.5" />
+                  <Calendar className={cn('w-3.5 h-3.5 mr-1.5 transition-colors', viewMode === 'calendar' ? 'text-primary' : 'text-muted-foreground')} />
                   Month Grid
-                </Button>
+                </button>
               </div>
             </div>
           </div>

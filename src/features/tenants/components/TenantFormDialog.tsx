@@ -28,6 +28,7 @@ import {
   type Tenant,
 } from '../types';
 import { TenantFormFields } from './TenantFormFields';
+import { cn } from '@/lib/utils';
 
 interface TenantFormDialogProps {
   open: boolean;
@@ -165,29 +166,35 @@ export const TenantFormDialog: React.FC<TenantFormDialogProps> = ({
           </div>
 
           {/* Navigation Tabs */}
-          <div className="flex items-center gap-2 pt-4">
+          <div role="tablist" aria-label="Tenant Details Navigation" className="inline-flex items-center gap-1.5 p-1 rounded-xl bg-muted/60 dark:bg-muted/30 border border-border/80 shadow-2xs mt-4">
             <button
               type="button"
+              role="tab"
+              aria-selected={activeTab === 'general'}
               onClick={() => setActiveTab('general')}
-              className={`flex items-center gap-1.5 px-3 min-h-[44px] text-xs font-semibold rounded-lg border transition-colors ${
+              className={cn(
+                'flex items-center gap-1.5 px-3 py-1.5 text-xs font-semibold rounded-lg transition-all duration-150 cursor-pointer select-none border',
                 activeTab === 'general'
-                  ? 'bg-primary text-primary-foreground border-primary shadow-xs'
-                  : 'border-border/60 hover:bg-accent text-muted-foreground hover:text-foreground'
-              }`}
+                  ? 'bg-background text-foreground font-bold shadow-xs border-border/90 dark:bg-card dark:border-primary/40'
+                  : 'border-transparent text-muted-foreground hover:bg-background/60 hover:text-foreground hover:border-border/40'
+              )}
             >
-              <Building2 className="h-3.5 w-3.5" />
+              <Building2 className={cn('h-3.5 w-3.5 transition-colors', activeTab === 'general' ? 'text-primary' : 'text-muted-foreground')} />
               <span>General Info</span>
             </button>
             <button
               type="button"
+              role="tab"
+              aria-selected={activeTab === 'address'}
               onClick={() => setActiveTab('address')}
-              className={`flex items-center gap-1.5 px-3 min-h-[44px] text-xs font-semibold rounded-lg border transition-colors ${
+              className={cn(
+                'flex items-center gap-1.5 px-3 py-1.5 text-xs font-semibold rounded-lg transition-all duration-150 cursor-pointer select-none border',
                 activeTab === 'address'
-                  ? 'bg-primary text-primary-foreground border-primary shadow-xs'
-                  : 'border-border/60 hover:bg-accent text-muted-foreground hover:text-foreground'
-              }`}
+                  ? 'bg-background text-foreground font-bold shadow-xs border-border/90 dark:bg-card dark:border-primary/40'
+                  : 'border-transparent text-muted-foreground hover:bg-background/60 hover:text-foreground hover:border-border/40'
+              )}
             >
-              <MapPin className="h-3.5 w-3.5" />
+              <MapPin className={cn('h-3.5 w-3.5 transition-colors', activeTab === 'address' ? 'text-primary' : 'text-muted-foreground')} />
               <span>Address Details</span>
             </button>
           </div>

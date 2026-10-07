@@ -45,6 +45,7 @@ import {
 } from 'lucide-react';
 import type { FeeStructure } from '../types';
 import type { FeeStructureFormValues } from '../schema';
+import { cn } from '@/lib/utils';
 
 export const FeeStructuresPage: React.FC = () => {
   const { activeTenantId } = useAuth();
@@ -293,51 +294,91 @@ export const FeeStructuresPage: React.FC = () => {
           </div>
 
           {/* 3-Level Tab Switcher */}
-          <div className="flex items-center gap-1.5 p-1 bg-muted/50 rounded-xl border border-border/60 max-w-full overflow-x-auto">
+          <div
+            role="tablist"
+            aria-label="Fee level switcher"
+            className="flex items-center gap-1.5 p-1.5 bg-muted/60 dark:bg-muted/30 rounded-2xl border border-border/80 max-w-full overflow-x-auto shadow-2xs"
+          >
             <button
               type="button"
+              role="tab"
+              aria-selected={activeTab === 'school'}
               onClick={() => setActiveTab('school')}
-              className={`flex items-center gap-2 px-4 py-2 rounded-lg text-xs font-semibold transition-all cursor-pointer whitespace-nowrap ${
+              className={cn(
+                'flex items-center gap-2 px-4 py-2 rounded-xl text-xs font-semibold transition-all duration-150 cursor-pointer whitespace-nowrap select-none',
+                'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/40',
                 activeTab === 'school'
-                  ? 'bg-card text-foreground shadow-xs font-bold'
-                  : 'text-muted-foreground hover:text-foreground hover:bg-card/50'
-              }`}
+                  ? 'bg-background text-foreground font-bold shadow-xs border border-border/90 dark:bg-card dark:border-primary/40 dark:shadow-md'
+                  : 'text-muted-foreground hover:text-foreground hover:bg-background/60 hover:border-border/40 border border-transparent'
+              )}
             >
-              <School className="w-3.5 h-3.5 text-blue-500" />
+              <School className={cn('w-3.5 h-3.5 transition-colors', activeTab === 'school' ? 'text-blue-500' : 'text-muted-foreground')} />
               <span>1. School Level Fees</span>
-              <Badge variant="secondary" className="text-[10px] px-1.5 py-0 font-bold ml-0.5">
+              <Badge
+                variant={activeTab === 'school' ? 'default' : 'outline'}
+                className={cn(
+                  'text-[10px] px-1.5 py-0 font-bold ml-0.5 transition-colors',
+                  activeTab === 'school'
+                    ? 'bg-primary text-primary-foreground'
+                    : 'bg-muted/60 text-muted-foreground border-border/60'
+                )}
+              >
                 {schoolFees.length}
               </Badge>
             </button>
 
             <button
               type="button"
+              role="tab"
+              aria-selected={activeTab === 'class'}
               onClick={() => setActiveTab('class')}
-              className={`flex items-center gap-2 px-4 py-2 rounded-lg text-xs font-semibold transition-all cursor-pointer whitespace-nowrap ${
+              className={cn(
+                'flex items-center gap-2 px-4 py-2 rounded-xl text-xs font-semibold transition-all duration-150 cursor-pointer whitespace-nowrap select-none',
+                'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/40',
                 activeTab === 'class'
-                  ? 'bg-card text-foreground shadow-xs font-bold'
-                  : 'text-muted-foreground hover:text-foreground hover:bg-card/50'
-              }`}
+                  ? 'bg-background text-foreground font-bold shadow-xs border border-border/90 dark:bg-card dark:border-primary/40 dark:shadow-md'
+                  : 'text-muted-foreground hover:text-foreground hover:bg-background/60 hover:border-border/40 border border-transparent'
+              )}
             >
-              <GraduationCap className="w-3.5 h-3.5 text-primary" />
+              <GraduationCap className={cn('w-3.5 h-3.5 transition-colors', activeTab === 'class' ? 'text-primary' : 'text-muted-foreground')} />
               <span>2. Class Level Fees</span>
-              <Badge variant="secondary" className="text-[10px] px-1.5 py-0 font-bold ml-0.5">
+              <Badge
+                variant={activeTab === 'class' ? 'default' : 'outline'}
+                className={cn(
+                  'text-[10px] px-1.5 py-0 font-bold ml-0.5 transition-colors',
+                  activeTab === 'class'
+                    ? 'bg-primary text-primary-foreground'
+                    : 'bg-muted/60 text-muted-foreground border-border/60'
+                )}
+              >
                 {totalClasses} Classes
               </Badge>
             </button>
 
             <button
               type="button"
+              role="tab"
+              aria-selected={activeTab === 'student'}
               onClick={() => setActiveTab('student')}
-              className={`flex items-center gap-2 px-4 py-2 rounded-lg text-xs font-semibold transition-all cursor-pointer whitespace-nowrap ${
+              className={cn(
+                'flex items-center gap-2 px-4 py-2 rounded-xl text-xs font-semibold transition-all duration-150 cursor-pointer whitespace-nowrap select-none',
+                'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/40',
                 activeTab === 'student'
-                  ? 'bg-card text-foreground shadow-xs font-bold'
-                  : 'text-muted-foreground hover:text-foreground hover:bg-card/50'
-              }`}
+                  ? 'bg-background text-foreground font-bold shadow-xs border border-border/90 dark:bg-card dark:border-primary/40 dark:shadow-md'
+                  : 'text-muted-foreground hover:text-foreground hover:bg-background/60 hover:border-border/40 border border-transparent'
+              )}
             >
-              <Sparkles className="w-3.5 h-3.5 text-purple-500" />
+              <Sparkles className={cn('w-3.5 h-3.5 transition-colors', activeTab === 'student' ? 'text-purple-500' : 'text-muted-foreground')} />
               <span>3. Student Level Fees</span>
-              <Badge variant="secondary" className="text-[10px] px-1.5 py-0 font-bold ml-0.5">
+              <Badge
+                variant={activeTab === 'student' ? 'default' : 'outline'}
+                className={cn(
+                  'text-[10px] px-1.5 py-0 font-bold ml-0.5 transition-colors',
+                  activeTab === 'student'
+                    ? 'bg-primary text-primary-foreground'
+                    : 'bg-muted/60 text-muted-foreground border-border/60'
+                )}
+              >
                 {totalStudents} Students
               </Badge>
             </button>

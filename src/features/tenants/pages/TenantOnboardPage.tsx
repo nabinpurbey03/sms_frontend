@@ -36,6 +36,7 @@ import {
 } from '../types';
 import { useOnboardTenant } from '../hooks';
 import { TenantFormFields } from '../components/TenantFormFields';
+import { cn } from '@/lib/utils';
 
 export const TenantOnboardPage: React.FC = () => {
   const navigate = useNavigate();
@@ -261,17 +262,25 @@ export const TenantOnboardPage: React.FC = () => {
               </div>
 
               {/* Tab Navigation for Step 1 */}
-              <div className="flex items-center gap-1.5 p-1 bg-muted/40 rounded-xl border border-border/60 self-start sm:self-auto">
+              <div
+                role="tablist"
+                aria-label="Onboarding sections"
+                className="flex items-center gap-1.5 p-1.5 bg-muted/60 dark:bg-muted/30 rounded-2xl border border-border/80 self-start sm:self-auto shadow-2xs"
+              >
                 <button
                   type="button"
+                  role="tab"
+                  aria-selected={activeTab === 'general'}
                   onClick={() => setActiveTab('general')}
-                  className={`flex items-center gap-1.5 px-3 py-1.5 text-xs font-semibold rounded-lg transition-colors ${
+                  className={cn(
+                    'flex items-center gap-2 px-3.5 py-2 text-xs font-semibold rounded-xl transition-all duration-150 cursor-pointer select-none',
+                    'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/40',
                     activeTab === 'general'
-                      ? 'bg-card text-foreground shadow-xs'
-                      : 'text-muted-foreground hover:text-foreground'
-                  }`}
+                      ? 'bg-background text-foreground font-bold shadow-xs border border-border/90 dark:bg-card dark:border-primary/40 dark:shadow-md'
+                      : 'text-muted-foreground hover:text-foreground hover:bg-background/60 hover:border-border/40 border border-transparent'
+                  )}
                 >
-                  <Building2 className="h-3.5 w-3.5" />
+                  <Building2 className={cn('h-3.5 w-3.5 transition-colors', activeTab === 'general' ? 'text-primary' : 'text-muted-foreground')} />
                   <span>General Info</span>
                   {(errors.name || errors.domain_name || errors.email || errors.phone) && (
                     <span className="w-1.5 h-1.5 rounded-full bg-destructive" />
@@ -279,14 +288,18 @@ export const TenantOnboardPage: React.FC = () => {
                 </button>
                 <button
                   type="button"
+                  role="tab"
+                  aria-selected={activeTab === 'address'}
                   onClick={() => setActiveTab('address')}
-                  className={`flex items-center gap-1.5 px-3 py-1.5 text-xs font-semibold rounded-lg transition-colors ${
+                  className={cn(
+                    'flex items-center gap-2 px-3.5 py-2 text-xs font-semibold rounded-xl transition-all duration-150 cursor-pointer select-none',
+                    'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/40',
                     activeTab === 'address'
-                      ? 'bg-card text-foreground shadow-xs'
-                      : 'text-muted-foreground hover:text-foreground'
-                  }`}
+                      ? 'bg-background text-foreground font-bold shadow-xs border border-border/90 dark:bg-card dark:border-primary/40 dark:shadow-md'
+                      : 'text-muted-foreground hover:text-foreground hover:bg-background/60 hover:border-border/40 border border-transparent'
+                  )}
                 >
-                  <MapPin className="h-3.5 w-3.5" />
+                  <MapPin className={cn('h-3.5 w-3.5 transition-colors', activeTab === 'address' ? 'text-primary' : 'text-muted-foreground')} />
                   <span>Address Details</span>
                   {errors.address && (
                     <span className="w-1.5 h-1.5 rounded-full bg-destructive" />

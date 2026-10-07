@@ -711,14 +711,16 @@ export const MarkAttendancePage: React.FC = () => {
             </div>
 
             {/* Interactive Metrics / Filter Tabs */}
-            <div className="flex items-center gap-1.5 p-1 bg-background/80 dark:bg-muted/40 rounded-xl border border-border/70 shadow-2xs">
+            <div role="tablist" aria-label="Attendance status filter" className="flex items-center gap-1.5 p-1 bg-muted/60 dark:bg-muted/30 rounded-xl border border-border/80 shadow-2xs">
               <button
                 type="button"
+                role="tab"
+                aria-selected={statusFilter === 'ALL'}
                 onClick={() => setStatusFilter('ALL')}
-                className={`px-3 py-1.5 text-xs rounded-lg font-medium transition-all cursor-pointer flex items-center gap-1.5 ${
+                className={`px-3 py-1.5 text-xs rounded-lg font-medium transition-all duration-150 cursor-pointer select-none flex items-center gap-1.5 border ${
                   statusFilter === 'ALL'
-                    ? 'bg-card text-foreground shadow-2xs font-semibold ring-1 ring-border/50'
-                    : 'text-muted-foreground hover:text-foreground hover:bg-muted/50'
+                    ? 'bg-background text-foreground shadow-xs font-bold border-border/90 dark:bg-card dark:border-primary/40'
+                    : 'border-transparent text-muted-foreground hover:bg-background/60 hover:text-foreground hover:border-border/40'
                 }`}
               >
                 <span>All</span>
@@ -726,11 +728,13 @@ export const MarkAttendancePage: React.FC = () => {
               </button>
               <button
                 type="button"
+                role="tab"
+                aria-selected={statusFilter === 'PRESENT'}
                 onClick={() => setStatusFilter('PRESENT')}
-                className={`px-3 py-1.5 text-xs rounded-lg font-medium transition-all cursor-pointer flex items-center gap-1.5 ${
+                className={`px-3 py-1.5 text-xs rounded-lg font-medium transition-all duration-150 cursor-pointer select-none flex items-center gap-1.5 border ${
                   statusFilter === 'PRESENT'
-                    ? 'bg-emerald-600 text-white shadow-2xs font-semibold'
-                    : 'text-emerald-700 dark:text-emerald-400 hover:text-emerald-800 dark:hover:text-emerald-300 hover:bg-emerald-500/10'
+                    ? 'bg-emerald-600 text-white shadow-xs font-bold border-emerald-500'
+                    : 'border-transparent text-emerald-700 dark:text-emerald-400 hover:text-emerald-800 dark:hover:text-emerald-300 hover:bg-emerald-500/10 hover:border-emerald-500/30'
                 }`}
               >
                 <Check className="w-3.5 h-3.5" />
@@ -740,11 +744,13 @@ export const MarkAttendancePage: React.FC = () => {
               </button>
               <button
                 type="button"
+                role="tab"
+                aria-selected={statusFilter === 'ABSENT'}
                 onClick={() => setStatusFilter('ABSENT')}
-                className={`px-3 py-1.5 text-xs rounded-lg font-medium transition-all cursor-pointer flex items-center gap-1.5 ${
+                className={`px-3 py-1.5 text-xs rounded-lg font-medium transition-all duration-150 cursor-pointer select-none flex items-center gap-1.5 border ${
                   statusFilter === 'ABSENT'
-                    ? 'bg-rose-600 text-white shadow-2xs font-semibold'
-                    : 'text-destructive hover:text-rose-700 dark:hover:text-rose-300 hover:bg-destructive/10'
+                    ? 'bg-rose-600 text-white shadow-xs font-bold border-rose-500'
+                    : 'border-transparent text-destructive hover:text-rose-700 dark:hover:text-rose-300 hover:bg-destructive/10 hover:border-destructive/30'
                 }`}
               >
                 <X className="w-3.5 h-3.5" />

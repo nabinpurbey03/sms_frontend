@@ -27,6 +27,7 @@ import {
 } from '../utils/nepaliDate';
 import { getCategoryBlockClass, getCategoryDotColor } from './AcademicCalendarGrid';
 import type { AcademicCalendarEvent } from '../types';
+import { cn } from '@/lib/utils';
 
 export interface NepaliCalendarGridProps {
   events: AcademicCalendarEvent[];
@@ -313,26 +314,32 @@ export const NepaliCalendarGrid: React.FC<NepaliCalendarGridProps> = ({
         </div>
 
         {/* View Switchers: Month Grid vs Agenda */}
-        <div className="flex items-center gap-1 bg-muted p-1 rounded-lg border border-border">
+        <div role="tablist" aria-label="Calendar view switcher" className="flex items-center gap-1 bg-muted/60 dark:bg-muted/30 p-1 rounded-xl border border-border/80 shadow-2xs">
           <button
             type="button"
+            role="tab"
+            aria-selected={viewMode === 'month'}
             onClick={() => setViewMode('month')}
-            className={`h-7 px-3 text-xs rounded-md font-medium transition-colors cursor-pointer ${
+            className={cn(
+              'h-7 px-3 text-xs rounded-lg font-medium transition-all duration-150 cursor-pointer select-none border',
               viewMode === 'month'
-                ? 'bg-background text-foreground font-bold shadow-2xs'
-                : 'text-muted-foreground hover:text-foreground'
-            }`}
+                ? 'bg-background text-foreground font-bold shadow-xs border-border/90 dark:bg-card dark:border-primary/40'
+                : 'border-transparent text-muted-foreground hover:bg-background/60 hover:text-foreground hover:border-border/40'
+            )}
           >
             Month Grid
           </button>
           <button
             type="button"
+            role="tab"
+            aria-selected={viewMode === 'agenda'}
             onClick={() => setViewMode('agenda')}
-            className={`h-7 px-3 text-xs rounded-md font-medium transition-colors cursor-pointer ${
+            className={cn(
+              'h-7 px-3 text-xs rounded-lg font-medium transition-all duration-150 cursor-pointer select-none border',
               viewMode === 'agenda'
-                ? 'bg-background text-foreground font-bold shadow-2xs'
-                : 'text-muted-foreground hover:text-foreground'
-            }`}
+                ? 'bg-background text-foreground font-bold shadow-xs border-border/90 dark:bg-card dark:border-primary/40'
+                : 'border-transparent text-muted-foreground hover:bg-background/60 hover:text-foreground hover:border-border/40'
+            )}
           >
             Agenda ({monthEvents.length})
           </button>

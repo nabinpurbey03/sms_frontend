@@ -185,23 +185,35 @@ export const ExamsListPage: React.FC = () => {
     <div className="space-y-6 max-w-7xl mx-auto pb-16">
       {/* Tabs Switcher & Action */}
       <div className="flex items-center justify-between gap-3 border-b pb-2 flex-wrap">
-        <div className="inline-flex items-center gap-1 p-1 rounded-xl bg-muted/40 border border-border/60">
+        <div
+          role="tablist"
+          aria-label="Exam view modes"
+          className="inline-flex items-center gap-1.5 p-1.5 rounded-2xl bg-muted/60 dark:bg-muted/30 border border-border/80 shadow-2xs"
+        >
           <button
             type="button"
+            role="tab"
+            aria-selected={activeTab === 'all-exams'}
             onClick={() => setActiveTab('all-exams')}
             className={cn(
-              'flex items-center gap-2 px-3 py-1.5 text-xs rounded-lg transition-colors cursor-pointer select-none font-medium',
+              'flex items-center gap-2 px-3.5 py-2 text-xs font-semibold rounded-xl transition-all duration-150 cursor-pointer select-none',
+              'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/40',
               activeTab === 'all-exams'
-                ? 'bg-background text-foreground shadow-2xs font-semibold'
-                : 'text-muted-foreground hover:text-foreground hover:bg-background/50'
+                ? 'bg-background text-foreground font-bold shadow-xs border border-border/90 dark:bg-card dark:border-primary/40 dark:shadow-md'
+                : 'text-muted-foreground hover:text-foreground hover:bg-background/60 hover:border-border/40 border border-transparent'
             )}
           >
-            <Layers className="w-4 h-4" />
+            <Layers className={cn('w-4 h-4 transition-colors', activeTab === 'all-exams' ? 'text-primary' : 'text-muted-foreground')} />
             <span>All School Exams</span>
             {exams.length > 0 && (
               <Badge
-                variant={activeTab === 'all-exams' ? 'secondary' : 'outline'}
-                className="ml-1 text-[11px] px-1.5 py-0"
+                variant={activeTab === 'all-exams' ? 'default' : 'outline'}
+                className={cn(
+                  'ml-0.5 text-[10px] px-1.5 py-0 font-bold transition-colors',
+                  activeTab === 'all-exams'
+                    ? 'bg-primary text-primary-foreground'
+                    : 'bg-muted/60 text-muted-foreground border-border/60'
+                )}
               >
                 {exams.length}
               </Badge>
@@ -211,20 +223,30 @@ export const ExamsListPage: React.FC = () => {
           {canGrade && (
             <button
               type="button"
+              role="tab"
+              aria-selected={activeTab === 'my-duties'}
               onClick={() => setActiveTab('my-duties')}
               className={cn(
-                'flex items-center gap-2 px-3 py-1.5 text-xs rounded-lg transition-colors cursor-pointer select-none font-medium',
+                'flex items-center gap-2 px-3.5 py-2 text-xs font-semibold rounded-xl transition-all duration-150 cursor-pointer select-none',
+                'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/40',
                 activeTab === 'my-duties'
-                  ? 'bg-background text-foreground shadow-2xs font-semibold'
-                  : 'text-muted-foreground hover:text-foreground hover:bg-background/50'
+                  ? 'bg-background text-foreground font-bold shadow-xs border border-border/90 dark:bg-card dark:border-primary/40 dark:shadow-md'
+                  : 'text-muted-foreground hover:text-foreground hover:bg-background/60 hover:border-border/40 border border-transparent'
               )}
             >
-              <BookOpen className="w-4 h-4" />
+              <BookOpen className={cn('w-4 h-4 transition-colors', activeTab === 'my-duties' ? 'text-blue-500' : 'text-muted-foreground')} />
               <span>My Grading Duties</span>
               {teacherAssignments.length > 0 && (
                 <Badge
-                  variant={pendingDutiesCount > 0 ? 'warning' : 'secondary'}
-                  className="ml-1 text-[11px] px-1.5 py-0 font-bold"
+                  variant={pendingDutiesCount > 0 ? 'warning' : activeTab === 'my-duties' ? 'default' : 'outline'}
+                  className={cn(
+                    'ml-0.5 text-[10px] px-1.5 py-0 font-bold transition-colors',
+                    pendingDutiesCount > 0
+                      ? 'bg-amber-500/15 text-amber-600 dark:text-amber-400 border border-amber-500/30'
+                      : activeTab === 'my-duties'
+                        ? 'bg-primary text-primary-foreground'
+                        : 'bg-muted/60 text-muted-foreground border-border/60'
+                  )}
                 >
                   {pendingDutiesCount > 0 ? `${pendingDutiesCount} Pending` : teacherAssignments.length}
                 </Badge>

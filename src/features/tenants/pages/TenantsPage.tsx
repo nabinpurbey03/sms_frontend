@@ -208,48 +208,54 @@ export const TenantsPage: React.FC = () => {
 
         <div className="flex items-center gap-2 flex-wrap sm:flex-nowrap">
           {/* Status Filter */}
-          <div className="flex items-center rounded-lg border border-border/70 p-0.5 bg-muted/40">
+          <div role="tablist" aria-label="Tenant status filter" className="flex items-center rounded-xl border border-border/80 p-1 bg-muted/60 dark:bg-muted/30 shadow-2xs gap-1">
             <button
               type="button"
+              role="tab"
+              aria-selected={statusFilter === 'all'}
               onClick={() => {
                 setStatusFilter('all');
                 setPage(1);
               }}
               className={cn(
-                'px-2.5 py-1 text-xs font-medium rounded-md transition-colors cursor-pointer select-none',
+                'px-3 py-1.5 text-xs font-semibold rounded-lg transition-all duration-150 cursor-pointer select-none border',
                 statusFilter === 'all'
-                  ? 'bg-background text-foreground shadow-2xs font-semibold'
-                  : 'text-muted-foreground hover:text-foreground'
+                  ? 'bg-background text-foreground font-bold shadow-xs border-border/90 dark:bg-card dark:border-primary/40'
+                  : 'border-transparent text-muted-foreground hover:text-foreground hover:bg-background/60 hover:border-border/40'
               )}
             >
               All
             </button>
             <button
               type="button"
+              role="tab"
+              aria-selected={statusFilter === 'active'}
               onClick={() => {
                 setStatusFilter('active');
                 setPage(1);
               }}
               className={cn(
-                'px-2.5 py-1 text-xs font-medium rounded-md transition-colors cursor-pointer select-none',
+                'px-3 py-1.5 text-xs font-semibold rounded-lg transition-all duration-150 cursor-pointer select-none border',
                 statusFilter === 'active'
-                  ? 'bg-background text-foreground shadow-2xs font-semibold'
-                  : 'text-muted-foreground hover:text-foreground'
+                  ? 'bg-background text-foreground font-bold shadow-xs border-border/90 dark:bg-card dark:border-primary/40'
+                  : 'border-transparent text-muted-foreground hover:text-foreground hover:bg-background/60 hover:border-border/40'
               )}
             >
               Active
             </button>
             <button
               type="button"
+              role="tab"
+              aria-selected={statusFilter === 'inactive'}
               onClick={() => {
                 setStatusFilter('inactive');
                 setPage(1);
               }}
               className={cn(
-                'px-2.5 py-1 text-xs font-medium rounded-md transition-colors cursor-pointer select-none',
+                'px-3 py-1.5 text-xs font-semibold rounded-lg transition-all duration-150 cursor-pointer select-none border',
                 statusFilter === 'inactive'
-                  ? 'bg-background text-foreground shadow-2xs font-semibold'
-                  : 'text-muted-foreground hover:text-foreground'
+                  ? 'bg-background text-foreground font-bold shadow-xs border-border/90 dark:bg-card dark:border-primary/40'
+                  : 'border-transparent text-muted-foreground hover:text-foreground hover:bg-background/60 hover:border-border/40'
               )}
             >
               Inactive
@@ -257,15 +263,16 @@ export const TenantsPage: React.FC = () => {
           </div>
 
           {/* View Toggle (Grid / Table) */}
-          <div className="flex items-center rounded-lg border border-border/70 p-0.5 bg-muted/40">
+          <div role="group" aria-label="View layout switcher" className="flex items-center rounded-xl border border-border/80 p-1 bg-muted/60 dark:bg-muted/30 shadow-2xs gap-1">
             <button
               type="button"
+              aria-pressed={viewMode === 'table'}
               onClick={() => setViewMode('table')}
               className={cn(
-                'p-1.5 rounded-md transition-colors cursor-pointer select-none',
+                'p-1.5 rounded-lg transition-all duration-150 cursor-pointer select-none border',
                 viewMode === 'table'
-                  ? 'bg-background text-foreground shadow-2xs'
-                  : 'text-muted-foreground hover:text-foreground'
+                  ? 'bg-background text-foreground shadow-xs border-border/90 dark:bg-card dark:border-primary/40'
+                  : 'border-transparent text-muted-foreground hover:text-foreground hover:bg-background/60 hover:border-border/40'
               )}
               title="Table View"
               aria-label="Table View"
@@ -274,12 +281,13 @@ export const TenantsPage: React.FC = () => {
             </button>
             <button
               type="button"
+              aria-pressed={viewMode === 'grid'}
               onClick={() => setViewMode('grid')}
               className={cn(
-                'p-1.5 rounded-md transition-colors cursor-pointer select-none',
+                'p-1.5 rounded-lg transition-all duration-150 cursor-pointer select-none border',
                 viewMode === 'grid'
-                  ? 'bg-background text-foreground shadow-2xs'
-                  : 'text-muted-foreground hover:text-foreground'
+                  ? 'bg-background text-foreground shadow-xs border-border/90 dark:bg-card dark:border-primary/40'
+                  : 'border-transparent text-muted-foreground hover:text-foreground hover:bg-background/60 hover:border-border/40'
               )}
               title="Grid Cards View"
               aria-label="Grid Cards View"
