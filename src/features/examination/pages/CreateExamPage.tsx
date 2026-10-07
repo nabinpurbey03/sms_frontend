@@ -261,16 +261,6 @@ export const CreateExamPage: React.FC = () => {
     return configsMap;
   }, [selectedClassIds, classes, overrides, subjectTeacherMap]);
 
-  // Total included subjects count across all selected classes
-  const totalIncludedSubjects = useMemo(() => {
-    let count = 0;
-    for (const classId of selectedClassIds) {
-      const configs = classSubjectConfigs[classId] || [];
-      count += configs.filter((s) => s.included).length;
-    }
-    return count;
-  }, [selectedClassIds, classSubjectConfigs]);
-
   const handleSubjectConfigsChange = (classId: string, configs: SubjectConfigItem[]) => {
     setOverrides((prev) => {
       const classOverrides: Record<string, Partial<SubjectConfigItem>> = {};
@@ -467,7 +457,7 @@ export const CreateExamPage: React.FC = () => {
   }
 
   return (
-    <form onSubmit={handleSubmit} className="space-y-6 max-w-6xl xl:max-w-7xl mx-auto pb-24">
+    <form onSubmit={handleSubmit} className="space-y-6 max-w-5xl mx-auto pb-12">
       {/* Header & Breadcrumb */}
       <div className="space-y-3 border-b pb-5">
         <Breadcrumb>
@@ -764,46 +754,35 @@ export const CreateExamPage: React.FC = () => {
         </CardContent>
       </Card>
 
-      {/* Sticky Bottom Action Bar */}
-      <div className="sticky bottom-0 z-20 bg-background/95 backdrop-blur-md border-t py-3.5 px-4 sm:px-6 shadow-lg -mx-4 sm:-mx-6 flex flex-col sm:flex-row items-center justify-between gap-3">
-        <div className="flex items-center gap-2 text-sm text-muted-foreground w-full sm:w-auto">
-          <span className="font-medium text-foreground">
-            {selectedClassIds.length} {selectedClassIds.length === 1 ? 'class' : 'classes'} selected
-          </span>
-          <span>•</span>
-          <span>
-            {totalIncludedSubjects} {totalIncludedSubjects === 1 ? 'subject' : 'subjects'} included
-          </span>
-        </div>
-        <div className="flex items-center gap-3 w-full sm:w-auto justify-end">
-          <Button
-            type="button"
-            variant="outline"
-            onClick={() => navigate({ to: '/examination/exams' as any })}
-            disabled={isSubmitting}
-          >
-            Cancel
-          </Button>
-          <Button
-            type="submit"
-            disabled={
-              isSubmitting ||
-              !currentYearId ||
-              isYearLoading ||
-              selectedClassIds.length === 0 ||
-              !examName.trim()
-            }
-          >
-            {isSubmitting ? (
-              <>
-                <Loader2 className="w-4 h-4 mr-2 animate-spin" />
-                Creating Examination...
-              </>
-            ) : (
-              'Create Examination'
-            )}
-          </Button>
-        </div>
+      {/* Footer / Action Bar */}
+      <div className="flex items-center justify-end gap-3 pt-4 border-t">
+        <Button
+          type="button"
+          variant="outline"
+          onClick={() => navigate({ to: '/examination/exams' as any })}
+          disabled={isSubmitting}
+        >
+          Cancel
+        </Button>
+        <Button
+          type="submit"
+          disabled={
+            isSubmitting ||
+            !currentYearId ||
+            isYearLoading ||
+            selectedClassIds.length === 0 ||
+            !examName.trim()
+          }
+        >
+          {isSubmitting ? (
+            <>
+              <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+              Creating Examination...
+            </>
+          ) : (
+            'Create Examination'
+          )}
+        </Button>
       </div>
     </form>
   );
