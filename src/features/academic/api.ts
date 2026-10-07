@@ -25,6 +25,8 @@ import type {
   StudentRemarkCreateDTO,
   SectionNoticeDTO,
   SectionNoticeCreateDTO,
+  EmptySectionResponse,
+  EmptySectionCleanupResult,
 } from './types';
 
 export const academicApi = {
@@ -94,6 +96,28 @@ export const academicApi = {
       : `/academic/tenants/${tenantId}/classes/${classId}/sections/${sectionId}/soft`;
     await apiClient.delete(endpoint);
     return true;
+  },
+
+  getEmptySections: async (
+    tenantId: string,
+    academicYearId?: string | null
+  ): Promise<EmptySectionResponse[]> => {
+    const res = (await apiClient.get(
+      `/academic/tenants/${tenantId}/classes/empty-sections`,
+      { params: { academic_year_id: academicYearId || undefined } }
+    )) as any;
+    return res.data || res;
+  },
+
+  cleanupEmptySections: async (
+    tenantId: string,
+    sectionIds?: string[]
+  ): Promise<EmptySectionCleanupResult> => {
+    const res = (await apiClient.post(
+      `/academic/tenants/${tenantId}/classes/sections/cleanup-empty`,
+      { section_ids: sectionIds && sectionIds.length > 0 ? sectionIds : undefined }
+    )) as any;
+    return res.data || res;
   },
 
   // ==========================================

@@ -905,3 +905,29 @@ export const useDeleteSectionNotice = () => {
   });
 };
 
+export const useEmptySections = (
+  tenantId: string | null,
+  academicYearId?: string | null,
+  options?: { enabled?: boolean }
+) => {
+  return useQuery({
+    queryKey: ['empty-sections', tenantId, academicYearId],
+    queryFn: () => academicApi.getEmptySections(tenantId!, academicYearId),
+    enabled: !!tenantId && (options?.enabled ?? true),
+  });
+};
+
+export const useCleanupEmptySections = () => {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: ({ tenantId, sectionIds }: { tenantId: string; sectionIds?: string[] }) =>
+      academicApi.cleanupEmptySections(tenantId, sectionIds),
+    onSuccess: (_, variables) => {
+      queryClient.invalidateQueries({ queryKey: ['empty-sections', variables.tenantId] });
+      queryClient.invalidateQueries({ queryKey: ['all-classes-details', variables.tenantId] });
+      queryClient.invalidateQueries({ queryKey: ['classes', variables.tenantId] });
+      queryClient.invalidateQueries({ queryKey: ['daily-attendance-status'] });
+    },
+  });
+};
+

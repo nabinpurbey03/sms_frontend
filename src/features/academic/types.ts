@@ -374,3 +374,34 @@ export interface SectionNoticeCreateDTO {
   due_date?: string | null;
 }
 
+export interface EmptySectionResponse {
+  section_id: string;
+  section_name: string;
+  class_id: string;
+  class_name: string;
+  student_count: number;
+  can_delete: boolean;
+  reason_if_cannot_delete?: string | null;
+}
+
+export interface EmptySectionCleanupRequest {
+  section_ids?: string[];
+}
+
+export interface EmptySectionSummaryItem {
+  section_id: string;
+  section_name: string;
+  class_name: string;
+}
+
+export interface EmptySectionCleanupResult {
+  deleted_count: number;
+  deleted_sections: EmptySectionSummaryItem[];
+  skipped_sections: Array<{
+    section_id?: string;
+    class_name?: string;
+    section_name?: string;
+    reason: string;
+  }>;
+}
+

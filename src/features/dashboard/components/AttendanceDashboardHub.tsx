@@ -297,13 +297,17 @@ export const AttendanceDashboardHub: React.FC = () => {
     return result;
   }, [schoolClasses, dailyStatus]);
 
-  const pendingSectionsCount = useMemo(() => {
-    return sectionsStatusList.filter((s) => !s.isMarked).length;
+  const activeSectionsList = useMemo(() => {
+    return sectionsStatusList.filter((s) => s.totalStudents > 0);
   }, [sectionsStatusList]);
 
+  const pendingSectionsCount = useMemo(() => {
+    return activeSectionsList.filter((s) => !s.isMarked).length;
+  }, [activeSectionsList]);
+
   const recordedSectionsCount = useMemo(() => {
-    return sectionsStatusList.filter((s) => s.isMarked).length;
-  }, [sectionsStatusList]);
+    return activeSectionsList.filter((s) => s.isMarked).length;
+  }, [activeSectionsList]);
 
   const filteredSectionsList = useMemo(() => {
     return sectionsStatusList.filter((sec) => {
@@ -311,7 +315,7 @@ export const AttendanceDashboardHub: React.FC = () => {
         sectionStatusFilter === 'all'
           ? true
           : sectionStatusFilter === 'pending'
-          ? !sec.isMarked
+          ? !sec.isMarked && sec.totalStudents > 0
           : sec.isMarked;
       const q = sectionSearchQuery.trim().toLowerCase();
       const matchesSearch =
@@ -347,7 +351,7 @@ export const AttendanceDashboardHub: React.FC = () => {
           : Math.max(0, totalStudents - presentCount);
       const percentage = totalStudents > 0 ? Math.round((presentCount / totalStudents) * 1000) / 10 : 0;
       const markedSectionsCount = dailyStatus?.marked_section_ids?.length || 0;
-      const totalSectionsCount = sectionsStatusList.length;
+      const totalSectionsCount = activeSectionsList.length;
 
       return {
         totalStudents,
@@ -372,7 +376,7 @@ export const AttendanceDashboardHub: React.FC = () => {
         totalSectionsCount: 0,
       };
     }
-  }, [timeframe, attendanceSummary, dailyStatus, schoolReport, sectionsStatusList]);
+  }, [timeframe, attendanceSummary, dailyStatus, schoolReport, sectionsStatusList, activeSectionsList]);
 
   const isRange = timeframe !== 'today';
   const selectedPeriod = timeframe;
@@ -767,6 +771,8 @@ export const AttendanceDashboardHub: React.FC = () => {
                             <p className="text-[11px] text-muted-foreground truncate">
                               {sec.isMarked
                                 ? `${sec.presentCount} present • ${sec.absentCount} absent`
+                                : sec.totalStudents === 0
+                                ? '0 enrolled • Empty'
                                 : `${sec.totalStudents} enrolled • Pending`}
                             </p>
                           </div>
@@ -780,6 +786,24 @@ export const AttendanceDashboardHub: React.FC = () => {
                                 <Check className="h-3 w-3" />
                                 Recorded
                               </Badge>
+                            ) : sec.totalStudents === 0 ? (
+                              <>
+                                <Badge
+                                  variant="outline"
+                                  className="font-semibold text-xs border-amber-500/30 bg-amber-500/10 text-amber-700 dark:text-amber-300"
+                                >
+                                  Empty (0 Students)
+                                </Badge>
+                                <Button
+                                  variant="outline"
+                                  size="sm"
+                                  disabled
+                                  title="No students enrolled in this section"
+                                  className="h-7 text-[11px] px-2.5 font-semibold opacity-50 cursor-not-allowed"
+                                >
+                                  Mark
+                                </Button>
+                              </>
                             ) : (
                               <Button
                                 variant="outline"
@@ -954,16 +978,25 @@ export const AttendanceDashboardHub: React.FC = () => {
                       </div>
 
                       {assignment.section_id && (
-                        <Badge
-                          variant="outline"
-                          className={`text-[10px] px-2 py-0.5 font-semibold ${
-                            isMarked
-                              ? 'bg-emerald-500/10 text-emerald-700 dark:text-emerald-400 border-emerald-500/30'
-                              : 'bg-amber-500/10 text-amber-700 dark:text-amber-400 border-amber-500/30'
-                          }`}
-                        >
-                          {isMarked ? 'Marked' : 'Pending'}
-                        </Badge>
+                        sectionStatus?.total_students === 0 ? (
+                          <Badge
+                            variant="outline"
+                            className="font-semibold text-xs border-amber-500/30 bg-amber-500/10 text-amber-700 dark:text-amber-300"
+                          >
+                            Empty (0 Students)
+                          </Badge>
+                        ) : (
+                          <Badge
+                            variant="outline"
+                            className={`text-[10px] px-2 py-0.5 font-semibold ${
+                              isMarked
+                                ? 'bg-emerald-500/10 text-emerald-700 dark:text-emerald-400 border-emerald-500/30'
+                                : 'bg-amber-500/10 text-amber-700 dark:text-amber-400 border-amber-500/30'
+                            }`}
+                          >
+                            {isMarked ? 'Marked' : 'Pending'}
+                          </Badge>
+                        )
                       )}
                     </div>
 
@@ -993,6 +1026,16 @@ export const AttendanceDashboardHub: React.FC = () => {
                               <Edit3 className="h-3.5 w-3.5" />
                               Update Today's Attendance
                             </Link>
+                          </Button>
+                        ) : sectionStatus?.total_students === 0 ? (
+                          <Button
+                            size="sm"
+                            disabled
+                            title="No students enrolled in this section"
+                            className="w-full text-xs font-semibold h-8 gap-1.5 opacity-50 cursor-not-allowed"
+                          >
+                            <CalendarCheck className="h-3.5 w-3.5" />
+                            Mark Today's Attendance
                           </Button>
                         ) : (
                           <Button
