@@ -421,15 +421,57 @@ export const MarkAttendancePage: React.FC = () => {
     <div className="space-y-6 pb-12">
       {/* Selection Controls */}
       <Card className="p-4 bg-card shadow-xs border-border/70">
-        <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
           {/* Date Picker */}
-          <div className="space-y-1.5">
-            <label className="text-xs font-semibold text-muted-foreground flex items-center gap-1">
-              <Calendar className="w-3.5 h-3.5" />
-              Attendance Date
-            </label>
-            <div className="flex items-center gap-2 flex-wrap sm:flex-nowrap">
-              <div className="flex-1 min-w-[200px]">
+          <div className="space-y-1.5 min-w-0">
+            <div className="flex items-center justify-between gap-2 min-w-0">
+              <label className="text-xs font-semibold text-muted-foreground flex items-center gap-1 truncate">
+                <Calendar className="w-3.5 h-3.5 shrink-0" />
+                Attendance Date
+              </label>
+
+              {/* Status Tag in Label Row */}
+              {!selectedDayInfo.isAcademicDay ? (
+                <Badge
+                  variant="destructive"
+                  className="text-[11px] gap-1 h-5 px-1.5 shrink-0 flex items-center font-medium"
+                  title={`${selectedDayInfo.dayName} Off (Non-Academic Day)`}
+                >
+                  <AlertCircle className="w-3 h-3" />
+                  <span>Closed</span>
+                </Badge>
+              ) : selectedDayInfo.holidayEvent ? (
+                <Badge
+                  variant="destructive"
+                  className="text-[11px] gap-1 h-5 px-1.5 shrink-0 flex items-center font-medium max-w-[130px] truncate"
+                  title={`Holiday: ${selectedDayInfo.holidayEvent.title}`}
+                >
+                  <AlertCircle className="w-3 h-3 shrink-0" />
+                  <span className="truncate">{selectedDayInfo.holidayEvent.title}</span>
+                </Badge>
+              ) : recordDate < minDateStr ? (
+                <Badge
+                  variant="warning"
+                  className="text-[11px] gap-1 h-5 px-1.5 shrink-0 flex items-center font-medium"
+                  title="Locked (>7 days old)"
+                >
+                  <Lock className="w-3 h-3" />
+                  <span>Locked</span>
+                </Badge>
+              ) : isAlreadyMarked ? (
+                <Badge
+                  variant="success"
+                  className="text-[11px] gap-1 h-5 px-2 shrink-0 flex items-center font-medium"
+                  title="Attendance recorded for this date"
+                >
+                  <CheckCircle2 className="w-3 h-3" />
+                  <span>Recorded</span>
+                </Badge>
+              ) : null}
+            </div>
+
+            <div className="flex items-center gap-2">
+              <div className="flex-1 min-w-0">
                 <NepaliDatePicker
                   value={recordDate}
                   onChange={(val) => setRecordDate(val)}
@@ -442,7 +484,7 @@ export const MarkAttendancePage: React.FC = () => {
               {recordDate === todayStr ? (
                 <Badge
                   variant="info"
-                  className="text-xs h-9 px-3 shrink-0 font-medium flex items-center"
+                  className="text-xs h-9 px-2.5 shrink-0 font-medium flex items-center"
                 >
                   Today
                 </Badge>
@@ -452,54 +494,22 @@ export const MarkAttendancePage: React.FC = () => {
                   variant="outline"
                   size="sm"
                   onClick={() => setRecordDate(todayStr)}
-                  className="h-9 px-3 text-xs gap-1.5 shrink-0 cursor-pointer text-muted-foreground hover:text-foreground"
+                  className="h-9 px-2.5 text-xs gap-1.5 shrink-0 cursor-pointer text-muted-foreground hover:text-foreground"
+                  title="Reset to today"
                 >
                   <RotateCcw className="w-3.5 h-3.5" />
-                  <span>Reset to Today</span>
+                  <span>Today</span>
                 </Button>
               )}
-              {!selectedDayInfo.isAcademicDay ? (
-                <Badge
-                  variant="destructive"
-                  className="text-xs gap-1 h-9 px-2.5 shrink-0 flex items-center font-medium"
-                >
-                  <AlertCircle className="w-3.5 h-3.5" />
-                  {selectedDayInfo.dayName} Off (Non-Academic Day)
-                </Badge>
-              ) : selectedDayInfo.holidayEvent ? (
-                <Badge
-                  variant="destructive"
-                  className="text-xs gap-1 h-9 px-2.5 shrink-0 flex items-center font-medium"
-                >
-                  <AlertCircle className="w-3.5 h-3.5" />
-                  Holiday: {selectedDayInfo.holidayEvent.title}
-                </Badge>
-              ) : recordDate < minDateStr ? (
-                <Badge
-                  variant="warning"
-                  className="text-xs gap-1 h-9 px-2.5 shrink-0 flex items-center font-medium"
-                >
-                  <Lock className="w-3.5 h-3.5" />
-                  Locked (&gt;7 days)
-                </Badge>
-              ) : isAlreadyMarked ? (
-                <Badge
-                  variant="success"
-                  className="text-xs gap-1 h-9 px-2.5 shrink-0 flex items-center font-medium"
-                >
-                  <CheckCircle2 className="w-3.5 h-3.5" />
-                  Recorded for this date
-                </Badge>
-              ) : null}
             </div>
-            <p className="text-[11px] text-muted-foreground flex items-center gap-1">
-              <Clock className="w-3 h-3" />
+            <p className="text-[11px] text-muted-foreground flex items-center gap-1 truncate">
+              <Clock className="w-3 h-3 shrink-0" />
               Editable window: last 7 days only ({minDateStr} to {todayStr})
             </p>
           </div>
 
           {/* Class Selector */}
-          <div className="space-y-1.5">
+          <div className="space-y-1.5 min-w-0">
             <label className="text-xs font-semibold text-muted-foreground">Class</label>
             <Select
               value={selectedClassId}
@@ -531,7 +541,7 @@ export const MarkAttendancePage: React.FC = () => {
           </div>
 
           {/* Section Selector */}
-          <div className="space-y-1.5">
+          <div className="space-y-1.5 min-w-0">
             <label className="text-xs font-semibold text-muted-foreground">Section</label>
             <Select
               value={selectedSectionId}
