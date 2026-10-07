@@ -1,5 +1,7 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
+import fs from 'node:fs';
+import path from 'node:path';
 import {
   EXAM_MARK_PRESETS,
   deriveTotalMarks,
@@ -273,5 +275,53 @@ test('preset values fit comfortably within 3-digit mark constraints', () => {
       assert.ok(str.length <= 3, `Preset ${preset.label} field value ${val} must fit within 3 digits`);
     }
   });
+});
+
+// ---------------------------------------------------------------------------
+// 5. ExamSubjectConfigList Component Layout & Modernization Tests
+// ---------------------------------------------------------------------------
+
+test('ExamSubjectConfigList source imports MARK_INPUT_CLASS from ../types', () => {
+  const filePath = path.resolve(import.meta.dirname, '../ExamSubjectConfigList.tsx');
+  const source = fs.readFileSync(filePath, 'utf-8');
+  assert.match(source, /import\s*\{[^}]*MARK_INPUT_CLASS[^}]*\}\s*from\s*['"]\.\.\/types['"]/);
+});
+
+test('ExamSubjectConfigList desktop table has overflow-x-auto and min-w-[880px]', () => {
+  const filePath = path.resolve(import.meta.dirname, '../ExamSubjectConfigList.tsx');
+  const source = fs.readFileSync(filePath, 'utf-8');
+  assert.match(source, /overflow-x-auto/);
+  assert.match(source, /Table\s+className=["'][^"']*min-w-\[880px\][^"']*["']/);
+});
+
+test('ExamSubjectConfigList desktop table defines specified column proportions', () => {
+  const filePath = path.resolve(import.meta.dirname, '../ExamSubjectConfigList.tsx');
+  const source = fs.readFileSync(filePath, 'utf-8');
+  assert.match(source, /TableHead[^>]*w-\[80px\][^>]*text-center/);
+  assert.match(source, /TableHead[^>]*min-w-\[220px\]/);
+  assert.match(source, /TableHead[^>]*w-\[170px\]/);
+  assert.match(source, /TableHead[^>]*w-\[110px\][^>]*text-center/);
+  assert.match(source, /TableHead[^>]*min-w-\[200px\]/);
+});
+
+test('ExamSubjectConfigList uses MARK_INPUT_CLASS on numeric inputs', () => {
+  const filePath = path.resolve(import.meta.dirname, '../ExamSubjectConfigList.tsx');
+  const source = fs.readFileSync(filePath, 'utf-8');
+  const count = (source.match(/MARK_INPUT_CLASS/g) || []).length;
+  // Should appear in import + at least 4 inputs in desktop table
+  assert.ok(count >= 5, `Expected at least 5 occurrences of MARK_INPUT_CLASS, found ${count}`);
+});
+
+test('ExamSubjectConfigList displays — Theory Only — button when practical is disabled', () => {
+  const filePath = path.resolve(import.meta.dirname, '../ExamSubjectConfigList.tsx');
+  const source = fs.readFileSync(filePath, 'utf-8');
+  assert.match(source, /— Theory Only —/);
+});
+
+test('ExamSubjectConfigList mobile card view uses h-10 touch targets and centered monospace inputs', () => {
+  const filePath = path.resolve(import.meta.dirname, '../ExamSubjectConfigList.tsx');
+  const source = fs.readFileSync(filePath, 'utf-8');
+  assert.match(source, /md:hidden/);
+  assert.match(source, /h-10[^'"]*font-mono[^'"]*text-center/);
 });
 
