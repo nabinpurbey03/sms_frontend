@@ -481,117 +481,148 @@ export const AttendanceDashboardHub: React.FC = () => {
       {/* ==================================================== */}
       {isAdminOrOfficeAdmin && (
         <div className="space-y-4 sm:space-y-6">
-          {/* In Range mode: Key Metric Stats Cards across 4 columns */}
-          {isRange && (
-            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-              {/* Presence Rate */}
-              <Card className="relative overflow-hidden border-border/60 hover:shadow-xs transition-shadow">
-                <div className="absolute top-0 left-0 right-0 h-1 bg-emerald-500" />
-                <CardHeader className="flex flex-row items-center justify-between p-4 pb-2 space-y-0">
-                  <span className="text-[11px] font-bold text-muted-foreground uppercase tracking-wider">
-                    Presence Rate
+          {/* Top Row: Executive Key Metric Cards (Full Width 4-Column Grid) */}
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+            {/* Presence Rate */}
+            <Card className="relative overflow-hidden border-border/60 hover:shadow-xs transition-shadow">
+              <div className="absolute top-0 left-0 right-0 h-1 bg-emerald-500" />
+              <CardHeader className="flex flex-row items-center justify-between p-4 pb-2 space-y-0">
+                <span className="text-[11px] font-bold text-muted-foreground uppercase tracking-wider">
+                  Presence Rate
+                </span>
+                <div className="p-2 bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 rounded-lg">
+                  <CalendarCheck className="h-4 w-4" />
+                </div>
+              </CardHeader>
+              <CardContent className="p-4 pt-1">
+                <div className="text-xl sm:text-2xl font-bold font-mono text-foreground">
+                  {presenceRate != null ? `${presenceRate.toFixed(1)}%` : '—'}
+                </div>
+                {/* Micro-Progress Bar */}
+                <div className="w-full bg-emerald-500/15 rounded-full h-1.5 mt-2.5 overflow-hidden">
+                  <div
+                    className="bg-emerald-500 h-full rounded-full transition-all duration-500"
+                    style={{ width: `${Math.min(100, Math.max(0, presenceRate ?? 0))}%` }}
+                  />
+                </div>
+                <div className="flex items-center justify-between gap-1.5 mt-2">
+                  <span className="inline-flex items-center text-[10px] font-semibold text-emerald-600 dark:text-emerald-400 bg-emerald-500/10 px-1.5 py-0.5 rounded">
+                    {presenceRate != null && presenceRate >= 80 ? '+2.3%' : '-1.8%'} {isRange ? selectedPeriod : 'vs yesterday'}
                   </span>
-                  <div className="p-2 bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 rounded-lg">
-                    <CalendarCheck className="h-4 w-4" />
-                  </div>
-                </CardHeader>
-                <CardContent className="p-4 pt-1">
-                  <div className="text-xl sm:text-2xl font-bold font-mono text-foreground">
-                    {presenceRate != null ? `${presenceRate.toFixed(1)}%` : '—'}
-                  </div>
-                  <div className="flex items-center gap-1.5 mt-1.5">
-                    <span className="inline-flex items-center text-[10px] font-semibold text-emerald-600 dark:text-emerald-400 bg-emerald-500/10 px-1.5 py-0.5 rounded">
-                      {presenceRate != null && presenceRate >= 80 ? '+2.3%' : '-1.8%'}
-                    </span>
-                    <span className="text-[11px] text-muted-foreground">{selectedPeriod} average</span>
-                  </div>
-                </CardContent>
-              </Card>
+                  <span className="text-[11px] text-muted-foreground">Target: ≥90%</span>
+                </div>
+              </CardContent>
+            </Card>
 
-              {/* Total Students */}
-              <Card className="relative overflow-hidden border-border/60 hover:shadow-xs transition-shadow">
-                <div className="absolute top-0 left-0 right-0 h-1 bg-blue-500" />
-                <CardHeader className="flex flex-row items-center justify-between p-4 pb-2 space-y-0">
-                  <span className="text-[11px] font-bold text-muted-foreground uppercase tracking-wider">
-                    Total Students
+            {/* Total Students */}
+            <Card className="relative overflow-hidden border-border/60 hover:shadow-xs transition-shadow">
+              <div className="absolute top-0 left-0 right-0 h-1 bg-blue-500" />
+              <CardHeader className="flex flex-row items-center justify-between p-4 pb-2 space-y-0">
+                <span className="text-[11px] font-bold text-muted-foreground uppercase tracking-wider">
+                  Total Students
+                </span>
+                <div className="p-2 bg-blue-500/10 text-blue-600 dark:text-blue-400 rounded-lg">
+                  <Users className="h-4 w-4" />
+                </div>
+              </CardHeader>
+              <CardContent className="p-4 pt-1">
+                <div className="text-xl sm:text-2xl font-bold font-mono text-foreground">
+                  {totalEnrolled.toLocaleString()}
+                </div>
+                {/* Micro-Progress Dual Track */}
+                <div className="w-full bg-muted/60 rounded-full h-1.5 mt-2.5 overflow-hidden flex">
+                  <div
+                    className="bg-teal-500 h-full transition-all duration-500"
+                    style={{ width: `${totalEnrolled > 0 ? (totalPresent / totalEnrolled) * 100 : 0}%` }}
+                    title={`Present: ${totalPresent}`}
+                  />
+                  <div
+                    className="bg-rose-500 h-full transition-all duration-500"
+                    style={{ width: `${totalEnrolled > 0 ? (totalAbsent / totalEnrolled) * 100 : 0}%` }}
+                    title={`Absent: ${totalAbsent}`}
+                  />
+                </div>
+                <div className="flex items-center justify-between gap-1.5 mt-2">
+                  <span className="inline-flex items-center text-[10px] font-semibold text-blue-600 dark:text-blue-400 bg-blue-500/10 px-1.5 py-0.5 rounded">
+                    Enrolled Roster
                   </span>
-                  <div className="p-2 bg-blue-500/10 text-blue-600 dark:text-blue-400 rounded-lg">
-                    <Users className="h-4 w-4" />
-                  </div>
-                </CardHeader>
-                <CardContent className="p-4 pt-1">
-                  <div className="text-xl sm:text-2xl font-bold font-mono text-foreground">
-                    {totalEnrolled.toLocaleString()}
-                  </div>
-                  <div className="flex items-center gap-1.5 mt-1.5">
-                    <span className="inline-flex items-center text-[10px] font-semibold text-blue-600 dark:text-blue-400 bg-blue-500/10 px-1.5 py-0.5 rounded">
-                      Enrolled
-                    </span>
-                    <span className="text-[11px] text-muted-foreground">Active student roster</span>
-                  </div>
-                </CardContent>
-              </Card>
+                  <span className="text-[11px] text-muted-foreground">{metrics.totalSectionsCount} Sections</span>
+                </div>
+              </CardContent>
+            </Card>
 
-              {/* Present */}
-              <Card className="relative overflow-hidden border-border/60 hover:shadow-xs transition-shadow">
-                <div className="absolute top-0 left-0 right-0 h-1 bg-teal-500" />
-                <CardHeader className="flex flex-row items-center justify-between p-4 pb-2 space-y-0">
-                  <span className="text-[11px] font-bold text-muted-foreground uppercase tracking-wider">
-                    Present
+            {/* Present */}
+            <Card className="relative overflow-hidden border-border/60 hover:shadow-xs transition-shadow">
+              <div className="absolute top-0 left-0 right-0 h-1 bg-teal-500" />
+              <CardHeader className="flex flex-row items-center justify-between p-4 pb-2 space-y-0">
+                <span className="text-[11px] font-bold text-muted-foreground uppercase tracking-wider">
+                  Present
+                </span>
+                <div className="p-2 bg-teal-500/10 text-teal-600 dark:text-teal-400 rounded-lg">
+                  <CheckCircle2 className="h-4 w-4" />
+                </div>
+              </CardHeader>
+              <CardContent className="p-4 pt-1">
+                <div className="text-xl sm:text-2xl font-bold font-mono text-foreground">
+                  {totalPresent.toLocaleString()}
+                </div>
+                {/* Micro-Progress Bar */}
+                <div className="w-full bg-teal-500/15 rounded-full h-1.5 mt-2.5 overflow-hidden">
+                  <div
+                    className="bg-teal-500 h-full rounded-full transition-all duration-500"
+                    style={{ width: `${totalEnrolled > 0 ? (totalPresent / totalEnrolled) * 100 : 0}%` }}
+                  />
+                </div>
+                <div className="flex items-center justify-between gap-1.5 mt-2">
+                  <span className="inline-flex items-center text-[10px] font-semibold text-teal-600 dark:text-teal-400 bg-teal-500/10 px-1.5 py-0.5 rounded">
+                    {presenceRate != null ? `${presenceRate.toFixed(1)}%` : '—'} Attending
                   </span>
-                  <div className="p-2 bg-teal-500/10 text-teal-600 dark:text-teal-400 rounded-lg">
-                    <CheckCircle2 className="h-4 w-4" />
-                  </div>
-                </CardHeader>
-                <CardContent className="p-4 pt-1">
-                  <div className="text-xl sm:text-2xl font-bold font-mono text-foreground">
-                    {totalPresent.toLocaleString()}
-                  </div>
-                  <div className="flex items-center gap-1.5 mt-1.5">
-                    <span className="inline-flex items-center text-[10px] font-semibold text-teal-600 dark:text-teal-400 bg-teal-500/10 px-1.5 py-0.5 rounded">
-                      {presenceRate != null ? `${presenceRate.toFixed(1)}%` : '—'}
-                    </span>
-                    <span className="text-[11px] text-muted-foreground">of enrolled students</span>
-                  </div>
-                </CardContent>
-              </Card>
+                  <span className="text-[11px] text-muted-foreground">{metrics.markedSectionsCount} Recorded</span>
+                </div>
+              </CardContent>
+            </Card>
 
-              {/* Absent */}
-              <Card
-                className="relative overflow-hidden border-border/60 hover:shadow-xs transition-shadow cursor-pointer hover:border-rose-500/50"
-                onClick={() => setAbsentDrawerOpen(true)}
-              >
-                <div className="absolute top-0 left-0 right-0 h-1 bg-rose-500" />
-                <CardHeader className="flex flex-row items-center justify-between p-4 pb-2 space-y-0">
-                  <span className="text-[11px] font-bold text-muted-foreground uppercase tracking-wider">
-                    Absent
+            {/* Absent */}
+            <Card
+              className="relative overflow-hidden border-border/60 hover:shadow-xs transition-shadow cursor-pointer hover:border-rose-500/50"
+              onClick={() => setAbsentDrawerOpen(true)}
+            >
+              <div className="absolute top-0 left-0 right-0 h-1 bg-rose-500" />
+              <CardHeader className="flex flex-row items-center justify-between p-4 pb-2 space-y-0">
+                <span className="text-[11px] font-bold text-muted-foreground uppercase tracking-wider">
+                  Absent
+                </span>
+                <div className="p-2 bg-rose-500/10 text-rose-600 dark:text-rose-400 rounded-lg">
+                  <AlertTriangle className="h-4 w-4" />
+                </div>
+              </CardHeader>
+              <CardContent className="p-4 pt-1">
+                <div className="text-xl sm:text-2xl font-bold font-mono text-rose-600 dark:text-rose-400">
+                  {totalAbsent.toLocaleString()}
+                </div>
+                {/* Micro-Progress Bar */}
+                <div className="w-full bg-rose-500/15 rounded-full h-1.5 mt-2.5 overflow-hidden">
+                  <div
+                    className="bg-rose-500 h-full rounded-full transition-all duration-500"
+                    style={{ width: `${totalEnrolled > 0 ? Math.min(100, (totalAbsent / totalEnrolled) * 100) : 0}%` }}
+                  />
+                </div>
+                <div className="flex items-center justify-between gap-1.5 mt-2">
+                  <span className="inline-flex items-center text-[10px] font-semibold text-rose-600 dark:text-rose-400 bg-rose-500/10 px-1.5 py-0.5 rounded">
+                    {totalAbsent > 0 && totalEnrolled > 0 ? ((totalAbsent / totalEnrolled) * 100).toFixed(1) : '0'}% Absent
                   </span>
-                  <div className="p-2 bg-rose-500/10 text-rose-600 dark:text-rose-400 rounded-lg">
-                    <AlertTriangle className="h-4 w-4" />
-                  </div>
-                </CardHeader>
-                <CardContent className="p-4 pt-1">
-                  <div className="text-xl sm:text-2xl font-bold font-mono text-rose-600 dark:text-rose-400">
-                    {totalAbsent.toLocaleString()}
-                  </div>
-                  <div className="flex items-center gap-1.5 mt-1.5">
-                    <span className="inline-flex items-center text-[10px] font-semibold text-rose-600 dark:text-rose-400 bg-rose-500/10 px-1.5 py-0.5 rounded">
-                      {totalAbsent > 0 ? ((totalAbsent / Math.max(totalEnrolled, 1)) * 100).toFixed(1) : '0'}%
-                    </span>
-                    <span className="text-[11px] text-muted-foreground">Click to inspect roster →</span>
-                  </div>
-                </CardContent>
-              </Card>
-            </div>
-          )}
+                  <span className="text-[11px] text-rose-600 dark:text-rose-400 font-medium">Inspect Roster →</span>
+                </div>
+              </CardContent>
+            </Card>
+          </div>
 
-          {/* Today mode: 50% Donut on left, 50% (2x2 StatCards) on right, followed by 100% Section Status */}
+          {/* Today mode: 1/3 Attendance Breakdown Donut on left, 2/3 Daily Section Submission Status on right */}
           {!isRange && (
-            <div className="space-y-4 sm:space-y-6">
-              {/* Top Row: 50% Left (Attendance Breakdown) + 50% Right (2 Horizontal Divisions) */}
-              <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 sm:gap-6 items-stretch">
-                {/* Left 50%: Attendance Breakdown Donut Chart */}
-                <Card className="border-border/60 rounded-xl overflow-hidden shadow-2xs flex flex-col justify-between">
+            <div className="grid grid-cols-1 lg:grid-cols-3 gap-4 sm:gap-6 items-start">
+              {/* Left 1/3: Attendance Breakdown Donut Chart */}
+              <div className="lg:col-span-1">
+                <Card className="border-border/60 rounded-xl overflow-hidden shadow-2xs">
                   <CardHeader className="p-5 pb-2">
                     <div className="flex items-center justify-between">
                       <CardTitle className="text-sm font-semibold">Attendance Breakdown</CardTitle>
@@ -600,11 +631,11 @@ export const AttendanceDashboardHub: React.FC = () => {
                       </Badge>
                     </div>
                     <CardDescription className="text-xs">
-                      Student distribution across present, absent, and unmarked
+                      Student distribution across roll call statuses
                     </CardDescription>
                   </CardHeader>
 
-                  <CardContent className="p-5 pt-0 flex-1 flex flex-col items-center justify-center">
+                  <CardContent className="p-5 pt-0 flex flex-col items-center justify-center">
                     <div className="w-full flex items-center justify-center py-2">
                       <DonutChart
                         data={[
@@ -622,118 +653,11 @@ export const AttendanceDashboardHub: React.FC = () => {
                     </div>
                   </CardContent>
                 </Card>
-
-                {/* Right 50%: Two Horizontal Divisions of Stat Cards */}
-                <div className="flex flex-col gap-4 sm:gap-6 justify-between">
-                  {/* Upper Division: Presence Rate & Total Students */}
-                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 flex-1">
-                    {/* Presence Rate */}
-                    <Card className="relative overflow-hidden border-border/60 hover:shadow-xs transition-shadow flex flex-col justify-between">
-                      <div className="absolute top-0 left-0 right-0 h-1 bg-emerald-500" />
-                      <CardHeader className="flex flex-row items-center justify-between p-4 pb-2 space-y-0">
-                        <span className="text-[11px] font-bold text-muted-foreground uppercase tracking-wider">
-                          Presence Rate
-                        </span>
-                        <div className="p-2 bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 rounded-lg">
-                          <CalendarCheck className="h-4 w-4" />
-                        </div>
-                      </CardHeader>
-                      <CardContent className="p-4 pt-1">
-                        <div className="text-xl sm:text-2xl font-bold font-mono text-foreground">
-                          {presenceRate != null ? `${presenceRate.toFixed(1)}%` : '—'}
-                        </div>
-                        <div className="flex items-center gap-1.5 mt-1.5">
-                          <span className="inline-flex items-center text-[10px] font-semibold text-emerald-600 dark:text-emerald-400 bg-emerald-500/10 px-1.5 py-0.5 rounded">
-                            {presenceRate != null && presenceRate >= 80 ? '+2.3%' : '-1.8%'}
-                          </span>
-                          <span className="text-[11px] text-muted-foreground">vs yesterday</span>
-                        </div>
-                      </CardContent>
-                    </Card>
-
-                    {/* Total Students */}
-                    <Card className="relative overflow-hidden border-border/60 hover:shadow-xs transition-shadow flex flex-col justify-between">
-                      <div className="absolute top-0 left-0 right-0 h-1 bg-blue-500" />
-                      <CardHeader className="flex flex-row items-center justify-between p-4 pb-2 space-y-0">
-                        <span className="text-[11px] font-bold text-muted-foreground uppercase tracking-wider">
-                          Total Students
-                        </span>
-                        <div className="p-2 bg-blue-500/10 text-blue-600 dark:text-blue-400 rounded-lg">
-                          <Users className="h-4 w-4" />
-                        </div>
-                      </CardHeader>
-                      <CardContent className="p-4 pt-1">
-                        <div className="text-xl sm:text-2xl font-bold font-mono text-foreground">
-                          {totalEnrolled.toLocaleString()}
-                        </div>
-                        <div className="flex items-center gap-1.5 mt-1.5">
-                          <span className="inline-flex items-center text-[10px] font-semibold text-blue-600 dark:text-blue-400 bg-blue-500/10 px-1.5 py-0.5 rounded">
-                            Enrolled
-                          </span>
-                          <span className="text-[11px] text-muted-foreground">In active session</span>
-                        </div>
-                      </CardContent>
-                    </Card>
-                  </div>
-
-                  {/* Lower Division: Present & Absent */}
-                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 flex-1">
-                    {/* Present */}
-                    <Card className="relative overflow-hidden border-border/60 hover:shadow-xs transition-shadow flex flex-col justify-between">
-                      <div className="absolute top-0 left-0 right-0 h-1 bg-teal-500" />
-                      <CardHeader className="flex flex-row items-center justify-between p-4 pb-2 space-y-0">
-                        <span className="text-[11px] font-bold text-muted-foreground uppercase tracking-wider">
-                          Present
-                        </span>
-                        <div className="p-2 bg-teal-500/10 text-teal-600 dark:text-teal-400 rounded-lg">
-                          <CheckCircle2 className="h-4 w-4" />
-                        </div>
-                      </CardHeader>
-                      <CardContent className="p-4 pt-1">
-                        <div className="text-xl sm:text-2xl font-bold font-mono text-foreground">
-                          {totalPresent.toLocaleString()}
-                        </div>
-                        <div className="flex items-center gap-1.5 mt-1.5">
-                          <span className="inline-flex items-center text-[10px] font-semibold text-teal-600 dark:text-teal-400 bg-teal-500/10 px-1.5 py-0.5 rounded">
-                            {presenceRate != null ? `${presenceRate.toFixed(1)}%` : '—'}
-                          </span>
-                          <span className="text-[11px] text-muted-foreground">of enrolled students</span>
-                        </div>
-                      </CardContent>
-                    </Card>
-
-                    {/* Absent */}
-                    <Card
-                      className="relative overflow-hidden border-border/60 hover:shadow-xs transition-shadow flex flex-col justify-between cursor-pointer hover:border-rose-500/50"
-                      onClick={() => setAbsentDrawerOpen(true)}
-                    >
-                      <div className="absolute top-0 left-0 right-0 h-1 bg-rose-500" />
-                      <CardHeader className="flex flex-row items-center justify-between p-4 pb-2 space-y-0">
-                        <span className="text-[11px] font-bold text-muted-foreground uppercase tracking-wider">
-                          Absent
-                        </span>
-                        <div className="p-2 bg-rose-500/10 text-rose-600 dark:text-rose-400 rounded-lg">
-                          <AlertTriangle className="h-4 w-4" />
-                        </div>
-                      </CardHeader>
-                      <CardContent className="p-4 pt-1">
-                        <div className="text-xl sm:text-2xl font-bold font-mono text-rose-600 dark:text-rose-400">
-                          {totalAbsent.toLocaleString()}
-                        </div>
-                        <div className="flex items-center gap-1.5 mt-1.5">
-                          <span className="inline-flex items-center text-[10px] font-semibold text-rose-600 dark:text-rose-400 bg-rose-500/10 px-1.5 py-0.5 rounded">
-                            {totalAbsent > 0 ? ((totalAbsent / Math.max(totalEnrolled, 1)) * 100).toFixed(1) : '0'}%
-                          </span>
-                          <span className="text-[11px] text-muted-foreground">Click to view roster →</span>
-                        </div>
-                      </CardContent>
-                    </Card>
-                  </div>
-                </div>
               </div>
 
-              {/* Bottom (100% Full Width): Daily Section Submission Status */}
-              <Card className="border-border/60 rounded-xl overflow-hidden shadow-2xs">
+              {/* Right 2/3: Daily Section Submission Status */}
+              <div className="lg:col-span-2">
+                <Card className="border-border/60 rounded-xl overflow-hidden shadow-2xs">
                 <CardHeader className="p-5 pb-3">
                   <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
                     <div>
@@ -953,7 +877,8 @@ export const AttendanceDashboardHub: React.FC = () => {
                 </CardContent>
               </Card>
             </div>
-          )}
+          </div>
+        )}
 
           {/* Range mode: Trend chart + class comparison + heatmap */}
           {isRange && (

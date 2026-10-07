@@ -596,11 +596,18 @@ export const SchoolResultsDashboardHub: React.FC<SchoolResultsDashboardHubProps>
                   '—'
                 )}
               </div>
-              <div className="flex items-center gap-1.5 mt-1.5">
+              {/* Micro-Progress Bar */}
+              <div className="w-full bg-emerald-500/15 rounded-full h-1.5 mt-2.5 overflow-hidden">
+                <div
+                  className="bg-emerald-500 h-full rounded-full transition-all duration-500"
+                  style={{ width: `${Math.min(100, Math.max(0, passRate ?? 0))}%` }}
+                />
+              </div>
+              <div className="flex items-center justify-between gap-1.5 mt-2">
                 <span className="inline-flex items-center text-[10px] font-semibold text-emerald-600 dark:text-emerald-400 bg-emerald-500/10 px-1.5 py-0.5 rounded">
                   {passedCount} / {evaluatedCount} Passed
                 </span>
-                <span className="text-[11px] text-muted-foreground">Evaluated students</span>
+                <span className="text-[11px] text-muted-foreground">Target: ≥85%</span>
               </div>
             </CardContent>
           </Card>
@@ -626,11 +633,18 @@ export const SchoolResultsDashboardHub: React.FC<SchoolResultsDashboardHubProps>
                   '—'
                 )}
               </div>
-              <div className="flex items-center gap-1.5 mt-1.5">
+              {/* Micro-Progress Bar */}
+              <div className="w-full bg-blue-500/15 rounded-full h-1.5 mt-2.5 overflow-hidden">
+                <div
+                  className="bg-blue-500 h-full rounded-full transition-all duration-500"
+                  style={{ width: `${Math.min(100, Math.max(0, avgScore ?? 0))}%` }}
+                />
+              </div>
+              <div className="flex items-center justify-between gap-1.5 mt-2">
                 <span className="inline-flex items-center text-[10px] font-semibold text-blue-600 dark:text-blue-400 bg-blue-500/10 px-1.5 py-0.5 rounded">
                   Mean Score
                 </span>
-                <span className="text-[11px] text-muted-foreground">Across all subjects</span>
+                <span className="text-[11px] text-muted-foreground">All Subjects</span>
               </div>
             </CardContent>
           </Card>
@@ -654,13 +668,34 @@ export const SchoolResultsDashboardHub: React.FC<SchoolResultsDashboardHubProps>
                   totalExams
                 )}
               </div>
-              <div className="flex items-center gap-1.5 mt-1.5">
+              {/* Micro-Progress Segmented Track */}
+              <div className="w-full bg-muted/60 rounded-full h-1.5 mt-2.5 overflow-hidden flex">
+                <div
+                  className="bg-purple-500 h-full transition-all duration-500"
+                  style={{ width: `${totalExams > 0 ? (publishedCount / totalExams) * 100 : 0}%` }}
+                  title={`Published: ${publishedCount}`}
+                />
+                <div
+                  className="bg-amber-500 h-full transition-all duration-500"
+                  style={{ width: `${totalExams > 0 ? (pendingCount / totalExams) * 100 : 0}%` }}
+                  title={`Pending: ${pendingCount}`}
+                />
+                <div
+                  className="bg-blue-500 h-full transition-all duration-500"
+                  style={{ width: `${totalExams > 0 ? (gradingCount / totalExams) * 100 : 0}%` }}
+                  title={`Grading: ${gradingCount}`}
+                />
+                <div
+                  className="bg-slate-400 dark:bg-slate-600 h-full transition-all duration-500"
+                  style={{ width: `${totalExams > 0 ? (draftCount / totalExams) * 100 : 0}%` }}
+                  title={`Draft: ${draftCount}`}
+                />
+              </div>
+              <div className="flex items-center justify-between gap-1.5 mt-2">
                 <span className="inline-flex items-center text-[10px] font-semibold text-purple-600 dark:text-purple-400 bg-purple-500/10 px-1.5 py-0.5 rounded">
                   {publishedCount} Published
                 </span>
-                <span className="text-[11px] text-muted-foreground">
-                  {draftCount} draft • {gradingCount} grading • {pendingCount} pending
-                </span>
+                <span className="text-[11px] text-muted-foreground">{totalExams} Total Exams</span>
               </div>
             </CardContent>
           </Card>
@@ -684,11 +719,18 @@ export const SchoolResultsDashboardHub: React.FC<SchoolResultsDashboardHubProps>
                   atRiskCount
                 )}
               </div>
-              <div className="flex items-center gap-1.5 mt-1.5">
+              {/* Micro-Progress Bar */}
+              <div className="w-full bg-rose-500/15 rounded-full h-1.5 mt-2.5 overflow-hidden">
+                <div
+                  className="bg-rose-500 h-full rounded-full transition-all duration-500"
+                  style={{ width: `${evaluatedCount > 0 ? Math.min(100, (atRiskCount / evaluatedCount) * 100) : 0}%` }}
+                />
+              </div>
+              <div className="flex items-center justify-between gap-1.5 mt-2">
                 <span className="inline-flex items-center text-[10px] font-semibold text-rose-600 dark:text-rose-400 bg-rose-500/10 px-1.5 py-0.5 rounded">
-                  Failing 1+ Subjects
+                  {evaluatedCount > 0 ? ((atRiskCount / evaluatedCount) * 100).toFixed(1) : 0}% of Evaluated
                 </span>
-                <span className="text-[11px] text-muted-foreground">Needs academic support</span>
+                <span className="text-[11px] text-rose-600 dark:text-rose-400 font-medium">Needs Support</span>
               </div>
             </CardContent>
           </Card>
