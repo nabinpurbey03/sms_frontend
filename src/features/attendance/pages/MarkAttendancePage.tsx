@@ -117,11 +117,12 @@ export const MarkAttendancePage: React.FC = () => {
     };
   }, [recordDate, schoolSettings, calendarEvents]);
 
-  // Search and attendance mark state
+  // Search, status filter, and attendance mark state
   const [presentStudentIds, setPresentStudentIds] = useState<Set<string>>(new Set());
   const [savedPresentStudentIds, setSavedPresentStudentIds] = useState<Set<string>>(new Set());
   const [isEditing, setIsEditing] = useState<boolean>(false);
   const [searchQuery, setSearchQuery] = useState('');
+  const [statusFilter, setStatusFilter] = useState<'ALL' | 'PRESENT' | 'ABSENT'>('ALL');
   const [confirmDialogOpen, setConfirmDialogOpen] = useState(false);
 
   const markAttendanceMutation = useMarkAttendance();
@@ -283,14 +284,20 @@ export const MarkAttendancePage: React.FC = () => {
   const absentCount = Math.max(0, totalCount - presentCount);
   const attendancePercentage = totalCount > 0 ? Math.round((presentCount / totalCount) * 100) : 0;
 
-  // Filter students by search
+  // Filter students by search and status tab
   const filteredStudents = useMemo(() => {
-    if (!searchQuery.trim()) return students;
-    const q = searchQuery.toLowerCase();
-    return students.filter((s) =>
-      `${s.first_name} ${s.last_name}`.toLowerCase().includes(q)
-    );
-  }, [students, searchQuery]);
+    return students.filter((s) => {
+      const isPresent = presentStudentIds.has(s.id);
+      if (statusFilter === 'PRESENT' && !isPresent) return false;
+      if (statusFilter === 'ABSENT' && isPresent) return false;
+      if (searchQuery.trim()) {
+        const q = searchQuery.toLowerCase();
+        const fullName = [s.first_name, s.middle_name, s.last_name].filter(Boolean).join(' ').toLowerCase();
+        if (!fullName.includes(q)) return false;
+      }
+      return true;
+    });
+  }, [students, searchQuery, statusFilter, presentStudentIds]);
 
   // Defense-in-depth verification for class teacher duty
   const isClassTeacherForSelected = useMemo(() => {
@@ -312,16 +319,17 @@ export const MarkAttendancePage: React.FC = () => {
     setPresentStudentIds(new Set());
   };
 
-  const toggleStudent = (studentId: string) => {
+  const markStudentStatus = (studentId: string, status: 'PRESENT' | 'ABSENT') => {
     if (!canEdit) return;
     const newSet = new Set(presentStudentIds);
-    if (newSet.has(studentId)) {
-      newSet.delete(studentId);
-    } else {
+    if (status === 'PRESENT') {
       newSet.add(studentId);
+    } else {
+      newSet.delete(studentId);
     }
     setPresentStudentIds(newSet);
   };
+
 
   const handleStartEdit = () => {
     setIsEditing(true);
@@ -524,6 +532,8 @@ export const MarkAttendancePage: React.FC = () => {
                   });
                 }
                 setPresentStudentIds(new Set());
+                setStatusFilter('ALL');
+                setSearchQuery('');
               }}
               disabled={isLoading}
             >
@@ -551,6 +561,8 @@ export const MarkAttendancePage: React.FC = () => {
                   sectionId: newSectionId,
                 });
                 setPresentStudentIds(new Set());
+                setStatusFilter('ALL');
+                setSearchQuery('');
               }}
               disabled={!selectedClassId || isLoading}
             >
@@ -698,24 +710,47 @@ export const MarkAttendancePage: React.FC = () => {
               </span>
             </div>
 
-            {/* Quick Metrics */}
-            <div className="flex items-center gap-3">
-              <div className="flex items-center gap-1.5">
-                <span className="text-xs text-muted-foreground">Total:</span>
-                <span className="text-xs font-bold text-foreground">{totalCount}</span>
-              </div>
-              <div className="h-3 w-px bg-border" />
-              <div className="flex items-center gap-1.5">
-                <span className="text-xs text-emerald-600 dark:text-emerald-400 font-medium">Present:</span>
-                <span className="text-xs font-bold text-emerald-700 dark:text-emerald-300">
-                  {presentCount} ({attendancePercentage}%)
-                </span>
-              </div>
-              <div className="h-3 w-px bg-border" />
-              <div className="flex items-center gap-1.5">
-                <span className="text-xs text-destructive font-medium">Absent:</span>
-                <span className="text-xs font-bold text-destructive">{absentCount}</span>
-              </div>
+            {/* Interactive Metrics / Filter Tabs */}
+            <div className="flex items-center gap-1.5 p-1 bg-background/80 dark:bg-muted/40 rounded-xl border border-border/70 shadow-2xs">
+              <button
+                type="button"
+                onClick={() => setStatusFilter('ALL')}
+                className={`px-3 py-1.5 text-xs rounded-lg font-medium transition-all cursor-pointer flex items-center gap-1.5 ${
+                  statusFilter === 'ALL'
+                    ? 'bg-card text-foreground shadow-2xs font-semibold ring-1 ring-border/50'
+                    : 'text-muted-foreground hover:text-foreground hover:bg-muted/50'
+                }`}
+              >
+                <span>All</span>
+                <span className="font-bold tabular-nums">{totalCount}</span>
+              </button>
+              <button
+                type="button"
+                onClick={() => setStatusFilter('PRESENT')}
+                className={`px-3 py-1.5 text-xs rounded-lg font-medium transition-all cursor-pointer flex items-center gap-1.5 ${
+                  statusFilter === 'PRESENT'
+                    ? 'bg-emerald-600 text-white shadow-2xs font-semibold'
+                    : 'text-emerald-700 dark:text-emerald-400 hover:text-emerald-800 dark:hover:text-emerald-300 hover:bg-emerald-500/10'
+                }`}
+              >
+                <Check className="w-3.5 h-3.5" />
+                <span>Present</span>
+                <span className="font-bold tabular-nums">{presentCount}</span>
+                <span className="text-[10px] opacity-80 tabular-nums">({attendancePercentage}%)</span>
+              </button>
+              <button
+                type="button"
+                onClick={() => setStatusFilter('ABSENT')}
+                className={`px-3 py-1.5 text-xs rounded-lg font-medium transition-all cursor-pointer flex items-center gap-1.5 ${
+                  statusFilter === 'ABSENT'
+                    ? 'bg-rose-600 text-white shadow-2xs font-semibold'
+                    : 'text-destructive hover:text-rose-700 dark:hover:text-rose-300 hover:bg-destructive/10'
+                }`}
+              >
+                <X className="w-3.5 h-3.5" />
+                <span>Absent</span>
+                <span className="font-bold tabular-nums">{absentCount}</span>
+              </button>
             </div>
 
             {/* Attendance Progress Bar */}
@@ -746,7 +781,7 @@ export const MarkAttendancePage: React.FC = () => {
 
           {/* Table Header Controls */}
           <div className="p-3.5 px-4 flex flex-col sm:flex-row sm:items-center justify-between gap-3 border-b bg-card">
-            <div className="flex items-center gap-2">
+            <div className="flex flex-wrap items-center gap-2">
               <div className="relative">
                 <Search className="w-3.5 h-3.5 absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground" />
                 <Input
@@ -766,7 +801,18 @@ export const MarkAttendancePage: React.FC = () => {
                   Clear
                 </Button>
               )}
-              {searchQuery && (
+              {statusFilter !== 'ALL' && (
+                <Badge
+                  variant="secondary"
+                  className="h-8 gap-1.5 px-2.5 text-xs font-medium cursor-pointer hover:bg-muted"
+                  onClick={() => setStatusFilter('ALL')}
+                  title="Click to reset filter"
+                >
+                  <span>Filtered: {statusFilter === 'PRESENT' ? 'Present' : 'Absent'}</span>
+                  <X className="w-3 h-3 text-muted-foreground" />
+                </Badge>
+              )}
+              {(searchQuery || statusFilter !== 'ALL') && (
                 <span className="text-[11px] text-muted-foreground tabular-nums">
                   {filteredStudents.length} of {students.length} students
                 </span>
@@ -816,27 +862,53 @@ export const MarkAttendancePage: React.FC = () => {
 
           {/* Students Table */}
           {filteredStudents.length === 0 ? (
-            <div className="p-6">
+            <div className="p-8">
               <EmptyState
-                icon={searchQuery ? Search : Users}
-                title={searchQuery ? 'No matching students' : 'No students found'}
+                icon={searchQuery ? Search : statusFilter === 'ABSENT' ? CheckCircle2 : Users}
+                title={
+                  searchQuery
+                    ? 'No matching students'
+                    : statusFilter === 'ABSENT'
+                      ? 'No Absent Students'
+                      : statusFilter === 'PRESENT'
+                        ? 'No Present Students'
+                        : 'No students found'
+                }
                 description={
                   searchQuery
                     ? `No students match "${searchQuery}". Try a different search term.`
-                    : 'No active students enrolled in this section.'
+                    : statusFilter === 'ABSENT'
+                      ? `All ${students.length} students in this section are currently marked present.`
+                      : statusFilter === 'PRESENT'
+                        ? 'No students are marked present yet.'
+                        : 'No active students enrolled in this section.'
+                }
+                action={
+                  statusFilter !== 'ALL' || searchQuery ? (
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      onClick={() => {
+                        setStatusFilter('ALL');
+                        setSearchQuery('');
+                      }}
+                      className="mt-2 text-xs cursor-pointer"
+                    >
+                      Show All Students
+                    </Button>
+                  ) : undefined
                 }
               />
             </div>
           ) : (
             <div className="overflow-x-auto max-h-[60vh] overflow-y-auto relative [&>div]:overflow-visible">
               <Table>
-                <TableHeader className="sticky top-0 z-10 bg-card">
+                <TableHeader className="sticky top-0 z-10 bg-card border-b">
                   <TableRow className="hover:bg-transparent">
-                    <TableHead className="w-12">#</TableHead>
+                    <TableHead className="w-12 text-center">#</TableHead>
                     <TableHead>Student Name</TableHead>
-                    <TableHead className="w-32 text-center">Status</TableHead>
-                    <TableHead className="w-28 text-center">
-                      {canEdit ? 'Toggle' : 'Protection'}
+                    <TableHead className="w-60 text-center">
+                      {canEdit ? 'Attendance Status' : 'Recorded Status'}
                     </TableHead>
                   </TableRow>
                 </TableHeader>
@@ -850,80 +922,88 @@ export const MarkAttendancePage: React.FC = () => {
                     return (
                       <TableRow
                         key={student.id}
-                        className={`transition-colors ${
-                          canEdit
-                            ? 'hover:bg-muted/40 cursor-pointer'
-                            : 'hover:bg-muted/20'
-                        }`}
-                        onClick={canEdit ? () => toggleStudent(student.id) : undefined}
+                        className="hover:bg-muted/30 transition-colors"
                       >
-                        <TableCell className="text-muted-foreground text-xs font-mono">
+                        <TableCell className="text-muted-foreground text-xs font-mono text-center">
                           {index + 1}
                         </TableCell>
                         <TableCell>
-                          <div className="flex items-center gap-2.5">
-                            <div className="w-8 h-8 rounded-full bg-primary/10 text-primary flex items-center justify-center font-bold text-xs shrink-0">
-                              {student.first_name[0].toUpperCase()}
+                          <div className="flex items-center gap-3">
+                            <div className="w-8 h-8 rounded-full bg-primary/10 text-primary flex items-center justify-center font-bold text-xs shrink-0 ring-1 ring-primary/20">
+                              {student.first_name[0]?.toUpperCase() ?? '?'}
                             </div>
-                            <span className="text-sm font-medium text-foreground">
-                              {fullName}
-                            </span>
+                            <div className="min-w-0">
+                              <p className="text-sm font-medium text-foreground truncate">
+                                {fullName}
+                              </p>
+                              {student.gender && (
+                                <p className="text-[11px] text-muted-foreground capitalize">
+                                  {student.gender.toLowerCase()}
+                                </p>
+                              )}
+                            </div>
                           </div>
                         </TableCell>
-                        <TableCell className="text-center">
-                          <Badge
-                            variant={isPresent ? 'success' : 'destructive'}
-                            className={`text-xs gap-1 py-0.5 px-2.5 ${
-                              isPresent
-                                ? 'bg-emerald-500/15 text-emerald-700 dark:text-emerald-300 border-emerald-500/30'
-                                : 'bg-rose-500/15 text-rose-700 dark:text-rose-300 border-rose-500/30'
-                            }`}
-                          >
-                            {isPresent ? (
-                              <>
-                                <Check className="w-3 h-3" />
-                                Present
-                              </>
-                            ) : (
-                              <>
-                                <X className="w-3 h-3" />
-                                Absent
-                              </>
-                            )}
-                          </Badge>
-                        </TableCell>
+
                         <TableCell className="text-center">
                           {canEdit ? (
-                            <Button
-                              type="button"
-                              variant={isPresent ? 'default' : 'outline'}
-                              size="sm"
-                              onClick={(e) => {
-                                e.stopPropagation();
-                                toggleStudent(student.id);
-                              }}
-                              className={`h-8 w-22 gap-1 text-xs cursor-pointer ${
-                                isPresent
-                                  ? 'bg-emerald-600 hover:bg-emerald-700 text-white'
-                                  : 'hover:bg-destructive/10 text-muted-foreground hover:text-destructive'
-                              }`}
+                            <div
+                              role="group"
+                              aria-label={`Attendance for ${fullName}`}
+                              className="inline-flex items-center rounded-lg border border-border/80 bg-muted/40 p-0.5 shadow-2xs"
                             >
-                              {isPresent ? (
-                                <>
-                                  <Check className="w-3 h-3" />
-                                  Present
-                                </>
-                              ) : (
-                                <>
-                                  <X className="w-3 h-3" />
-                                  Absent
-                                </>
-                              )}
-                            </Button>
+                              <button
+                                type="button"
+                                onClick={() => markStudentStatus(student.id, 'PRESENT')}
+                                aria-pressed={isPresent}
+                                aria-label={`Mark ${fullName} Present`}
+                                className={`flex items-center gap-1.5 px-3 py-1.5 rounded-md text-xs font-medium transition-all duration-150 cursor-pointer ${
+                                  isPresent
+                                    ? 'bg-emerald-600 text-white font-semibold shadow-xs hover:bg-emerald-700'
+                                    : 'text-muted-foreground hover:text-emerald-700 dark:hover:text-emerald-400 hover:bg-background/80'
+                                }`}
+                              >
+                                <Check className={`w-3.5 h-3.5 ${isPresent ? 'stroke-[2.5]' : 'stroke-[1.75]'}`} />
+                                <span>Present</span>
+                              </button>
+                              <button
+                                type="button"
+                                onClick={() => markStudentStatus(student.id, 'ABSENT')}
+                                aria-pressed={!isPresent}
+                                aria-label={`Mark ${fullName} Absent`}
+                                className={`flex items-center gap-1.5 px-3 py-1.5 rounded-md text-xs font-medium transition-all duration-150 cursor-pointer ${
+                                  !isPresent
+                                    ? 'bg-rose-600 text-white font-semibold shadow-xs hover:bg-rose-700'
+                                    : 'text-muted-foreground hover:text-rose-700 dark:hover:text-rose-400 hover:bg-background/80'
+                                }`}
+                              >
+                                <X className={`w-3.5 h-3.5 ${!isPresent ? 'stroke-[2.5]' : 'stroke-[1.75]'}`} />
+                                <span>Absent</span>
+                              </button>
+                            </div>
                           ) : (
-                            <div className="flex items-center justify-center text-xs text-muted-foreground gap-1 select-none">
-                              <Lock className="w-3 h-3 text-muted-foreground/40" />
-                              <span className="text-[11px]">Saved</span>
+                            <div className="inline-flex items-center justify-center">
+                              <Badge
+                                variant={isPresent ? 'success' : 'destructive'}
+                                className={`text-xs gap-1.5 py-1 px-3 ${
+                                  isPresent
+                                    ? 'bg-emerald-500/15 text-emerald-700 dark:text-emerald-300 border-emerald-500/30'
+                                    : 'bg-rose-500/15 text-rose-700 dark:text-rose-300 border-rose-500/30'
+                                }`}
+                              >
+                                {isPresent ? (
+                                  <>
+                                    <Check className="w-3.5 h-3.5" />
+                                    Present
+                                  </>
+                                ) : (
+                                  <>
+                                    <X className="w-3.5 h-3.5" />
+                                    Absent
+                                  </>
+                                )}
+                                <span className="text-[10px] opacity-75 font-normal ml-0.5">• Saved</span>
+                              </Badge>
                             </div>
                           )}
                         </TableCell>
@@ -935,8 +1015,8 @@ export const MarkAttendancePage: React.FC = () => {
             </div>
           )}
 
-          {/* Submit / Action Footer */}
-          <div className="p-4 border-t bg-muted/20 flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+          {/* Submit / Action Footer - Sticky */}
+          <div className="p-4 border-t bg-card/95 backdrop-blur-sm sticky bottom-0 z-20 flex flex-col sm:flex-row sm:items-center justify-between gap-3 shadow-xs">
             <div className="text-xs text-muted-foreground">
               {recordDate && (
                 <span>
