@@ -901,7 +901,7 @@ export const MarkAttendancePage: React.FC = () => {
               />
             </div>
           ) : (
-            <div className="overflow-x-auto max-h-[60vh] overflow-y-auto relative [&>div]:overflow-visible">
+            <div className="overflow-x-auto relative [&>div]:overflow-visible">
               <Table>
                 <TableHeader className="sticky top-0 z-10 bg-card border-b">
                   <TableRow className="hover:bg-transparent">
