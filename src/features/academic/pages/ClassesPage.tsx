@@ -9,6 +9,7 @@ import {
   useDeleteClass,
   useCreateSection,
   useAddStudent,
+  useEmptySections,
 } from '../hooks';
 import { useDailyAttendanceStatus } from '@/features/attendance/hooks';
 import { AcademicStatsCards } from '../components/AcademicStatsCards';
@@ -20,7 +21,8 @@ import { SectionAddDialog } from '../components/SectionAddDialog';
 import { ClassDetailModal } from '../components/ClassDetailModal';
 import { ClassProgressionPipeline } from '../components/ClassProgressionPipeline';
 import { ClassReorderDialog } from '../components/ClassReorderDialog';
-import { Plus, BookOpen, ShieldCheck, School } from 'lucide-react';
+import { EmptySectionsCleanupModal } from '../components/EmptySectionsCleanupModal';
+import { Plus, BookOpen, ShieldCheck, School, AlertTriangle } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { useNavigate } from '@tanstack/react-router';
 import { TenantRequiredState } from '@/components/common/TenantRequiredState';
@@ -63,8 +65,10 @@ export const ClassesPage: React.FC = () => {
   const [deletingClass, setDeletingClass] = useState<AcademicClass | null>(null);
   const [addingSectionClass, setAddingSectionClass] = useState<AcademicClass | null>(null);
   const [isReorderOpen, setIsReorderOpen] = useState(false);
+  const [isCleanupModalOpen, setIsCleanupModalOpen] = useState(false);
 
   // Queries & Mutations
+  const { data: emptySections = [] } = useEmptySections(pageTenantId);
   const {
     data: classesWithDetails = [],
     isLoading,
@@ -341,6 +345,31 @@ export const ClassesPage: React.FC = () => {
             </div>
           )}
 
+          {/* Empty Sections Alert Banner */}
+          {emptySections.length > 0 && (
+            <div className="border border-amber-500/30 bg-amber-500/10 text-amber-950 dark:text-amber-200 rounded-xl p-4 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
+              <div className="flex items-start gap-3">
+                <AlertTriangle className="w-5 h-5 text-amber-600 dark:text-amber-400 shrink-0 mt-0.5" />
+                <div className="space-y-0.5">
+                  <h4 className="text-sm font-bold text-amber-950 dark:text-amber-200">
+                    Empty Sections Detected ({emptySections.length})
+                  </h4>
+                  <p className="text-xs text-amber-900/80 dark:text-amber-300/80 leading-relaxed">
+                    Found {emptySections.length} section(s) with 0 enrolled students for this session. To maintain accurate attendance analytics and section creation rules, please fill or delete them.
+                  </p>
+                </div>
+              </div>
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={() => setIsCleanupModalOpen(true)}
+                className="shrink-0 border-amber-500/40 hover:bg-amber-500/20 text-xs font-semibold self-end sm:self-auto"
+              >
+                Manage Empty Sections
+              </Button>
+            </div>
+          )}
+
       {/* Classes Grid */}
       {isLoading ? (
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
@@ -511,6 +540,13 @@ export const ClassesPage: React.FC = () => {
         onClose={() => setIsReorderOpen(false)}
         classes={sortedClasses}
         tenantId={pageTenantId || activeTenantId || ''}
+      />
+
+      {/* Dialog: Empty Sections Cleanup Modal */}
+      <EmptySectionsCleanupModal
+        isOpen={isCleanupModalOpen}
+        onClose={() => setIsCleanupModalOpen(false)}
+        tenantId={pageTenantId}
       />
         </>
       )}
