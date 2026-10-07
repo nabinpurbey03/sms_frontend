@@ -40,8 +40,11 @@ import {
   TableHeader,
   TableRow,
 } from '@/components/ui/table';
+import { useNavigate } from '@tanstack/react-router';
+import { useCleanupEmptySections } from '@/features/academic/hooks';
 import {
   AlertCircle,
+  AlertTriangle,
   CheckCircle2,
   GraduationCap,
   Loader2,
@@ -77,6 +80,8 @@ export const TenantRolloverDialog: React.FC<TenantRolloverDialogProps> = ({
 }) => {
   const { calendarSystem } = useCalendarPreferenceStore();
   const rolloverMutation = useTenantRollover();
+  const cleanupMutation = useCleanupEmptySections();
+  const navigate = useNavigate();
 
   // Wizard state
   const [currentStep, setCurrentStep] = useState<1 | 2 | 3>(1);
@@ -85,6 +90,7 @@ export const TenantRolloverDialog: React.FC<TenantRolloverDialogProps> = ({
   const [isFetchingPreview, setIsFetchingPreview] = useState(false);
   const [activeClassId, setActiveClassId] = useState<string>('');
   const [overrides, setOverrides] = useState<Record<string, RolloverAction>>({});
+  const [isCleanupConfirmOpen, setIsCleanupConfirmOpen] = useState(false);
 
   const {
     register,
@@ -117,7 +123,43 @@ export const TenantRolloverDialog: React.FC<TenantRolloverDialogProps> = ({
     setOverrides({});
     setActiveClassId('');
     setCurrentStep(1);
+    setIsCleanupConfirmOpen(false);
     onOpenChange(false);
+  };
+
+  const handleCleanupEmptySections = async () => {
+    try {
+      const secIds = summary?.empty_sections?.map((s) => s.section_id);
+      const res = await cleanupMutation.mutateAsync({
+        tenantId,
+        sectionIds: secIds,
+      });
+      const deletedCount = res?.deleted_count ?? (secIds?.length || 0);
+      toast.success(`Successfully cleaned up ${deletedCount} empty section(s).`);
+
+      setSummary((prev) => {
+        if (!prev) return null;
+        const deletedIds = new Set(
+          res?.deleted_sections?.map((d) => d.section_id) || secIds || []
+        );
+        const remaining = (prev.empty_sections || []).filter(
+          (s) => !deletedIds.has(s.section_id)
+        );
+        return {
+          ...prev,
+          empty_sections_count: remaining.length,
+          empty_sections: remaining,
+        };
+      });
+      setIsCleanupConfirmOpen(false);
+    } catch (err: any) {
+      const msg =
+        err?.response?.data?.message ||
+        err?.response?.data?.detail ||
+        err?.message ||
+        'Failed to clean up empty sections';
+      toast.error('Cleanup Error', { description: msg });
+    }
   };
 
   // Step 1 -> Step 2: Validate & Fetch Preview
@@ -259,8 +301,9 @@ export const TenantRolloverDialog: React.FC<TenantRolloverDialogProps> = ({
   };
 
   return (
-    <Dialog
-      open={open}
+    <>
+      <Dialog
+        open={open}
       onOpenChange={(val) => {
         if (!val) {
           if (!rolloverMutation.isPending && !isFetchingPreview) handleClose();
@@ -415,6 +458,65 @@ export const TenantRolloverDialog: React.FC<TenantRolloverDialogProps> = ({
                   <p className="text-2xl font-bold text-foreground">{summary.teacher_assignments_copied}</p>
                 </div>
               </div>
+
+              {/* Empty Sections Audit Card */}
+              {summary.empty_sections_count && summary.empty_sections_count > 0 ? (
+                <div className="rounded-xl border border-amber-500/30 bg-amber-500/10 p-4 space-y-3">
+                  <div className="flex items-start gap-3">
+                    <AlertTriangle className="w-5 h-5 text-amber-600 dark:text-amber-400 shrink-0 mt-0.5" />
+                    <div className="space-y-1">
+                      <h4 className="text-sm font-bold text-amber-950 dark:text-amber-200">
+                        Attention: Empty Sections Detected ({summary.empty_sections_count})
+                      </h4>
+                      <p className="text-xs text-amber-900/90 dark:text-amber-300/90 leading-relaxed">
+                        Some sections have 0 students enrolled for session {summary.academic_year_name}. School policy requires active sections to have students; empty sections distort attendance tracking and block creating new sections (minimum 20 students rule).
+                      </p>
+                    </div>
+                  </div>
+
+                  {summary.empty_sections && summary.empty_sections.length > 0 && (
+                    <div className="flex flex-wrap gap-2 pt-1">
+                      {summary.empty_sections.map((sec) => (
+                        <Badge
+                          key={sec.section_id}
+                          variant="outline"
+                          className="bg-amber-500/15 border-amber-500/30 text-amber-900 dark:text-amber-200 text-xs px-2.5 py-1"
+                        >
+                          {sec.class_name} - Section {sec.section_name}
+                        </Badge>
+                      ))}
+                    </div>
+                  )}
+
+                  <div className="flex flex-wrap items-center gap-2.5 pt-1">
+                    <Button
+                      type="button"
+                      variant="destructive"
+                      size="sm"
+                      onClick={() => setIsCleanupConfirmOpen(true)}
+                      disabled={cleanupMutation.isPending}
+                      className="h-8 text-xs font-semibold"
+                    >
+                      {cleanupMutation.isPending && (
+                        <Loader2 className="mr-1.5 h-3.5 w-3.5 animate-spin" />
+                      )}
+                      Clean Up Empty Sections Now
+                    </Button>
+                    <Button
+                      type="button"
+                      variant="outline"
+                      size="sm"
+                      onClick={() => {
+                        handleClose();
+                        navigate({ to: '/academic/classes' });
+                      }}
+                      className="h-8 text-xs font-semibold border-amber-500/40 text-amber-950 dark:text-amber-200 hover:bg-amber-500/20"
+                    >
+                      Review in Classes Page
+                    </Button>
+                  </div>
+                </div>
+              ) : null}
             </div>
           ) : currentStep === 1 ? (
             /* Step 1: Session Timeline & Details */
@@ -1036,5 +1138,50 @@ export const TenantRolloverDialog: React.FC<TenantRolloverDialogProps> = ({
         </DialogFooter>
       </DialogContent>
     </Dialog>
+
+    {/* Confirmation Dialog: Empty Sections Cleanup */}
+    <Dialog
+      open={isCleanupConfirmOpen}
+      onOpenChange={(val) => !cleanupMutation.isPending && setIsCleanupConfirmOpen(val)}
+    >
+      <DialogContent className="max-w-md">
+        <DialogHeader>
+          <div className="w-10 h-10 rounded-full bg-destructive/15 text-destructive flex items-center justify-center mb-2">
+            <AlertTriangle className="w-5 h-5" />
+          </div>
+          <DialogTitle className="text-base font-bold text-foreground">
+            Clean Up Empty Sections?
+          </DialogTitle>
+          <DialogDescription className="text-xs text-muted-foreground leading-relaxed">
+            This will remove eligible empty sections created for session{' '}
+            <strong>{summary?.academic_year_name}</strong> that have 0 enrolled students.
+            Default sections (Section A) are preserved per policy.
+          </DialogDescription>
+        </DialogHeader>
+
+        <DialogFooter className="gap-2 sm:gap-0">
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={() => setIsCleanupConfirmOpen(false)}
+            disabled={cleanupMutation.isPending}
+            className="text-xs"
+          >
+            Cancel
+          </Button>
+          <Button
+            variant="destructive"
+            size="sm"
+            onClick={handleCleanupEmptySections}
+            disabled={cleanupMutation.isPending}
+            className="gap-1.5 text-xs"
+          >
+            {cleanupMutation.isPending && <Loader2 className="w-3.5 h-3.5 animate-spin" />}
+            <span>Confirm Clean Up</span>
+          </Button>
+        </DialogFooter>
+      </DialogContent>
+    </Dialog>
+  </>
   );
 };

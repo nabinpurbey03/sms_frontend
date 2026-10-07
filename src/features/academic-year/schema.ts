@@ -69,6 +69,12 @@ export interface TenantRolloverSummaryResponse {
   total_students_transferred: number;
   total_students_graduated: number;
   teacher_assignments_copied: number;
+  empty_sections_count?: number;
+  empty_sections?: Array<{
+    section_id: string;
+    section_name: string;
+    class_name: string;
+  }>;
 }
 
 export const tenantRolloverSchema = z.object({
