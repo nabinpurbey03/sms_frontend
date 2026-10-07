@@ -849,19 +849,22 @@ export const AttendanceDashboardHub: React.FC = () => {
                       </Button>
                     </div>
                   ) : (
-                    /* Responsive 100% full-width grid: 1 col on mobile, 2 on sm, 3 on md, 4 on lg/xl */
-                    <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-3 pt-1">
+                    /* Responsive 100% full-width grid: 1 col on mobile, 2 on sm, 3 on md, 4 on xl */
+                    <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 xl:grid-cols-4 gap-3 pt-1">
                       {filteredSectionsList.map((sec) => (
                         <div
                           key={sec.sectionId}
-                          className={`p-3.5 rounded-xl border flex items-center justify-between transition-colors ${
+                          className={`p-3.5 rounded-xl border flex items-center justify-between gap-3 transition-colors min-w-0 ${
                             sec.isMarked
                               ? 'bg-emerald-500/5 border-emerald-500/20 hover:bg-emerald-500/10'
                               : 'bg-amber-500/5 border-amber-500/20 hover:bg-amber-500/10'
                           }`}
                         >
-                          <div className="space-y-1 min-w-0 pr-2">
-                            <p className="text-xs font-bold text-foreground truncate">
+                          <div className="space-y-1 min-w-0 flex-1">
+                            <p
+                              className="text-xs font-bold text-foreground truncate"
+                              title={`${sec.className} - ${sec.sectionName}`}
+                            >
                               {sec.className} - {sec.sectionName}
                             </p>
                             <p className="text-[11px] text-muted-foreground truncate">
@@ -877,34 +880,23 @@ export const AttendanceDashboardHub: React.FC = () => {
                             {sec.isMarked ? (
                               <Badge
                                 variant="outline"
-                                className="text-[10px] px-2 py-0.5 font-medium bg-emerald-500/10 text-emerald-700 dark:text-emerald-400 border-emerald-500/30 gap-1"
+                                className="text-[10px] px-2 py-0.5 font-medium bg-emerald-500/10 text-emerald-700 dark:text-emerald-400 border-emerald-500/30 gap-1 shrink-0"
                               >
                                 <Check className="h-3 w-3" />
                                 Recorded
                               </Badge>
                             ) : sec.totalStudents === 0 ? (
-                              <>
-                                <Badge
-                                  variant="outline"
-                                  className="font-semibold text-xs border-amber-500/30 bg-amber-500/10 text-amber-700 dark:text-amber-300"
-                                >
-                                  Empty (0 Students)
-                                </Badge>
-                                <Button
-                                  variant="outline"
-                                  size="sm"
-                                  disabled
-                                  title="No students enrolled in this section"
-                                  className="h-7 text-[11px] px-2.5 font-semibold opacity-50 cursor-not-allowed"
-                                >
-                                  Mark
-                                </Button>
-                              </>
+                              <Badge
+                                variant="outline"
+                                className="font-semibold text-[11px] border-amber-500/30 bg-amber-500/10 text-amber-700 dark:text-amber-300 shrink-0"
+                              >
+                                Empty Section
+                              </Badge>
                             ) : (
                               <Button
                                 variant="outline"
                                 size="sm"
-                                className="h-7 text-[11px] px-2.5 font-semibold text-primary border-primary/30 hover:bg-primary/10"
+                                className="h-7 text-[11px] px-2.5 font-semibold text-primary border-primary/30 hover:bg-primary/10 shrink-0"
                                 asChild
                               >
                                 <Link
