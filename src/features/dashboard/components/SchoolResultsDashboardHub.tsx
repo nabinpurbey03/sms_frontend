@@ -22,7 +22,6 @@ import { Badge } from '@/components/ui/badge';
 import { Input } from '@/components/ui/input';
 import { ResponsiveDataTable, type Column } from '@/components/common/ResponsiveDataTable';
 import { cn } from '@/lib/utils';
-import { StatCard } from '@/components/ui/stat-card';
 import { ChartCard } from '@/components/ui/chart-card';
 import { DonutChart } from '@/components/ui/charts/donut-chart';
 import { TrendAreaChart } from '@/components/ui/charts/trend-area-chart';
@@ -575,39 +574,124 @@ export const SchoolResultsDashboardHub: React.FC<SchoolResultsDashboardHubProps>
         )}
 
         {/* 3. Executive KPI Cards */}
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 sm:gap-6">
-          <StatCard
-            title="Overall Pass Rate"
-            value={passRate != null ? `${passRate.toFixed(1)}%` : '—'}
-            icon={CheckCircle2}
-            description={`${passedCount} of ${evaluatedCount} students passed`}
-            trend={
-              passRate != null
-                ? {
-                    value: passRate >= 70 ? 3.5 : -2.1,
-                    label: 'vs last exam',
-                  }
-                : undefined
-            }
-          />
-          <StatCard
-            title="School Average Score"
-            value={avgScore != null ? `${avgScore.toFixed(1)}%` : '—'}
-            icon={TrendingUp}
-            description="Mean score across all subjects"
-          />
-          <StatCard
-            title="Exam Pipeline"
-            value={totalExams}
-            icon={BookOpen}
-            description={`${draftCount} draft · ${gradingCount} grading · ${pendingCount} pending · ${publishedCount} published`}
-          />
-          <StatCard
-            title="At-Risk Students"
-            value={atRiskCount}
-            icon={AlertTriangle}
-            description="Students failing 1+ subjects"
-          />
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+          {/* Card 1: Overall Pass Rate */}
+          <Card className="relative overflow-hidden border-border/60 hover:shadow-xs transition-shadow">
+            <div className="absolute top-0 left-0 right-0 h-1 bg-emerald-500" />
+            <CardHeader className="flex flex-row items-center justify-between p-4 pb-2 space-y-0">
+              <span className="text-[11px] font-bold text-muted-foreground uppercase tracking-wider">
+                Overall Pass Rate
+              </span>
+              <div className="p-2 bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 rounded-lg">
+                <CheckCircle2 className="h-4 w-4" />
+              </div>
+            </CardHeader>
+            <CardContent className="p-4 pt-1">
+              <div className="text-xl sm:text-2xl font-bold font-mono text-emerald-600 dark:text-emerald-400">
+                {isLoading ? (
+                  <div className="h-7 w-20 bg-muted animate-pulse rounded" />
+                ) : passRate != null ? (
+                  `${passRate.toFixed(1)}%`
+                ) : (
+                  '—'
+                )}
+              </div>
+              <div className="flex items-center gap-1.5 mt-1.5">
+                <span className="inline-flex items-center text-[10px] font-semibold text-emerald-600 dark:text-emerald-400 bg-emerald-500/10 px-1.5 py-0.5 rounded">
+                  {passedCount} / {evaluatedCount} Passed
+                </span>
+                <span className="text-[11px] text-muted-foreground">Evaluated students</span>
+              </div>
+            </CardContent>
+          </Card>
+
+          {/* Card 2: School Average Score */}
+          <Card className="relative overflow-hidden border-border/60 hover:shadow-xs transition-shadow">
+            <div className="absolute top-0 left-0 right-0 h-1 bg-blue-500" />
+            <CardHeader className="flex flex-row items-center justify-between p-4 pb-2 space-y-0">
+              <span className="text-[11px] font-bold text-muted-foreground uppercase tracking-wider">
+                School Average Score
+              </span>
+              <div className="p-2 bg-blue-500/10 text-blue-600 dark:text-blue-400 rounded-lg">
+                <TrendingUp className="h-4 w-4" />
+              </div>
+            </CardHeader>
+            <CardContent className="p-4 pt-1">
+              <div className="text-xl sm:text-2xl font-bold font-mono text-foreground">
+                {isLoading ? (
+                  <div className="h-7 w-20 bg-muted animate-pulse rounded" />
+                ) : avgScore != null ? (
+                  `${avgScore.toFixed(1)}%`
+                ) : (
+                  '—'
+                )}
+              </div>
+              <div className="flex items-center gap-1.5 mt-1.5">
+                <span className="inline-flex items-center text-[10px] font-semibold text-blue-600 dark:text-blue-400 bg-blue-500/10 px-1.5 py-0.5 rounded">
+                  Mean Score
+                </span>
+                <span className="text-[11px] text-muted-foreground">Across all subjects</span>
+              </div>
+            </CardContent>
+          </Card>
+
+          {/* Card 3: Exam Pipeline */}
+          <Card className="relative overflow-hidden border-border/60 hover:shadow-xs transition-shadow">
+            <div className="absolute top-0 left-0 right-0 h-1 bg-purple-500" />
+            <CardHeader className="flex flex-row items-center justify-between p-4 pb-2 space-y-0">
+              <span className="text-[11px] font-bold text-muted-foreground uppercase tracking-wider">
+                Exam Pipeline
+              </span>
+              <div className="p-2 bg-purple-500/10 text-purple-600 dark:text-purple-400 rounded-lg">
+                <BookOpen className="h-4 w-4" />
+              </div>
+            </CardHeader>
+            <CardContent className="p-4 pt-1">
+              <div className="text-xl sm:text-2xl font-bold font-mono text-foreground">
+                {isLoading ? (
+                  <div className="h-7 w-12 bg-muted animate-pulse rounded" />
+                ) : (
+                  totalExams
+                )}
+              </div>
+              <div className="flex items-center gap-1.5 mt-1.5">
+                <span className="inline-flex items-center text-[10px] font-semibold text-purple-600 dark:text-purple-400 bg-purple-500/10 px-1.5 py-0.5 rounded">
+                  {publishedCount} Published
+                </span>
+                <span className="text-[11px] text-muted-foreground">
+                  {draftCount} draft • {gradingCount} grading • {pendingCount} pending
+                </span>
+              </div>
+            </CardContent>
+          </Card>
+
+          {/* Card 4: At-Risk Students */}
+          <Card className="relative overflow-hidden border-border/60 hover:shadow-xs transition-shadow">
+            <div className="absolute top-0 left-0 right-0 h-1 bg-rose-500" />
+            <CardHeader className="flex flex-row items-center justify-between p-4 pb-2 space-y-0">
+              <span className="text-[11px] font-bold text-muted-foreground uppercase tracking-wider">
+                At-Risk Students
+              </span>
+              <div className="p-2 bg-rose-500/10 text-rose-600 dark:text-rose-400 rounded-lg">
+                <AlertTriangle className="h-4 w-4" />
+              </div>
+            </CardHeader>
+            <CardContent className="p-4 pt-1">
+              <div className="text-xl sm:text-2xl font-bold font-mono text-rose-600 dark:text-rose-400">
+                {isLoading ? (
+                  <div className="h-7 w-12 bg-muted animate-pulse rounded" />
+                ) : (
+                  atRiskCount
+                )}
+              </div>
+              <div className="flex items-center gap-1.5 mt-1.5">
+                <span className="inline-flex items-center text-[10px] font-semibold text-rose-600 dark:text-rose-400 bg-rose-500/10 px-1.5 py-0.5 rounded">
+                  Failing 1+ Subjects
+                </span>
+                <span className="text-[11px] text-muted-foreground">Needs academic support</span>
+              </div>
+            </CardContent>
+          </Card>
         </div>
 
         {/* 4. Visual Charts: Pass/Fail Donut & Pipeline Bar */}
