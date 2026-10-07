@@ -137,6 +137,167 @@ const printStyles = `
 }
 `;
 
+export function formatTheoryMarks(sub: {
+  theory_full_mark?: number | null;
+  theory_pass_mark?: number | null;
+  theory_score?: number | null;
+  is_theory_absent?: boolean;
+  full_mark: number;
+  pass_mark: number;
+  score?: number | null;
+  has_practical?: boolean;
+}) {
+  const full =
+    sub.theory_full_mark != null && sub.theory_full_mark > 0
+      ? sub.theory_full_mark
+      : sub.full_mark;
+  const pass =
+    sub.theory_pass_mark != null && sub.theory_pass_mark > 0
+      ? sub.theory_pass_mark
+      : sub.pass_mark;
+
+  let obtained = '-';
+  let isAbsent = false;
+
+  if (sub.is_theory_absent) {
+    obtained = '0.00 (AB)';
+    isAbsent = true;
+  } else if (sub.theory_score !== null && sub.theory_score !== undefined) {
+    obtained = Number(sub.theory_score).toFixed(2);
+  } else if (sub.score !== null && sub.score !== undefined && !sub.has_practical) {
+    obtained = Number(sub.score).toFixed(2);
+  }
+
+  return {
+    full: String(full),
+    pass: String(pass),
+    obtained,
+    isAbsent,
+  };
+}
+
+export function formatPracticalMarks(sub: {
+  has_practical?: boolean;
+  practical_full_mark?: number | null;
+  practical_pass_mark?: number | null;
+  practical_score?: number | null;
+  is_practical_absent?: boolean;
+}) {
+  if (!sub.has_practical) {
+    return {
+      hasPractical: false,
+      full: '—',
+      pass: '—',
+      obtained: '—',
+      isAbsent: false,
+    };
+  }
+
+  const full = sub.practical_full_mark ?? 0;
+  const pass = sub.practical_pass_mark ?? 0;
+
+  let obtained = '-';
+  let isAbsent = false;
+
+  if (sub.is_practical_absent) {
+    obtained = '0.00 (AB)';
+    isAbsent = true;
+  } else if (sub.practical_score !== null && sub.practical_score !== undefined) {
+    obtained = Number(sub.practical_score).toFixed(2);
+  }
+
+  return {
+    hasPractical: true,
+    full: String(full),
+    pass: String(pass),
+    obtained,
+    isAbsent,
+  };
+}
+
+export function formatTotalMarks(sub: {
+  full_mark: number;
+  score?: number | null;
+  is_absent?: boolean;
+}) {
+  let obtained = '-';
+  let isAbsent = false;
+
+  if (sub.is_absent) {
+    obtained = '0.00 (AB)';
+    isAbsent = true;
+  } else if (sub.score !== null && sub.score !== undefined) {
+    obtained = Number(sub.score).toFixed(2);
+  }
+
+  return {
+    full: String(sub.full_mark),
+    obtained,
+    isAbsent,
+  };
+}
+
+export function calculateReportCardTotals(
+  subjects: Array<{
+    has_practical?: boolean;
+    theory_full_mark?: number | null;
+    theory_score?: number | null;
+    is_theory_absent?: boolean;
+    practical_full_mark?: number | null;
+    practical_score?: number | null;
+    is_practical_absent?: boolean;
+    full_mark: number;
+    score?: number | null;
+  }> = [],
+  summary?: {
+    total_full_mark?: number;
+    total_obtained?: number;
+  }
+) {
+  let theoryFull = 0;
+  let theoryObtained = 0;
+  let practicalFull = 0;
+  let practicalObtained = 0;
+  let hasAnyPractical = false;
+
+  for (const s of subjects) {
+    const sHasPr = Boolean(s.has_practical);
+    if (sHasPr) {
+      hasAnyPractical = true;
+      practicalFull += Number(s.practical_full_mark || 0);
+      if (!s.is_practical_absent && s.practical_score !== null && s.practical_score !== undefined) {
+        practicalObtained += Number(s.practical_score);
+      }
+    }
+
+    const tf =
+      s.theory_full_mark != null && s.theory_full_mark > 0
+        ? s.theory_full_mark
+        : s.full_mark;
+    theoryFull += Number(tf || 0);
+
+    if (!s.is_theory_absent) {
+      if (s.theory_score !== null && s.theory_score !== undefined) {
+        theoryObtained += Number(s.theory_score);
+      } else if (!sHasPr && s.score !== null && s.score !== undefined) {
+        theoryObtained += Number(s.score);
+      }
+    }
+  }
+
+  return {
+    theoryFull,
+    theoryPass: '-',
+    theoryObtained: Number(theoryObtained.toFixed(2)),
+    practicalFull,
+    practicalPass: '-',
+    practicalObtained: Number(practicalObtained.toFixed(2)),
+    hasAnyPractical,
+    totalFull: Number(summary?.total_full_mark ?? 0),
+    totalObtained: Number(summary?.total_obtained ?? 0),
+  };
+}
+
 export const OfficialReportCardDocument: React.FC<OfficialReportCardDocumentProps> = ({
   reportCard,
   className,
@@ -149,6 +310,7 @@ export const OfficialReportCardDocument: React.FC<OfficialReportCardDocumentProp
     (summary.final_result_text
       ? summary.final_result_text.toUpperCase().includes('PASS')
       : false);
+  const grandTotals = calculateReportCardTotals(subjects, summary);
 
   return (
     <>
@@ -277,21 +439,68 @@ export const OfficialReportCardDocument: React.FC<OfficialReportCardDocumentProp
         {/* DETAILED SUBJECT MARKS TABLE                              */}
         {/* ========================================================= */}
         <section className="overflow-x-auto rounded-xl border border-border/80 mb-6">
-          <table className="w-full text-[10px] sm:text-xs text-left border-collapse">
-            <thead className="bg-muted/60 text-[9px] sm:text-[10px] uppercase font-semibold text-muted-foreground border-b border-border/80">
+          <table className="w-full text-[9.5px] sm:text-xs text-left border-collapse">
+            <thead className="bg-muted/60 text-[8.5px] sm:text-[9.5px] uppercase font-semibold text-muted-foreground border-b border-border/80">
               <tr>
-                <th className="px-2 py-1.5 sm:px-3 sm:py-2 text-left font-bold">Subject Name</th>
-                <th className="px-1.5 py-1.5 sm:px-2 sm:py-2 text-center font-bold">Full Mark</th>
-                <th className="px-1.5 py-1.5 sm:px-2 sm:py-2 text-center font-bold">Pass Mark</th>
-                <th className="px-2 py-1.5 sm:px-3 sm:py-2 text-right font-bold">Marks Obtained</th>
-                <th className="px-1.5 py-1.5 sm:px-2 sm:py-2 text-center font-bold">Grade</th>
-                <th className="px-2 py-1.5 sm:px-3 sm:py-2 text-left font-bold">Remarks</th>
+                <th
+                  rowSpan={2}
+                  className="px-2 py-1.5 sm:px-3 sm:py-2 text-left font-bold border-r border-border/60"
+                >
+                  Subject Name
+                </th>
+                <th
+                  colSpan={3}
+                  className="px-1.5 py-1 text-center font-bold border-r border-border/60 bg-muted/40"
+                >
+                  Theory
+                </th>
+                <th
+                  colSpan={3}
+                  className="px-1.5 py-1 text-center font-bold border-r border-border/60 bg-muted/30"
+                >
+                  Practical
+                </th>
+                <th
+                  colSpan={2}
+                  className="px-1.5 py-1 text-center font-bold border-r border-border/60 bg-muted/50"
+                >
+                  Total Marks
+                </th>
+                <th
+                  rowSpan={2}
+                  className="px-1.5 py-1.5 sm:px-2 sm:py-2 text-center font-bold border-r border-border/60"
+                >
+                  Grade
+                </th>
+                <th
+                  rowSpan={2}
+                  className="px-2 py-1.5 sm:px-3 sm:py-2 text-left font-bold"
+                >
+                  Remarks
+                </th>
+              </tr>
+              <tr className="border-t border-border/60 text-[7.5px] sm:text-[8.5px]">
+                {/* Theory Sub-headers */}
+                <th className="px-1 py-1 text-center font-semibold">Full</th>
+                <th className="px-1 py-1 text-center font-semibold">Pass</th>
+                <th className="px-1.5 py-1 text-right font-semibold border-r border-border/60">Obt</th>
+                {/* Practical Sub-headers */}
+                <th className="px-1 py-1 text-center font-semibold">Full</th>
+                <th className="px-1 py-1 text-center font-semibold">Pass</th>
+                <th className="px-1.5 py-1 text-right font-semibold border-r border-border/60">Obt</th>
+                {/* Total Sub-headers */}
+                <th className="px-1 py-1 text-center font-semibold">Full</th>
+                <th className="px-1.5 py-1 text-right font-semibold border-r border-border/60">Obt</th>
               </tr>
             </thead>
             <tbody className="divide-y divide-border/60 bg-card">
               {subjects.map((sub, index) => {
                 const isAbsent = sub.is_absent;
                 const isFailing = !isAbsent && !sub.is_pass;
+                const thMarks = formatTheoryMarks(sub);
+                const prMarks = formatPracticalMarks(sub);
+                const totMarks = formatTotalMarks(sub);
+                const subCode = (sub as any).subject_code || (sub as any).code;
 
                 return (
                   <tr
@@ -301,21 +510,86 @@ export const OfficialReportCardDocument: React.FC<OfficialReportCardDocumentProp
                       index % 2 === 1 ? 'bg-muted/10' : ''
                     )}
                   >
-                    <td className="px-2 py-1.5 sm:px-3 sm:py-2 font-semibold text-foreground">
-                      {sub.subject_name}
+                    {/* Subject Name & optional code badge */}
+                    <td className="px-2 py-1.5 sm:px-3 sm:py-2 font-semibold text-foreground border-r border-border/40">
+                      <div className="flex items-center gap-1.5 flex-wrap">
+                        <span>{sub.subject_name}</span>
+                        {subCode && (
+                          <span className="inline-block px-1 py-0.2 rounded text-[8px] sm:text-[9px] font-mono text-muted-foreground bg-muted/60 border border-border/50">
+                            {subCode}
+                          </span>
+                        )}
+                      </div>
                     </td>
-                    <td className="px-1.5 py-1.5 sm:px-2 sm:py-2 text-center font-mono text-muted-foreground">
-                      {sub.full_mark}
+
+                    {/* Theory: Full, Pass, Obt */}
+                    <td className="px-1 py-1.5 text-center font-mono text-muted-foreground">
+                      {thMarks.full}
                     </td>
-                    <td className="px-1.5 py-1.5 sm:px-2 sm:py-2 text-center font-mono text-muted-foreground">
-                      {sub.pass_mark}
+                    <td className="px-1 py-1.5 text-center font-mono text-muted-foreground">
+                      {thMarks.pass}
                     </td>
-                    <td className="px-2 py-1.5 sm:px-3 sm:py-2 text-right font-mono font-bold">
-                      {isAbsent ? (
-                        <span className="inline-flex items-center px-1.5 py-0.5 rounded text-[9px] sm:text-[10px] font-bold bg-rose-500/15 text-rose-600 dark:text-rose-400 border border-rose-500/25">
+                    <td className="px-1.5 py-1.5 text-right font-mono border-r border-border/40">
+                      {thMarks.isAbsent ? (
+                        <span className="inline-flex items-center px-1 py-0.5 rounded text-[8px] sm:text-[9px] font-bold bg-rose-500/15 text-rose-600 dark:text-rose-400 border border-rose-500/25">
                           0.00 (AB)
                         </span>
-                      ) : sub.score !== null && sub.score !== undefined ? (
+                      ) : (
+                        <span
+                          className={cn(
+                            sub.theory_score !== null &&
+                              sub.theory_score !== undefined &&
+                              Number(sub.theory_score) < Number(sub.theory_pass_mark || sub.pass_mark)
+                              ? 'text-rose-600 dark:text-rose-400 font-bold'
+                              : 'text-foreground'
+                          )}
+                        >
+                          {thMarks.obtained}
+                        </span>
+                      )}
+                    </td>
+
+                    {/* Practical: Full, Pass, Obt (em-dashes when !has_practical) */}
+                    <td className="px-1 py-1.5 text-center font-mono text-muted-foreground">
+                      {prMarks.full}
+                    </td>
+                    <td className="px-1 py-1.5 text-center font-mono text-muted-foreground">
+                      {prMarks.pass}
+                    </td>
+                    <td className="px-1.5 py-1.5 text-right font-mono border-r border-border/40">
+                      {prMarks.hasPractical ? (
+                        prMarks.isAbsent ? (
+                          <span className="inline-flex items-center px-1 py-0.5 rounded text-[8px] sm:text-[9px] font-bold bg-rose-500/15 text-rose-600 dark:text-rose-400 border border-rose-500/25">
+                            0.00 (AB)
+                          </span>
+                        ) : (
+                          <span
+                            className={cn(
+                              sub.practical_score !== null &&
+                                sub.practical_score !== undefined &&
+                                Number(sub.practical_score) < Number(sub.practical_pass_mark)
+                                ? 'text-rose-600 dark:text-rose-400 font-bold'
+                                : 'text-foreground'
+                            )}
+                          >
+                            {prMarks.obtained}
+                          </span>
+                        )
+                      ) : (
+                        <span className="text-muted-foreground font-mono font-medium">—</span>
+                      )}
+                    </td>
+
+                    {/* Total: Full, Obt */}
+                    <td className="px-1 py-1.5 text-center font-mono text-muted-foreground">
+                      {totMarks.full}
+                    </td>
+                    <td className="px-1.5 py-1.5 text-right font-mono font-bold border-r border-border/40">
+                      {totMarks.isAbsent ? (
+                        <span className="inline-flex items-center px-1 py-0.5 rounded text-[8px] sm:text-[9px] font-bold bg-rose-500/15 text-rose-600 dark:text-rose-400 border border-rose-500/25">
+                          0.00 (AB)
+                        </span>
+                      ) : (
                         <span
                           className={cn(
                             isFailing
@@ -323,26 +597,33 @@ export const OfficialReportCardDocument: React.FC<OfficialReportCardDocumentProp
                               : 'text-foreground'
                           )}
                         >
-                          {Number(sub.score).toFixed(2)}
+                          {totMarks.obtained}
                         </span>
-                      ) : (
-                        '-'
                       )}
                     </td>
-                    <td className="px-1.5 py-1.5 sm:px-2 sm:py-2 text-center">
+
+                    {/* Grade & Grade Point */}
+                    <td className="px-1.5 py-1.5 sm:px-2 sm:py-2 text-center border-r border-border/40">
                       <span
                         className={cn(
                           'inline-block px-1.5 py-0.5 rounded text-[10px] font-black min-w-[24px]',
                           isAbsent || isFailing
                             ? 'bg-rose-500/15 text-rose-600 dark:text-rose-400'
-                            : sub.grade.startsWith('A')
+                            : sub.grade?.startsWith('A')
                             ? 'bg-emerald-500/15 text-emerald-700 dark:text-emerald-400'
                             : 'bg-primary/10 text-primary'
                         )}
                       >
                         {sub.grade || '-'}
                       </span>
+                      {sub.grade_point !== undefined && sub.grade_point !== null && (
+                        <span className="block text-[8px] sm:text-[9px] text-muted-foreground font-mono mt-0.5">
+                          ({Number(sub.grade_point).toFixed(2)})
+                        </span>
+                      )}
                     </td>
+
+                    {/* Remarks */}
                     <td className="px-2 py-1.5 sm:px-3 sm:py-2 text-[10px] font-medium text-muted-foreground truncate max-w-[120px]">
                       {sub.remarks ||
                         (isAbsent
@@ -357,23 +638,42 @@ export const OfficialReportCardDocument: React.FC<OfficialReportCardDocumentProp
             </tbody>
             <tfoot className="bg-muted/50 border-t-2 border-border/80 font-bold text-foreground">
               <tr>
-                <td className="px-2 py-1.5 sm:px-3 sm:py-2 text-left uppercase text-[10px] sm:text-xs tracking-wider">
+                <td className="px-2 py-1.5 sm:px-3 sm:py-2 text-left uppercase text-[9px] sm:text-[10px] tracking-wider border-r border-border/40">
                   Grand Total
                 </td>
-                <td className="px-1.5 py-1.5 sm:px-2 sm:py-2 text-center font-mono">
-                  {summary.total_full_mark}
+                <td className="px-1 py-1.5 text-center font-mono">
+                  {grandTotals.theoryFull}
                 </td>
-                <td className="px-1.5 py-1.5 sm:px-2 sm:py-2 text-center text-muted-foreground font-normal">
+                <td className="px-1 py-1.5 text-center text-muted-foreground font-normal">
                   -
                 </td>
-                <td className="px-2 py-1.5 sm:px-3 sm:py-2 text-right font-mono text-primary font-black">
-                  {Number(summary.total_obtained).toFixed(2)}
+                <td className="px-1.5 py-1.5 text-right font-mono text-primary font-bold border-r border-border/40">
+                  {grandTotals.theoryObtained.toFixed(2)}
                 </td>
-                <td
-                  colSpan={2}
-                  className="px-2 py-1.5 sm:px-3 sm:py-2 text-right text-[10px] sm:text-xs text-muted-foreground font-medium"
-                >
-                  Obtained {Number(summary.total_obtained).toFixed(2)} / {summary.total_full_mark}
+                <td className="px-1 py-1.5 text-center font-mono">
+                  {grandTotals.hasAnyPractical ? grandTotals.practicalFull : '—'}
+                </td>
+                <td className="px-1 py-1.5 text-center text-muted-foreground font-normal">
+                  -
+                </td>
+                <td className="px-1.5 py-1.5 text-right font-mono text-primary font-bold border-r border-border/40">
+                  {grandTotals.hasAnyPractical
+                    ? grandTotals.practicalObtained.toFixed(2)
+                    : '—'}
+                </td>
+                <td className="px-1 py-1.5 text-center font-mono">
+                  {grandTotals.totalFull}
+                </td>
+                <td className="px-1.5 py-1.5 text-right font-mono text-primary font-black border-r border-border/40">
+                  {Number(grandTotals.totalObtained).toFixed(2)}
+                </td>
+                <td className="px-1.5 py-1.5 text-center border-r border-border/40">
+                  <span className="inline-block px-1.5 py-0.5 rounded text-[10px] font-black text-primary bg-primary/10">
+                    {summary.overall_grade || '-'}
+                  </span>
+                </td>
+                <td className="px-2 py-1.5 sm:px-3 sm:py-2 text-left text-[9px] sm:text-[10px] text-muted-foreground font-semibold truncate max-w-[120px]">
+                  {summary.final_result_text || (isPassed ? 'PASSED' : 'FAILED')}
                 </td>
               </tr>
             </tfoot>
