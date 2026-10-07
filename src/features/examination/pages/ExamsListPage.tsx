@@ -196,11 +196,11 @@ export const ExamsListPage: React.FC = () => {
             aria-selected={activeTab === 'all-exams'}
             onClick={() => setActiveTab('all-exams')}
             className={cn(
-              'flex items-center gap-2 px-3.5 py-2 text-xs font-semibold rounded-xl transition-all duration-150 cursor-pointer select-none',
+              'flex items-center gap-2 px-3.5 py-2 text-xs font-semibold rounded-xl transition-all duration-150 cursor-pointer select-none border',
               'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/40',
               activeTab === 'all-exams'
-                ? 'bg-background text-foreground font-bold shadow-xs border border-border/90 dark:bg-card dark:border-primary/40 dark:shadow-md'
-                : 'text-muted-foreground hover:text-foreground hover:bg-background/60 hover:border-border/40 border border-transparent'
+                ? 'bg-primary/10 text-primary font-bold shadow-xs border-primary/30 dark:bg-primary/15 dark:text-primary dark:border-primary/50'
+                : 'text-muted-foreground hover:text-foreground hover:bg-muted/40 hover:border-border/40 border-transparent'
             )}
           >
             <Layers className={cn('w-4 h-4 transition-colors', activeTab === 'all-exams' ? 'text-primary' : 'text-muted-foreground')} />
@@ -211,7 +211,7 @@ export const ExamsListPage: React.FC = () => {
                 className={cn(
                   'ml-0.5 text-[10px] px-1.5 py-0 font-bold transition-colors',
                   activeTab === 'all-exams'
-                    ? 'bg-primary text-primary-foreground'
+                    ? 'bg-primary/20 text-primary border-primary/30 dark:bg-primary/25 dark:text-primary dark:border-primary/50'
                     : 'bg-muted/60 text-muted-foreground border-border/60'
                 )}
               >
@@ -227,14 +227,14 @@ export const ExamsListPage: React.FC = () => {
               aria-selected={activeTab === 'my-duties'}
               onClick={() => setActiveTab('my-duties')}
               className={cn(
-                'flex items-center gap-2 px-3.5 py-2 text-xs font-semibold rounded-xl transition-all duration-150 cursor-pointer select-none',
+                'flex items-center gap-2 px-3.5 py-2 text-xs font-semibold rounded-xl transition-all duration-150 cursor-pointer select-none border',
                 'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/40',
                 activeTab === 'my-duties'
-                  ? 'bg-background text-foreground font-bold shadow-xs border border-border/90 dark:bg-card dark:border-primary/40 dark:shadow-md'
-                  : 'text-muted-foreground hover:text-foreground hover:bg-background/60 hover:border-border/40 border border-transparent'
+                  ? 'bg-primary/10 text-primary font-bold shadow-xs border-primary/30 dark:bg-primary/15 dark:text-primary dark:border-primary/50'
+                  : 'text-muted-foreground hover:text-foreground hover:bg-muted/40 hover:border-border/40 border-transparent'
               )}
             >
-              <BookOpen className={cn('w-4 h-4 transition-colors', activeTab === 'my-duties' ? 'text-blue-500' : 'text-muted-foreground')} />
+              <BookOpen className={cn('w-4 h-4 transition-colors', activeTab === 'my-duties' ? 'text-primary' : 'text-muted-foreground')} />
               <span>My Grading Duties</span>
               {teacherAssignments.length > 0 && (
                 <Badge
@@ -244,7 +244,7 @@ export const ExamsListPage: React.FC = () => {
                     pendingDutiesCount > 0
                       ? 'bg-amber-500/15 text-amber-600 dark:text-amber-400 border border-amber-500/30'
                       : activeTab === 'my-duties'
-                        ? 'bg-primary text-primary-foreground'
+                        ? 'bg-primary/20 text-primary border-primary/30 dark:bg-primary/25 dark:text-primary dark:border-primary/50'
                         : 'bg-muted/60 text-muted-foreground border-border/60'
                   )}
                 >

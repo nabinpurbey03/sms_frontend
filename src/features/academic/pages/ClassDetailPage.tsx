@@ -529,11 +529,11 @@ export const ClassDetailPage: React.FC = () => {
           aria-selected={activeTab === 'roster'}
           onClick={() => setActiveTab('roster')}
           className={cn(
-            'px-3.5 py-2 text-xs font-semibold rounded-xl transition-all duration-150 cursor-pointer flex items-center gap-2 whitespace-nowrap select-none',
+            'px-3.5 py-2 text-xs font-semibold rounded-xl transition-all duration-150 cursor-pointer flex items-center gap-2 whitespace-nowrap select-none border',
             'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/40',
             activeTab === 'roster'
-              ? 'bg-background text-foreground font-bold shadow-xs border border-border/90 dark:bg-card dark:border-primary/40 dark:shadow-md'
-              : 'text-muted-foreground hover:text-foreground hover:bg-background/60 hover:border-border/40 border border-transparent'
+              ? 'bg-primary/10 text-primary font-bold shadow-xs border-primary/30 dark:bg-primary/15 dark:text-primary dark:border-primary/50'
+              : 'text-muted-foreground hover:text-foreground hover:bg-muted/40 hover:border-border/40 border-transparent'
           )}
         >
           <Users className={cn('w-3.5 h-3.5 transition-colors', activeTab === 'roster' ? 'text-primary' : 'text-muted-foreground')} />
@@ -543,7 +543,7 @@ export const ClassDetailPage: React.FC = () => {
             className={cn(
               'text-[10px] px-1.5 py-0 font-bold ml-0.5 transition-colors',
               activeTab === 'roster'
-                ? 'bg-primary text-primary-foreground'
+                ? 'bg-primary/20 text-primary border-primary/30 dark:bg-primary/25 dark:text-primary dark:border-primary/50'
                 : 'bg-muted/60 text-muted-foreground border-border/60'
             )}
           >
@@ -557,21 +557,21 @@ export const ClassDetailPage: React.FC = () => {
           aria-selected={activeTab === 'subjects'}
           onClick={() => setActiveTab('subjects')}
           className={cn(
-            'px-3.5 py-2 text-xs font-semibold rounded-xl transition-all duration-150 cursor-pointer flex items-center gap-2 whitespace-nowrap select-none',
+            'px-3.5 py-2 text-xs font-semibold rounded-xl transition-all duration-150 cursor-pointer flex items-center gap-2 whitespace-nowrap select-none border',
             'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/40',
             activeTab === 'subjects'
-              ? 'bg-background text-foreground font-bold shadow-xs border border-border/90 dark:bg-card dark:border-primary/40 dark:shadow-md'
-              : 'text-muted-foreground hover:text-foreground hover:bg-background/60 hover:border-border/40 border border-transparent'
+              ? 'bg-primary/10 text-primary font-bold shadow-xs border-primary/30 dark:bg-primary/15 dark:text-primary dark:border-primary/50'
+              : 'text-muted-foreground hover:text-foreground hover:bg-muted/40 hover:border-border/40 border-transparent'
           )}
         >
-          <BookOpen className={cn('w-3.5 h-3.5 transition-colors', activeTab === 'subjects' ? 'text-blue-500' : 'text-muted-foreground')} />
+          <BookOpen className={cn('w-3.5 h-3.5 transition-colors', activeTab === 'subjects' ? 'text-primary' : 'text-muted-foreground')} />
           <span>Curriculum Subjects</span>
           <Badge
             variant={activeTab === 'subjects' ? 'default' : 'outline'}
             className={cn(
               'text-[10px] px-1.5 py-0 font-bold ml-0.5 transition-colors',
               activeTab === 'subjects'
-                ? 'bg-primary text-primary-foreground'
+                ? 'bg-primary/20 text-primary border-primary/30 dark:bg-primary/25 dark:text-primary dark:border-primary/50'
                 : 'bg-muted/60 text-muted-foreground border-border/60'
             )}
           >
@@ -586,14 +586,14 @@ export const ClassDetailPage: React.FC = () => {
             aria-selected={activeTab === 'assignments'}
             onClick={() => setActiveTab('assignments')}
             className={cn(
-              'px-3.5 py-2 text-xs font-semibold rounded-xl transition-all duration-150 cursor-pointer flex items-center gap-2 whitespace-nowrap select-none',
+              'px-3.5 py-2 text-xs font-semibold rounded-xl transition-all duration-150 cursor-pointer flex items-center gap-2 whitespace-nowrap select-none border',
               'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/40',
               activeTab === 'assignments'
-                ? 'bg-background text-foreground font-bold shadow-xs border border-border/90 dark:bg-card dark:border-primary/40 dark:shadow-md'
-                : 'text-muted-foreground hover:text-foreground hover:bg-background/60 hover:border-border/40 border border-transparent'
+                ? 'bg-primary/10 text-primary font-bold shadow-xs border-primary/30 dark:bg-primary/15 dark:text-primary dark:border-primary/50'
+                : 'text-muted-foreground hover:text-foreground hover:bg-muted/40 hover:border-border/40 border-transparent'
             )}
           >
-            <UserCheck className={cn('w-3.5 h-3.5 transition-colors', activeTab === 'assignments' ? 'text-emerald-500' : 'text-muted-foreground')} />
+            <UserCheck className={cn('w-3.5 h-3.5 transition-colors', activeTab === 'assignments' ? 'text-primary' : 'text-muted-foreground')} />
             <span>Teacher Assignments</span>
             {classAssignments.length > 0 && (
               <Badge
@@ -601,7 +601,7 @@ export const ClassDetailPage: React.FC = () => {
                 className={cn(
                   'text-[10px] px-1.5 py-0 font-bold ml-0.5 transition-colors',
                   activeTab === 'assignments'
-                    ? 'bg-primary text-primary-foreground'
+                    ? 'bg-primary/20 text-primary border-primary/30 dark:bg-primary/25 dark:text-primary dark:border-primary/50'
                     : 'bg-muted/60 text-muted-foreground border-border/60'
                 )}
               >
@@ -618,14 +618,14 @@ export const ClassDetailPage: React.FC = () => {
             aria-selected={activeTab === 'expansion'}
             onClick={() => setActiveTab('expansion')}
             className={cn(
-              'px-3.5 py-2 text-xs font-semibold rounded-xl transition-all duration-150 cursor-pointer flex items-center gap-2 whitespace-nowrap select-none',
+              'px-3.5 py-2 text-xs font-semibold rounded-xl transition-all duration-150 cursor-pointer flex items-center gap-2 whitespace-nowrap select-none border',
               'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/40',
               activeTab === 'expansion'
-                ? 'bg-background text-foreground font-bold shadow-xs border border-border/90 dark:bg-card dark:border-primary/40 dark:shadow-md'
-                : 'text-muted-foreground hover:text-foreground hover:bg-background/60 hover:border-border/40 border border-transparent'
+                ? 'bg-primary/10 text-primary font-bold shadow-xs border-primary/30 dark:bg-primary/15 dark:text-primary dark:border-primary/50'
+                : 'text-muted-foreground hover:text-foreground hover:bg-muted/40 hover:border-border/40 border-transparent'
             )}
           >
-            <Layers className={cn('w-3.5 h-3.5 transition-colors', activeTab === 'expansion' ? 'text-indigo-500' : 'text-muted-foreground')} />
+            <Layers className={cn('w-3.5 h-3.5 transition-colors', activeTab === 'expansion' ? 'text-primary' : 'text-muted-foreground')} />
             <span>20-Student Expansion</span>
           </button>
         )}
@@ -636,14 +636,14 @@ export const ClassDetailPage: React.FC = () => {
           aria-selected={activeTab === 'notices'}
           onClick={() => setActiveTab('notices')}
           className={cn(
-            'px-3.5 py-2 text-xs font-semibold rounded-xl transition-all duration-150 cursor-pointer flex items-center gap-2 whitespace-nowrap select-none',
+            'px-3.5 py-2 text-xs font-semibold rounded-xl transition-all duration-150 cursor-pointer flex items-center gap-2 whitespace-nowrap select-none border',
             'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/40',
             activeTab === 'notices'
-              ? 'bg-background text-foreground font-bold shadow-xs border border-border/90 dark:bg-card dark:border-primary/40 dark:shadow-md'
-              : 'text-muted-foreground hover:text-foreground hover:bg-background/60 hover:border-border/40 border border-transparent'
+              ? 'bg-primary/10 text-primary font-bold shadow-xs border-primary/30 dark:bg-primary/15 dark:text-primary dark:border-primary/50'
+              : 'text-muted-foreground hover:text-foreground hover:bg-muted/40 hover:border-border/40 border-transparent'
           )}
         >
-          <Bell className={cn('w-3.5 h-3.5 transition-colors', activeTab === 'notices' ? 'text-amber-500' : 'text-muted-foreground')} />
+          <Bell className={cn('w-3.5 h-3.5 transition-colors', activeTab === 'notices' ? 'text-primary' : 'text-muted-foreground')} />
           <span>Noticeboard &amp; Homework</span>
         </button>
       </div>
@@ -665,10 +665,10 @@ export const ClassDetailPage: React.FC = () => {
                       type="button"
                       onClick={() => setSelectedSectionId(sec.id)}
                       className={cn(
-                        'px-3 py-1.5 text-xs rounded-lg font-semibold transition-all cursor-pointer select-none border',
+                        'px-3 py-1.5 text-xs rounded-lg font-semibold transition-all duration-150 cursor-pointer select-none border',
                         isSelected
-                          ? 'bg-primary text-primary-foreground border-primary shadow-xs font-bold'
-                          : 'bg-muted/50 border-border/70 text-muted-foreground hover:bg-muted hover:text-foreground hover:border-border'
+                          ? 'bg-primary/10 text-primary border-primary/30 font-bold shadow-xs dark:bg-primary/15 dark:text-primary dark:border-primary/50'
+                          : 'border-transparent text-muted-foreground hover:bg-muted/40 hover:text-foreground hover:border-border/40'
                       )}
                     >
                       Section {sec.name} ({sec.student_count ?? 0})

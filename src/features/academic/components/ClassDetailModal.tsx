@@ -214,10 +214,10 @@ export const ClassDetailModal: React.FC<ClassDetailModalProps> = ({
                           type="button"
                           onClick={() => setSelectedSectionId(sec.id)}
                           className={cn(
-                            'px-3 py-1.5 text-xs rounded-lg font-semibold transition-all cursor-pointer select-none border',
+                            'px-3 py-1.5 text-xs rounded-lg font-semibold transition-all duration-150 cursor-pointer select-none border',
                             isSelected
-                              ? 'bg-primary text-primary-foreground border-primary shadow-xs font-bold'
-                              : 'bg-muted/50 border-border/70 text-muted-foreground hover:bg-muted hover:text-foreground hover:border-border'
+                              ? 'bg-primary/10 text-primary border-primary/30 font-bold shadow-xs dark:bg-primary/15 dark:text-primary dark:border-primary/50'
+                              : 'border-transparent text-muted-foreground hover:bg-muted/40 hover:text-foreground hover:border-border/40'
                           )}
                         >
                           Section {sec.name} ({sec.student_count ?? 0})

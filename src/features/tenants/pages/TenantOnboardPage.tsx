@@ -273,11 +273,11 @@ export const TenantOnboardPage: React.FC = () => {
                   aria-selected={activeTab === 'general'}
                   onClick={() => setActiveTab('general')}
                   className={cn(
-                    'flex items-center gap-2 px-3.5 py-2 text-xs font-semibold rounded-xl transition-all duration-150 cursor-pointer select-none',
+                    'flex items-center gap-2 px-3.5 py-2 text-xs font-semibold rounded-xl transition-all duration-150 cursor-pointer select-none border',
                     'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/40',
                     activeTab === 'general'
-                      ? 'bg-background text-foreground font-bold shadow-xs border border-border/90 dark:bg-card dark:border-primary/40 dark:shadow-md'
-                      : 'text-muted-foreground hover:text-foreground hover:bg-background/60 hover:border-border/40 border border-transparent'
+                      ? 'bg-primary/10 text-primary font-bold shadow-xs border-primary/30 dark:bg-primary/15 dark:text-primary dark:border-primary/50'
+                      : 'text-muted-foreground hover:text-foreground hover:bg-muted/40 hover:border-border/40 border-transparent'
                   )}
                 >
                   <Building2 className={cn('h-3.5 w-3.5 transition-colors', activeTab === 'general' ? 'text-primary' : 'text-muted-foreground')} />
@@ -292,11 +292,11 @@ export const TenantOnboardPage: React.FC = () => {
                   aria-selected={activeTab === 'address'}
                   onClick={() => setActiveTab('address')}
                   className={cn(
-                    'flex items-center gap-2 px-3.5 py-2 text-xs font-semibold rounded-xl transition-all duration-150 cursor-pointer select-none',
+                    'flex items-center gap-2 px-3.5 py-2 text-xs font-semibold rounded-xl transition-all duration-150 cursor-pointer select-none border',
                     'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/40',
                     activeTab === 'address'
-                      ? 'bg-background text-foreground font-bold shadow-xs border border-border/90 dark:bg-card dark:border-primary/40 dark:shadow-md'
-                      : 'text-muted-foreground hover:text-foreground hover:bg-background/60 hover:border-border/40 border border-transparent'
+                      ? 'bg-primary/10 text-primary font-bold shadow-xs border-primary/30 dark:bg-primary/15 dark:text-primary dark:border-primary/50'
+                      : 'text-muted-foreground hover:text-foreground hover:bg-muted/40 hover:border-border/40 border-transparent'
                   )}
                 >
                   <MapPin className={cn('h-3.5 w-3.5 transition-colors', activeTab === 'address' ? 'text-primary' : 'text-muted-foreground')} />

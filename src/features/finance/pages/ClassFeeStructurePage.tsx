@@ -450,11 +450,11 @@ export const ClassFeeStructurePage: React.FC = () => {
           aria-selected={activeTab === 'students'}
           onClick={() => setActiveTab('students')}
           className={cn(
-            'px-3.5 py-2 text-xs font-semibold rounded-xl transition-all duration-150 cursor-pointer flex items-center gap-2 whitespace-nowrap select-none',
+            'px-3.5 py-2 text-xs font-semibold rounded-xl transition-all duration-150 cursor-pointer flex items-center gap-2 whitespace-nowrap select-none border',
             'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/40',
             activeTab === 'students'
-              ? 'bg-background text-foreground font-bold shadow-xs border border-border/90 dark:bg-card dark:border-primary/40 dark:shadow-md'
-              : 'text-muted-foreground hover:text-foreground hover:bg-background/60 hover:border-border/40 border border-transparent'
+              ? 'bg-primary/10 text-primary font-bold shadow-xs border-primary/30 dark:bg-primary/15 dark:text-primary dark:border-primary/50'
+              : 'text-muted-foreground hover:text-foreground hover:bg-muted/40 hover:border-border/40 border-transparent'
           )}
         >
           <Users className={cn('w-3.5 h-3.5 transition-colors', activeTab === 'students' ? 'text-primary' : 'text-muted-foreground')} />
@@ -464,7 +464,7 @@ export const ClassFeeStructurePage: React.FC = () => {
             className={cn(
               'text-[10px] px-1.5 py-0 font-bold ml-0.5 transition-colors',
               activeTab === 'students'
-                ? 'bg-primary text-primary-foreground'
+                ? 'bg-primary/20 text-primary border-primary/30 dark:bg-primary/25 dark:text-primary dark:border-primary/50'
                 : 'bg-muted/60 text-muted-foreground border-border/60'
             )}
           >
@@ -478,21 +478,21 @@ export const ClassFeeStructurePage: React.FC = () => {
           aria-selected={activeTab === 'structures'}
           onClick={() => setActiveTab('structures')}
           className={cn(
-            'px-3.5 py-2 text-xs font-semibold rounded-xl transition-all duration-150 cursor-pointer flex items-center gap-2 whitespace-nowrap select-none',
+            'px-3.5 py-2 text-xs font-semibold rounded-xl transition-all duration-150 cursor-pointer flex items-center gap-2 whitespace-nowrap select-none border',
             'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/40',
             activeTab === 'structures'
-              ? 'bg-background text-foreground font-bold shadow-xs border border-border/90 dark:bg-card dark:border-primary/40 dark:shadow-md'
-              : 'text-muted-foreground hover:text-foreground hover:bg-background/60 hover:border-border/40 border border-transparent'
+              ? 'bg-primary/10 text-primary font-bold shadow-xs border-primary/30 dark:bg-primary/15 dark:text-primary dark:border-primary/50'
+              : 'text-muted-foreground hover:text-foreground hover:bg-muted/40 hover:border-border/40 border-transparent'
           )}
         >
-          <Coins className={cn('w-3.5 h-3.5 transition-colors', activeTab === 'structures' ? 'text-amber-500' : 'text-muted-foreground')} />
+          <Coins className={cn('w-3.5 h-3.5 transition-colors', activeTab === 'structures' ? 'text-primary' : 'text-muted-foreground')} />
           <span>Fee Structure &amp; Rates</span>
           <Badge
             variant={activeTab === 'structures' ? 'default' : 'outline'}
             className={cn(
               'text-[10px] px-1.5 py-0 font-bold ml-0.5 transition-colors',
               activeTab === 'structures'
-                ? 'bg-primary text-primary-foreground'
+                ? 'bg-primary/20 text-primary border-primary/30 dark:bg-primary/25 dark:text-primary dark:border-primary/50'
                 : 'bg-muted/60 text-muted-foreground border-border/60'
             )}
           >

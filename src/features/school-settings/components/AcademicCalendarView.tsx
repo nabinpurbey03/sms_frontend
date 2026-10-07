@@ -321,8 +321,8 @@ export const AcademicCalendarView: React.FC<AcademicCalendarViewProps> = ({
                   className={cn(
                     'h-7 px-2.5 text-xs rounded-lg font-medium transition-all duration-150 cursor-pointer select-none border',
                     calendarSystem === 'BS'
-                      ? 'bg-background text-foreground font-bold shadow-xs border-border/90 dark:bg-card dark:border-primary/40'
-                      : 'border-transparent text-muted-foreground hover:bg-background/60 hover:text-foreground hover:border-border/40'
+                      ? 'bg-primary/10 text-primary font-bold shadow-xs border-primary/30 dark:bg-primary/15 dark:text-primary dark:border-primary/50'
+                      : 'border-transparent text-muted-foreground hover:bg-muted/40 hover:text-foreground hover:border-border/40'
                   )}
                 >
                   BS
@@ -334,8 +334,8 @@ export const AcademicCalendarView: React.FC<AcademicCalendarViewProps> = ({
                   className={cn(
                     'h-7 px-2.5 text-xs rounded-lg font-medium transition-all duration-150 cursor-pointer select-none border',
                     calendarSystem === 'AD'
-                      ? 'bg-background text-foreground font-bold shadow-xs border-border/90 dark:bg-card dark:border-primary/40'
-                      : 'border-transparent text-muted-foreground hover:bg-background/60 hover:text-foreground hover:border-border/40'
+                      ? 'bg-primary/10 text-primary font-bold shadow-xs border-primary/30 dark:bg-primary/15 dark:text-primary dark:border-primary/50'
+                      : 'border-transparent text-muted-foreground hover:bg-muted/40 hover:text-foreground hover:border-border/40'
                   )}
                 >
                   AD
@@ -351,8 +351,8 @@ export const AcademicCalendarView: React.FC<AcademicCalendarViewProps> = ({
                   className={cn(
                     'h-7 text-xs px-2.5 font-medium rounded-lg inline-flex items-center transition-all duration-150 cursor-pointer select-none border',
                     viewMode === 'list'
-                      ? 'bg-background text-foreground font-bold shadow-xs border-border/90 dark:bg-card dark:border-primary/40'
-                      : 'border-transparent text-muted-foreground hover:bg-background/60 hover:text-foreground hover:border-border/40'
+                      ? 'bg-primary/10 text-primary font-bold shadow-xs border-primary/30 dark:bg-primary/15 dark:text-primary dark:border-primary/50'
+                      : 'border-transparent text-muted-foreground hover:bg-muted/40 hover:text-foreground hover:border-border/40'
                   )}
                 >
                   <List className={cn('w-3.5 h-3.5 mr-1.5 transition-colors', viewMode === 'list' ? 'text-primary' : 'text-muted-foreground')} />
@@ -365,8 +365,8 @@ export const AcademicCalendarView: React.FC<AcademicCalendarViewProps> = ({
                   className={cn(
                     'h-7 text-xs px-2.5 font-medium rounded-lg inline-flex items-center transition-all duration-150 cursor-pointer select-none border',
                     viewMode === 'calendar'
-                      ? 'bg-background text-foreground font-bold shadow-xs border-border/90 dark:bg-card dark:border-primary/40'
-                      : 'border-transparent text-muted-foreground hover:bg-background/60 hover:text-foreground hover:border-border/40'
+                      ? 'bg-primary/10 text-primary font-bold shadow-xs border-primary/30 dark:bg-primary/15 dark:text-primary dark:border-primary/50'
+                      : 'border-transparent text-muted-foreground hover:bg-muted/40 hover:text-foreground hover:border-border/40'
                   )}
                 >
                   <Calendar className={cn('w-3.5 h-3.5 mr-1.5 transition-colors', viewMode === 'calendar' ? 'text-primary' : 'text-muted-foreground')} />

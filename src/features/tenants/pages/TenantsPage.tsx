@@ -220,8 +220,8 @@ export const TenantsPage: React.FC = () => {
               className={cn(
                 'px-3 py-1.5 text-xs font-semibold rounded-lg transition-all duration-150 cursor-pointer select-none border',
                 statusFilter === 'all'
-                  ? 'bg-background text-foreground font-bold shadow-xs border-border/90 dark:bg-card dark:border-primary/40'
-                  : 'border-transparent text-muted-foreground hover:text-foreground hover:bg-background/60 hover:border-border/40'
+                  ? 'bg-primary/10 text-primary font-bold shadow-xs border-primary/30 dark:bg-primary/15 dark:text-primary dark:border-primary/50'
+                  : 'border-transparent text-muted-foreground hover:text-foreground hover:bg-muted/40 hover:border-border/40'
               )}
             >
               All
@@ -237,8 +237,8 @@ export const TenantsPage: React.FC = () => {
               className={cn(
                 'px-3 py-1.5 text-xs font-semibold rounded-lg transition-all duration-150 cursor-pointer select-none border',
                 statusFilter === 'active'
-                  ? 'bg-background text-foreground font-bold shadow-xs border-border/90 dark:bg-card dark:border-primary/40'
-                  : 'border-transparent text-muted-foreground hover:text-foreground hover:bg-background/60 hover:border-border/40'
+                  ? 'bg-primary/10 text-primary font-bold shadow-xs border-primary/30 dark:bg-primary/15 dark:text-primary dark:border-primary/50'
+                  : 'border-transparent text-muted-foreground hover:text-foreground hover:bg-muted/40 hover:border-border/40'
               )}
             >
               Active
@@ -254,8 +254,8 @@ export const TenantsPage: React.FC = () => {
               className={cn(
                 'px-3 py-1.5 text-xs font-semibold rounded-lg transition-all duration-150 cursor-pointer select-none border',
                 statusFilter === 'inactive'
-                  ? 'bg-background text-foreground font-bold shadow-xs border-border/90 dark:bg-card dark:border-primary/40'
-                  : 'border-transparent text-muted-foreground hover:text-foreground hover:bg-background/60 hover:border-border/40'
+                  ? 'bg-primary/10 text-primary font-bold shadow-xs border-primary/30 dark:bg-primary/15 dark:text-primary dark:border-primary/50'
+                  : 'border-transparent text-muted-foreground hover:text-foreground hover:bg-muted/40 hover:border-border/40'
               )}
             >
               Inactive
@@ -271,8 +271,8 @@ export const TenantsPage: React.FC = () => {
               className={cn(
                 'p-1.5 rounded-lg transition-all duration-150 cursor-pointer select-none border',
                 viewMode === 'table'
-                  ? 'bg-background text-foreground shadow-xs border-border/90 dark:bg-card dark:border-primary/40'
-                  : 'border-transparent text-muted-foreground hover:text-foreground hover:bg-background/60 hover:border-border/40'
+                  ? 'bg-primary/10 text-primary shadow-xs border-primary/30 dark:bg-primary/15 dark:text-primary dark:border-primary/50'
+                  : 'border-transparent text-muted-foreground hover:text-foreground hover:bg-muted/40 hover:border-border/40'
               )}
               title="Table View"
               aria-label="Table View"
@@ -286,8 +286,8 @@ export const TenantsPage: React.FC = () => {
               className={cn(
                 'p-1.5 rounded-lg transition-all duration-150 cursor-pointer select-none border',
                 viewMode === 'grid'
-                  ? 'bg-background text-foreground shadow-xs border-border/90 dark:bg-card dark:border-primary/40'
-                  : 'border-transparent text-muted-foreground hover:text-foreground hover:bg-background/60 hover:border-border/40'
+                  ? 'bg-primary/10 text-primary shadow-xs border-primary/30 dark:bg-primary/15 dark:text-primary dark:border-primary/50'
+                  : 'border-transparent text-muted-foreground hover:text-foreground hover:bg-muted/40 hover:border-border/40'
               )}
               title="Grid Cards View"
               aria-label="Grid Cards View"

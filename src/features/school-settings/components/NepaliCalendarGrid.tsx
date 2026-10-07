@@ -323,8 +323,8 @@ export const NepaliCalendarGrid: React.FC<NepaliCalendarGridProps> = ({
             className={cn(
               'h-7 px-3 text-xs rounded-lg font-medium transition-all duration-150 cursor-pointer select-none border',
               viewMode === 'month'
-                ? 'bg-background text-foreground font-bold shadow-xs border-border/90 dark:bg-card dark:border-primary/40'
-                : 'border-transparent text-muted-foreground hover:bg-background/60 hover:text-foreground hover:border-border/40'
+                ? 'bg-primary/10 text-primary font-bold shadow-xs border-primary/30 dark:bg-primary/15 dark:text-primary dark:border-primary/50'
+                : 'border-transparent text-muted-foreground hover:bg-muted/40 hover:text-foreground hover:border-border/40'
             )}
           >
             Month Grid
@@ -337,8 +337,8 @@ export const NepaliCalendarGrid: React.FC<NepaliCalendarGridProps> = ({
             className={cn(
               'h-7 px-3 text-xs rounded-lg font-medium transition-all duration-150 cursor-pointer select-none border',
               viewMode === 'agenda'
-                ? 'bg-background text-foreground font-bold shadow-xs border-border/90 dark:bg-card dark:border-primary/40'
-                : 'border-transparent text-muted-foreground hover:bg-background/60 hover:text-foreground hover:border-border/40'
+                ? 'bg-primary/10 text-primary font-bold shadow-xs border-primary/30 dark:bg-primary/15 dark:text-primary dark:border-primary/50'
+                : 'border-transparent text-muted-foreground hover:bg-muted/40 hover:text-foreground hover:border-border/40'
             )}
           >
             Agenda ({monthEvents.length})

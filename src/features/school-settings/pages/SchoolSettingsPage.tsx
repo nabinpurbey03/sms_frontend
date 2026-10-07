@@ -171,8 +171,8 @@ export const SchoolSettingsPage: React.FC = () => {
                   value={tab.id}
                   className={cn(
                     'group relative flex items-center gap-2.5 px-4 py-2 text-sm rounded-xl transition-all duration-150 shrink-0 cursor-pointer select-none border border-transparent',
-                    'text-muted-foreground hover:text-foreground hover:bg-background/60 hover:border-border/40',
-                    'data-[state=active]:bg-background data-[state=active]:text-foreground data-[state=active]:shadow-xs data-[state=active]:border-border/90 dark:data-[state=active]:bg-card dark:data-[state=active]:border-primary/40 dark:data-[state=active]:shadow-md data-[state=active]:font-bold',
+                    'text-muted-foreground hover:text-foreground hover:bg-muted/40 hover:border-border/40',
+                    'data-[state=active]:bg-primary/10 data-[state=active]:text-primary data-[state=active]:shadow-xs data-[state=active]:border-primary/30 dark:data-[state=active]:bg-primary/15 dark:data-[state=active]:text-primary dark:data-[state=active]:border-primary/50 dark:data-[state=active]:shadow-xs data-[state=active]:font-bold',
                     'focus-visible:ring-2 focus-visible:ring-primary/40 focus-visible:outline-none'
                   )}
                 >

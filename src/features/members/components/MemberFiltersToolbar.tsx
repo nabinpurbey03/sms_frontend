@@ -76,8 +76,8 @@ export const MemberFiltersToolbar: React.FC<MemberFiltersToolbarProps> = ({
               className={cn(
                 'px-3 py-1.5 text-xs font-semibold rounded-lg transition-all duration-150 cursor-pointer select-none border',
                 statusFilter === 'ALL'
-                  ? 'bg-background text-foreground font-bold shadow-xs border-border/90 dark:bg-card dark:border-primary/40'
-                  : 'border-transparent text-muted-foreground hover:text-foreground hover:bg-background/60 hover:border-border/40'
+                  ? 'bg-primary/10 text-primary font-bold shadow-xs border-primary/30 dark:bg-primary/15 dark:text-primary dark:border-primary/50'
+                  : 'border-transparent text-muted-foreground hover:text-foreground hover:bg-muted/40 hover:border-border/40'
               )}
             >
               All
@@ -90,8 +90,8 @@ export const MemberFiltersToolbar: React.FC<MemberFiltersToolbarProps> = ({
               className={cn(
                 'px-3 py-1.5 text-xs font-semibold rounded-lg transition-all duration-150 cursor-pointer select-none border',
                 statusFilter === 'ACTIVE'
-                  ? 'bg-background text-foreground font-bold shadow-xs border-border/90 dark:bg-card dark:border-primary/40'
-                  : 'border-transparent text-muted-foreground hover:text-foreground hover:bg-background/60 hover:border-border/40'
+                  ? 'bg-primary/10 text-primary font-bold shadow-xs border-primary/30 dark:bg-primary/15 dark:text-primary dark:border-primary/50'
+                  : 'border-transparent text-muted-foreground hover:text-foreground hover:bg-muted/40 hover:border-border/40'
               )}
             >
               Active
@@ -104,8 +104,8 @@ export const MemberFiltersToolbar: React.FC<MemberFiltersToolbarProps> = ({
               className={cn(
                 'px-3 py-1.5 text-xs font-semibold rounded-lg transition-all duration-150 cursor-pointer select-none border',
                 statusFilter === 'INACTIVE'
-                  ? 'bg-background text-foreground font-bold shadow-xs border-border/90 dark:bg-card dark:border-primary/40'
-                  : 'border-transparent text-muted-foreground hover:text-foreground hover:bg-background/60 hover:border-border/40'
+                  ? 'bg-primary/10 text-primary font-bold shadow-xs border-primary/30 dark:bg-primary/15 dark:text-primary dark:border-primary/50'
+                  : 'border-transparent text-muted-foreground hover:text-foreground hover:bg-muted/40 hover:border-border/40'
               )}
             >
               Inactive

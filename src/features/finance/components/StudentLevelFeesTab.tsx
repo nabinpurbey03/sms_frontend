@@ -329,8 +329,8 @@ export const StudentLevelFeesTab: React.FC<StudentLevelFeesTabProps> = ({ tenant
               onClick={() => setFilterFacility('ALL')}
               className={`px-2.5 py-1 rounded-lg font-medium transition-all duration-150 cursor-pointer select-none border ${
                 filterFacility === 'ALL'
-                  ? 'bg-background text-foreground shadow-xs font-bold border-border/90 dark:bg-card dark:border-primary/40'
-                  : 'border-transparent text-muted-foreground hover:text-foreground hover:bg-background/60 hover:border-border/40'
+                  ? 'bg-primary/10 text-primary font-bold shadow-xs border-primary/30 dark:bg-primary/15 dark:text-primary dark:border-primary/50'
+                  : 'border-transparent text-muted-foreground hover:text-foreground hover:bg-muted/40 hover:border-border/40'
               }`}
             >
               All Students ({students.length})
@@ -343,7 +343,7 @@ export const StudentLevelFeesTab: React.FC<StudentLevelFeesTabProps> = ({ tenant
               onClick={() => setFilterFacility('TRANSPORT')}
               className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg font-medium transition-all duration-150 cursor-pointer select-none border ${
                 filterFacility === 'TRANSPORT'
-                  ? 'bg-emerald-600 text-white shadow-xs font-bold border-emerald-500'
+                  ? 'bg-emerald-500/15 text-emerald-700 dark:text-emerald-300 font-bold shadow-xs border-emerald-500/40'
                   : 'border-transparent text-muted-foreground hover:text-emerald-700 dark:hover:text-emerald-400 hover:bg-emerald-500/10 hover:border-emerald-500/30'
               }`}
             >
@@ -358,7 +358,7 @@ export const StudentLevelFeesTab: React.FC<StudentLevelFeesTabProps> = ({ tenant
               onClick={() => setFilterFacility('HOSTEL')}
               className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg font-medium transition-all duration-150 cursor-pointer select-none border ${
                 filterFacility === 'HOSTEL'
-                  ? 'bg-indigo-600 text-white shadow-xs font-bold border-indigo-500'
+                  ? 'bg-indigo-500/15 text-indigo-700 dark:text-indigo-300 font-bold shadow-xs border-indigo-500/40'
                   : 'border-transparent text-muted-foreground hover:text-indigo-700 dark:hover:text-indigo-400 hover:bg-indigo-500/10 hover:border-indigo-500/30'
               }`}
             >
@@ -373,7 +373,7 @@ export const StudentLevelFeesTab: React.FC<StudentLevelFeesTabProps> = ({ tenant
               onClick={() => setFilterFacility('CANTEEN')}
               className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg font-medium transition-all duration-150 cursor-pointer select-none border ${
                 filterFacility === 'CANTEEN'
-                  ? 'bg-amber-600 text-white shadow-xs font-bold border-amber-500'
+                  ? 'bg-amber-500/15 text-amber-700 dark:text-amber-300 font-bold shadow-xs border-amber-500/40'
                   : 'border-transparent text-muted-foreground hover:text-amber-700 dark:hover:text-amber-400 hover:bg-amber-500/10 hover:border-amber-500/30'
               }`}
             >
@@ -388,7 +388,7 @@ export const StudentLevelFeesTab: React.FC<StudentLevelFeesTabProps> = ({ tenant
               onClick={() => setFilterFacility('COACHING')}
               className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg font-medium transition-all duration-150 cursor-pointer select-none border ${
                 filterFacility === 'COACHING'
-                  ? 'bg-purple-600 text-white shadow-xs font-bold border-purple-500'
+                  ? 'bg-purple-500/15 text-purple-700 dark:text-purple-300 font-bold shadow-xs border-purple-500/40'
                   : 'border-transparent text-muted-foreground hover:text-purple-700 dark:hover:text-purple-400 hover:bg-purple-500/10 hover:border-purple-500/30'
               }`}
             >
@@ -403,8 +403,8 @@ export const StudentLevelFeesTab: React.FC<StudentLevelFeesTabProps> = ({ tenant
               onClick={() => setFilterFacility('CUSTOM')}
               className={`px-2.5 py-1 rounded-lg font-medium transition-all duration-150 cursor-pointer select-none border ${
                 filterFacility === 'CUSTOM'
-                  ? 'bg-background text-foreground shadow-xs font-bold border-border/90 dark:bg-card dark:border-primary/40'
-                  : 'border-transparent text-muted-foreground hover:text-foreground hover:bg-background/60 hover:border-border/40'
+                  ? 'bg-primary/10 text-primary font-bold shadow-xs border-primary/30 dark:bg-primary/15 dark:text-primary dark:border-primary/50'
+                  : 'border-transparent text-muted-foreground hover:text-foreground hover:bg-muted/40 hover:border-border/40'
               }`}
             >
               Any Subscribed Facility ({facilityCounts.custom})

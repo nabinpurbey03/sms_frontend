@@ -305,21 +305,21 @@ export const FeeStructuresPage: React.FC = () => {
               aria-selected={activeTab === 'school'}
               onClick={() => setActiveTab('school')}
               className={cn(
-                'flex items-center gap-2 px-4 py-2 rounded-xl text-xs font-semibold transition-all duration-150 cursor-pointer whitespace-nowrap select-none',
+                'flex items-center gap-2 px-4 py-2 rounded-xl text-xs font-semibold transition-all duration-150 cursor-pointer whitespace-nowrap select-none border',
                 'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/40',
                 activeTab === 'school'
-                  ? 'bg-background text-foreground font-bold shadow-xs border border-border/90 dark:bg-card dark:border-primary/40 dark:shadow-md'
-                  : 'text-muted-foreground hover:text-foreground hover:bg-background/60 hover:border-border/40 border border-transparent'
+                  ? 'bg-primary/10 text-primary font-bold shadow-xs border-primary/30 dark:bg-primary/15 dark:text-primary dark:border-primary/50'
+                  : 'text-muted-foreground hover:text-foreground hover:bg-muted/40 hover:border-border/40 border-transparent'
               )}
             >
-              <School className={cn('w-3.5 h-3.5 transition-colors', activeTab === 'school' ? 'text-blue-500' : 'text-muted-foreground')} />
+              <School className={cn('w-3.5 h-3.5 transition-colors', activeTab === 'school' ? 'text-primary' : 'text-muted-foreground')} />
               <span>1. School Level Fees</span>
               <Badge
                 variant={activeTab === 'school' ? 'default' : 'outline'}
                 className={cn(
                   'text-[10px] px-1.5 py-0 font-bold ml-0.5 transition-colors',
                   activeTab === 'school'
-                    ? 'bg-primary text-primary-foreground'
+                    ? 'bg-primary/20 text-primary border-primary/30 dark:bg-primary/25 dark:text-primary dark:border-primary/50'
                     : 'bg-muted/60 text-muted-foreground border-border/60'
                 )}
               >
@@ -333,11 +333,11 @@ export const FeeStructuresPage: React.FC = () => {
               aria-selected={activeTab === 'class'}
               onClick={() => setActiveTab('class')}
               className={cn(
-                'flex items-center gap-2 px-4 py-2 rounded-xl text-xs font-semibold transition-all duration-150 cursor-pointer whitespace-nowrap select-none',
+                'flex items-center gap-2 px-4 py-2 rounded-xl text-xs font-semibold transition-all duration-150 cursor-pointer whitespace-nowrap select-none border',
                 'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/40',
                 activeTab === 'class'
-                  ? 'bg-background text-foreground font-bold shadow-xs border border-border/90 dark:bg-card dark:border-primary/40 dark:shadow-md'
-                  : 'text-muted-foreground hover:text-foreground hover:bg-background/60 hover:border-border/40 border border-transparent'
+                  ? 'bg-primary/10 text-primary font-bold shadow-xs border-primary/30 dark:bg-primary/15 dark:text-primary dark:border-primary/50'
+                  : 'text-muted-foreground hover:text-foreground hover:bg-muted/40 hover:border-border/40 border-transparent'
               )}
             >
               <GraduationCap className={cn('w-3.5 h-3.5 transition-colors', activeTab === 'class' ? 'text-primary' : 'text-muted-foreground')} />
@@ -347,7 +347,7 @@ export const FeeStructuresPage: React.FC = () => {
                 className={cn(
                   'text-[10px] px-1.5 py-0 font-bold ml-0.5 transition-colors',
                   activeTab === 'class'
-                    ? 'bg-primary text-primary-foreground'
+                    ? 'bg-primary/20 text-primary border-primary/30 dark:bg-primary/25 dark:text-primary dark:border-primary/50'
                     : 'bg-muted/60 text-muted-foreground border-border/60'
                 )}
               >
@@ -361,21 +361,21 @@ export const FeeStructuresPage: React.FC = () => {
               aria-selected={activeTab === 'student'}
               onClick={() => setActiveTab('student')}
               className={cn(
-                'flex items-center gap-2 px-4 py-2 rounded-xl text-xs font-semibold transition-all duration-150 cursor-pointer whitespace-nowrap select-none',
+                'flex items-center gap-2 px-4 py-2 rounded-xl text-xs font-semibold transition-all duration-150 cursor-pointer whitespace-nowrap select-none border',
                 'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/40',
                 activeTab === 'student'
-                  ? 'bg-background text-foreground font-bold shadow-xs border border-border/90 dark:bg-card dark:border-primary/40 dark:shadow-md'
-                  : 'text-muted-foreground hover:text-foreground hover:bg-background/60 hover:border-border/40 border border-transparent'
+                  ? 'bg-primary/10 text-primary font-bold shadow-xs border-primary/30 dark:bg-primary/15 dark:text-primary dark:border-primary/50'
+                  : 'text-muted-foreground hover:text-foreground hover:bg-muted/40 hover:border-border/40 border-transparent'
               )}
             >
-              <Sparkles className={cn('w-3.5 h-3.5 transition-colors', activeTab === 'student' ? 'text-purple-500' : 'text-muted-foreground')} />
+              <Sparkles className={cn('w-3.5 h-3.5 transition-colors', activeTab === 'student' ? 'text-primary' : 'text-muted-foreground')} />
               <span>3. Student Level Fees</span>
               <Badge
                 variant={activeTab === 'student' ? 'default' : 'outline'}
                 className={cn(
                   'text-[10px] px-1.5 py-0 font-bold ml-0.5 transition-colors',
                   activeTab === 'student'
-                    ? 'bg-primary text-primary-foreground'
+                    ? 'bg-primary/20 text-primary border-primary/30 dark:bg-primary/25 dark:text-primary dark:border-primary/50'
                     : 'bg-muted/60 text-muted-foreground border-border/60'
                 )}
               >

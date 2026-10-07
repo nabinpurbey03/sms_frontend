@@ -124,11 +124,11 @@ export const BulkAssignFacilityDialog: React.FC<BulkAssignFacilityDialogProps> =
                 aria-selected={mode === 'PRESET'}
                 onClick={() => setMode('PRESET')}
                 className={cn(
-                  'px-3 py-1.5 rounded-lg font-semibold text-xs transition-all duration-150 cursor-pointer select-none',
+                  'px-3 py-1.5 rounded-lg font-semibold text-xs transition-all duration-150 cursor-pointer select-none border',
                   'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/40',
                   mode === 'PRESET'
-                    ? 'bg-background text-foreground font-bold shadow-xs border border-border/90 dark:bg-card dark:border-primary/40 dark:shadow-md'
-                    : 'text-muted-foreground hover:text-foreground hover:bg-background/60 hover:border-border/40 border border-transparent'
+                    ? 'bg-primary/10 text-primary font-bold shadow-xs border-primary/30 dark:bg-primary/15 dark:text-primary dark:border-primary/50'
+                    : 'text-muted-foreground hover:text-foreground hover:bg-muted/40 hover:border-border/40 border-transparent'
                 )}
               >
                 School Presets
@@ -139,11 +139,11 @@ export const BulkAssignFacilityDialog: React.FC<BulkAssignFacilityDialogProps> =
                 aria-selected={mode === 'CUSTOM'}
                 onClick={() => setMode('CUSTOM')}
                 className={cn(
-                  'px-3 py-1.5 rounded-lg font-semibold text-xs transition-all duration-150 cursor-pointer select-none',
+                  'px-3 py-1.5 rounded-lg font-semibold text-xs transition-all duration-150 cursor-pointer select-none border',
                   'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/40',
                   mode === 'CUSTOM'
-                    ? 'bg-background text-foreground font-bold shadow-xs border border-border/90 dark:bg-card dark:border-primary/40 dark:shadow-md'
-                    : 'text-muted-foreground hover:text-foreground hover:bg-background/60 hover:border-border/40 border border-transparent'
+                    ? 'bg-primary/10 text-primary font-bold shadow-xs border-primary/30 dark:bg-primary/15 dark:text-primary dark:border-primary/50'
+                    : 'text-muted-foreground hover:text-foreground hover:bg-muted/40 hover:border-border/40 border-transparent'
                 )}
               >
                 Custom Entry

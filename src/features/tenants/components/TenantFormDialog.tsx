@@ -175,8 +175,8 @@ export const TenantFormDialog: React.FC<TenantFormDialogProps> = ({
               className={cn(
                 'flex items-center gap-1.5 px-3 py-1.5 text-xs font-semibold rounded-lg transition-all duration-150 cursor-pointer select-none border',
                 activeTab === 'general'
-                  ? 'bg-background text-foreground font-bold shadow-xs border-border/90 dark:bg-card dark:border-primary/40'
-                  : 'border-transparent text-muted-foreground hover:bg-background/60 hover:text-foreground hover:border-border/40'
+                  ? 'bg-primary/10 text-primary font-bold shadow-xs border-primary/30 dark:bg-primary/15 dark:text-primary dark:border-primary/50'
+                  : 'border-transparent text-muted-foreground hover:bg-muted/40 hover:text-foreground hover:border-border/40'
               )}
             >
               <Building2 className={cn('h-3.5 w-3.5 transition-colors', activeTab === 'general' ? 'text-primary' : 'text-muted-foreground')} />
@@ -190,8 +190,8 @@ export const TenantFormDialog: React.FC<TenantFormDialogProps> = ({
               className={cn(
                 'flex items-center gap-1.5 px-3 py-1.5 text-xs font-semibold rounded-lg transition-all duration-150 cursor-pointer select-none border',
                 activeTab === 'address'
-                  ? 'bg-background text-foreground font-bold shadow-xs border-border/90 dark:bg-card dark:border-primary/40'
-                  : 'border-transparent text-muted-foreground hover:bg-background/60 hover:text-foreground hover:border-border/40'
+                  ? 'bg-primary/10 text-primary font-bold shadow-xs border-primary/30 dark:bg-primary/15 dark:text-primary dark:border-primary/50'
+                  : 'border-transparent text-muted-foreground hover:bg-muted/40 hover:text-foreground hover:border-border/40'
               )}
             >
               <MapPin className={cn('h-3.5 w-3.5 transition-colors', activeTab === 'address' ? 'text-primary' : 'text-muted-foreground')} />
