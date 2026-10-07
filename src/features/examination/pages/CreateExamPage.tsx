@@ -55,6 +55,7 @@ import {
   ExamSubjectConfigList,
   type SubjectConfigItem,
 } from '@/features/examination/components/ExamSubjectConfigList';
+import { validateSubjectMarks } from '@/features/examination/types';
 
 export const CreateExamPage: React.FC = () => {
   const navigate = useNavigate();
@@ -148,11 +149,57 @@ export const CreateExamPage: React.FC = () => {
       configsMap[classId] = cls.subjects.map((s) => {
         const override = overrides[classId]?.[s.id];
         const autoTeacher = subjectTeacherMap.get(`${classId}_${s.id}`);
+        const subjAny = s as any;
 
-        const fullMark =
-          override?.fullMark !== undefined ? override.fullMark : 100;
-        const passMark =
-          override?.passMark !== undefined ? override.passMark : 40;
+        const hasPractical =
+          override?.hasPractical !== undefined
+            ? override.hasPractical
+            : subjAny.has_practical ?? false;
+
+        const theoryFullMark =
+          override?.theoryFullMark !== undefined
+            ? override.theoryFullMark
+            : subjAny.theory_full_mark != null
+              ? Number(subjAny.theory_full_mark)
+              : hasPractical
+                ? 75
+                : 100;
+
+        const theoryPassMark =
+          override?.theoryPassMark !== undefined
+            ? override.theoryPassMark
+            : subjAny.theory_pass_mark != null
+              ? Number(subjAny.theory_pass_mark)
+              : hasPractical
+                ? 27
+                : 40;
+
+        const practicalFullMark =
+          override?.practicalFullMark !== undefined
+            ? override.practicalFullMark
+            : subjAny.practical_full_mark != null
+              ? Number(subjAny.practical_full_mark)
+              : hasPractical
+                ? 25
+                : 0;
+
+        const practicalPassMark =
+          override?.practicalPassMark !== undefined
+            ? override.practicalPassMark
+            : subjAny.practical_pass_mark != null
+              ? Number(subjAny.practical_pass_mark)
+              : hasPractical
+                ? 10
+                : 0;
+
+        const fullMark = hasPractical
+          ? theoryFullMark + practicalFullMark
+          : theoryFullMark;
+
+        const passMark = hasPractical
+          ? theoryPassMark + practicalPassMark
+          : theoryPassMark;
+
         const included =
           override?.included !== undefined ? override.included : true;
 
@@ -167,15 +214,25 @@ export const CreateExamPage: React.FC = () => {
         const error =
           override?.error !== undefined
             ? override.error
-            : included && passMark > fullMark
-              ? 'Pass mark cannot exceed full mark'
-              : undefined;
+            : validateSubjectMarks({
+                included,
+                hasPractical,
+                theoryFullMark,
+                theoryPassMark,
+                practicalFullMark,
+                practicalPassMark,
+              });
 
         return {
           subjectId: s.id,
           subjectName: s.name,
           subjectCode: s.code,
           included,
+          hasPractical,
+          theoryFullMark,
+          theoryPassMark,
+          practicalFullMark,
+          practicalPassMark,
           fullMark,
           passMark,
           assignedTeacherId,
@@ -194,6 +251,11 @@ export const CreateExamPage: React.FC = () => {
       for (const c of configs) {
         classOverrides[c.subjectId] = {
           included: c.included,
+          hasPractical: c.hasPractical,
+          theoryFullMark: c.theoryFullMark,
+          theoryPassMark: c.theoryPassMark,
+          practicalFullMark: c.practicalFullMark,
+          practicalPassMark: c.practicalPassMark,
           fullMark: c.fullMark,
           passMark: c.passMark,
           assignedTeacherId: c.assignedTeacherId,
@@ -270,11 +332,16 @@ export const CreateExamPage: React.FC = () => {
       }
       
       const hasInvalidMarks = included.some(
-        (s) => s.passMark > s.fullMark || s.fullMark < 1 || s.passMark < 0
+        (s) =>
+          s.theoryPassMark > s.theoryFullMark ||
+          s.theoryFullMark < 1 ||
+          (s.hasPractical &&
+            (s.practicalPassMark > s.practicalFullMark || s.practicalFullMark < 1))
       );
       if (hasInvalidMarks) {
         toast.error('Validation Error', {
-          description: 'Pass mark cannot exceed full mark, and full mark must be at least 1.',
+          description:
+            'Pass mark cannot exceed full mark, and full marks must be at least 1.',
         });
         return;
       }
@@ -307,6 +374,11 @@ export const CreateExamPage: React.FC = () => {
             examId: createdExam.id,
             data: {
               subject_id: item.subjectId,
+              has_practical: item.hasPractical,
+              theory_full_mark: item.theoryFullMark,
+              theory_pass_mark: item.theoryPassMark,
+              practical_full_mark: item.practicalFullMark,
+              practical_pass_mark: item.practicalPassMark,
               full_mark: item.fullMark,
               pass_mark: item.passMark,
               teacher_id: item.assignedTeacherId || undefined,

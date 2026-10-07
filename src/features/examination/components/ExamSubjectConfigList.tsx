@@ -1,5 +1,5 @@
 import React from 'react';
-import { AlertCircle, BookOpen } from 'lucide-react';
+import { AlertCircle, BookOpen, SlidersHorizontal, FlaskConical } from 'lucide-react';
 import {
   Table,
   TableHeader,
@@ -11,14 +11,27 @@ import {
 import { Input } from '@/components/ui/input';
 import { Checkbox } from '@/components/ui/checkbox';
 import { Badge } from '@/components/ui/badge';
+import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
 import { cn } from '@/lib/utils';
+import {
+  EXAM_MARK_PRESETS,
+  type ExamMarkPresetKey,
+  deriveTotalMarks,
+  validateSubjectMarks,
+  applyPresetToSubject,
+} from '@/features/examination/types';
 
 export interface SubjectConfigItem {
   subjectId: string;
   subjectName: string;
   subjectCode?: string | null;
   included: boolean;
+  hasPractical: boolean;
+  theoryFullMark: number;
+  theoryPassMark: number;
+  practicalFullMark: number;
+  practicalPassMark: number;
   fullMark: number;
   passMark: number;
   assignedTeacherId: string;
@@ -43,12 +56,14 @@ export const ExamSubjectConfigList: React.FC<ExamSubjectConfigListProps> = ({
   const handleUpdate = (index: number, updates: Partial<SubjectConfigItem>) => {
     const updated = configs.map((item, i) => {
       if (i !== index) return item;
-      const newItem = { ...item, ...updates };
-      if (newItem.included && newItem.passMark > newItem.fullMark) {
-        newItem.error = 'Pass mark cannot exceed full mark';
-      } else {
-        newItem.error = undefined;
-      }
+      const merged = { ...item, ...updates };
+      const { fullMark, passMark } = deriveTotalMarks(merged);
+      const newItem: SubjectConfigItem = {
+        ...merged,
+        fullMark,
+        passMark,
+      };
+      newItem.error = validateSubjectMarks(newItem);
       return newItem;
     });
     onChange(updated);
@@ -59,35 +74,85 @@ export const ExamSubjectConfigList: React.FC<ExamSubjectConfigListProps> = ({
   };
 
   const handleToggleAll = (included: boolean) => {
-    const updated = configs.map((item) => ({
-      ...item,
-      included,
-      error:
-        included && item.passMark > item.fullMark
-          ? 'Pass mark cannot exceed full mark'
-          : undefined,
-    }));
+    const updated = configs.map((item) => {
+      const newItem = { ...item, included };
+      newItem.error = validateSubjectMarks(newItem);
+      return newItem;
+    });
     onChange(updated);
   };
 
-  const handleFullMarkChange = (index: number, valStr: string) => {
-    const fullMark = valStr === '' ? 0 : Math.max(0, parseInt(valStr, 10) || 0);
-    handleUpdate(index, { fullMark });
+  const handlePracticalToggle = (index: number, hasPractical: boolean) => {
+    const current = configs[index];
+    if (!current) return;
+    if (hasPractical) {
+      const theoryFullMark = current.theoryFullMark === 100 ? 75 : current.theoryFullMark;
+      const theoryPassMark = current.theoryFullMark === 100 ? 27 : current.theoryPassMark;
+      const practicalFullMark = current.practicalFullMark > 0 ? current.practicalFullMark : 25;
+      const practicalPassMark = current.practicalPassMark > 0 ? current.practicalPassMark : 10;
+      handleUpdate(index, {
+        hasPractical: true,
+        theoryFullMark,
+        theoryPassMark,
+        practicalFullMark,
+        practicalPassMark,
+      });
+    } else {
+      const theoryFullMark = current.theoryFullMark === 75 ? 100 : current.theoryFullMark;
+      const theoryPassMark = current.theoryPassMark === 27 ? 40 : current.theoryPassMark;
+      handleUpdate(index, {
+        hasPractical: false,
+        theoryFullMark,
+        theoryPassMark,
+        practicalFullMark: 0,
+        practicalPassMark: 0,
+      });
+    }
   };
 
-  const handlePassMarkChange = (index: number, valStr: string) => {
-    const passMark = valStr === '' ? 0 : Math.max(0, parseInt(valStr, 10) || 0);
-    handleUpdate(index, { passMark });
+  const handlePresetSelect = (index: number, presetKey: ExamMarkPresetKey) => {
+    const updated = configs.map((item, i) => {
+      if (i !== index) return item;
+      return applyPresetToSubject(item, presetKey);
+    });
+    onChange(updated);
+  };
+
+  const handleBatchPreset = (presetKey: ExamMarkPresetKey) => {
+    const updated = configs.map((item) => {
+      if (!item.included) return item;
+      return applyPresetToSubject(item, presetKey);
+    });
+    onChange(updated);
+  };
+
+  const handleTheoryFullMarkChange = (index: number, valStr: string) => {
+    const theoryFullMark = valStr === '' ? 0 : Math.max(0, parseInt(valStr, 10) || 0);
+    handleUpdate(index, { theoryFullMark });
+  };
+
+  const handleTheoryPassMarkChange = (index: number, valStr: string) => {
+    const theoryPassMark = valStr === '' ? 0 : Math.max(0, parseInt(valStr, 10) || 0);
+    handleUpdate(index, { theoryPassMark });
+  };
+
+  const handlePracticalFullMarkChange = (index: number, valStr: string) => {
+    const practicalFullMark = valStr === '' ? 0 : Math.max(0, parseInt(valStr, 10) || 0);
+    handleUpdate(index, { practicalFullMark });
+  };
+
+  const handlePracticalPassMarkChange = (index: number, valStr: string) => {
+    const practicalPassMark = valStr === '' ? 0 : Math.max(0, parseInt(valStr, 10) || 0);
+    handleUpdate(index, { practicalPassMark });
   };
 
   const handleTeacherChange = (index: number, teacherId: string) => {
     handleUpdate(index, { assignedTeacherId: teacherId });
   };
 
-  const hasAnyError = configs.some(
-    (c) => c.included && c.passMark > c.fullMark
-  );
+  const hasAnyError = configs.some((c) => c.included && !!c.error);
   const allIncluded = configs.length > 0 && configs.every((c) => c.included);
+  const includedCount = configs.filter((c) => c.included).length;
 
   if (configs.length === 0) {
     return null;
@@ -99,16 +164,45 @@ export const ExamSubjectConfigList: React.FC<ExamSubjectConfigListProps> = ({
       {hasAnyError && (
         <div className="rounded-lg border border-destructive/30 bg-destructive/10 p-3 text-destructive text-sm flex items-center gap-2 font-medium">
           <AlertCircle className="w-4 h-4 shrink-0" />
-          <span>Pass mark cannot exceed full mark. Please review the highlighted subjects.</span>
+          <span>
+            Pass mark cannot exceed full mark, and full marks must be at least 1. Please review highlighted subjects.
+          </span>
         </div>
       )}
 
-      {/* Desktop View (>= md): Clean Table */}
+      {/* Batch Preset Bar */}
+      <div className="flex flex-wrap items-center justify-between gap-2.5 p-3 rounded-xl border bg-muted/30">
+        <div className="flex items-center gap-2 text-xs font-semibold text-foreground">
+          <SlidersHorizontal className="w-4 h-4 text-primary" />
+          <span>Quick Apply Presets to Included Subjects ({includedCount}):</span>
+        </div>
+        <div className="flex flex-wrap items-center gap-1.5">
+          {(['75_25', '80_20', '50_50', '100_TH'] as const).map((key) => {
+            const p = EXAM_MARK_PRESETS[key];
+            return (
+              <Button
+                key={key}
+                type="button"
+                variant="outline"
+                size="sm"
+                className="h-7 text-xs px-2.5 py-0 font-medium hover:bg-primary/10 hover:text-primary hover:border-primary/40 transition-colors"
+                disabled={disabled || includedCount === 0}
+                onClick={() => handleBatchPreset(key)}
+                title={`Apply ${p.label} preset to all ${includedCount} included subjects`}
+              >
+                {p.label}
+              </Button>
+            );
+          })}
+        </div>
+      </div>
+
+      {/* Desktop View (>= md): Comprehensive Table */}
       <div className="hidden md:block rounded-xl border bg-card overflow-hidden shadow-sm">
         <Table>
           <TableHeader>
             <TableRow>
-              <TableHead className="w-[180px]">
+              <TableHead className="w-[140px]">
                 <div className="flex items-center gap-2">
                   <Checkbox
                     checked={allIncluded}
@@ -116,13 +210,14 @@ export const ExamSubjectConfigList: React.FC<ExamSubjectConfigListProps> = ({
                     disabled={disabled || configs.length === 0}
                     aria-label="Toggle all subjects"
                   />
-                  <span>Include in Exam</span>
+                  <span>Include</span>
                 </div>
               </TableHead>
-              <TableHead>Subject</TableHead>
-              <TableHead className="w-[140px]">Full Mark</TableHead>
-              <TableHead className="w-[160px]">Pass Mark</TableHead>
-              <TableHead className="w-[280px]">
+              <TableHead className="min-w-[200px]">Subject & Presets</TableHead>
+              <TableHead className="w-[180px]">Theory Marks</TableHead>
+              <TableHead className="w-[180px]">Practical Marks</TableHead>
+              <TableHead className="w-[130px]">Total</TableHead>
+              <TableHead className="w-[240px]">
                 Grading Teacher <span className="text-destructive">*</span>
               </TableHead>
             </TableRow>
@@ -130,7 +225,7 @@ export const ExamSubjectConfigList: React.FC<ExamSubjectConfigListProps> = ({
           <TableBody>
             {configs.map((item, index) => {
               const isExcluded = !item.included;
-              const hasError = !!item.error || (item.included && item.passMark > item.fullMark);
+              const hasError = !!item.error;
 
               return (
                 <TableRow
@@ -140,7 +235,8 @@ export const ExamSubjectConfigList: React.FC<ExamSubjectConfigListProps> = ({
                     isExcluded && 'opacity-50 bg-muted/20'
                   )}
                 >
-                  <TableCell>
+                  {/* Column 1: Include Toggle */}
+                  <TableCell className="align-top py-3">
                     <label className="flex items-center gap-2 cursor-pointer select-none">
                       <Checkbox
                         checked={item.included}
@@ -149,69 +245,246 @@ export const ExamSubjectConfigList: React.FC<ExamSubjectConfigListProps> = ({
                         }
                         disabled={disabled}
                       />
-                      <span className="text-xs text-muted-foreground">
+                      <span className="text-xs text-muted-foreground font-medium">
                         {item.included ? 'Included' : 'Excluded'}
                       </span>
                     </label>
                   </TableCell>
-                  <TableCell>
-                    <div className="flex items-center gap-2">
-                      <div className="p-1.5 rounded-lg bg-primary/10 text-primary shrink-0">
-                        <BookOpen className="w-4 h-4" />
-                      </div>
-                      <div>
-                        <div className="font-semibold text-sm text-foreground">
-                          {item.subjectName}
+
+                  {/* Column 2: Subject Details + Practical Switch + Presets */}
+                  <TableCell className="align-top py-3">
+                    <div className="space-y-2">
+                      <div className="flex items-center gap-2">
+                        <div className="p-1.5 rounded-lg bg-primary/10 text-primary shrink-0">
+                          <BookOpen className="w-4 h-4" />
                         </div>
-                        {item.subjectCode && (
-                          <Badge
-                            variant="outline"
-                            className="text-[10px] px-1.5 py-0 mt-0.5"
+                        <div>
+                          <div className="font-semibold text-sm text-foreground">
+                            {item.subjectName}
+                          </div>
+                          {item.subjectCode && (
+                            <Badge
+                              variant="outline"
+                              className="text-[10px] px-1.5 py-0 mt-0.5"
+                            >
+                              {item.subjectCode}
+                            </Badge>
+                          )}
+                        </div>
+                      </div>
+
+                      <div className="flex flex-wrap items-center gap-2 pt-0.5">
+                        {/* Practical Toggle Switch */}
+                        <label className="flex items-center gap-1.5 cursor-pointer text-xs select-none">
+                          <Checkbox
+                            checked={item.hasPractical}
+                            onCheckedChange={(checked) =>
+                              handlePracticalToggle(index, !!checked)
+                            }
+                            disabled={disabled || isExcluded}
+                          />
+                          <span
+                            className={cn(
+                              'text-xs font-medium flex items-center gap-1',
+                              item.hasPractical
+                                ? 'text-primary font-semibold'
+                                : 'text-muted-foreground'
+                            )}
                           >
-                            {item.subjectCode}
-                          </Badge>
-                        )}
+                            <FlaskConical className="w-3.5 h-3.5" />
+                            Practical
+                          </span>
+                        </label>
+
+                        {/* Preset quick pills */}
+                        <div className="flex items-center gap-1">
+                          {(['75_25', '80_20', '50_50', '100_TH'] as const).map((key) => {
+                            const p = EXAM_MARK_PRESETS[key];
+                            const isCurrent =
+                              item.hasPractical === p.hasPractical &&
+                              item.theoryFullMark === p.theoryFullMark &&
+                              item.theoryPassMark === p.theoryPassMark &&
+                              item.practicalFullMark === p.practicalFullMark &&
+                              item.practicalPassMark === p.practicalPassMark;
+
+                            return (
+                              <button
+                                key={key}
+                                type="button"
+                                disabled={disabled || isExcluded}
+                                onClick={() => handlePresetSelect(index, key)}
+                                className={cn(
+                                  'text-[10px] px-1.5 py-0.5 rounded border transition-colors font-medium',
+                                  isCurrent
+                                    ? 'bg-primary text-primary-foreground border-primary shadow-xs'
+                                    : 'bg-background hover:bg-muted text-muted-foreground border-input'
+                                )}
+                              >
+                                {p.label}
+                              </button>
+                            );
+                          })}
+                        </div>
                       </div>
                     </div>
                   </TableCell>
-                  <TableCell>
-                    <Input
-                      type="number"
-                      min={1}
-                      max={1000}
-                      value={item.fullMark === 0 ? '' : item.fullMark}
-                      onChange={(e) =>
-                        handleFullMarkChange(index, e.target.value)
-                      }
-                      disabled={disabled || isExcluded}
-                      className="h-9 w-28"
-                      placeholder="100"
-                    />
+
+                  {/* Column 3: Theory Marks */}
+                  <TableCell className="align-top py-3">
+                    <div className="space-y-1">
+                      <div className="grid grid-cols-2 gap-1.5">
+                        <div>
+                          <span className="text-[10px] text-muted-foreground font-medium block mb-0.5">
+                            Full
+                          </span>
+                          <Input
+                            type="number"
+                            min={1}
+                            max={1000}
+                            value={item.theoryFullMark === 0 ? '' : item.theoryFullMark}
+                            onChange={(e) =>
+                              handleTheoryFullMarkChange(index, e.target.value)
+                            }
+                            disabled={disabled || isExcluded}
+                            className={cn(
+                              'h-8 text-xs',
+                              item.included &&
+                                (item.theoryFullMark < 1 ||
+                                  item.theoryPassMark > item.theoryFullMark) &&
+                                'border-destructive text-destructive'
+                            )}
+                            placeholder="75"
+                          />
+                        </div>
+                        <div>
+                          <span className="text-[10px] text-muted-foreground font-medium block mb-0.5">
+                            Pass
+                          </span>
+                          <Input
+                            type="number"
+                            min={0}
+                            max={item.theoryFullMark || 1000}
+                            value={item.theoryPassMark === 0 ? '0' : item.theoryPassMark}
+                            onChange={(e) =>
+                              handleTheoryPassMarkChange(index, e.target.value)
+                            }
+                            disabled={disabled || isExcluded}
+                            className={cn(
+                              'h-8 text-xs',
+                              item.included &&
+                                item.theoryPassMark > item.theoryFullMark &&
+                                'border-destructive text-destructive'
+                            )}
+                            placeholder="27"
+                          />
+                        </div>
+                      </div>
+                      {item.included &&
+                        (item.theoryPassMark > item.theoryFullMark ||
+                          item.theoryFullMark < 1) && (
+                          <p className="text-[11px] text-destructive font-medium leading-tight mt-1">
+                            {item.theoryPassMark > item.theoryFullMark
+                              ? 'Theory pass cannot exceed full'
+                              : 'Theory full must be ≥ 1'}
+                          </p>
+                        )}
+                    </div>
                   </TableCell>
-                  <TableCell>
-                    <Input
-                      type="number"
-                      min={0}
-                      max={item.fullMark || 1000}
-                      value={item.passMark === 0 ? '0' : item.passMark}
-                      onChange={(e) =>
-                        handlePassMarkChange(index, e.target.value)
-                      }
-                      disabled={disabled || isExcluded}
-                      className={cn(
-                        'h-9 w-28',
-                        hasError &&
-                          'border-destructive focus-visible:ring-destructive text-destructive'
-                      )}
-                      placeholder="40"
-                    />
-                    {hasError && (
-                      <p className="text-[11px] text-destructive mt-1 font-medium leading-tight">
-                        Pass mark cannot exceed full mark
-                      </p>
+
+                  {/* Column 4: Practical Marks */}
+                  <TableCell className="align-top py-3">
+                    {item.hasPractical ? (
+                      <div className="space-y-1">
+                        <div className="grid grid-cols-2 gap-1.5">
+                          <div>
+                            <span className="text-[10px] text-muted-foreground font-medium block mb-0.5">
+                              Full
+                            </span>
+                            <Input
+                              type="number"
+                              min={1}
+                              max={1000}
+                              value={
+                                item.practicalFullMark === 0
+                                  ? ''
+                                  : item.practicalFullMark
+                              }
+                              onChange={(e) =>
+                                handlePracticalFullMarkChange(index, e.target.value)
+                              }
+                              disabled={disabled || isExcluded}
+                              className={cn(
+                                'h-8 text-xs',
+                                item.included &&
+                                  (item.practicalFullMark < 1 ||
+                                    item.practicalPassMark >
+                                      item.practicalFullMark) &&
+                                  'border-destructive text-destructive'
+                              )}
+                              placeholder="25"
+                            />
+                          </div>
+                          <div>
+                            <span className="text-[10px] text-muted-foreground font-medium block mb-0.5">
+                              Pass
+                            </span>
+                            <Input
+                              type="number"
+                              min={0}
+                              max={item.practicalFullMark || 1000}
+                              value={
+                                item.practicalPassMark === 0
+                                  ? '0'
+                                  : item.practicalPassMark
+                              }
+                              onChange={(e) =>
+                                handlePracticalPassMarkChange(index, e.target.value)
+                              }
+                              disabled={disabled || isExcluded}
+                              className={cn(
+                                'h-8 text-xs',
+                                item.included &&
+                                  item.practicalPassMark >
+                                    item.practicalFullMark &&
+                                  'border-destructive text-destructive'
+                              )}
+                              placeholder="10"
+                            />
+                          </div>
+                        </div>
+                        {item.included &&
+                          (item.practicalPassMark > item.practicalFullMark ||
+                            item.practicalFullMark < 1) && (
+                            <p className="text-[11px] text-destructive font-medium leading-tight mt-1">
+                              {item.practicalPassMark > item.practicalFullMark
+                                ? 'Practical pass cannot exceed full'
+                                : 'Practical full must be ≥ 1'}
+                            </p>
+                          )}
+                      </div>
+                    ) : (
+                      <div className="h-8 flex items-center">
+                        <span className="text-xs text-muted-foreground italic">
+                          None (Theory Only)
+                        </span>
+                      </div>
                     )}
                   </TableCell>
-                  <TableCell>
+
+                  {/* Column 5: Read-only Total Badge */}
+                  <TableCell className="align-top py-3">
+                    <div className="pt-2">
+                      <Badge
+                        variant="secondary"
+                        className="text-xs font-semibold px-2 py-0.5 whitespace-nowrap bg-muted/60"
+                      >
+                        {item.fullMark} (Pass {item.passMark})
+                      </Badge>
+                    </div>
+                  </TableCell>
+
+                  {/* Column 6: Teacher Assignment */}
+                  <TableCell className="align-top py-3">
                     <div className="space-y-1.5">
                       <div className="flex items-center justify-between gap-1">
                         <div className="flex items-center gap-1">
@@ -255,8 +528,10 @@ export const ExamSubjectConfigList: React.FC<ExamSubjectConfigListProps> = ({
                         }
                         disabled={disabled || isExcluded}
                         className={cn(
-                          "w-full h-9 px-3 rounded-lg border border-input bg-background text-sm focus:outline-none focus:ring-2 focus:ring-primary disabled:cursor-not-allowed disabled:opacity-50",
-                          !item.assignedTeacherId && item.included && "border-amber-500/80 focus:ring-amber-500 text-amber-900 dark:text-amber-100"
+                          'w-full h-8 px-2.5 rounded-lg border border-input bg-background text-xs focus:outline-none focus:ring-2 focus:ring-primary disabled:cursor-not-allowed disabled:opacity-50',
+                          !item.assignedTeacherId &&
+                            item.included &&
+                            'border-amber-500/80 focus:ring-amber-500 text-amber-900 dark:text-amber-100'
                         )}
                       >
                         <option value="">
@@ -297,11 +572,11 @@ export const ExamSubjectConfigList: React.FC<ExamSubjectConfigListProps> = ({
         </Table>
       </div>
 
-      {/* Mobile View (< md): Card List */}
+      {/* Mobile View (< md): Comprehensive Card List */}
       <div className="md:hidden space-y-3">
         {configs.map((item, index) => {
           const isExcluded = !item.included;
-          const hasError = !!item.error || (item.included && item.passMark > item.fullMark);
+          const hasError = !!item.error;
 
           return (
             <Card
@@ -311,7 +586,8 @@ export const ExamSubjectConfigList: React.FC<ExamSubjectConfigListProps> = ({
                 isExcluded && 'opacity-60 bg-muted/20'
               )}
             >
-              <CardContent className="p-4 space-y-3">
+              <CardContent className="p-4 space-y-3.5">
+                {/* Header: Name, Code & Include checkbox */}
                 <div className="flex items-center justify-between gap-2 border-b pb-2.5">
                   <div className="flex items-center gap-2">
                     <div className="p-1.5 rounded-lg bg-primary/10 text-primary shrink-0">
@@ -343,55 +619,197 @@ export const ExamSubjectConfigList: React.FC<ExamSubjectConfigListProps> = ({
                   </label>
                 </div>
 
-                <div className="grid grid-cols-2 gap-3">
-                  <div className="space-y-1">
-                    <label className="text-xs font-medium text-muted-foreground">
-                      Full Mark
-                    </label>
-                    <Input
-                      type="number"
-                      min={1}
-                      max={1000}
-                      value={item.fullMark === 0 ? '' : item.fullMark}
-                      onChange={(e) =>
-                        handleFullMarkChange(index, e.target.value)
+                {/* Practical Toggle + Preset Pills */}
+                <div className="flex flex-wrap items-center justify-between gap-2">
+                  <label className="flex items-center gap-1.5 cursor-pointer text-xs select-none">
+                    <Checkbox
+                      checked={item.hasPractical}
+                      onCheckedChange={(checked) =>
+                        handlePracticalToggle(index, !!checked)
                       }
                       disabled={disabled || isExcluded}
-                      className="h-9"
-                      placeholder="100"
                     />
-                  </div>
-                  <div className="space-y-1">
-                    <label className="text-xs font-medium text-muted-foreground">
-                      Pass Mark
-                    </label>
-                    <Input
-                      type="number"
-                      min={0}
-                      max={item.fullMark || 1000}
-                      value={item.passMark === 0 ? '0' : item.passMark}
-                      onChange={(e) =>
-                        handlePassMarkChange(index, e.target.value)
-                      }
-                      disabled={disabled || isExcluded}
+                    <span
                       className={cn(
-                        'h-9',
-                        hasError &&
-                          'border-destructive focus-visible:ring-destructive text-destructive'
+                        'text-xs font-medium flex items-center gap-1',
+                        item.hasPractical
+                          ? 'text-primary font-semibold'
+                          : 'text-muted-foreground'
                       )}
-                      placeholder="40"
-                    />
+                    >
+                      <FlaskConical className="w-3.5 h-3.5" />
+                      Practical
+                    </span>
+                  </label>
+
+                  <div className="flex items-center gap-1">
+                    {(['75_25', '80_20', '50_50', '100_TH'] as const).map((key) => {
+                      const p = EXAM_MARK_PRESETS[key];
+                      const isCurrent =
+                        item.hasPractical === p.hasPractical &&
+                        item.theoryFullMark === p.theoryFullMark &&
+                        item.theoryPassMark === p.theoryPassMark &&
+                        item.practicalFullMark === p.practicalFullMark &&
+                        item.practicalPassMark === p.practicalPassMark;
+
+                      return (
+                        <button
+                          key={key}
+                          type="button"
+                          disabled={disabled || isExcluded}
+                          onClick={() => handlePresetSelect(index, key)}
+                          className={cn(
+                            'text-[10px] px-1.5 py-0.5 rounded border transition-colors font-medium',
+                            isCurrent
+                              ? 'bg-primary text-primary-foreground border-primary shadow-xs'
+                              : 'bg-background hover:bg-muted text-muted-foreground border-input'
+                          )}
+                        >
+                          {p.label}
+                        </button>
+                      );
+                    })}
                   </div>
                 </div>
 
-                {hasError && (
-                  <div className="text-xs text-destructive flex items-center gap-1.5 font-medium bg-destructive/10 p-2 rounded-md">
-                    <AlertCircle className="w-4 h-4 shrink-0" />
-                    <span>Pass mark cannot exceed full mark</span>
+                {/* Theory Inputs */}
+                <div className="space-y-1">
+                  <div className="text-xs font-semibold text-muted-foreground">
+                    Theory Marks
+                  </div>
+                  <div className="grid grid-cols-2 gap-2">
+                    <div>
+                      <label className="text-[10px] text-muted-foreground font-medium block mb-0.5">
+                        Theory Full
+                      </label>
+                      <Input
+                        type="number"
+                        min={1}
+                        max={1000}
+                        value={item.theoryFullMark === 0 ? '' : item.theoryFullMark}
+                        onChange={(e) =>
+                          handleTheoryFullMarkChange(index, e.target.value)
+                        }
+                        disabled={disabled || isExcluded}
+                        className={cn(
+                          'h-8 text-xs',
+                          item.included &&
+                            (item.theoryFullMark < 1 ||
+                              item.theoryPassMark > item.theoryFullMark) &&
+                            'border-destructive text-destructive'
+                        )}
+                        placeholder="75"
+                      />
+                    </div>
+                    <div>
+                      <label className="text-[10px] text-muted-foreground font-medium block mb-0.5">
+                        Theory Pass
+                      </label>
+                      <Input
+                        type="number"
+                        min={0}
+                        max={item.theoryFullMark || 1000}
+                        value={item.theoryPassMark === 0 ? '0' : item.theoryPassMark}
+                        onChange={(e) =>
+                          handleTheoryPassMarkChange(index, e.target.value)
+                        }
+                        disabled={disabled || isExcluded}
+                        className={cn(
+                          'h-8 text-xs',
+                          item.included &&
+                            item.theoryPassMark > item.theoryFullMark &&
+                            'border-destructive text-destructive'
+                        )}
+                        placeholder="27"
+                      />
+                    </div>
+                  </div>
+                </div>
+
+                {/* Practical Inputs (when active) */}
+                {item.hasPractical && (
+                  <div className="space-y-1">
+                    <div className="text-xs font-semibold text-muted-foreground">
+                      Practical Marks
+                    </div>
+                    <div className="grid grid-cols-2 gap-2">
+                      <div>
+                        <label className="text-[10px] text-muted-foreground font-medium block mb-0.5">
+                          Practical Full
+                        </label>
+                        <Input
+                          type="number"
+                          min={1}
+                          max={1000}
+                          value={
+                            item.practicalFullMark === 0
+                              ? ''
+                              : item.practicalFullMark
+                          }
+                          onChange={(e) =>
+                            handlePracticalFullMarkChange(index, e.target.value)
+                          }
+                          disabled={disabled || isExcluded}
+                          className={cn(
+                            'h-8 text-xs',
+                            item.included &&
+                              (item.practicalFullMark < 1 ||
+                                item.practicalPassMark > item.practicalFullMark) &&
+                              'border-destructive text-destructive'
+                          )}
+                          placeholder="25"
+                        />
+                      </div>
+                      <div>
+                        <label className="text-[10px] text-muted-foreground font-medium block mb-0.5">
+                          Practical Pass
+                        </label>
+                        <Input
+                          type="number"
+                          min={0}
+                          max={item.practicalFullMark || 1000}
+                          value={
+                            item.practicalPassMark === 0
+                              ? '0'
+                              : item.practicalPassMark
+                          }
+                          onChange={(e) =>
+                            handlePracticalPassMarkChange(index, e.target.value)
+                          }
+                          disabled={disabled || isExcluded}
+                          className={cn(
+                            'h-8 text-xs',
+                            item.included &&
+                              item.practicalPassMark > item.practicalFullMark &&
+                              'border-destructive text-destructive'
+                          )}
+                          placeholder="10"
+                        />
+                      </div>
+                    </div>
                   </div>
                 )}
 
-                <div className="space-y-1.5 pt-1">
+                {/* Total Marks Banner */}
+                <div className="flex items-center justify-between bg-muted/40 p-2 rounded-lg text-xs">
+                  <span className="font-medium text-muted-foreground">
+                    Combined Total:
+                  </span>
+                  <Badge variant="secondary" className="font-semibold text-xs">
+                    {item.fullMark} Marks (Pass {item.passMark})
+                  </Badge>
+                </div>
+
+                {/* Error Banner */}
+                {hasError && item.included && (
+                  <div className="text-xs text-destructive flex items-center gap-1.5 font-medium bg-destructive/10 p-2 rounded-md">
+                    <AlertCircle className="w-4 h-4 shrink-0" />
+                    <span>{item.error}</span>
+                  </div>
+                )}
+
+                {/* Teacher Selection */}
+                <div className="space-y-1.5 pt-1 border-t">
                   <div className="flex items-center justify-between gap-1">
                     <label className="text-xs font-medium text-muted-foreground">
                       Grading Teacher <span className="text-destructive">*</span>
@@ -436,8 +854,10 @@ export const ExamSubjectConfigList: React.FC<ExamSubjectConfigListProps> = ({
                     }
                     disabled={disabled || isExcluded}
                     className={cn(
-                      "w-full h-10 px-3 rounded-lg border border-input bg-background text-sm focus:outline-none focus:ring-2 focus:ring-primary disabled:cursor-not-allowed disabled:opacity-50",
-                      !item.assignedTeacherId && item.included && "border-amber-500/80 focus:ring-amber-500 text-amber-900 dark:text-amber-100"
+                      'w-full h-9 px-3 rounded-lg border border-input bg-background text-sm focus:outline-none focus:ring-2 focus:ring-primary disabled:cursor-not-allowed disabled:opacity-50',
+                      !item.assignedTeacherId &&
+                        item.included &&
+                        'border-amber-500/80 focus:ring-amber-500 text-amber-900 dark:text-amber-100'
                     )}
                   >
                     <option value="">

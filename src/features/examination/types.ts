@@ -22,6 +22,11 @@ export interface ExamSubjectResponse {
   exam_id: string;
   subject_id: string;
   subject_name?: string | null;
+  has_practical: boolean;
+  theory_full_mark: number;
+  theory_pass_mark: number;
+  practical_full_mark: number;
+  practical_pass_mark: number;
   full_mark: number;
   pass_mark: number;
   assigned_teacher_id?: string | null;
@@ -41,6 +46,10 @@ export interface StudentScoreResponse {
   score?: number | null;
   is_absent: boolean;
   is_pass?: boolean | null;
+  theory_score?: number | null;
+  is_theory_absent?: boolean;
+  practical_score?: number | null;
+  is_practical_absent?: boolean;
 }
 
 export interface BulkUpsertScoresResponse {
@@ -53,6 +62,11 @@ export interface ExamSubjectReviewItem {
   id: string;
   subject_id: string;
   subject_name: string;
+  has_practical: boolean;
+  theory_full_mark: number;
+  theory_pass_mark: number;
+  practical_full_mark: number;
+  practical_pass_mark: number;
   full_mark: number;
   pass_mark: number;
   assigned_teacher_id?: string | null;
@@ -94,6 +108,11 @@ export interface ExamCreateDTO {
 
 export interface ExamSubjectCreateDTO {
   subject_id: string;
+  has_practical?: boolean;
+  theory_full_mark?: number;
+  theory_pass_mark?: number;
+  practical_full_mark?: number;
+  practical_pass_mark?: number;
   full_mark: number;
   pass_mark: number;
   teacher_id?: string | null;
@@ -103,6 +122,10 @@ export interface StudentScoreItemDTO {
   student_id: string;
   score?: number | null;
   is_absent: boolean;
+  theory_score?: number | null;
+  is_theory_absent?: boolean;
+  practical_score?: number | null;
+  is_practical_absent?: boolean;
 }
 
 export interface BulkUpsertScoresRequest {
@@ -117,10 +140,150 @@ export interface TeacherExamSubjectAssignment {
   class_name: string;
   subject_id: string;
   subject_name: string;
+  has_practical?: boolean;
+  theory_full_mark?: number;
+  theory_pass_mark?: number;
+  practical_full_mark?: number;
+  practical_pass_mark?: number;
   full_mark: number;
   pass_mark: number;
   status: ExamSubjectStatus;
   submitted_at?: string | null;
+}
+
+// ==========================================
+// Exam Mark Preset & Calculation Helpers
+// ==========================================
+
+export type ExamMarkPresetKey = '75_25' | '80_20' | '50_50' | '100_TH';
+
+export interface ExamMarkPreset {
+  id: ExamMarkPresetKey;
+  label: string;
+  hasPractical: boolean;
+  theoryFullMark: number;
+  theoryPassMark: number;
+  practicalFullMark: number;
+  practicalPassMark: number;
+}
+
+export const EXAM_MARK_PRESETS: Record<ExamMarkPresetKey, ExamMarkPreset> = {
+  '75_25': {
+    id: '75_25',
+    label: '75/25',
+    hasPractical: true,
+    theoryFullMark: 75,
+    theoryPassMark: 27,
+    practicalFullMark: 25,
+    practicalPassMark: 10,
+  },
+  '80_20': {
+    id: '80_20',
+    label: '80/20',
+    hasPractical: true,
+    theoryFullMark: 80,
+    theoryPassMark: 32,
+    practicalFullMark: 20,
+    practicalPassMark: 8,
+  },
+  '50_50': {
+    id: '50_50',
+    label: '50/50',
+    hasPractical: true,
+    theoryFullMark: 50,
+    theoryPassMark: 20,
+    practicalFullMark: 50,
+    practicalPassMark: 20,
+  },
+  '100_TH': {
+    id: '100_TH',
+    label: '100 TH',
+    hasPractical: false,
+    theoryFullMark: 100,
+    theoryPassMark: 40,
+    practicalFullMark: 0,
+    practicalPassMark: 0,
+  },
+};
+
+export function deriveTotalMarks(item: {
+  hasPractical: boolean;
+  theoryFullMark: number;
+  theoryPassMark: number;
+  practicalFullMark: number;
+  practicalPassMark: number;
+}): { fullMark: number; passMark: number } {
+  const fullMark = item.hasPractical
+    ? item.theoryFullMark + item.practicalFullMark
+    : item.theoryFullMark;
+  const passMark = item.hasPractical
+    ? item.theoryPassMark + item.practicalPassMark
+    : item.theoryPassMark;
+  return { fullMark, passMark };
+}
+
+export function validateSubjectMarks(item: {
+  included: boolean;
+  hasPractical: boolean;
+  theoryFullMark: number;
+  theoryPassMark: number;
+  practicalFullMark: number;
+  practicalPassMark: number;
+}): string | undefined {
+  if (!item.included) return undefined;
+  if (item.theoryPassMark > item.theoryFullMark) {
+    return 'Theory pass mark cannot exceed full mark';
+  }
+  if (item.hasPractical && item.practicalPassMark > item.practicalFullMark) {
+    return 'Practical pass mark cannot exceed full mark';
+  }
+  if (item.theoryFullMark < 1) {
+    return 'Theory full mark must be at least 1';
+  }
+  if (item.hasPractical && item.practicalFullMark < 1) {
+    return 'Practical full mark must be at least 1';
+  }
+  return undefined;
+}
+
+export function applyPresetToSubject<T extends {
+  hasPractical: boolean;
+  theoryFullMark: number;
+  theoryPassMark: number;
+  practicalFullMark: number;
+  practicalPassMark: number;
+  fullMark: number;
+  passMark: number;
+  error?: string;
+  included?: boolean;
+}>(
+  subject: T,
+  presetKey: ExamMarkPresetKey
+): T {
+  const preset = EXAM_MARK_PRESETS[presetKey];
+  const { fullMark, passMark } = deriveTotalMarks(preset);
+  const updated: T = {
+    ...subject,
+    hasPractical: preset.hasPractical,
+    theoryFullMark: preset.theoryFullMark,
+    theoryPassMark: preset.theoryPassMark,
+    practicalFullMark: preset.practicalFullMark,
+    practicalPassMark: preset.practicalPassMark,
+    fullMark,
+    passMark,
+    error: undefined,
+  };
+  if (updated.included !== undefined) {
+    updated.error = validateSubjectMarks({
+      included: updated.included,
+      hasPractical: updated.hasPractical,
+      theoryFullMark: updated.theoryFullMark,
+      theoryPassMark: updated.theoryPassMark,
+      practicalFullMark: updated.practicalFullMark,
+      practicalPassMark: updated.practicalPassMark,
+    });
+  }
+  return updated;
 }
 
 // ==========================================
@@ -247,6 +410,15 @@ export interface ExamDetailsInfo {
 export interface StudentReportCardSubjectItem {
   subject_id: string;
   subject_name: string;
+  has_practical: boolean;
+  theory_full_mark: number;
+  theory_pass_mark: number;
+  theory_score?: number | null;
+  is_theory_absent?: boolean;
+  practical_full_mark: number;
+  practical_pass_mark: number;
+  practical_score?: number | null;
+  is_practical_absent?: boolean;
   full_mark: number;
   pass_mark: number;
   score: number | null;
