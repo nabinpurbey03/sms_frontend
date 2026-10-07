@@ -5,6 +5,7 @@ import {
   deriveTotalMarks,
   validateSubjectMarks,
   applyPresetToSubject,
+  MARK_INPUT_CLASS,
 } from '../../types.ts';
 
 // ---------------------------------------------------------------------------
@@ -236,3 +237,41 @@ test('validateSubjectMarks: practical marks are not validated when hasPractical 
   });
   assert.equal(result, undefined);
 });
+
+// ---------------------------------------------------------------------------
+// 4. Mark Input Sizing & Ergonomic Class Tests
+// ---------------------------------------------------------------------------
+
+test('MARK_INPUT_CLASS: includes spin-button suppression, typography, and width sizing', () => {
+  assert.ok(typeof MARK_INPUT_CLASS === 'string', 'MARK_INPUT_CLASS should be a string');
+  assert.match(MARK_INPUT_CLASS, /w-14/, 'Must define mobile base width w-14');
+  assert.match(MARK_INPUT_CLASS, /sm:w-16/, 'Must define responsive width sm:w-16');
+  assert.match(MARK_INPUT_CLASS, /\[appearance:textfield\]/, 'Must suppress browser steppers on Firefox');
+  assert.match(MARK_INPUT_CLASS, /\[&::-webkit-inner-spin-button\]:appearance-none/, 'Must suppress inner stepper spin button on WebKit');
+  assert.match(MARK_INPUT_CLASS, /\[&::-webkit-outer-spin-button\]:appearance-none/, 'Must suppress outer stepper spin button on WebKit');
+  assert.match(MARK_INPUT_CLASS, /font-mono/, 'Must use monospace font for uniform digit alignment');
+  assert.match(MARK_INPUT_CLASS, /text-center/, 'Must center text for compact numerical readability');
+});
+
+test('preset values fit comfortably within 3-digit mark constraints', () => {
+  const valuesToCheck = [100, 75, 27, 25, 10, 0];
+  for (const val of valuesToCheck) {
+    const str = String(val);
+    assert.ok(str.length >= 1 && str.length <= 3, `Value ${val} string length (${str.length}) must be between 1 and 3 digits`);
+  }
+
+  // Also verify all predefined presets have values that fit within 3 digits
+  Object.values(EXAM_MARK_PRESETS).forEach((preset) => {
+    const fields = [
+      preset.theoryFullMark,
+      preset.theoryPassMark,
+      preset.practicalFullMark,
+      preset.practicalPassMark,
+    ];
+    for (const val of fields) {
+      const str = String(val);
+      assert.ok(str.length <= 3, `Preset ${preset.label} field value ${val} must fit within 3 digits`);
+    }
+  });
+});
+

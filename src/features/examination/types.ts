@@ -286,6 +286,16 @@ export function applyPresetToSubject<T extends {
   return updated;
 }
 
+/**
+ * Ergonomic Tailwind classes for compact mark input fields:
+ * - Suppresses browser spin-buttons (steppers) that steal 15-20px of inner width
+ * - Centers monospace typography for instant numerical readability
+ * - Ensures fixed comfortable width (w-14 sm:w-16 = 56-64px) fitting 1-3 digits easily (e.g. "100", "75", "0")
+ */
+export const MARK_INPUT_CLASS =
+  'w-14 sm:w-16 h-8 text-xs sm:text-sm font-semibold font-mono text-center px-1.5 ' +
+  '[appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none';
+
 // ==========================================
 // Dual-Component Grading & Student Row Types
 // ==========================================
