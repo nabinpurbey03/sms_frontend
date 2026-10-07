@@ -61,12 +61,12 @@ export const SchoolHeaderBadge: React.FC<SchoolHeaderBadgeProps> = ({
     return (
       <div
         className={cn(
-          "flex items-center gap-2 sm:gap-2.5 px-2 py-1 rounded-full max-w-[220px] xs:max-w-[280px] sm:max-w-[360px] md:max-w-[420px]",
+          "flex items-center gap-2 sm:gap-2.5 px-2.5 py-1 rounded-xl max-w-[220px] xs:max-w-[280px] sm:max-w-[360px] md:max-w-[420px]",
           className
         )}
         title="Global Platform Scope — Super Admin Administration"
       >
-        <div className="h-8 w-8 sm:h-9 sm:w-9 min-h-[32px] min-w-[32px] sm:min-h-[36px] sm:min-w-[36px] rounded-full bg-purple-500/10 text-purple-600 dark:text-purple-400 border border-purple-500/20 flex items-center justify-center shrink-0 ring-1 ring-purple-500/30 shadow-xs">
+        <div className="h-8 w-8 sm:h-9 sm:w-9 min-h-[32px] min-w-[32px] sm:min-h-[36px] sm:min-w-[36px] rounded-xl bg-purple-500/10 text-purple-600 dark:text-purple-400 border border-purple-500/20 flex items-center justify-center shrink-0 ring-1 ring-purple-500/30 shadow-xs">
           <Sparkles className="h-4 w-4 shrink-0" />
         </div>
         <div className="flex flex-col min-w-0 text-left justify-center">
@@ -91,16 +91,16 @@ export const SchoolHeaderBadge: React.FC<SchoolHeaderBadgeProps> = ({
   const badgeContent = (
     <>
       {/* Left element: Logo Container */}
-      <div className="h-8 w-8 sm:h-9 sm:w-9 min-h-[32px] min-w-[32px] sm:min-h-[36px] sm:min-w-[36px] shrink-0 rounded-full bg-white dark:bg-card border border-border/80 p-0.5 sm:p-1 flex items-center justify-center shadow-xs overflow-hidden ring-1 ring-border/30">
+      <div className="h-8 w-8 sm:h-9 sm:w-9 min-h-[32px] min-w-[32px] sm:min-h-[36px] sm:min-w-[36px] shrink-0 rounded-xl bg-white dark:bg-card border border-border/80 p-1 flex items-center justify-center shadow-xs overflow-hidden ring-1 ring-border/30">
         {resolvedLogoUrl && !logoError ? (
           <img
             src={resolvedLogoUrl}
             alt=""
-            className="h-full w-full object-contain rounded-full"
+            className="h-full w-full object-contain rounded-md"
             onError={() => setLogoError(true)}
           />
         ) : (
-          <div className="h-full w-full rounded-full bg-primary/10 flex items-center justify-center text-primary">
+          <div className="h-full w-full rounded-md bg-primary/10 flex items-center justify-center text-primary">
             <School className="h-4 w-4 sm:h-4.5 sm:w-4.5 shrink-0" />
           </div>
         )}
@@ -141,7 +141,7 @@ export const SchoolHeaderBadge: React.FC<SchoolHeaderBadgeProps> = ({
           <button
             type="button"
             className={cn(
-              "group flex items-center gap-2 sm:gap-2.5 px-2 py-1 rounded-full hover:bg-accent/50 transition-all duration-150 cursor-pointer focus:outline-none focus-visible:ring-2 focus-visible:ring-primary max-w-[220px] xs:max-w-[280px] sm:max-w-[360px] md:max-w-[420px]",
+              "group flex items-center gap-2 sm:gap-2.5 px-2.5 py-1 rounded-xl hover:bg-accent/50 transition-all duration-150 cursor-pointer focus:outline-none focus-visible:ring-2 focus-visible:ring-primary max-w-[220px] xs:max-w-[280px] sm:max-w-[360px] md:max-w-[420px]",
               className
             )}
             aria-label={`Current school: ${displayName}. Switch School`}
@@ -167,7 +167,7 @@ export const SchoolHeaderBadge: React.FC<SchoolHeaderBadgeProps> = ({
                 )}
               >
                 <div className="flex items-center gap-2 truncate">
-                  <div className="h-5 w-5 rounded-full bg-primary/10 border border-primary/20 flex items-center justify-center shrink-0 text-primary">
+                  <div className="h-5.5 w-5.5 rounded-md bg-primary/10 border border-primary/20 flex items-center justify-center shrink-0 text-primary">
                     <School className="h-3 w-3 shrink-0" />
                   </div>
                   <span className="truncate">{m.tenant_name}</span>
@@ -185,7 +185,7 @@ export const SchoolHeaderBadge: React.FC<SchoolHeaderBadgeProps> = ({
   return (
     <div
       className={cn(
-        "flex items-center gap-2 sm:gap-2.5 px-2 py-1 rounded-full max-w-[220px] xs:max-w-[280px] sm:max-w-[360px] md:max-w-[420px]",
+        "flex items-center gap-2 sm:gap-2.5 px-2.5 py-1 rounded-xl max-w-[220px] xs:max-w-[280px] sm:max-w-[360px] md:max-w-[420px]",
         className
       )}
       title={tooltipTitle}

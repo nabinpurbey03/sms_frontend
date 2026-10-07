@@ -1,4 +1,4 @@
-import React, { useEffect } from 'react';
+import React, { useEffect, useMemo } from 'react';
 import { useForm, Controller } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import {
@@ -80,6 +80,22 @@ export const CalendarEventDialog: React.FC<CalendarEventDialogProps> = ({
 
   const selectedType = watch('event_type');
 
+  // For new events, do not allow creating events prior to today.
+  // For editing existing events, respect the academic session minDate so historical records can still be modified.
+  const todayAdStr = useMemo(() => {
+    const d = new Date();
+    const pad = (n: number) => String(n).padStart(2, '0');
+    return `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}`;
+  }, []);
+
+  const effectiveMinDate = useMemo(() => {
+    if (isEditing) return minDate;
+    if (minDate && minDate > todayAdStr) {
+      return minDate;
+    }
+    return todayAdStr;
+  }, [isEditing, minDate, todayAdStr]);
+
   useEffect(() => {
     if (open) {
       if (eventToEdit) {
@@ -93,18 +109,19 @@ export const CalendarEventDialog: React.FC<CalendarEventDialogProps> = ({
           description: eventToEdit.description || '',
         });
       } else {
+        const defaultDate = initialDate && initialDate >= todayAdStr ? initialDate : todayAdStr;
         reset({
           academic_year_id: academicYearId,
           title: '',
           event_type: 'HOLIDAY',
-          start_date: initialDate || '',
-          end_date: initialDate || '',
+          start_date: defaultDate,
+          end_date: defaultDate,
           is_holiday: true,
           description: '',
         });
       }
     }
-  }, [open, eventToEdit, academicYearId, initialDate, reset]);
+  }, [open, eventToEdit, academicYearId, initialDate, reset, todayAdStr]);
 
   // Category-aware "School Closed" default: ON for Holiday and Vacation, OFF for Exam, Event, and Other
   const handleTypeChange = (type: (typeof CALENDAR_EVENT_TYPES)[number]) => {
@@ -123,6 +140,13 @@ export const CalendarEventDialog: React.FC<CalendarEventDialogProps> = ({
 
   const onSubmit = async (data: CalendarEventFormData) => {
     if (!tenantId) return;
+
+    if (!isEditing && (data.start_date < todayAdStr || data.end_date < todayAdStr)) {
+      toast.error('Invalid Date Range', {
+        description: 'Cannot create calendar events on dates prior to today.',
+      });
+      return;
+    }
 
     if (minDate && (data.start_date < minDate || data.end_date < minDate)) {
       toast.error('Invalid Date Range', {
@@ -235,7 +259,7 @@ export const CalendarEventDialog: React.FC<CalendarEventDialogProps> = ({
                     id="start_date"
                     label="Start Date *"
                     value={field.value}
-                    minDate={minDate}
+                    minDate={effectiveMinDate}
                     maxDate={maxDate}
                     onChange={(newStart) => {
                       field.onChange(newStart);
@@ -257,7 +281,7 @@ export const CalendarEventDialog: React.FC<CalendarEventDialogProps> = ({
                     id="end_date"
                     label="End Date *"
                     value={field.value}
-                    minDate={watch('start_date') || minDate}
+                    minDate={watch('start_date') || effectiveMinDate}
                     maxDate={maxDate}
                     onChange={field.onChange}
                     error={errors.end_date?.message}

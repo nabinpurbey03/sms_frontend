@@ -23,7 +23,7 @@ import {
   ArrowUpDown,
 } from 'lucide-react';
 import { useCurrentAcademicYear } from '@/features/academic-year/hooks/useCurrentAcademicYear';
-import { useCalendarEvents, useDeleteCalendarEvent } from '../hooks';
+import { useCalendarEvents, useDeleteCalendarEvent, useSchoolSettings } from '../hooks';
 import { CalendarEventDialog } from './CalendarEventDialog';
 import { AcademicCalendarGrid } from './AcademicCalendarGrid';
 import { formatDualDateRange } from '../utils/nepaliDate';
@@ -41,6 +41,7 @@ export const AcademicCalendarView: React.FC<AcademicCalendarViewProps> = ({
 }) => {
   const { calendarSystem, setCalendarSystem } = useCalendarPreferenceStore();
   const { currentYear, currentYearId, isLoading: isLoadingYears } = useCurrentAcademicYear(tenantId);
+  const { data: schoolSettings } = useSchoolSettings(tenantId);
   const deleteMutation = useDeleteCalendarEvent();
 
   const activeYearId = currentYearId || '';
@@ -385,6 +386,7 @@ export const AcademicCalendarView: React.FC<AcademicCalendarViewProps> = ({
               minDate={activeYear?.start_date}
               maxDate={activeYear?.end_date}
               academicYearName={activeYear?.name}
+              academicDays={schoolSettings?.academic_days}
             />
           ) : filteredEvents.length === 0 ? (
             <div className="py-12 text-center border rounded-xl border-dashed border-border bg-muted/20">

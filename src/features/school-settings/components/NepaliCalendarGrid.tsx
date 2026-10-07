@@ -4,7 +4,15 @@ import { Badge } from '@/components/ui/badge';
 import {
   ChevronLeft,
   ChevronRight,
+  Plus,
 } from 'lucide-react';
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogDescription,
+} from '@/components/ui/dialog';
 import {
   NEPALI_MONTHS,
   NEPALI_DAYS_OF_WEEK,
@@ -31,6 +39,7 @@ export interface NepaliCalendarGridProps {
   academicYearName?: string;
   viewAdDate?: Date;
   onViewAdDateChange?: (d: Date) => void;
+  offDayIndices?: Set<number>;
 }
 
 export const NepaliCalendarGrid: React.FC<NepaliCalendarGridProps> = ({
@@ -44,7 +53,17 @@ export const NepaliCalendarGrid: React.FC<NepaliCalendarGridProps> = ({
   academicYearName,
   viewAdDate,
   onViewAdDateChange,
+  offDayIndices,
 }) => {
+  const effectiveOffDayIndices = useMemo(() => {
+    return offDayIndices ?? new Set([6]);
+  }, [offDayIndices]);
+
+  const [viewingDayModal, setViewingDayModal] = useState<{
+    dateTitle: string;
+    events: AcademicCalendarEvent[];
+  } | null>(null);
+
   // Determine initial BS Year and Month
   const initialBs = useMemo(() => {
     const d = viewAdDate ?? initialDate ?? new Date();
@@ -358,21 +377,24 @@ export const NepaliCalendarGrid: React.FC<NepaliCalendarGridProps> = ({
         <div className="border border-border rounded-xl bg-card shadow-xs overflow-hidden">
           {/* Weekday Column Headers */}
           <div className="grid grid-cols-7 border-b border-border bg-muted/40 text-center">
-            {NEPALI_DAYS_OF_WEEK.map((day) => (
-              <div
-                key={day.index}
-                className={`py-2 px-1 text-xs font-bold border-r border-border last:border-r-0 ${
-                  day.index === 6
-                    ? 'text-rose-600 dark:text-rose-400 bg-rose-50/50 dark:bg-rose-950/20'
-                    : 'text-muted-foreground'
-                }`}
-              >
-                <div className="flex items-center justify-center gap-1">
-                  <span>{day.short}</span>
-                  <span className="text-[10px] font-normal opacity-75">({day.nepaliShort})</span>
+            {NEPALI_DAYS_OF_WEEK.map((day) => {
+              const isWeeklyOff = effectiveOffDayIndices.has(day.index);
+              return (
+                <div
+                  key={day.index}
+                  className={`py-2 px-1 text-xs font-bold border-r border-border last:border-r-0 ${
+                    isWeeklyOff
+                      ? 'text-rose-600 dark:text-rose-400 bg-rose-50/50 dark:bg-rose-950/20'
+                      : 'text-muted-foreground'
+                  }`}
+                >
+                  <div className="flex items-center justify-center gap-1">
+                    <span>{day.short}</span>
+                    <span className="text-[10px] font-normal opacity-75">({day.nepaliShort})</span>
+                  </div>
                 </div>
-              </div>
-            ))}
+              );
+            })}
           </div>
 
           {/* Days Cells */}
@@ -392,7 +414,8 @@ export const NepaliCalendarGrid: React.FC<NepaliCalendarGridProps> = ({
               const bsStr = `${viewYear}-${pad(viewMonth + 1)}-${pad(dayNum)}`;
               const adStr = bsToAd(bsStr);
 
-              const isSaturday = (startDayOfWeek + i) % 7 === 6;
+              const dayOfWeek = (startDayOfWeek + i) % 7;
+              const isWeeklyOff = effectiveOffDayIndices.has(dayOfWeek);
               const isToday = adStr === todayAdStr;
               const isOutOfSession = !isAdDateWithinSession(adStr, minDate, maxDate);
               const dayEvents = eventsByDay.get(dayNum) || [];
@@ -405,21 +428,23 @@ export const NepaliCalendarGrid: React.FC<NepaliCalendarGridProps> = ({
                 day: 'numeric',
               });
 
+              const isPast = adStr < todayAdStr;
+
               return (
                 <div
                   key={dayNum}
                   onClick={() => {
-                    if (isOutOfSession || !canManage) return;
+                    if (isOutOfSession || isPast || !canManage) return;
                     onSelectDate(adStr);
                   }}
                   className={`min-h-[95px] sm:min-h-[115px] p-1.5 border-b border-r border-border transition-colors flex flex-col justify-between group ${
                     isOutOfSession
                       ? 'bg-muted/30 opacity-30 cursor-not-allowed'
-                      : canManage
+                      : canManage && !isPast
                       ? 'hover:bg-muted/30 cursor-pointer'
                       : ''
                   } ${
-                    isSaturday
+                    isWeeklyOff
                       ? 'bg-rose-50/20 dark:bg-rose-950/10'
                       : ''
                   } ${
@@ -428,19 +453,29 @@ export const NepaliCalendarGrid: React.FC<NepaliCalendarGridProps> = ({
                       : ''
                   }`}
                 >
-                  {/* Cell Header: BS Day number + AD subtitle */}
+                  {/* Cell Header: BS Day number + Add affordance + AD subtitle */}
                   <div className="flex items-start justify-between">
-                    <span
-                      className={`text-sm sm:text-base font-bold leading-none ${
-                        isSaturday
-                          ? 'text-rose-600 dark:text-rose-400'
-                          : isToday
-                          ? 'text-primary'
-                          : 'text-foreground'
-                      }`}
-                    >
-                      {dayNum}
-                    </span>
+                    <div className="flex items-center gap-1">
+                      <span
+                        className={`text-sm sm:text-base font-bold leading-none ${
+                          isWeeklyOff
+                            ? 'text-rose-600 dark:text-rose-400'
+                            : isToday
+                            ? 'text-primary'
+                            : 'text-foreground'
+                        }`}
+                      >
+                        {dayNum}
+                      </span>
+                      {canManage && !isOutOfSession && !isPast && (
+                        <span
+                          className="opacity-0 group-hover:opacity-100 transition-opacity p-0.5 rounded bg-primary/10 text-primary hover:bg-primary hover:text-primary-foreground leading-none"
+                          title="Schedule event on this date"
+                        >
+                          <Plus className="w-2.5 h-2.5" />
+                        </span>
+                      )}
+                    </div>
 
                     <span
                       className="text-[10px] text-muted-foreground font-medium select-none"
@@ -475,9 +510,19 @@ export const NepaliCalendarGrid: React.FC<NepaliCalendarGridProps> = ({
                     })}
 
                     {dayEvents.length > 3 && (
-                      <span className="text-[10px] text-muted-foreground font-semibold block px-1">
+                      <button
+                        type="button"
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          setViewingDayModal({
+                            dateTitle: `${NEPALI_MONTHS[viewMonth]?.nameEn} ${dayNum}, ${viewYear} BS (${adLabel})`,
+                            events: dayEvents,
+                          });
+                        }}
+                        className="text-[10px] text-primary hover:underline font-semibold block px-1 text-left cursor-pointer transition-colors"
+                      >
                         +{dayEvents.length - 3} more
-                      </span>
+                      </button>
                     )}
                   </div>
 
@@ -550,6 +595,58 @@ export const NepaliCalendarGrid: React.FC<NepaliCalendarGridProps> = ({
           )}
         </div>
       )}
+
+      {/* Day Events Modal for +N more items */}
+      <Dialog
+        open={!!viewingDayModal}
+        onOpenChange={(open) => {
+          if (!open) setViewingDayModal(null);
+        }}
+      >
+        <DialogContent className="sm:max-w-[420px] rounded-2xl p-5 shadow-xl">
+          <DialogHeader>
+            <DialogTitle className="text-base font-bold text-foreground">
+              {viewingDayModal?.dateTitle}
+            </DialogTitle>
+            <DialogDescription className="text-xs text-muted-foreground">
+              {viewingDayModal?.events.length || 0} event(s) scheduled for this date.
+            </DialogDescription>
+          </DialogHeader>
+
+          <div className="space-y-2 mt-2 max-h-[320px] overflow-y-auto pr-1">
+            {viewingDayModal?.events.map((ev) => {
+              const colorClass = getCategoryBlockClass(ev.event_type, ev.is_holiday);
+              return (
+                <div
+                  key={ev.id}
+                  onClick={() => {
+                    setViewingDayModal(null);
+                    onSelectEvent(ev);
+                  }}
+                  className={`${colorClass} p-2.5 rounded-lg border text-xs font-medium flex items-center justify-between gap-2 shadow-2xs hover:scale-[1.01] transition-transform cursor-pointer`}
+                >
+                  <div className="min-w-0 flex-1">
+                    <div className="flex items-center gap-1.5 font-bold">
+                      {ev.is_holiday && (
+                        <span className="w-2 h-2 rounded-full bg-rose-600 shrink-0" />
+                      )}
+                      <span className="truncate">{ev.title}</span>
+                    </div>
+                    {ev.description && (
+                      <p className="text-[11px] opacity-80 line-clamp-1 mt-0.5">
+                        {ev.description}
+                      </p>
+                    )}
+                  </div>
+                  <Badge variant="outline" className="text-[10px] shrink-0 font-semibold">
+                    {ev.event_type}
+                  </Badge>
+                </div>
+              );
+            })}
+          </div>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 };

@@ -88,8 +88,8 @@ export const DesktopSidebar: React.FC<DesktopSidebarProps> = ({
           className={`flex items-center focus:outline-none min-w-0 ${isCollapsed ? 'shrink-0' : 'gap-2'}`}
           title="Go to Dashboard"
         >
-          <div className="flex h-8.5 w-8.5 min-h-[34px] min-w-[34px] items-center justify-center rounded-full bg-white dark:bg-card border border-border/80 shadow-xs overflow-hidden p-0.5 shrink-0 ring-1 ring-border/30">
-            <img src={BRAND_LOGO_URL} alt="Schools Up Pro" className="h-full w-full object-contain rounded-full" />
+          <div className="flex h-8.5 w-8.5 min-h-[34px] min-w-[34px] items-center justify-center rounded-xl bg-white dark:bg-card border border-border/80 shadow-xs overflow-hidden p-1 shrink-0 ring-1 ring-border/30">
+            <img src={BRAND_LOGO_URL} alt="Schools Up Pro" className="h-full w-full object-contain rounded-md" />
           </div>
           {!isCollapsed && (
             <span className="font-bold tracking-tight text-foreground text-sm truncate">

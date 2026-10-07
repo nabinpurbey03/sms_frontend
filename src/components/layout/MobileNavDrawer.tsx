@@ -91,11 +91,11 @@ export const MobileNavDrawer: React.FC<MobileNavDrawerProps> = ({
           {/* Header Section */}
           <div className="flex items-center justify-between pb-3 border-b border-border/60">
             <div className="flex items-center gap-2.5">
-              <div className="flex h-9 w-9 min-h-[36px] min-w-[36px] items-center justify-center rounded-full bg-white dark:bg-card border border-border/80 shadow-xs p-0.5 overflow-hidden shrink-0 ring-1 ring-border/30">
+              <div className="flex h-9 w-9 min-h-[36px] min-w-[36px] items-center justify-center rounded-xl bg-white dark:bg-card border border-border/80 shadow-xs p-1 overflow-hidden shrink-0 ring-1 ring-border/30">
                 <img
                   src={BRAND_LOGO_URL}
                   alt="Schools Up Pro"
-                  className="h-full w-full object-contain rounded-full"
+                  className="h-full w-full object-contain rounded-md"
                 />
               </div>
               <div>

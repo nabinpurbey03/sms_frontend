@@ -234,24 +234,10 @@ export const AttendanceDashboardHub: React.FC = () => {
     { enabled: !!activeTenantId && isAdminOrOfficeAdmin && timeframe !== 'today' }
   );
 
-  const rollingStartDate = useMemo(() => getDateDaysAgo(7), []);
-
   const {
-    data: todayRollingReport,
-    isLoading: isTodayRollingLoading,
-    refetch: refetchTodayRolling,
-  } = useSchoolAttendanceReport(
-    activeTenantId,
-    rollingStartDate,
-    selectedDate,
-    { enabled: !!activeTenantId && isAdminOrOfficeAdmin && timeframe === 'today' }
-  );
-
-  const rollingDailyRecords = useMemo(() => {
-    return todayRollingReport?.daily_stats || [];
-  }, [todayRollingReport]);
-
-  const { data: schoolClasses = [] } = useAllClassesWithDetails(!isParent ? activeTenantId : null);
+    data: schoolClasses = [],
+    isLoading: isClassesLoading,
+  } = useAllClassesWithDetails(!isParent ? activeTenantId : null);
 
   // Queries for Teacher
   const {
@@ -276,7 +262,6 @@ export const AttendanceDashboardHub: React.FC = () => {
   // Map section details for Admin checklist
   const sectionsStatusList = useMemo(() => {
     if (!schoolClasses.length) return [];
-    const markedIds = new Set(dailyStatus?.marked_section_ids || []);
     const statusMap = new Map<string, SectionDailyAttendanceStatus>();
     (dailyStatus?.sections || []).forEach((sec) => statusMap.set(sec.section_id, sec));
 
@@ -343,12 +328,44 @@ export const AttendanceDashboardHub: React.FC = () => {
     });
   }, [sectionsStatusList, sectionStatusFilter, sectionSearchQuery]);
 
+  // Class attendance breakdown for Today
+  const todayClassBreakdown = useMemo(() => {
+    if (!schoolClasses.length) return [];
+
+    return schoolClasses
+      .map((cls) => {
+        const classSections = sectionsStatusList.filter((s) => s.classId === cls.id);
+        const totalStudents = classSections.reduce((sum, s) => sum + s.totalStudents, 0);
+        const totalPresent = classSections.reduce((sum, s) => sum + s.presentCount, 0);
+        const totalAbsent = classSections.reduce((sum, s) => sum + s.absentCount, 0);
+        const markedSections = classSections.filter((s) => s.isMarked).length;
+        const totalSections = classSections.length;
+        const isMarked = markedSections > 0;
+        const rate =
+          totalStudents > 0 && isMarked
+            ? Number(((totalPresent / totalStudents) * 100).toFixed(1))
+            : 0;
+
+        return {
+          id: cls.id,
+          name: cls.name,
+          rate,
+          totalStudents,
+          totalPresent,
+          totalAbsent,
+          markedSections,
+          totalSections,
+          isMarked,
+        };
+      })
+      .filter((cls) => cls.totalStudents > 0);
+  }, [schoolClasses, sectionsStatusList]);
+
   // Handle manual refresh
   const handleRefresh = () => {
     if (timeframe === 'today') {
       refetchDailyStatus();
       refetchSummary();
-      refetchTodayRolling();
     } else {
       refetchSchoolReport();
     }
@@ -674,27 +691,29 @@ export const AttendanceDashboardHub: React.FC = () => {
                   </Card>
                 </div>
 
-                {/* Right 2/3: Recent Attendance Trend (Rolling 7-Day) */}
+                {/* Right 2/3: Today's Class Attendance Breakdown */}
                 <div className="lg:col-span-2">
                   <ChartCard
-                    title="Recent Attendance Trend"
-                    description="Rolling 7-day school-wide attendance rate"
-                    isLoading={isTodayRollingLoading}
-                    isEmpty={!rollingDailyRecords || rollingDailyRecords.length === 0}
+                    title="Today's Class Attendance"
+                    description="Attendance rate comparison across classes for today"
+                    isLoading={isDailyStatusLoading || isClassesLoading}
+                    isEmpty={!todayClassBreakdown || todayClassBreakdown.length === 0}
                     className="border-border/60 rounded-xl overflow-hidden shadow-2xs h-full flex flex-col justify-between"
                   >
-                    <TrendAreaChart
-                      data={rollingDailyRecords.map((record: DailySchoolAttendanceItem) => ({
-                        date: new Intl.DateTimeFormat('en-US', { month: 'short', day: 'numeric' }).format(new Date(record.date)),
-                        rate:
-                          record.total_students > 0
-                            ? Number(((record.present_count / record.total_students) * 100).toFixed(1))
-                            : (record.attendance_percentage ?? 0),
-                      }))}
-                      dataKey="rate"
-                      xAxisKey="date"
-                      color="#10b981"
-                      valueFormatter={(v: number) => `${v.toFixed(1)}%`}
+                    <ComparisonBarChart
+                      data={todayClassBreakdown}
+                      bars={[{ dataKey: 'rate', color: '#10b981', label: 'Attendance %' }]}
+                      categoryKey="name"
+                      layout="horizontal"
+                      valueFormatter={(v: number) => `${v}%`}
+                      barColorFn={(entry) => {
+                        const isMarked = entry.isMarked as boolean;
+                        const rate = entry.rate as number;
+                        if (!isMarked) return '#94a3b8';
+                        if (rate >= 85) return '#10b981';
+                        if (rate >= 70) return '#3b82f6';
+                        return '#f59e0b';
+                      }}
                       height={220}
                     />
                   </ChartCard>

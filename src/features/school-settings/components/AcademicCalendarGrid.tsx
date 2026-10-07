@@ -7,10 +7,41 @@ import { getNepaliDateFromAd } from '../utils/nepaliDate';
 import { useCalendarPreferenceStore } from '@/stores/calendarPreferenceStore';
 import { NepaliCalendarGrid } from './NepaliCalendarGrid';
 import { toast } from 'sonner';
-import type { AcademicCalendarEvent, CalendarEventType } from '../types';
+import type { AcademicCalendarEvent, CalendarEventType, WeekDay } from '../types';
 import '../styles/calendar.css';
 
 const localizer = dayjsLocalizer(dayjs);
+
+export const WEEKDAY_TO_INDEX: Record<WeekDay, number> = {
+  sunday: 0,
+  monday: 1,
+  tuesday: 2,
+  wednesday: 3,
+  thursday: 4,
+  friday: 5,
+  saturday: 6,
+};
+
+export const DEFAULT_ACADEMIC_DAYS: WeekDay[] = [
+  'sunday',
+  'monday',
+  'tuesday',
+  'wednesday',
+  'thursday',
+  'friday',
+];
+
+export const computeOffDayIndices = (academicDays?: WeekDay[]): Set<number> => {
+  const activeDays = academicDays && academicDays.length > 0 ? academicDays : DEFAULT_ACADEMIC_DAYS;
+  const activeSet = new Set(activeDays);
+  const offDays = new Set<number>();
+  (Object.keys(WEEKDAY_TO_INDEX) as WeekDay[]).forEach((day) => {
+    if (!activeSet.has(day)) {
+      offDays.add(WEEKDAY_TO_INDEX[day]);
+    }
+  });
+  return offDays;
+};
 
 export interface AcademicCalendarGridProps {
   events: AcademicCalendarEvent[];
@@ -21,6 +52,7 @@ export interface AcademicCalendarGridProps {
   minDate?: string; // Academic year start_date (YYYY-MM-DD)
   maxDate?: string; // Academic year end_date (YYYY-MM-DD)
   academicYearName?: string;
+  academicDays?: WeekDay[];
 }
 
 interface CalendarItem {
@@ -76,7 +108,8 @@ const CustomDateHeader: React.FC<{
   calendarSystem: 'BS' | 'AD';
   minDate?: string;
   maxDate?: string;
-}> = ({ date, label, calendarSystem, minDate, maxDate }) => {
+  offDayIndices: Set<number>;
+}> = ({ date, label, calendarSystem, minDate, maxDate, offDayIndices }) => {
   const npInfo = useMemo(() => {
     return getNepaliDateFromAd(date);
   }, [date]);
@@ -84,6 +117,7 @@ const CustomDateHeader: React.FC<{
   const pad = (n: number) => String(n).padStart(2, '0');
   const adStr = `${date.getFullYear()}-${pad(date.getMonth() + 1)}-${pad(date.getDate())}`;
   const isOutOfSession = (minDate && adStr < minDate) || (maxDate && adStr > maxDate);
+  const isWeeklyOff = offDayIndices.has(date.getDay());
 
   const primaryNumber = calendarSystem === 'BS' ? (npInfo ? npInfo.date : label) : label;
   const secondaryText =
@@ -99,12 +133,22 @@ const CustomDateHeader: React.FC<{
         isOutOfSession ? 'opacity-30' : ''
       }`}
     >
-      <span className="text-sm font-bold text-foreground leading-none">
+      <span
+        className={`text-sm font-bold leading-none ${
+          isWeeklyOff
+            ? 'text-rose-600 dark:text-rose-400'
+            : 'text-foreground'
+        }`}
+      >
         {primaryNumber}
       </span>
       {secondaryText && (
         <span
-          className="text-[10px] text-muted-foreground font-medium mt-0.5"
+          className={`text-[10px] font-medium mt-0.5 ${
+            isWeeklyOff
+              ? 'text-rose-500/80 dark:text-rose-400/80'
+              : 'text-muted-foreground'
+          }`}
           title={
             npInfo
               ? `${npInfo.monthNameEn} ${npInfo.date}, ${npInfo.year} BS / ${adStr}`
@@ -143,6 +187,7 @@ const CustomEventComponent: React.FC<{ event: CalendarItem }> = ({ event }) => {
 interface GregorianCalendarGridInnerProps extends AcademicCalendarGridProps {
   viewAdDate: Date;
   onViewAdDateChange: (d: Date) => void;
+  offDayIndices: Set<number>;
 }
 
 const GregorianCalendarGridInner: React.FC<GregorianCalendarGridInnerProps> = ({
@@ -155,6 +200,7 @@ const GregorianCalendarGridInner: React.FC<GregorianCalendarGridInnerProps> = ({
   academicYearName,
   viewAdDate,
   onViewAdDateChange,
+  offDayIndices,
 }) => {
   const { calendarSystem } = useCalendarPreferenceStore();
   const [currentView, setCurrentView] = useState<View>('month');
@@ -192,6 +238,13 @@ const GregorianCalendarGridInner: React.FC<GregorianCalendarGridInnerProps> = ({
     const pad = (n: number) => String(n).padStart(2, '0');
     const d = slotInfo.start;
     const adDateStr = `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}`;
+
+    const now = new Date();
+    const todayAdStr = `${now.getFullYear()}-${pad(now.getMonth() + 1)}-${pad(now.getDate())}`;
+    if (adDateStr < todayAdStr) {
+      toast.error('Cannot schedule events on dates prior to today.');
+      return;
+    }
 
     if (minDate && adDateStr < minDate) {
       toast.error(`Selected date is before academic session start (${minDate}).`);
@@ -429,15 +482,46 @@ const GregorianCalendarGridInner: React.FC<GregorianCalendarGridInnerProps> = ({
           onSelectSlot={handleSelectSlot}
           onSelectEvent={(item) => onSelectEvent(item.resource)}
           eventPropGetter={eventPropGetter}
+          dayPropGetter={(date: Date) => {
+            const isWeeklyOff = offDayIndices.has(date.getDay());
+            const pad = (n: number) => String(n).padStart(2, '0');
+            const adStr = `${date.getFullYear()}-${pad(date.getMonth() + 1)}-${pad(date.getDate())}`;
+            const isOutOfSession = (minDate && adStr < minDate) || (maxDate && adStr > maxDate);
+
+            if (isOutOfSession) {
+              return { className: 'bg-muted/15 opacity-40' };
+            }
+            if (isWeeklyOff) {
+              return { className: 'bg-rose-50/20 dark:bg-rose-950/10' };
+            }
+            return {};
+          }}
           components={{
             toolbar: CustomToolbar,
+            header: ({ label, date }: { label: string; date: Date }) => {
+              const isWeeklyOff = offDayIndices.has(date.getDay());
+              return (
+                <span className={isWeeklyOff ? 'text-rose-600 dark:text-rose-400 font-bold' : ''}>
+                  {label}
+                </span>
+              );
+            },
             month: {
+              header: ({ label, date }: { label: string; date: Date }) => {
+                const isWeeklyOff = offDayIndices.has(date.getDay());
+                return (
+                  <span className={isWeeklyOff ? 'text-rose-600 dark:text-rose-400 font-bold' : ''}>
+                    {label}
+                  </span>
+                );
+              },
               dateHeader: (props) => (
                 <CustomDateHeader
                   {...props}
                   calendarSystem={calendarSystem}
                   minDate={minDate}
                   maxDate={maxDate}
+                  offDayIndices={offDayIndices}
                 />
               ),
             },
@@ -452,6 +536,7 @@ const GregorianCalendarGridInner: React.FC<GregorianCalendarGridInnerProps> = ({
 
 export const AcademicCalendarGrid: React.FC<AcademicCalendarGridProps> = (props) => {
   const { calendarSystem } = useCalendarPreferenceStore();
+  const offDayIndices = useMemo(() => computeOffDayIndices(props.academicDays), [props.academicDays]);
 
   // Lift the viewed Gregorian date so switching BS↔AD preserves position
   const [viewAdDate, setViewAdDate] = useState<Date>(props.initialDate || new Date());
@@ -467,6 +552,7 @@ export const AcademicCalendarGrid: React.FC<AcademicCalendarGridProps> = (props)
     return (
       <NepaliCalendarGrid
         {...props}
+        offDayIndices={offDayIndices}
         viewAdDate={viewAdDate}
         onViewAdDateChange={setViewAdDate}
       />
@@ -476,6 +562,7 @@ export const AcademicCalendarGrid: React.FC<AcademicCalendarGridProps> = (props)
   return (
     <GregorianCalendarGridInner
       {...props}
+      offDayIndices={offDayIndices}
       viewAdDate={viewAdDate}
       onViewAdDateChange={setViewAdDate}
     />
