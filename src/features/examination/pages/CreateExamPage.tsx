@@ -64,6 +64,7 @@ export const CreateExamPage: React.FC = () => {
 
   // Form states
   const [selectedClassIds, setSelectedClassIds] = useState<string[]>([]);
+  const [openAccordionIds, setOpenAccordionIds] = useState<string[]>([]);
   const [examName, setExamName] = useState<string>('');
   const { currentYear, currentYearId, isLoading: isYearLoading } =
     useCurrentAcademicYear(activeTenantId);
@@ -128,11 +129,26 @@ export const CreateExamPage: React.FC = () => {
   // Handle class selection toggle
   const toggleClassSelection = (classId: string) => {
     setSelectedClassIds((prev) => {
-      if (prev.includes(classId)) {
+      const isSelected = prev.includes(classId);
+      if (isSelected) {
+        setOpenAccordionIds((open) => open.filter((id) => id !== classId));
         return prev.filter((id) => id !== classId);
+      } else {
+        setOpenAccordionIds((open) => (open.includes(classId) ? open : [...open, classId]));
+        return [...prev, classId];
       }
-      return [...prev, classId];
     });
+  };
+
+  const handleSelectAllClasses = () => {
+    const allIds = classes.map((c) => c.id);
+    setSelectedClassIds(allIds);
+    setOpenAccordionIds(allIds);
+  };
+
+  const handleClearAllClasses = () => {
+    setSelectedClassIds([]);
+    setOpenAccordionIds([]);
   };
 
   // Derive subjectConfigs from loaded subjects, academic subject teachers, and user overrides
@@ -244,6 +260,16 @@ export const CreateExamPage: React.FC = () => {
     }
     return configsMap;
   }, [selectedClassIds, classes, overrides, subjectTeacherMap]);
+
+  // Total included subjects count across all selected classes
+  const totalIncludedSubjects = useMemo(() => {
+    let count = 0;
+    for (const classId of selectedClassIds) {
+      const configs = classSubjectConfigs[classId] || [];
+      count += configs.filter((s) => s.included).length;
+    }
+    return count;
+  }, [selectedClassIds, classSubjectConfigs]);
 
   const handleSubjectConfigsChange = (classId: string, configs: SubjectConfigItem[]) => {
     setOverrides((prev) => {
@@ -441,7 +467,7 @@ export const CreateExamPage: React.FC = () => {
   }
 
   return (
-    <form onSubmit={handleSubmit} className="space-y-6 max-w-5xl mx-auto pb-12">
+    <form onSubmit={handleSubmit} className="space-y-6 max-w-6xl xl:max-w-7xl mx-auto pb-24">
       {/* Header & Breadcrumb */}
       <div className="space-y-3 border-b pb-5">
         <Breadcrumb>
@@ -482,30 +508,70 @@ export const CreateExamPage: React.FC = () => {
         <CardContent className="space-y-4">
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             {/* Class Selector */}
-            <div className="space-y-1.5 md:col-span-2">
-              <Label className="text-sm font-semibold">
-                Target Classes <span className="text-destructive">*</span>
-              </Label>
+            <div className="space-y-2.5 md:col-span-2">
+              <div className="flex flex-wrap items-center justify-between gap-2">
+                <div className="flex items-center gap-2">
+                  <Label className="text-sm font-semibold">
+                    Target Classes <span className="text-destructive">*</span>
+                  </Label>
+                  <Badge variant="outline" className="text-xs font-normal">
+                    {selectedClassIds.length} of {classes.length} selected
+                  </Badge>
+                </div>
+                <div className="flex items-center gap-1.5">
+                  <Button
+                    type="button"
+                    variant="outline"
+                    size="sm"
+                    className="h-7 px-2.5 text-xs"
+                    onClick={handleSelectAllClasses}
+                    disabled={isSubmitting || classes.length === 0 || selectedClassIds.length === classes.length}
+                  >
+                    Select All
+                  </Button>
+                  <Button
+                    type="button"
+                    variant="outline"
+                    size="sm"
+                    className="h-7 px-2.5 text-xs"
+                    onClick={handleClearAllClasses}
+                    disabled={isSubmitting || selectedClassIds.length === 0}
+                  >
+                    Clear All
+                  </Button>
+                </div>
+              </div>
+
               {classesLoading ? (
-                <div className="flex items-center gap-2 text-sm text-muted-foreground p-3">
-                  <Loader2 className="w-4 h-4 animate-spin" /> Loading classes...
+                <div className="flex items-center gap-2 text-sm text-muted-foreground p-4 border rounded-xl bg-muted/10">
+                  <Loader2 className="w-4 h-4 animate-spin text-primary" /> Loading classes...
                 </div>
               ) : classes.length === 0 ? (
-                <div className="text-sm text-muted-foreground p-3 border rounded-lg bg-muted/10">
+                <div className="text-sm text-muted-foreground p-4 border rounded-xl bg-muted/10">
                   No classes available.
                 </div>
               ) : (
-                <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-3 mt-1 border rounded-lg p-3 bg-muted/10 max-h-[160px] overflow-y-auto">
-                  {classes.map((cls) => (
-                    <label key={cls.id} className="flex items-center gap-2 cursor-pointer hover:bg-muted/50 p-1.5 rounded-md transition-colors">
-                      <Checkbox
-                        checked={selectedClassIds.includes(cls.id)}
-                        onCheckedChange={() => toggleClassSelection(cls.id)}
-                        disabled={isSubmitting}
-                      />
-                      <span className="text-sm font-medium truncate">{cls.name}</span>
-                    </label>
-                  ))}
+                <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-2.5 mt-1">
+                  {classes.map((cls) => {
+                    const isSelected = selectedClassIds.includes(cls.id);
+                    return (
+                      <label
+                        key={cls.id}
+                        className={`flex items-center gap-2.5 p-3 rounded-lg border cursor-pointer transition-all select-none ${
+                          isSelected
+                            ? 'border-primary bg-primary/10 text-primary font-semibold ring-1 ring-primary/30'
+                            : 'border-border/70 hover:border-primary/40 hover:bg-muted/40 text-foreground font-medium'
+                        } ${isSubmitting ? 'opacity-60 cursor-not-allowed pointer-events-none' : ''}`}
+                      >
+                        <Checkbox
+                          checked={isSelected}
+                          onCheckedChange={() => toggleClassSelection(cls.id)}
+                          disabled={isSubmitting}
+                        />
+                        <span className="text-sm truncate">{cls.name}</span>
+                      </label>
+                    );
+                  })}
                 </div>
               )}
             </div>
@@ -610,21 +676,68 @@ export const CreateExamPage: React.FC = () => {
               </p>
             </div>
           ) : (
-            <Accordion type="multiple" defaultValue={selectedClassIds} className="w-full space-y-3">
+            <Accordion
+              type="multiple"
+              value={openAccordionIds}
+              onValueChange={setOpenAccordionIds}
+              className="w-full space-y-3"
+            >
               {selectedClassIds.map((classId) => {
                 const cls = classes.find((c) => c.id === classId);
                 const classConfigs = classSubjectConfigs[classId] || [];
                 if (!cls) return null;
 
+                const includedSubjects = classConfigs.filter((s) => s.included);
+                const includedCount = includedSubjects.length;
+                const totalMarks = includedSubjects.reduce(
+                  (acc, s) => acc + (s.fullMark || 0),
+                  0
+                );
+                const hasMissingTeacher = includedSubjects.some(
+                  (s) => !s.assignedTeacherId
+                );
+                const hasMarkError = includedSubjects.some((s) => Boolean(s.error));
+
                 return (
-                  <AccordionItem key={classId} value={classId} className="border rounded-lg bg-card/60 px-4">
+                  <AccordionItem
+                    key={classId}
+                    value={classId}
+                    className="border rounded-lg bg-card/60 px-4"
+                  >
                     <AccordionTrigger className="hover:no-underline py-4">
-                      <div className="flex items-center gap-2">
-                        <GraduationCap className="w-4 h-4 text-muted-foreground" />
-                        <span className="font-semibold">{cls.name} Subjects</span>
-                        <span className="text-xs text-muted-foreground font-normal ml-2">
-                          ({classConfigs.length} subjects)
-                        </span>
+                      <div className="flex flex-1 flex-wrap items-center justify-between gap-2.5 mr-3 text-left">
+                        <div className="flex items-center gap-2 min-w-0">
+                          <GraduationCap className="w-4 h-4 text-primary shrink-0" />
+                          <span className="font-semibold text-foreground truncate">
+                            {cls.name}
+                          </span>
+                        </div>
+                        <div className="flex flex-wrap items-center gap-2">
+                          <Badge variant="secondary" className="text-xs font-normal">
+                            {includedCount} of {classConfigs.length} included
+                          </Badge>
+                          <Badge variant="outline" className="text-xs font-medium">
+                            Total {totalMarks} Marks
+                          </Badge>
+                          {hasMissingTeacher && (
+                            <Badge
+                              variant="outline"
+                              className="text-xs border-amber-500/40 bg-amber-500/10 text-amber-700 dark:text-amber-400 flex items-center gap-1 font-medium"
+                            >
+                              <AlertTriangle className="w-3 h-3 shrink-0" />
+                              Missing Teacher
+                            </Badge>
+                          )}
+                          {hasMarkError && (
+                            <Badge
+                              variant="destructive"
+                              className="text-xs flex items-center gap-1 font-medium"
+                            >
+                              <AlertTriangle className="w-3 h-3 shrink-0" />
+                              Review Marks
+                            </Badge>
+                          )}
+                        </div>
                       </div>
                     </AccordionTrigger>
                     <AccordionContent className="pt-2 pb-4">
@@ -636,7 +749,9 @@ export const CreateExamPage: React.FC = () => {
                         <ExamSubjectConfigList
                           configs={classConfigs}
                           teachers={teacherList}
-                          onChange={(configs) => handleSubjectConfigsChange(classId, configs)}
+                          onChange={(configs) =>
+                            handleSubjectConfigsChange(classId, configs)
+                          }
                           disabled={isSubmitting}
                         />
                       )}
@@ -649,35 +764,46 @@ export const CreateExamPage: React.FC = () => {
         </CardContent>
       </Card>
 
-      {/* Footer / Action Bar */}
-      <div className="flex items-center justify-end gap-3 pt-4 border-t">
-        <Button
-          type="button"
-          variant="outline"
-          onClick={() => navigate({ to: '/examination/exams' as any })}
-          disabled={isSubmitting}
-        >
-          Cancel
-        </Button>
-        <Button
-          type="submit"
-          disabled={
-            isSubmitting ||
-            !currentYearId ||
-            isYearLoading ||
-            selectedClassIds.length === 0 ||
-            !examName.trim()
-          }
-        >
-          {isSubmitting ? (
-            <>
-              <Loader2 className="w-4 h-4 mr-2 animate-spin" />
-              Creating Examination...
-            </>
-          ) : (
-            'Create Examination'
-          )}
-        </Button>
+      {/* Sticky Bottom Action Bar */}
+      <div className="sticky bottom-0 z-20 bg-background/95 backdrop-blur-md border-t py-3.5 px-4 sm:px-6 shadow-lg -mx-4 sm:-mx-6 flex flex-col sm:flex-row items-center justify-between gap-3">
+        <div className="flex items-center gap-2 text-sm text-muted-foreground w-full sm:w-auto">
+          <span className="font-medium text-foreground">
+            {selectedClassIds.length} {selectedClassIds.length === 1 ? 'class' : 'classes'} selected
+          </span>
+          <span>•</span>
+          <span>
+            {totalIncludedSubjects} {totalIncludedSubjects === 1 ? 'subject' : 'subjects'} included
+          </span>
+        </div>
+        <div className="flex items-center gap-3 w-full sm:w-auto justify-end">
+          <Button
+            type="button"
+            variant="outline"
+            onClick={() => navigate({ to: '/examination/exams' as any })}
+            disabled={isSubmitting}
+          >
+            Cancel
+          </Button>
+          <Button
+            type="submit"
+            disabled={
+              isSubmitting ||
+              !currentYearId ||
+              isYearLoading ||
+              selectedClassIds.length === 0 ||
+              !examName.trim()
+            }
+          >
+            {isSubmitting ? (
+              <>
+                <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                Creating Examination...
+              </>
+            ) : (
+              'Create Examination'
+            )}
+          </Button>
+        </div>
       </div>
     </form>
   );
