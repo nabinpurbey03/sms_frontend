@@ -140,6 +140,8 @@ export interface TeacherExamSubjectAssignment {
   class_name: string;
   subject_id: string;
   subject_name: string;
+  section_id?: string | null;
+  section_name?: string | null;
   has_practical?: boolean;
   theory_full_mark?: number;
   theory_pass_mark?: number;
