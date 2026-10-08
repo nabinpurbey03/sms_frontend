@@ -33,7 +33,7 @@
 - Consumes: `TeacherAssignmentCreate(teacher_id, class_id, section_id, subject_id, is_class_teacher)`
 - Produces: `TeacherAssignmentResponse` allowing distinct teachers for distinct sections of the same subject.
 
-- [ ] **Step 1: Write failing test for section-scoped subject teacher assignment**
+- [x] **Step 1: Write failing test for section-scoped subject teacher assignment**
 
 Add test in `backend/tests/test_staffing_status.py` verifying that Teacher 1 can be assigned to Class 10 Section A for Math, and Teacher 2 can be assigned to Class 10 Section B for Math without throwing `ConflictException`.
 
@@ -44,12 +44,12 @@ def test_section_scoped_subject_teacher_assignment(default_academic_year):
     # Assign Teacher 2 to Section B Math -> 200 OK (must not raise 409 Conflict)
 ```
 
-- [ ] **Step 2: Run test to verify it fails**
+- [x] **Step 2: Run test to verify it fails**
 
 Run: `backend/.venv/Scripts/pytest.exe tests/test_staffing_status.py -k test_section_scoped_subject_teacher_assignment`
 Expected: FAIL with `ConflictException: Subject 'Mathematics' is already assigned to teacher...`
 
-- [ ] **Step 3: Update rule 6 in `AcademicService.create_teacher_assignment`**
+- [x] **Step 3: Update rule 6 in `AcademicService.create_teacher_assignment`**
 
 In `backend/src/modules/academic/service.py`, update rule 6:
 ```python
@@ -83,20 +83,20 @@ In `backend/src/modules/academic/service.py`, update rule 6:
                 )
 ```
 
-- [ ] **Step 4: Enable section selection for Subject Teachers in `AssignTeacherDialog.tsx`**
+- [x] **Step 4: Enable section selection for Subject Teachers in `AssignTeacherDialog.tsx`**
 
 In `frontend/src/features/academic/components/AssignTeacherDialog.tsx`, enable the Section dropdown for both `class_teacher` and `subject` modes:
 - Option: `All Sections (Class-Wide)` (`value=""`)
 - Option per section: `Section {s.name}` (`value={s.id}`)
 Include helpful subtitle: `Assign instructor to a specific section or all sections of this class`.
 
-- [ ] **Step 5: Run tests and typecheck**
+- [x] **Step 5: Run tests and typecheck**
 
 Run: `backend/.venv/Scripts/pytest.exe tests/test_staffing_status.py`
 Run: `npx tsc -b` in `frontend`
 Expected: PASS
 
-- [ ] **Step 6: Commit**
+- [x] **Step 6: Commit**
 
 ```bash
 git add backend/src/modules/academic/service.py backend/tests/test_staffing_status.py frontend/src/features/academic/components/AssignTeacherDialog.tsx
@@ -117,16 +117,16 @@ git commit -m "feat(academic): allow section-scoped subject teacher assignments"
 - Consumes: `teacher_id`, `exam_subject_id`, `exam.class_id`, `Student.section_id`
 - Produces: Section-aware authorization and grading assignments list.
 
-- [ ] **Step 1: Write failing test in `backend/tests/test_examination_lifecycle.py`**
+- [x] **Step 1: Write failing test in `backend/tests/test_examination_lifecycle.py`**
 
 Test that Teacher B (assigned to Section B Math) can edit scores for Section B students, but is rejected with 403 Forbidden if attempting to save scores for Section A students.
 
-- [ ] **Step 2: Run test to verify it fails**
+- [x] **Step 2: Run test to verify it fails**
 
 Run: `backend/.venv/Scripts/pytest.exe tests/test_examination_lifecycle.py -k test_section_permission`
 Expected: FAIL
 
-- [ ] **Step 3: Update `require_exam_subject_edit_permission` in `dependencies.py`**
+- [x] **Step 3: Update `require_exam_subject_edit_permission` in `dependencies.py`**
 
 In `backend/src/core/dependencies.py`:
 ```python
@@ -158,7 +158,7 @@ In `backend/src/core/dependencies.py`:
         )
 ```
 
-- [ ] **Step 4: Enforce section quarantine in `bulk_upsert_scores`**
+- [x] **Step 4: Enforce section quarantine in `bulk_upsert_scores`**
 
 In `backend/src/modules/examination/service.py`:
 If `user_id` is a Teacher (not Admin/Office Admin/Super Admin):
@@ -166,12 +166,12 @@ If `user_id` is a Teacher (not Admin/Office Admin/Super Admin):
 2. If teacher has a class-wide assignment (`section_id is None`) or is `exam_subject.assigned_teacher_id`, allow all sections.
 3. Otherwise, verify that every student in `payload.scores` has `student.section_id in teacher_section_ids`. If any student is outside, raise `ForbiddenException("You can only submit scores for students in your assigned section.")`.
 
-- [ ] **Step 5: Include section details in `TeacherExamSubjectAssignment`**
+- [x] **Step 5: Include section details in `TeacherExamSubjectAssignment`**
 
 In `get_teacher_exam_assignments`:
 If teacher is assigned to specific section(s), return section names and IDs so the teacher's grading queue cards clearly show e.g. `Class 10 - Section A • Mathematics`.
 
-- [ ] **Step 6: Run tests and commit**
+- [x] **Step 6: Run tests and commit**
 
 ```bash
 git add backend/src/core/dependencies.py backend/src/modules/examination/service.py backend/src/modules/examination/schemas.py backend/tests/test_examination_lifecycle.py
@@ -191,19 +191,19 @@ git commit -m "feat(examination): enforce section-level ReBAC for score entry"
 - Consumes: `BulkUpsertScoresRequest(scores: list[StudentScoreItemDTO])`, `submit_exam_subject(exam_subject_id, section_id=None)`
 - Produces: Partial drafts saved; submission blocked with HTTP 400 if any student marks are missing.
 
-- [ ] **Step 1: Write failing tests for partial draft and compulsory submission**
+- [x] **Step 1: Write failing tests for partial draft and compulsory submission**
 
 In `backend/tests/test_examination_lifecycle.py`:
 1. `test_partial_draft_saving_allowed`: Saving 1 student score out of 5 enrolled students succeeds with 200 OK.
 2. `test_incomplete_submission_rejected`: Calling `/submit` when 4 students are missing scores fails with HTTP 400 Bad Request (`f"Cannot submit: 4 student(s) have missing scores."`).
 3. `test_complete_submission_succeeds`: Filling remaining 4 students and calling `/submit` succeeds with 200 OK and status `SUBMITTED`.
 
-- [ ] **Step 2: Run tests to verify they fail**
+- [x] **Step 2: Run tests to verify they fail**
 
 Run: `backend/.venv/Scripts/pytest.exe tests/test_examination_lifecycle.py -k "test_partial_draft or test_incomplete_submission"`
 Expected: FAIL
 
-- [ ] **Step 3: Support partial draft saving in `bulk_upsert_scores`**
+- [x] **Step 3: Support partial draft saving in `bulk_upsert_scores`**
 
 In `backend/src/modules/examination/service.py`:
 - In `bulk_upsert_scores`, only validate items that are actually present in `payload.scores`.
@@ -212,7 +212,7 @@ In `backend/src/modules/examination/service.py`:
   - If `has_practical` and `is_practical_absent is False`, `practical_score` must not be None, and `0 <= practical_score <= practical_full_mark`.
 - Unsent students remain unpersisted without causing errors.
 
-- [ ] **Step 4: Implement compulsory completeness validation in `submit_exam_subject`**
+- [x] **Step 4: Implement compulsory completeness validation in `submit_exam_subject`**
 
 In `backend/src/modules/examination/service.py`:
 Inside `submit_exam_subject`:
@@ -232,12 +232,12 @@ Inside `submit_exam_subject`:
    ```
 5. If 100% complete: mark status as `SUBMITTED`.
 
-- [ ] **Step 5: Run tests and verify all pass**
+- [x] **Step 5: Run tests and verify all pass**
 
 Run: `backend/.venv/Scripts/pytest.exe tests/test_examination_lifecycle.py`
 Expected: ALL PASS
 
-- [ ] **Step 6: Commit**
+- [x] **Step 6: Commit**
 
 ```bash
 git add backend/src/modules/examination/service.py backend/src/modules/examination/router.py backend/tests/test_examination_lifecycle.py
@@ -258,18 +258,18 @@ git commit -m "feat(examination): support partial drafts and enforce compulsory 
 - Consumes: `useExamReview`, `useSaveExamScores`, `useSubmitExamSubject`, `useAuth`
 - Produces: Section-filtered UI, progress indicators, inline cell warnings, non-blocking draft save, blocking submit with error summary.
 
-- [ ] **Step 1: Write frontend unit tests for draft filtering and submission validation**
+- [x] **Step 1: Write frontend unit tests for draft filtering and submission validation**
 
 In `frontend/src/features/examination/components/__tests__/teacherScoreEntry.test.mjs`:
 - Test that `buildDraftScorePayload` only includes rows where `isTheoryAbsent || theoryScore !== null`.
 - Test that `validateAllScoresComplete` returns a list of missing student names when any row has `theoryScore === null && !isTheoryAbsent`.
 
-- [ ] **Step 2: Run tests to verify they fail**
+- [x] **Step 2: Run tests to verify they fail**
 
 Run: `node frontend/src/features/examination/components/__tests__/teacherScoreEntry.test.mjs`
 Expected: FAIL
 
-- [ ] **Step 3: Implement helper functions in `types.ts`**
+- [x] **Step 3: Implement helper functions in `types.ts`**
 
 In `frontend/src/features/examination/types.ts`:
 1. `buildDraftScorePayload(rows: StudentGradingRow[], hasPractical: boolean): StudentScoreItemDTO[]`:
@@ -277,7 +277,7 @@ In `frontend/src/features/examination/types.ts`:
 2. `validateAllScoresComplete(rows: StudentGradingRow[], options: { hasPractical: boolean }): { isComplete: boolean; missingStudents: string[] }`:
    Checks every student. Returns `missingStudents` list.
 
-- [ ] **Step 4: Update `ScoreEntryPage.tsx`**
+- [x] **Step 4: Update `ScoreEntryPage.tsx`**
 
 1. **Section Isolation:**
    - Detect if current user is a Teacher assigned to a specific section.
@@ -300,14 +300,14 @@ In `frontend/src/features/examination/types.ts`:
        - Opens confirmation modal with total student count and pass/fail summary.
        - Dispatches save and submit mutations.
 
-- [ ] **Step 5: Run frontend tests and typecheck**
+- [x] **Step 5: Run frontend tests and typecheck**
 
 Run: `node frontend/src/features/examination/components/__tests__/teacherScoreEntry.test.mjs`
 Run: `npx tsc -b` in `frontend`
 Run: `npm run build` in `frontend`
 Expected: ALL PASS
 
-- [ ] **Step 6: Commit**
+- [x] **Step 6: Commit**
 
 ```bash
 git add frontend/src/features/examination/pages/ScoreEntryPage.tsx frontend/src/features/examination/components/TeacherScoreEntryTable.tsx frontend/src/features/examination/types.ts frontend/src/features/examination/components/__tests__/teacherScoreEntry.test.mjs
@@ -322,7 +322,7 @@ git commit -m "feat(examination): add section-scoped grading UX and compulsory s
 - Create: `backend/tests/test_examination_section_grading.py`
 - Test: Full lifecycle test from multi-teacher assignment to section draft and final submission.
 
-- [ ] **Step 1: Write end-to-end integration test**
+- [x] **Step 1: Write end-to-end integration test**
 
 In `backend/tests/test_examination_section_grading.py`:
 1. Create Class 10 with Section A and Section B.
@@ -336,22 +336,22 @@ In `backend/tests/test_examination_section_grading.py`:
 9. Verify Teacher Shyam can save draft and submit Section B.
 10. Verify Exam transitions to `PENDING_APPROVAL` once both sections are submitted.
 
-- [ ] **Step 2: Run backend test suite**
+- [x] **Step 2: Run backend test suite**
 
 Run: `backend/.venv/Scripts/pytest.exe tests/test_examination_section_grading.py`
 Expected: 100% PASS
 
-- [ ] **Step 3: Run full backend regression suite**
+- [x] **Step 3: Run full backend regression suite**
 
 Run: `backend/.venv/Scripts/pytest.exe tests/test_staffing_status.py tests/test_examination_lifecycle.py tests/test_student_actions.py`
 Expected: ALL PASS
 
-- [ ] **Step 4: Run full frontend build**
+- [x] **Step 4: Run full frontend build**
 
 Run: `npm run build` in `frontend`
 Expected: Clean build in ~1.1s with code 0
 
-- [ ] **Step 5: Final Commit**
+- [x] **Step 5: Final Commit**
 
 ```bash
 git add backend/tests/test_examination_section_grading.py
