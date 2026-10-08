@@ -5,6 +5,8 @@ import {
   deriveStudentScore,
   buildStudentScorePayload,
   validateStudentScoreBounds,
+  buildDraftScorePayload,
+  validateAllScoresComplete,
 } from '../../types.ts';
 
 // ---------------------------------------------------------------------------
@@ -529,4 +531,140 @@ test('validateStudentScoreBounds: returns error for negative scores', () => {
     fullMark: 100,
   });
   assert.match(err || '', /between 0 and 75/i);
+});
+
+// ---------------------------------------------------------------------------
+// 4. Draft Saving & Compulsory Submission Validation Tests
+// ---------------------------------------------------------------------------
+
+test('buildDraftScorePayload: filters out untouched rows and includes partial drafts', () => {
+  const rows = [
+    {
+      studentId: 'st-001',
+      studentName: 'Aarav Sharma',
+      theoryScore: 50,
+      isTheoryAbsent: false,
+      practicalScore: 15,
+      isPracticalAbsent: false,
+      score: 65,
+      isAbsent: false,
+    },
+    {
+      studentId: 'st-002',
+      studentName: 'Diya Patel',
+      theoryScore: null,
+      isTheoryAbsent: false,
+      practicalScore: null,
+      isPracticalAbsent: false,
+      score: null,
+      isAbsent: false,
+    },
+    {
+      studentId: 'st-003',
+      studentName: 'Rohan Gupta',
+      theoryScore: 0,
+      isTheoryAbsent: true,
+      practicalScore: 20,
+      isPracticalAbsent: false,
+      score: 20,
+      isAbsent: false,
+    },
+    {
+      studentId: 'st-004',
+      studentName: 'Pooja Verma',
+      theoryScore: 45,
+      isTheoryAbsent: false,
+      practicalScore: null, // Partial draft in dual component
+      isPracticalAbsent: false,
+      score: 45,
+      isAbsent: false,
+    },
+  ];
+
+  const payload = buildDraftScorePayload(rows, true);
+
+  // st-002 is untouched and should be excluded
+  assert.equal(payload.length, 3);
+  assert.equal(payload[0].student_id, 'st-001');
+  assert.equal(payload[0].theory_score, 50);
+  assert.equal(payload[0].practical_score, 15);
+  assert.equal(payload[0].score, 65);
+
+  assert.equal(payload[1].student_id, 'st-003');
+  assert.equal(payload[1].is_theory_absent, true);
+  assert.equal(payload[1].theory_score, 0);
+  assert.equal(payload[1].practical_score, 20);
+
+  assert.equal(payload[2].student_id, 'st-004');
+  assert.equal(payload[2].theory_score, 45);
+  assert.equal(payload[2].practical_score, null);
+});
+
+test('validateAllScoresComplete: returns isComplete false when students have missing marks', () => {
+  const rows = [
+    {
+      studentId: 'st-001',
+      studentName: 'Aarav Sharma',
+      theoryScore: 50,
+      isTheoryAbsent: false,
+      practicalScore: 15,
+      isPracticalAbsent: false,
+      score: 65,
+      isAbsent: false,
+    },
+    {
+      studentId: 'st-002',
+      studentName: 'Diya Patel',
+      theoryScore: null,
+      isTheoryAbsent: false,
+      practicalScore: null,
+      isPracticalAbsent: false,
+      score: null,
+      isAbsent: false,
+    },
+    {
+      studentId: 'st-003',
+      studentName: 'Rohan Gupta',
+      theoryScore: 40,
+      isTheoryAbsent: false,
+      practicalScore: null, // missing practical
+      isPracticalAbsent: false,
+      score: 40,
+      isAbsent: false,
+    },
+  ];
+
+  const check = validateAllScoresComplete(rows, { hasPractical: true });
+  assert.equal(check.isComplete, false);
+  assert.equal(check.missingStudents.length, 2);
+  assert.deepEqual(check.missingStudents, ['Diya Patel', 'Rohan Gupta']);
+});
+
+test('validateAllScoresComplete: returns isComplete true when 100% of students are graded or absent', () => {
+  const rows = [
+    {
+      studentId: 'st-001',
+      studentName: 'Aarav Sharma',
+      theoryScore: 50,
+      isTheoryAbsent: false,
+      practicalScore: 15,
+      isPracticalAbsent: false,
+      score: 65,
+      isAbsent: false,
+    },
+    {
+      studentId: 'st-002',
+      studentName: 'Diya Patel',
+      theoryScore: 0,
+      isTheoryAbsent: true,
+      practicalScore: 0,
+      isPracticalAbsent: true,
+      score: 0,
+      isAbsent: true,
+    },
+  ];
+
+  const check = validateAllScoresComplete(rows, { hasPractical: true });
+  assert.equal(check.isComplete, true);
+  assert.equal(check.missingStudents.length, 0);
 });

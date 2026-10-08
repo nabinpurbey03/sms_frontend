@@ -15,6 +15,7 @@ import {
   Check,
   XCircle,
   Award,
+  Info,
 } from 'lucide-react';
 import { useAuth } from '@/auth/useAuth';
 import { usePermission } from '@/auth/usePermission';
@@ -22,12 +23,15 @@ import {
   useExamReview,
   useSaveExamScores,
   useSubmitExamSubject,
+  useTeacherExamAssignments,
 } from '@/features/examination/hooks';
 import type { StudentScoreItemDTO } from '@/features/examination/types';
 import {
   deriveStudentScore,
   evaluateStudentResult,
   buildStudentScorePayload,
+  buildDraftScorePayload,
+  validateAllScoresComplete,
   validateStudentScoreBounds,
 } from '@/features/examination/types';
 import { Button } from '@/components/ui/button';
@@ -97,6 +101,11 @@ export const ScoreEntryPage: React.FC = () => {
     error: reviewError,
   } = useExamReview(activeTenantId, examId ?? null);
 
+  const { data: teacherAssignments } = useTeacherExamAssignments(
+    activeTenantId,
+    { enabled: Boolean(activeTenantId && isTeacher && !isPrivileged) }
+  );
+
   const saveScoresMutation = useSaveExamScores();
   const submitSubjectMutation = useSubmitExamSubject();
 
@@ -116,6 +125,9 @@ export const ScoreEntryPage: React.FC = () => {
   const [isSaving, setIsSaving] = useState<boolean>(false);
   const [isSubmitting, setIsSubmitting] = useState<boolean>(false);
   const [isConfirmOpen, setIsConfirmOpen] = useState<boolean>(false);
+  const [highlightMissingIds, setHighlightMissingIds] = useState<Set<string>>(
+    new Set()
+  );
 
   // Active Subject
   const subjectsList = review?.subjects;
@@ -127,6 +139,64 @@ export const ScoreEntryPage: React.FC = () => {
       ) ?? null
     );
   }, [subjectsList, examSubjectId]);
+
+  // Teacher exam assignments for this exam and subject
+  const myAssignments = useMemo(() => {
+    if (!teacherAssignments || !examId || !subject) return [];
+    return teacherAssignments.filter(
+      (a) =>
+        a.exam_id === examId &&
+        (a.exam_subject_id === subject.id || a.subject_id === subject.subject_id)
+    );
+  }, [teacherAssignments, examId, subject]);
+
+  const isAssignedTeacher = Boolean(
+    (subject?.assigned_teacher_id &&
+      user?.id &&
+      subject.assigned_teacher_id === user.id) ||
+      myAssignments.length > 0
+  );
+
+  // Section isolation: determine if the teacher is assigned to specific section(s)
+  const assignedSectionIds = useMemo(() => {
+    if (!isTeacher || isPrivileged) return null;
+    if (!subject) return null;
+
+    // Direct exam subject teacher without specific section assignments has class-wide access
+    if (
+      subject.assigned_teacher_id &&
+      user?.id &&
+      subject.assigned_teacher_id === user.id &&
+      myAssignments.length === 0
+    ) {
+      return null;
+    }
+
+    const secIds = myAssignments
+      .map((a) => a.section_id)
+      .filter((id): id is string => Boolean(id));
+
+    // If any assignment has null section_id, it is class-wide
+    const hasClassWide = myAssignments.some((a) => !a.section_id);
+    if (hasClassWide) {
+      return null;
+    }
+
+    return secIds.length > 0 ? new Set(secIds) : null;
+  }, [isTeacher, isPrivileged, subject, user, myAssignments]);
+
+  // Auto-select assigned section for section-scoped teacher
+  React.useEffect(() => {
+    if (assignedSectionIds && assignedSectionIds.size > 0) {
+      const firstSecId = Array.from(assignedSectionIds)[0];
+      if (
+        selectedSectionId === 'ALL' ||
+        !assignedSectionIds.has(selectedSectionId)
+      ) {
+        setSelectedSectionId(firstSecId);
+      }
+    }
+  }, [assignedSectionIds]);
 
   // Subject constants
   const hasPractical = Boolean(subject?.has_practical);
@@ -390,15 +460,29 @@ export const ScoreEntryPage: React.FC = () => {
     return Array.from(map.entries()).map(([id, name]) => ({ id, name }));
   }, [rawStudents]);
 
+  // Allowed sections for this teacher (or all sections if admin/class-wide)
+  const allowedSections = useMemo(() => {
+    if (!assignedSectionIds) return sections;
+    return sections.filter((s) => assignedSectionIds.has(s.id));
+  }, [sections, assignedSectionIds]);
+
+  // Students scoped to this teacher's assignment
+  const scopedStudentRows = useMemo(() => {
+    if (!assignedSectionIds) return studentRows;
+    return studentRows.filter(
+      (r) => r.sectionId && assignedSectionIds.has(r.sectionId)
+    );
+  }, [studentRows, assignedSectionIds]);
+
   // Filtered students according to section tab
   const visibleStudents = useMemo(() => {
-    if (selectedSectionId === 'ALL') return studentRows;
-    return studentRows.filter((r) => r.sectionId === selectedSectionId);
-  }, [studentRows, selectedSectionId]);
+    if (selectedSectionId === 'ALL') return scopedStudentRows;
+    return scopedStudentRows.filter((r) => r.sectionId === selectedSectionId);
+  }, [scopedStudentRows, selectedSectionId]);
 
-  const totalStudents = studentRows.length;
-  const absentCount = studentRows.filter((r) => r.isAbsent).length;
-  const gradedCount = studentRows.filter((r) => {
+  const totalStudents = scopedStudentRows.length;
+  const absentCount = scopedStudentRows.filter((r) => r.isAbsent).length;
+  const gradedCount = scopedStudentRows.filter((r) => {
     if (hasPractical) {
       const thDone = r.isTheoryAbsent || r.theoryScore !== null;
       const prDone = r.isPracticalAbsent || r.practicalScore !== null;
@@ -407,7 +491,7 @@ export const ScoreEntryPage: React.FC = () => {
     return r.isTheoryAbsent || r.theoryScore !== null || r.score !== null;
   }).length;
 
-  const passCount = studentRows.filter((r) => {
+  const passCount = scopedStudentRows.filter((r) => {
     const evalResult = evaluateStudentResult({
       hasPractical,
       theoryScore: r.theoryScore,
@@ -467,12 +551,6 @@ export const ScoreEntryPage: React.FC = () => {
   }
 
   // ReBAC Guard
-  const isAssignedTeacher = Boolean(
-    subject.assigned_teacher_id &&
-      user?.id &&
-      subject.assigned_teacher_id === user.id
-  );
-
   if (
     !can('ENTER_EXAM_SCORES') ||
     (isTeacher && !isPrivileged && !isAssignedTeacher)
@@ -502,7 +580,7 @@ export const ScoreEntryPage: React.FC = () => {
   }
 
   const validateScores = (): boolean => {
-    for (const r of studentRows) {
+    for (const r of scopedStudentRows) {
       const err = validateStudentScoreBounds(r, {
         hasPractical,
         theoryFullMark,
@@ -525,8 +603,9 @@ export const ScoreEntryPage: React.FC = () => {
 
     if (!validateScores()) return;
 
-    const payload: StudentScoreItemDTO[] = studentRows.map((r) =>
-      buildStudentScorePayload(r, hasPractical)
+    const payload: StudentScoreItemDTO[] = buildDraftScorePayload(
+      scopedStudentRows,
+      hasPractical
     );
 
     setIsSaving(true);
@@ -536,11 +615,63 @@ export const ScoreEntryPage: React.FC = () => {
         examSubjectId: subject.id,
         scores: payload,
       });
+
+      toast.success('Draft Saved', {
+        description: `Draft Saved: ${payload.length} of ${scopedStudentRows.length} student score(s) recorded. Unfilled students remain pending.`,
+      });
     } catch (err: any) {
       console.error('Failed to save scores:', err);
+      const errMsg =
+        err?.response?.data?.message || err?.message || 'Failed to save scores.';
+      toast.error('Failed to Save Draft', {
+        description: errMsg,
+      });
     } finally {
       setIsSaving(false);
     }
+  };
+
+  // Action: Open Submit Confirmation with Compulsory Completeness Validation
+  const handleOpenSubmitConfirm = () => {
+    if (isLocked) return;
+    if (!validateScores()) return;
+
+    const completeness = validateAllScoresComplete(scopedStudentRows, {
+      hasPractical,
+    });
+
+    if (!completeness.isComplete) {
+      const missingIds = new Set(
+        scopedStudentRows
+          .filter((r) => {
+            const hasTh =
+              r.isTheoryAbsent ||
+              (r.theoryScore !== null &&
+                r.theoryScore !== undefined &&
+                !isNaN(Number(r.theoryScore)));
+            const hasPr =
+              !hasPractical ||
+              r.isPracticalAbsent ||
+              (r.practicalScore !== null &&
+                r.practicalScore !== undefined &&
+                !isNaN(Number(r.practicalScore)));
+            return !hasTh || !hasPr;
+          })
+          .map((r) => r.studentId)
+      );
+
+      setHighlightMissingIds(missingIds);
+
+      const firstFew = completeness.missingStudents.slice(0, 3).join(', ');
+      const moreCount = completeness.missingStudents.length - 3;
+      toast.error('Cannot Submit for Approval', {
+        description: `${completeness.missingStudents.length} student(s) have missing scores (${firstFew}${moreCount > 0 ? ` +${moreCount} more` : ''}). All scores must be completed before submission.`,
+      });
+      return;
+    }
+
+    setHighlightMissingIds(new Set());
+    setIsConfirmOpen(true);
   };
 
   // Action: Submit Final Scores
@@ -549,7 +680,18 @@ export const ScoreEntryPage: React.FC = () => {
 
     if (!validateScores()) return;
 
-    const payload: StudentScoreItemDTO[] = studentRows.map((r) =>
+    const completeness = validateAllScoresComplete(scopedStudentRows, {
+      hasPractical,
+    });
+    if (!completeness.isComplete) {
+      toast.error('Cannot Submit for Approval', {
+        description: `${completeness.missingStudents.length} student(s) have incomplete marks. All scores must be completed before submission.`,
+      });
+      setIsConfirmOpen(false);
+      return;
+    }
+
+    const payload: StudentScoreItemDTO[] = scopedStudentRows.map((r) =>
       buildStudentScorePayload(r, hasPractical)
     );
 
@@ -566,9 +708,17 @@ export const ScoreEntryPage: React.FC = () => {
         examSubjectId: subject.id,
       });
 
+      toast.success('Submitted for Approval', {
+        description: 'All scores have been submitted for approval and are now locked.',
+      });
       setIsConfirmOpen(false);
     } catch (err: any) {
       console.error('Failed to submit final scores:', err);
+      const errMsg =
+        err?.response?.data?.message || err?.message || 'Failed to submit final scores.';
+      toast.error('Submission Blocked', {
+        description: errMsg,
+      });
     } finally {
       setIsSubmitting(false);
     }
@@ -656,7 +806,7 @@ export const ScoreEntryPage: React.FC = () => {
 
           <Button
             type="button"
-            onClick={() => setIsConfirmOpen(true)}
+            onClick={handleOpenSubmitConfirm}
             disabled={isLocked || isSaving || isSubmitting}
             className="font-medium"
           >
@@ -677,6 +827,17 @@ export const ScoreEntryPage: React.FC = () => {
               Scores can no longer be modified.
             </p>
           </div>
+        </div>
+      )}
+
+      {/* Section Instructor Scoping Banner */}
+      {assignedSectionIds && (
+        <div className="flex items-center gap-2.5 p-3 rounded-xl bg-primary/10 border border-primary/20 text-primary text-xs font-semibold">
+          <Users className="w-4 h-4 shrink-0" />
+          <span>
+            Section-Scoped Grading Active • You are assigned to grade{' '}
+            {allowedSections.map((s) => `Section ${s.name}`).join(', ')}
+          </span>
         </div>
       )}
 
@@ -760,23 +921,25 @@ export const ScoreEntryPage: React.FC = () => {
         </div>
       </div>
 
-      {/* Section Filter Tabs */}
-      {sections.length > 0 && (
+      {/* Section Filter Tabs / Pill */}
+      {allowedSections.length > 1 && (
         <div className="flex flex-wrap items-center gap-2 pb-1 pt-1">
           <span className="text-xs font-semibold text-muted-foreground uppercase tracking-wider mr-1 shrink-0">
             Sections:
           </span>
-          <Button
-            type="button"
-            size="sm"
-            variant={selectedSectionId === 'ALL' ? 'default' : 'outline'}
-            onClick={() => setSelectedSectionId('ALL')}
-            className="rounded-full px-3.5 h-8 text-xs font-medium shrink-0"
-          >
-            All Sections ({studentRows.length})
-          </Button>
-          {sections.map((sec) => {
-            const count = studentRows.filter(
+          {!assignedSectionIds && (
+            <Button
+              type="button"
+              size="sm"
+              variant={selectedSectionId === 'ALL' ? 'default' : 'outline'}
+              onClick={() => setSelectedSectionId('ALL')}
+              className="rounded-full px-3.5 h-8 text-xs font-medium shrink-0"
+            >
+              All Sections ({scopedStudentRows.length})
+            </Button>
+          )}
+          {allowedSections.map((sec) => {
+            const count = scopedStudentRows.filter(
               (r) => r.sectionId === sec.id
             ).length;
             return (
@@ -795,6 +958,19 @@ export const ScoreEntryPage: React.FC = () => {
         </div>
       )}
 
+      {/* Missing Scores Warning Alert */}
+      {highlightMissingIds.size > 0 && (
+        <div className="flex items-start gap-2.5 p-3.5 rounded-xl bg-amber-500/10 border border-amber-500/30 text-amber-900 dark:text-amber-200 text-xs">
+          <AlertTriangle className="w-4 h-4 shrink-0 text-amber-600 dark:text-amber-400 mt-0.5" />
+          <div className="space-y-0.5">
+            <p className="font-semibold">Submission Incomplete: Missing Scores</p>
+            <p className="text-muted-foreground">
+              {highlightMissingIds.size} student(s) currently have incomplete theory or practical marks (highlighted below). All students must have complete marks before submission for approval.
+            </p>
+          </div>
+        </div>
+      )}
+
       {/* Teacher Grading Table */}
       <TeacherScoreEntryTable
         students={visibleStudents}
@@ -806,6 +982,7 @@ export const ScoreEntryPage: React.FC = () => {
         fullMark={fullMark}
         passMark={passMark}
         isLocked={isLocked}
+        highlightMissingStudentIds={highlightMissingIds}
         onTheoryScoreChange={handleTheoryScoreChange}
         onTheoryAbsentToggle={handleTheoryAbsentToggle}
         onPracticalScoreChange={handlePracticalScoreChange}
@@ -827,15 +1004,20 @@ export const ScoreEntryPage: React.FC = () => {
             </DialogDescription>
           </DialogHeader>
 
-          {totalStudents - gradedCount > 0 && (
-            <div className="p-3 rounded-lg bg-amber-500/10 border border-amber-500/20 text-xs text-amber-900 dark:text-amber-200 flex items-start gap-2">
-              <Clock className="w-4 h-4 shrink-0 text-amber-600 dark:text-amber-400 mt-0.5" />
-              <span>
-                Note: {totalStudents - gradedCount} student(s) currently have
-                no score or attendance recorded.
-              </span>
+          <div className="space-y-2 pt-2 text-xs">
+            <div className="flex justify-between p-2 rounded-md bg-muted/40">
+              <span className="text-muted-foreground">Total Students</span>
+              <span className="font-semibold">{visibleStudents.length}</span>
             </div>
-          )}
+            <div className="flex justify-between p-2 rounded-md bg-muted/40">
+              <span className="text-muted-foreground">Graded & Present</span>
+              <span className="font-semibold">{gradedCount - absentCount}</span>
+            </div>
+            <div className="flex justify-between p-2 rounded-md bg-muted/40">
+              <span className="text-muted-foreground">Absent</span>
+              <span className="font-semibold">{absentCount}</span>
+            </div>
+          </div>
 
           <DialogFooter className="gap-2 sm:gap-0">
             <Button

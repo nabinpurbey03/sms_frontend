@@ -549,6 +549,117 @@ export function buildStudentScorePayload(
   };
 }
 
+export function buildDraftScorePayload(
+  rows: StudentGradingRow[],
+  hasPractical: boolean
+): StudentScoreItemDTO[] {
+  const result: StudentScoreItemDTO[] = [];
+
+  for (const r of rows) {
+    const isTheoryTouched =
+      r.isTheoryAbsent ||
+      (r.theoryScore !== null && r.theoryScore !== undefined);
+    const isPracticalTouched =
+      hasPractical &&
+      (r.isPracticalAbsent ||
+        (r.practicalScore !== null && r.practicalScore !== undefined));
+
+    if (!isTheoryTouched && !isPracticalTouched) {
+      // Row is untouched in draft mode - skip sending empty record
+      continue;
+    }
+
+    const isTheoryAbsent = Boolean(r.isTheoryAbsent);
+    const isPracticalAbsent = hasPractical
+      ? Boolean(r.isPracticalAbsent)
+      : false;
+
+    const theoryScore = isTheoryAbsent ? 0 : r.theoryScore;
+    const practicalScore = hasPractical
+      ? isPracticalAbsent
+        ? 0
+        : r.practicalScore
+      : null;
+
+    let totalScore: number | null = null;
+    if (hasPractical) {
+      if (isTheoryAbsent && isPracticalAbsent) {
+        totalScore = 0;
+      } else {
+        const thVal = isTheoryAbsent
+          ? 0
+          : r.theoryScore !== null && r.theoryScore !== undefined
+          ? Number(r.theoryScore)
+          : null;
+        const prVal = isPracticalAbsent
+          ? 0
+          : r.practicalScore !== null && r.practicalScore !== undefined
+          ? Number(r.practicalScore)
+          : null;
+        if (thVal !== null || prVal !== null) {
+          totalScore = (thVal ?? 0) + (prVal ?? 0);
+        }
+      }
+    } else {
+      if (isTheoryAbsent) {
+        totalScore = 0;
+      } else if (r.theoryScore !== null && r.theoryScore !== undefined) {
+        totalScore = Number(r.theoryScore);
+      }
+    }
+
+    const isAbsent = hasPractical
+      ? isTheoryAbsent && isPracticalAbsent
+      : isTheoryAbsent;
+
+    result.push({
+      student_id: r.studentId,
+      theory_score: theoryScore,
+      is_theory_absent: isTheoryAbsent,
+      practical_score: practicalScore,
+      is_practical_absent: isPracticalAbsent,
+      score: totalScore,
+      is_absent: isAbsent,
+    });
+  }
+
+  return result;
+}
+
+export function validateAllScoresComplete(
+  rows: StudentGradingRow[],
+  options: { hasPractical: boolean }
+): { isComplete: boolean; missingStudents: string[] } {
+  const missingStudents: string[] = [];
+
+  for (const r of rows) {
+    const hasTheory =
+      r.isTheoryAbsent ||
+      (r.theoryScore !== null &&
+        r.theoryScore !== undefined &&
+        !isNaN(Number(r.theoryScore)));
+
+    let hasPractical = true;
+    if (options.hasPractical) {
+      hasPractical =
+        r.isPracticalAbsent ||
+        (r.practicalScore !== null &&
+          r.practicalScore !== undefined &&
+          !isNaN(Number(r.practicalScore)));
+    }
+
+    if (!hasTheory || !hasPractical) {
+      missingStudents.push(r.studentName || 'Student');
+    }
+  }
+
+  return {
+    isComplete: missingStudents.length === 0,
+    missingStudents,
+  };
+}
+
+
 export function validateStudentScoreBounds(
   row: {
     studentName?: string;

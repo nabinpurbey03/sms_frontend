@@ -30,6 +30,7 @@ export interface TeacherScoreEntryTableProps {
   fullMark: number;
   passMark: number;
   isLocked: boolean;
+  highlightMissingStudentIds?: Set<string>;
   onTheoryScoreChange: (studentId: string, score: number | null) => void;
   onTheoryAbsentToggle: (studentId: string, isAbsent: boolean) => void;
   onPracticalScoreChange: (studentId: string, score: number | null) => void;
@@ -113,6 +114,7 @@ export const TeacherScoreEntryTable: React.FC<TeacherScoreEntryTableProps> = ({
   fullMark,
   passMark,
   isLocked,
+  highlightMissingStudentIds,
   onTheoryScoreChange,
   onTheoryAbsentToggle,
   onPracticalScoreChange,
@@ -171,6 +173,11 @@ export const TeacherScoreEntryTable: React.FC<TeacherScoreEntryTableProps> = ({
             !isNaN(scoreNum) &&
             (scoreNum < 0 || scoreNum > theoryFullMark);
 
+          const isMissing =
+            Boolean(highlightMissingStudentIds?.has(row.studentId)) &&
+            !row.isTheoryAbsent &&
+            (row.theoryScore === null || row.theoryScore === undefined || isNaN(Number(row.theoryScore)));
+
           return (
             <div className="flex items-center justify-center gap-2">
               <Button
@@ -222,7 +229,9 @@ export const TeacherScoreEntryTable: React.FC<TeacherScoreEntryTableProps> = ({
                           row.isTheoryAbsent &&
                             'bg-muted text-muted-foreground cursor-not-allowed font-medium',
                           isInvalid &&
-                            'border-destructive text-destructive focus-visible:ring-destructive bg-destructive/5'
+                            'border-destructive text-destructive focus-visible:ring-destructive bg-destructive/5',
+                          isMissing && !isInvalid &&
+                            'border-amber-500 bg-amber-500/10 focus-visible:ring-amber-500 ring-1 ring-amber-500/30'
                         )}
                       />
                     </div>
@@ -263,6 +272,11 @@ export const TeacherScoreEntryTable: React.FC<TeacherScoreEntryTableProps> = ({
             scoreNum !== null &&
             !isNaN(scoreNum) &&
             (scoreNum < 0 || scoreNum > practicalFullMark);
+
+          const isMissing =
+            Boolean(highlightMissingStudentIds?.has(row.studentId)) &&
+            !row.isPracticalAbsent &&
+            (row.practicalScore === null || row.practicalScore === undefined || isNaN(Number(row.practicalScore)));
 
           return (
             <div className="flex items-center justify-center gap-2">
@@ -315,7 +329,9 @@ export const TeacherScoreEntryTable: React.FC<TeacherScoreEntryTableProps> = ({
                           row.isPracticalAbsent &&
                             'bg-muted text-muted-foreground cursor-not-allowed font-medium',
                           isInvalid &&
-                            'border-destructive text-destructive focus-visible:ring-destructive bg-destructive/5'
+                            'border-destructive text-destructive focus-visible:ring-destructive bg-destructive/5',
+                          isMissing && !isInvalid &&
+                            'border-amber-500 bg-amber-500/10 focus-visible:ring-amber-500 ring-1 ring-amber-500/30'
                         )}
                       />
                     </div>
@@ -421,6 +437,11 @@ export const TeacherScoreEntryTable: React.FC<TeacherScoreEntryTableProps> = ({
             !isNaN(scoreNum) &&
             (scoreNum < 0 || scoreNum > fullMarkNum);
 
+          const isMissing =
+            Boolean(highlightMissingStudentIds?.has(row.studentId)) &&
+            !row.isTheoryAbsent &&
+            (row.theoryScore === null || row.theoryScore === undefined || isNaN(Number(row.theoryScore)));
+
           return (
             <div className="flex flex-col items-center justify-center">
               <TooltipProvider delayDuration={150}>
@@ -460,7 +481,9 @@ export const TeacherScoreEntryTable: React.FC<TeacherScoreEntryTableProps> = ({
                           row.isTheoryAbsent &&
                             'bg-muted text-muted-foreground cursor-not-allowed font-medium',
                           isInvalid &&
-                            'border-destructive text-destructive focus-visible:ring-destructive focus-visible:border-destructive bg-destructive/5'
+                            'border-destructive text-destructive focus-visible:ring-destructive focus-visible:border-destructive bg-destructive/5',
+                          isMissing && !isInvalid &&
+                            'border-amber-500 bg-amber-500/10 focus-visible:ring-amber-500 ring-1 ring-amber-500/30'
                         )}
                       />
                     </div>
@@ -508,6 +531,7 @@ export const TeacherScoreEntryTable: React.FC<TeacherScoreEntryTableProps> = ({
     fullMark,
     passMark,
     isLocked,
+    highlightMissingStudentIds,
     onTheoryScoreChange,
     onTheoryAbsentToggle,
     onPracticalScoreChange,
@@ -538,8 +562,18 @@ export const TeacherScoreEntryTable: React.FC<TeacherScoreEntryTableProps> = ({
         !isNaN(prNum) &&
         (prNum < 0 || prNum > practicalFullMark);
 
+      const isCardMissing = Boolean(
+        highlightMissingStudentIds?.has(row.studentId)
+      );
+
       return (
-        <Card className="border-border/70 shadow-sm p-4 space-y-3 bg-card">
+        <Card
+          className={cn(
+            'border-border/70 shadow-sm p-4 space-y-3 bg-card',
+            isCardMissing &&
+              'border-amber-500/70 bg-amber-500/5 ring-1 ring-amber-500/20'
+          )}
+        >
           {/* Header row: Avatar, Student name, Section, Result Pill */}
           <div className="flex items-start justify-between gap-3">
             <div className="flex items-center gap-3 min-w-0">
@@ -719,8 +753,18 @@ export const TeacherScoreEntryTable: React.FC<TeacherScoreEntryTableProps> = ({
       !isNaN(scoreNum) &&
       (scoreNum < 0 || scoreNum > fullMarkNum);
 
+    const isCardMissing = Boolean(
+      highlightMissingStudentIds?.has(row.studentId)
+    );
+
     return (
-      <Card className="border-border/70 shadow-sm p-4 space-y-3 bg-card">
+      <Card
+        className={cn(
+          'border-border/70 shadow-sm p-4 space-y-3 bg-card',
+          isCardMissing &&
+            'border-amber-500/70 bg-amber-500/5 ring-1 ring-amber-500/20'
+        )}
+      >
         <div className="flex items-start justify-between gap-3">
           <div className="flex items-center gap-3 min-w-0">
             <Avatar className="h-10 w-10 text-xs shrink-0">
