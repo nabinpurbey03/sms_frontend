@@ -92,7 +92,7 @@ export const GraduatedStudentsTable: React.FC<GraduatedStudentsTableProps> = ({
   });
 
   // Alumni Financial Clearance Query
-  const { data: clearanceResponse } = useAlumniClearance(tenantId, {
+  const { data: clearanceResponse, isLoading: isClearanceLoading } = useAlumniClearance(tenantId, {
     academic_year_id: selectedBatchId !== 'ALL' ? selectedBatchId : undefined,
     page_size: 100,
   });
@@ -467,10 +467,26 @@ export const GraduatedStudentsTable: React.FC<GraduatedStudentsTableProps> = ({
                       {/* Financial Clearance */}
                       <TableCell>
                         {(() => {
+                          if (isClearanceLoading) {
+                            return (
+                              <Badge variant="outline" className="text-muted-foreground animate-pulse text-xs">
+                                Checking...
+                              </Badge>
+                            );
+                          }
+
                           const clearance = clearanceMap.get(student.student_id);
+                          if (!clearance) {
+                            return (
+                              <Badge variant="outline" className="text-muted-foreground text-xs">
+                                N/A
+                              </Badge>
+                            );
+                          }
+
                           const isPending =
-                            clearance?.clearance_status === 'PENDING_CLEARANCE' ||
-                            (clearance && Number(clearance.total_due) > 0);
+                            clearance.clearance_status === 'PENDING_CLEARANCE' ||
+                            Number(clearance.total_due || 0) > 0;
 
                           if (isPending) {
                             return (
@@ -478,7 +494,7 @@ export const GraduatedStudentsTable: React.FC<GraduatedStudentsTableProps> = ({
                                 <Badge className="bg-amber-500/10 text-amber-600 border-amber-500/20 text-[10px] font-medium">
                                   Pending Clearance
                                 </Badge>
-                                {clearance && Number(clearance.total_due) > 0 && (
+                                {Number(clearance.total_due || 0) > 0 && (
                                   <span className="text-[10px] font-mono text-amber-600 dark:text-amber-400">
                                     Due: NPR {Number(clearance.total_due).toLocaleString('en-IN', { minimumFractionDigits: 2 })}
                                   </span>

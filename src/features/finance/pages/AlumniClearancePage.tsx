@@ -17,6 +17,7 @@ import {
   Receipt,
   ExternalLink,
   ChevronRight,
+  Loader2,
 } from 'lucide-react';
 import { Card, CardHeader, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -46,6 +47,7 @@ import {
   useStudentLedger,
   ALUMNI_CLEARANCE_KEY,
   FINANCE_DASHBOARD_KEY,
+  STUDENT_LEDGER_KEY,
 } from '../hooks';
 import type { AlumniClearanceItem, FeePayment } from '../types';
 import { SessionArchiveSelect } from '../components/SessionArchiveSelect';
@@ -100,7 +102,7 @@ export const AlumniClearancePage: React.FC = () => {
 
   // Fetch ledger data for modals when a student is selected
   const activeStudentIdForLedger = studentForPayment?.student_id || studentForStatement?.student_id || null;
-  const { data: activeStudentLedger } = useStudentLedger(activeTenantId, activeStudentIdForLedger);
+  const { data: activeStudentLedger, isLoading: isLedgerLoading } = useStudentLedger(activeTenantId, activeStudentIdForLedger);
 
   const unpaidBills = useMemo(() => {
     if (!activeStudentLedger?.bills) return [];
@@ -108,6 +110,16 @@ export const AlumniClearancePage: React.FC = () => {
       (b) => b.status !== 'PAID' && b.status !== 'CANCELLED'
     );
   }, [activeStudentLedger]);
+
+  // If ledger finishes loading and no unpaid bills found for settlement
+  React.useEffect(() => {
+    if (studentForPayment && !isLedgerLoading && activeStudentLedger) {
+      if (unpaidBills.length === 0) {
+        toast.error('No unpaid bills found in current ledger for settlement; please view full student ledger.');
+        setStudentForPayment(null);
+      }
+    }
+  }, [studentForPayment, isLedgerLoading, activeStudentLedger, unpaidBills.length]);
 
   const items = clearanceResponse?.items || [];
   const totalCount = clearanceResponse?.total_count || 0;
@@ -136,6 +148,7 @@ export const AlumniClearancePage: React.FC = () => {
     setStudentForPayment(null);
     queryClient.invalidateQueries({ queryKey: [ALUMNI_CLEARANCE_KEY, activeTenantId] });
     queryClient.invalidateQueries({ queryKey: [FINANCE_DASHBOARD_KEY, activeTenantId] });
+    queryClient.invalidateQueries({ queryKey: [STUDENT_LEDGER_KEY, activeTenantId] });
     toast.success('Clearance Payment Recorded', {
       description: `Receipt #${payment.receipt_number} issued successfully.`,
     });
@@ -534,15 +547,26 @@ export const AlumniClearancePage: React.FC = () => {
                       <TableCell className="text-right">
                         <div className="flex items-center justify-end gap-1.5">
                           {totalDue > 0 ? (
-                            <Button
-                              size="sm"
-                              onClick={() => setStudentForPayment(item)}
-                              className="h-8 gap-1.5 text-xs font-medium shadow-2xs bg-amber-600 hover:bg-amber-700 text-white cursor-pointer"
-                              title="Collect dues and issue clearance"
-                            >
-                              <CreditCard className="w-3.5 h-3.5" />
-                              <span>Collect &amp; Settle</span>
-                            </Button>
+                            studentForPayment?.student_id === item.student_id && isLedgerLoading ? (
+                              <Button
+                                size="sm"
+                                disabled
+                                className="h-8 gap-1.5 text-xs font-medium shadow-2xs bg-amber-600 text-white opacity-85 cursor-wait"
+                              >
+                                <Loader2 className="w-3.5 h-3.5 animate-spin" />
+                                <span>Loading...</span>
+                              </Button>
+                            ) : (
+                              <Button
+                                size="sm"
+                                onClick={() => setStudentForPayment(item)}
+                                className="h-8 gap-1.5 text-xs font-medium shadow-2xs bg-amber-600 hover:bg-amber-700 text-white cursor-pointer"
+                                title="Collect dues and issue clearance"
+                              >
+                                <CreditCard className="w-3.5 h-3.5" />
+                                <span>Collect &amp; Settle</span>
+                              </Button>
+                            )
                           ) : (
                             <Button
                               variant="outline"
@@ -577,11 +601,20 @@ export const AlumniClearancePage: React.FC = () => {
 
                               {totalDue > 0 && (
                                 <DropdownMenuItem
+                                  disabled={studentForPayment?.student_id === item.student_id && isLedgerLoading}
                                   onClick={() => setStudentForPayment(item)}
                                   className="cursor-pointer gap-2"
                                 >
-                                  <CreditCard className="w-3.5 h-3.5 text-amber-600" />
-                                  <span>Collect &amp; Settle</span>
+                                  {studentForPayment?.student_id === item.student_id && isLedgerLoading ? (
+                                    <Loader2 className="w-3.5 h-3.5 animate-spin text-amber-600" />
+                                  ) : (
+                                    <CreditCard className="w-3.5 h-3.5 text-amber-600" />
+                                  )}
+                                  <span>
+                                    {studentForPayment?.student_id === item.student_id && isLedgerLoading
+                                      ? 'Loading Ledger...'
+                                      : 'Collect & Settle'}
+                                  </span>
                                 </DropdownMenuItem>
                               )}
 
@@ -615,9 +648,9 @@ export const AlumniClearancePage: React.FC = () => {
       </div>
 
       {/* Collect & Settle Modal */}
-      {studentForPayment && (
+      {studentForPayment && !isLedgerLoading && unpaidBills.length > 0 && (
         <PaymentCollectDialog
-          isOpen={!!studentForPayment}
+          isOpen={Boolean(studentForPayment && !isLedgerLoading && unpaidBills.length > 0)}
           onClose={() => setStudentForPayment(null)}
           bill={unpaidBills[0] || null}
           isPayAllMode={true}
