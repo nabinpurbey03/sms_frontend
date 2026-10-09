@@ -11,7 +11,9 @@ import {
   Copy,
   Phone,
   PhoneCall,
+  CreditCard,
 } from 'lucide-react';
+import { Link } from '@tanstack/react-router';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
@@ -33,6 +35,8 @@ import {
 } from '@/components/ui/dropdown-menu';
 import { useAcademicYears } from '@/features/academic-year/hooks';
 import { useClasses, useGraduatedStudents } from '../hooks';
+import { useAlumniClearance } from '@/features/finance/hooks';
+import type { AlumniClearanceItem } from '@/features/finance/types';
 import type { AcademicStudent, GraduatedStudentDTO } from '../types';
 import { StudentEnrollmentHistoryDialog } from './StudentEnrollmentHistoryDialog';
 import { toast } from 'sonner';
@@ -86,6 +90,22 @@ export const GraduatedStudentsTable: React.FC<GraduatedStudentsTableProps> = ({
     class_id: selectedClassId !== 'ALL' ? selectedClassId : undefined,
     search: debouncedSearch.trim() || undefined,
   });
+
+  // Alumni Financial Clearance Query
+  const { data: clearanceResponse } = useAlumniClearance(tenantId, {
+    academic_year_id: selectedBatchId !== 'ALL' ? selectedBatchId : undefined,
+    page_size: 100,
+  });
+
+  const clearanceMap = useMemo(() => {
+    const map = new Map<string, AlumniClearanceItem>();
+    if (clearanceResponse?.items) {
+      clearanceResponse.items.forEach((item) => {
+        map.set(item.student_id, item);
+      });
+    }
+    return map;
+  }, [clearanceResponse?.items]);
 
   const graduates: GraduatedStudentDTO[] = useMemo(() => {
     if (!graduatedData) return [];
@@ -343,6 +363,7 @@ export const GraduatedStudentsTable: React.FC<GraduatedStudentsTableProps> = ({
                   <TableHead>Graduation / Exit Date</TableHead>
                   <TableHead>Parent Contact</TableHead>
                   <TableHead>Status</TableHead>
+                  <TableHead>Financial Clearance</TableHead>
                   <TableHead className="text-right">Actions</TableHead>
                 </TableRow>
               </TableHeader>
@@ -443,6 +464,37 @@ export const GraduatedStudentsTable: React.FC<GraduatedStudentsTableProps> = ({
                         </Badge>
                       </TableCell>
 
+                      {/* Financial Clearance */}
+                      <TableCell>
+                        {(() => {
+                          const clearance = clearanceMap.get(student.student_id);
+                          const isPending =
+                            clearance?.clearance_status === 'PENDING_CLEARANCE' ||
+                            (clearance && Number(clearance.total_due) > 0);
+
+                          if (isPending) {
+                            return (
+                              <div className="flex flex-col items-start gap-0.5">
+                                <Badge className="bg-amber-500/10 text-amber-600 border-amber-500/20 text-[10px] font-medium">
+                                  Pending Clearance
+                                </Badge>
+                                {clearance && Number(clearance.total_due) > 0 && (
+                                  <span className="text-[10px] font-mono text-amber-600 dark:text-amber-400">
+                                    Due: NPR {Number(clearance.total_due).toLocaleString('en-IN', { minimumFractionDigits: 2 })}
+                                  </span>
+                                )}
+                              </div>
+                            );
+                          }
+
+                          return (
+                            <Badge className="bg-emerald-500/10 text-emerald-600 border-emerald-500/20 text-[10px] font-medium">
+                              Cleared
+                            </Badge>
+                          );
+                        })()}
+                      </TableCell>
+
                       {/* Actions */}
                       <TableCell className="text-right">
                         <div className="flex items-center justify-end gap-1">
@@ -504,6 +556,13 @@ export const GraduatedStudentsTable: React.FC<GraduatedStudentsTableProps> = ({
                               >
                                 <Copy className="w-3.5 h-3.5 text-muted-foreground" />
                                 <span>Copy Student ID</span>
+                              </DropdownMenuItem>
+
+                              <DropdownMenuItem asChild className="cursor-pointer gap-2 text-xs">
+                                <Link to="/finance/alumni-clearance">
+                                  <CreditCard className="w-3.5 h-3.5 text-indigo-600" />
+                                  <span>Clearance Register</span>
+                                </Link>
                               </DropdownMenuItem>
 
                               {student.parent_phone && (

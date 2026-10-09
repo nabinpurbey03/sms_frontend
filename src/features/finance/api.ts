@@ -32,6 +32,9 @@ import type {
   StudentWallet,
   StudentDuesBreakdown,
   LateFeeCalculation,
+  AlumniClearanceItem,
+  AlumniClearanceResponse,
+  AlumniClearanceParams,
 } from './types';
 
 export type { PaymentFilterParams };
@@ -268,5 +271,12 @@ export const financeApi = {
     return apiClient.get(`/finance/tenants/${tenantId}/students/${studentId}/dues-breakdown`, {
       params: asOfDate ? { as_of_date: asOfDate } : undefined,
     });
+  },
+
+  getAlumniClearance: async (
+    tenantId: string,
+    params?: AlumniClearanceParams
+  ): Promise<AlumniClearanceResponse> => {
+    return apiClient.get(`/finance/tenants/${tenantId}/alumni-clearance`, { params });
   },
 };

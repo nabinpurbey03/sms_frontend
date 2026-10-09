@@ -51,6 +51,7 @@ import { TransactionsPage } from '@/features/finance/pages/TransactionsPage';
 import { StudentLedgerPage } from '@/features/finance/pages/StudentLedgerPage';
 import { ParentFeeStatusPage } from '@/features/finance/pages/ParentFeeStatusPage';
 import { BatchBillingPage } from '@/features/finance/pages/BatchBillingPage';
+import { AlumniClearancePage } from '@/features/finance/pages/AlumniClearancePage';
 import { useAuth } from '@/auth/useAuth';
 
 const IndexRedirect: React.FC = () => {
@@ -478,6 +479,12 @@ const financeLedgerRoute = createRoute({
   component: StudentLedgerPage,
 });
 
+const financeAlumniClearanceRoute = createRoute({
+  getParentRoute: () => protectedLayoutRoute,
+  path: '/finance/alumni-clearance',
+  component: AlumniClearancePage,
+});
+
 // Build Route Tree
 const routeTree = rootRoute.addChildren([
   indexRoute,
@@ -525,6 +532,7 @@ const routeTree = rootRoute.addChildren([
     financeClassStructureRoute,
     financeTransactionsRoute,
     financeLedgerRoute,
+    financeAlumniClearanceRoute,
   ]),
 ]);
 

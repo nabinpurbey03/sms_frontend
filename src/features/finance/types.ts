@@ -497,3 +497,37 @@ export interface ParentChildFeeSummary {
   outstanding_due: number | string;
   bills: FeeBill[];
 }
+
+export interface AlumniClearanceItem {
+  student_id: string;
+  admission_number?: string | null;
+  roll_number?: string | null;
+  first_name: string;
+  last_name: string;
+  graduation_academic_year_id?: string | null;
+  graduation_academic_year_name?: string | null;
+  graduation_class_id?: string | null;
+  graduation_class_name?: string | null;
+  total_billed: number | string;
+  total_paid: number | string;
+  total_due: number | string;
+  clearance_status: 'CLEARED' | 'PENDING_CLEARANCE' | string;
+  last_payment_date?: string | null;
+}
+
+export interface AlumniClearanceResponse {
+  items: AlumniClearanceItem[];
+  total_count: number;
+  total_alumni_dues: number | string;
+  cleared_count: number;
+  pending_count: number;
+}
+
+export interface AlumniClearanceParams {
+  search?: string;
+  clearance_status?: string;
+  academic_year_id?: string;
+  page?: number;
+  page_size?: number;
+}
+

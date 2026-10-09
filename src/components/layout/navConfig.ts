@@ -271,6 +271,14 @@ export const getNavItems = (ctx: NavPermissionsContext): NavItem[] => [
     show: ctx.can('VIEW_FINANCE') && !ctx.isParent,
     category: 'Finance',
   },
+  {
+    label: 'Alumni Clearance',
+    href: '/finance/alumni-clearance',
+    icon: GraduationCap,
+    description: 'Track and settle outstanding dues for graduated students.',
+    show: ctx.can('VIEW_FINANCE') && !ctx.isParent,
+    category: 'Finance',
+  },
 ];
 
 export const NAV_CATEGORY_ORDER: Record<NavCategory, number> = {

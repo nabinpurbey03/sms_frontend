@@ -15,6 +15,8 @@ import type {
   FeePaymentCreateDTO,
   FeePaymentFilters,
   PaymentFilterParams,
+  AlumniClearanceParams,
+  AlumniClearanceResponse,
 } from './types';
 
 export type { PaymentFilterParams };
@@ -42,6 +44,7 @@ export const STUDENT_WALLET_KEY = 'student_wallet';
 export const STUDENT_DUES_BREAKDOWN_KEY = 'student_dues_breakdown';
 export const BILL_LATE_FEE_KEY = 'finance_bill_late_fee';
 export const GENERATED_MONTHS_KEY = 'finance_generated_months';
+export const ALUMNI_CLEARANCE_KEY = 'alumni-clearance';
 
 // --- Query Hooks ---
 
@@ -269,6 +272,14 @@ export const useGeneratedMonths = (tenantId: string | null, classId?: string | n
     staleTime: 1000 * 30,
   });
 };
+
+export function useAlumniClearance(tenantId: string | null, params?: AlumniClearanceParams) {
+  return useQuery({
+    queryKey: [ALUMNI_CLEARANCE_KEY, tenantId, params],
+    queryFn: () => financeApi.getAlumniClearance(tenantId!, params),
+    enabled: !!tenantId,
+  });
+}
 
 // --- Mutation Hooks ---
 
