@@ -435,6 +435,9 @@ export interface FinanceDashboardSummary {
   collection_rate_percent: number;
   total_defaulters_count: number;
   recent_payments: FeePayment[];
+  total_discount_year?: number | string;
+  total_discount_month?: number | string;
+  total_discounted_students_count?: number;
 }
 
 export interface FeeBillFilters {

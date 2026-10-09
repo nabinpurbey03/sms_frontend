@@ -466,6 +466,9 @@ const financeClassStructureRoute = createRoute({
 const financeTransactionsRoute = createRoute({
   getParentRoute: () => protectedLayoutRoute,
   path: '/finance/transactions',
+  validateSearch: (search: Record<string, unknown>): { tab?: string } => ({
+    tab: typeof search.tab === 'string' ? search.tab : undefined,
+  }),
   component: TransactionsPage,
 });
 

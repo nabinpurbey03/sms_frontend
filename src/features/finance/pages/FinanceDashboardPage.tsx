@@ -35,6 +35,8 @@ import {
   Layers,
   Banknote,
   ShieldAlert,
+  Tag,
+  BadgePercent,
 } from 'lucide-react';
 import { FeeStructureDialog } from '../components/FeeStructureDialog';
 import { PrintableReceiptModal } from '../components/PrintableReceiptModal';
@@ -80,11 +82,18 @@ export const FinanceDashboardPage: React.FC = () => {
   const collectionRate = Number(summary?.collection_rate_percent || 0);
   const defaultersCount = summary?.total_defaulters_count || 0;
   const recentPayments = summary?.recent_payments || [];
+  const yearDiscounts = Number(summary?.total_discount_year || 0);
+  const monthDiscounts = Number(summary?.total_discount_month || 0);
+  const discountedStudentsCount = summary?.total_discounted_students_count || 0;
 
   // Analytical derivations
   const totalInvoiced = yearCollected + outstandingDues;
   const realizedPercent = totalInvoiced > 0 ? Math.min(100, Math.round((yearCollected / totalInvoiced) * 100)) : 0;
   const duePercent = totalInvoiced > 0 ? Math.max(0, 100 - realizedPercent) : 0;
+
+  const concessionPayments = useMemo(() => {
+    return recentPayments.filter((p) => Number(p.discount_amount || 0) > 0);
+  }, [recentPayments]);
 
   const recentTotal = useMemo(() => {
     return recentPayments.reduce((acc, p) => acc + Number(p.amount_paid || 0), 0);
@@ -194,7 +203,7 @@ export const FinanceDashboardPage: React.FC = () => {
       {/* 2. Top Analytics Suite (Shifted to Prominent Top) */}
       <section className="space-y-4" aria-label="Financial Analytics and Key Performance Indicators">
         {/* KPI Summary Cards Grid */}
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-5 gap-4">
           {/* KPI 1: This Month Collection */}
           <Card className="relative overflow-hidden border-border/60 hover:shadow-xs transition-shadow">
             <div className="absolute top-0 left-0 right-0 h-1 bg-emerald-500" />
@@ -288,7 +297,42 @@ export const FinanceDashboardPage: React.FC = () => {
             </CardContent>
           </Card>
 
-          {/* KPI 4: Collection Efficiency */}
+          {/* KPI 4: Total Concessions & Waivers */}
+          <Card className="relative overflow-hidden border-border/60 hover:shadow-xs transition-shadow">
+            <div className="absolute top-0 left-0 right-0 h-1 bg-amber-500" />
+            <CardHeader className="flex flex-row items-center justify-between p-4 pb-2 space-y-0">
+              <span className="text-[11px] font-bold text-muted-foreground uppercase tracking-wider">
+                Total Concessions &amp; Waivers
+              </span>
+              <div className="p-2 bg-amber-500/10 text-amber-600 dark:text-amber-400 rounded-lg border border-amber-500/20">
+                <Tag className="h-4 w-4" />
+              </div>
+            </CardHeader>
+            <CardContent className="p-4 pt-1">
+              <div
+                className="text-xl sm:text-2xl font-bold font-mono text-amber-600 dark:text-amber-400"
+                title={`NPR ${yearDiscounts.toLocaleString('en-IN', { minimumFractionDigits: 2 })}`}
+              >
+                {isLoadingSummary ? (
+                  <Loader2 className="w-5 h-5 animate-spin text-muted-foreground" />
+                ) : (
+                  `NPR ${yearDiscounts.toLocaleString('en-IN', { minimumFractionDigits: 2 })}`
+                )}
+              </div>
+              <div className="flex flex-col gap-1 mt-1.5">
+                <div className="flex items-center gap-1.5 flex-wrap">
+                  <span className="inline-flex items-center text-[10px] font-semibold text-amber-600 dark:text-amber-400 bg-amber-500/10 px-1.5 py-0.5 rounded border border-amber-500/20">
+                    This Month: NPR {monthDiscounts.toLocaleString('en-IN', { minimumFractionDigits: 2 })}
+                  </span>
+                </div>
+                <span className="text-[11px] text-muted-foreground">
+                  {discountedStudentsCount} student{discountedStudentsCount === 1 ? '' : 's'} benefited
+                </span>
+              </div>
+            </CardContent>
+          </Card>
+
+          {/* KPI 5: Collection Efficiency */}
           <Card className="relative overflow-hidden border-border/60 hover:shadow-xs transition-shadow">
             <div className="absolute top-0 left-0 right-0 h-1 bg-purple-500" />
             <CardHeader className="flex flex-row items-center justify-between p-4 pb-2 space-y-0">
@@ -762,6 +806,136 @@ export const FinanceDashboardPage: React.FC = () => {
                   ))}
                 </tbody>
               </table>
+            </div>
+          </div>
+        )}
+      </section>
+
+      {/* 5. Recent Concessions & Waivers Audit Feed */}
+      <section className="space-y-3" aria-label="Recent Concessions & Waivers Audit Feed">
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+          <div>
+            <h2 className="text-sm font-bold text-foreground flex items-center gap-2">
+              <BadgePercent className="w-4 h-4 text-amber-600 dark:text-amber-400" />
+              Recent Concessions &amp; Waivers Audit
+            </h2>
+            <p className="text-xs text-muted-foreground mt-0.5">
+              Live audit trail of fee discounts, percentage waivers, and scholarship credits granted at receipt issuance.
+            </p>
+          </div>
+
+          <Link
+            to="/finance/transactions"
+            search={{ tab: 'discounts' }}
+            className="inline-flex items-center gap-1.5 text-xs text-amber-600 hover:text-amber-700 dark:text-amber-400 dark:hover:text-amber-300 font-semibold group"
+          >
+            <span>View Full Concession Register</span>
+            <ArrowRight className="w-3.5 h-3.5 group-hover:translate-x-0.5 transition-transform" />
+          </Link>
+        </div>
+
+        {concessionPayments.length === 0 ? (
+          <div className="p-6 text-center text-xs text-muted-foreground border border-dashed rounded-xl bg-card space-y-1.5">
+            <div className="p-2.5 rounded-full bg-amber-500/10 text-amber-600 dark:text-amber-400 w-fit mx-auto border border-amber-500/20">
+              <Tag className="w-5 h-5" />
+            </div>
+            <p className="font-medium text-foreground">
+              No recent fee waivers recorded
+            </p>
+            <p className="text-muted-foreground text-[11px]">
+              Discounts applied during billing payments will appear here with student details, receipt reference, and approving cashier.
+            </p>
+          </div>
+        ) : (
+          <div className="border border-border/60 rounded-xl overflow-hidden bg-card shadow-2xs">
+            <div className="overflow-x-auto">
+              <table className="w-full text-xs text-left">
+                <thead className="bg-amber-500/5 border-b border-border/60 text-muted-foreground font-semibold">
+                  <tr>
+                    <th className="py-2.5 px-4">Receipt #</th>
+                    <th className="py-2.5 px-4">Student</th>
+                    <th className="py-2.5 px-4">Concession / Waiver</th>
+                    <th className="py-2.5 px-4">Type</th>
+                    <th className="py-2.5 px-4">Approved / Handled By</th>
+                    <th className="py-2.5 px-4">Date</th>
+                    <th className="py-2.5 px-4 text-right">Net Paid</th>
+                    <th className="py-2.5 px-4 text-right">Action</th>
+                  </tr>
+                </thead>
+                <tbody className="divide-y divide-border/40">
+                  {concessionPayments.map((p) => {
+                    const discountAmt = Number(p.discount_amount || 0);
+                    const discountRate = p.discount_rate;
+                    const isPercent = p.discount_type === 'PERCENT';
+                    const discountTypeLabel = isPercent
+                      ? `${discountRate ?? ''}% Waiver`
+                      : 'Fixed Discount';
+
+                    return (
+                      <tr key={`concession-${p.id}`} className="hover:bg-amber-500/5 transition-colors">
+                        <td className="py-2.5 px-4 font-mono font-bold text-foreground">
+                          {p.receipt_number}
+                        </td>
+                        <td className="py-2.5 px-4">
+                          <div className="font-medium text-foreground">
+                            {p.student_name || 'Student'}
+                          </div>
+                          {p.bill_number && (
+                            <span className="font-mono text-[10px] text-muted-foreground block">
+                              Bill: {p.bill_number}
+                            </span>
+                          )}
+                        </td>
+                        <td className="py-2.5 px-4">
+                          <span className="inline-flex items-center gap-1 font-mono font-bold text-amber-600 dark:text-amber-400 bg-amber-500/10 border border-amber-500/20 px-2 py-0.5 rounded text-[11px]">
+                            -NPR {discountAmt.toFixed(2)}
+                          </span>
+                        </td>
+                        <td className="py-2.5 px-4">
+                          <Badge variant="outline" className="text-[10px] font-semibold border-amber-500/30 text-amber-700 dark:text-amber-300 bg-amber-500/10">
+                            {discountTypeLabel}
+                          </Badge>
+                        </td>
+                        <td className="py-2.5 px-4 text-muted-foreground">
+                          <span className="inline-flex items-center gap-1">
+                            Received by {p.received_by_name || 'Cashier'}
+                          </span>
+                        </td>
+                        <td className="py-2.5 px-4 text-muted-foreground whitespace-nowrap">
+                          {formatDate(p.payment_date, calendarSystem)}
+                        </td>
+                        <td className="py-2.5 px-4 text-right font-mono font-bold text-emerald-600 dark:text-emerald-400">
+                          {formatCurrency(p.amount_paid)}
+                        </td>
+                        <td className="py-2.5 px-4 text-right">
+                          <Button
+                            variant="ghost"
+                            size="sm"
+                            onClick={() => setSelectedReceiptPaymentId(p.id)}
+                            className="h-7 text-xs gap-1.5 cursor-pointer hover:bg-amber-500/10 hover:text-amber-700 dark:hover:text-amber-300"
+                            aria-label={`Print receipt for ${p.receipt_number}`}
+                          >
+                            <Printer className="w-3.5 h-3.5" />
+                            <span>Receipt</span>
+                          </Button>
+                        </td>
+                      </tr>
+                    );
+                  })}
+                </tbody>
+              </table>
+            </div>
+            <div className="p-3 bg-muted/30 border-t border-border/60 flex items-center justify-between text-xs text-muted-foreground">
+              <span>
+                Showing {concessionPayments.length} recent discounted transaction{concessionPayments.length === 1 ? '' : 's'}
+              </span>
+              <Link
+                to="/finance/transactions"
+                search={{ tab: 'discounts' }}
+                className="font-semibold text-amber-600 dark:text-amber-400 hover:underline inline-flex items-center gap-1"
+              >
+                View Full Concession Register →
+              </Link>
             </div>
           </div>
         )}
