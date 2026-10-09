@@ -44,6 +44,7 @@ export const PrintableConsolidatedReceiptModal: React.FC<PrintableConsolidatedRe
   }, [isOpen]);
 
   const totalPaid = Number(receipt?.total_amount_paid ?? 0);
+  const totalDiscount = Number(receipt?.total_discount_amount ?? 0);
   const remainingBalance = Number(receipt?.total_account_balance_remaining ?? 0);
 
   return (
@@ -269,7 +270,12 @@ export const PrintableConsolidatedReceiptModal: React.FC<PrintableConsolidatedRe
                               {alloc.bill_title}
                             </td>
                             <td className="py-2 px-2.5 border-r border-zinc-300 text-right font-mono font-bold text-zinc-900 tabular-nums">
-                              {Number(alloc.amount_allocated).toFixed(2)}
+                              <div>{Number(alloc.amount_allocated).toFixed(2)}</div>
+                              {alloc.discount_amount && Number(alloc.discount_amount) > 0 && (
+                                <div className="text-[10px] text-amber-600 font-medium">
+                                  + {Number(alloc.discount_amount).toFixed(2)} waiver
+                                </div>
+                              )}
                             </td>
                             <td className="py-2 px-2.5 border-r border-zinc-300 text-right font-mono tabular-nums text-zinc-600">
                               {Number(alloc.remaining_due_after).toFixed(2)}
@@ -297,6 +303,14 @@ export const PrintableConsolidatedReceiptModal: React.FC<PrintableConsolidatedRe
                 {/* Financial Calculation Summary */}
                 <div className="flex justify-end text-xs">
                   <div className="w-88 space-y-1.5">
+                    {totalDiscount > 0 && (
+                      <div className="flex justify-between items-center py-1 px-2 rounded bg-amber-500/10 border border-amber-500/20 text-amber-700">
+                        <span className="font-medium">Total Concession / Discount:</span>
+                        <span className="font-mono font-bold text-xs">
+                          NPR {totalDiscount.toFixed(2)}
+                        </span>
+                      </div>
+                    )}
                     <div className="flex justify-between py-1 border-y-2 border-black font-bold text-sm bg-zinc-50 px-2">
                       <span>TOTAL AMOUNT PAID (एकमुष्ठ भुक्तानी):</span>
                       <span className="font-mono text-base tabular-nums">

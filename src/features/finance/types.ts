@@ -326,6 +326,7 @@ export interface PaymentAllocation {
   billing_month?: string | null;
   bill_title: string;
   amount_allocated: number | string;
+  discount_amount?: number | string;
   remaining_due_after: number | string;
   status: string;
 }
@@ -413,6 +414,7 @@ export interface ConsolidatedReceiptDocument {
   received_by_name?: string | null;
   allocations: PaymentAllocation[];
   total_amount_paid: number | string;
+  total_discount_amount?: number | string;
   amount_in_words: string;
   total_account_balance_remaining: number | string;
 }
