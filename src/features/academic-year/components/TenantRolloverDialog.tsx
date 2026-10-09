@@ -1,7 +1,7 @@
 import React, { useState, useMemo } from 'react';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
-import { useTenantRollover } from '../hooks';
+import { useTenantRollover, useAcademicYearStatus } from '../hooks';
 import { academicYearApi } from '../api';
 import {
   tenantRolloverSchema,
@@ -81,6 +81,7 @@ export const TenantRolloverDialog: React.FC<TenantRolloverDialogProps> = ({
   const { calendarSystem } = useCalendarPreferenceStore();
   const rolloverMutation = useTenantRollover();
   const cleanupMutation = useCleanupEmptySections();
+  const { data: statusData } = useAcademicYearStatus(tenantId);
   const navigate = useNavigate();
 
   // Wizard state
@@ -521,6 +522,28 @@ export const TenantRolloverDialog: React.FC<TenantRolloverDialogProps> = ({
           ) : currentStep === 1 ? (
             /* Step 1: Session Timeline & Details */
             <div className="space-y-4 pt-1">
+              {statusData?.current_year && !statusData.is_expired && (
+                <div className="rounded-lg border border-amber-500/50 bg-amber-500/15 p-3.5 text-amber-950 dark:text-amber-100 flex items-start gap-3">
+                  <AlertTriangle className="h-5 w-5 shrink-0 text-amber-600 dark:text-amber-400 mt-0.5" />
+                  <div className="text-xs leading-relaxed space-y-1">
+                    <p className="font-semibold text-amber-900 dark:text-amber-200">
+                      Active Academic Session Still in Progress ({statusData.current_year.name})
+                    </p>
+                    <p>
+                      The current session is active through{' '}
+                      <strong>
+                        {formatDualDateRange(
+                          statusData.current_year.start_date,
+                          statusData.current_year.end_date,
+                          calendarSystem
+                        )}
+                      </strong>
+                      . Performing a rollover now will immediately close and archive this session, advance student cohorts mid-term, and lock daily attendance marking for remaining dates.
+                    </p>
+                  </div>
+                </div>
+              )}
+
               <div className="rounded-lg border border-amber-500/30 bg-amber-500/10 p-3.5 text-amber-900 dark:text-amber-200 flex items-start gap-3">
                 <AlertCircle className="h-5 w-5 shrink-0 text-amber-600 dark:text-amber-400 mt-0.5" />
                 <div className="text-xs leading-relaxed space-y-1">

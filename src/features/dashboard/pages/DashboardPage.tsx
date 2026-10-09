@@ -51,6 +51,7 @@ import { PlatformRankingsSection } from '../components/PlatformRankingsSection';
 import { TeacherMissionControlHub } from '../components/teacher/TeacherMissionControlHub';
 import { DashboardUpcomingCalendar } from '../components/DashboardUpcomingCalendar';
 import { SchoolOnboardingChecklist } from '../components/SchoolOnboardingChecklist';
+import { StaffingReadinessBanner } from '../components/StaffingReadinessBanner';
 import { useCalendarEvents } from '@/features/school-settings/hooks';
 import { useCalendarPreferenceStore } from '@/stores/calendarPreferenceStore';
 import { formatDateRange } from '@/features/school-settings/utils/nepaliDate';
@@ -283,6 +284,12 @@ export const DashboardPage: React.FC = () => {
               </div>
             </div>
           )}
+
+          {/* Staffing Readiness Alert Banner for Admins & Office Admins */}
+          <StaffingReadinessBanner
+            tenantId={activeTenantId}
+            academicYearId={activeAcademicYear?.id}
+          />
 
           {/* School Onboarding Checklist for Admins */}
           {(can('MANAGE_TENANT_SETTINGS') || isSuperAdmin) && !isParent && (

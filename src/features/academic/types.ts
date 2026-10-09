@@ -109,6 +109,41 @@ export interface AssignTeacherDTO {
   section_id?: string;
 }
 
+export interface MissingClassTeacherItem {
+  class_id: string;
+  class_name: string;
+  section_id: string;
+  section_name: string;
+}
+
+export interface MissingSubjectTeacherItem {
+  class_id: string;
+  class_name: string;
+  section_id?: string | null;
+  section_name?: string | null;
+  subject_id: string;
+  subject_name: string;
+  subject_code?: string | null;
+}
+
+export interface StaffingSummary {
+  total_sections: number;
+  sections_with_class_teacher: number;
+  missing_class_teachers_count: number;
+  total_subject_slots: number;
+  slots_with_subject_teacher: number;
+  missing_subject_teachers_count: number;
+}
+
+export interface StaffingStatusResponse {
+  academic_year_id?: string | null;
+  academic_year_name?: string | null;
+  is_fully_staffed: boolean;
+  summary: StaffingSummary;
+  missing_class_teachers: MissingClassTeacherItem[];
+  missing_subject_teachers: MissingSubjectTeacherItem[];
+}
+
 
 // ==========================================
 // Parent-Teacher Link Interfaces

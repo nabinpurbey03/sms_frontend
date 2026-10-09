@@ -27,6 +27,7 @@ import type {
   SectionNoticeCreateDTO,
   EmptySectionResponse,
   EmptySectionCleanupResult,
+  StaffingStatusResponse,
 } from './types';
 
 export const academicApi = {
@@ -165,11 +166,13 @@ export const academicApi = {
   deleteStudent: async (
     tenantId: string,
     classId: string,
-    studentId: string
+    studentId: string,
+    sectionId?: string | null
   ): Promise<boolean> => {
-    await apiClient.delete(
-      `/academic/tenants/${tenantId}/classes/${classId}/students/${studentId}`
-    );
+    const endpoint = sectionId
+      ? `/academic/tenants/${tenantId}/classes/${classId}/sections/${sectionId}/students/${studentId}/soft`
+      : `/academic/tenants/${tenantId}/classes/${classId}/students/${studentId}`;
+    await apiClient.delete(endpoint);
     return true;
   },
 
@@ -177,12 +180,13 @@ export const academicApi = {
     tenantId: string,
     classId: string,
     studentId: string,
-    status: AcademicStudent['status']
+    status: AcademicStudent['status'],
+    sectionId?: string | null
   ): Promise<AcademicStudent> => {
-    return apiClient.patch(
-      `/academic/tenants/${tenantId}/classes/${classId}/students/${studentId}`,
-      { status }
-    );
+    const endpoint = sectionId
+      ? `/academic/tenants/${tenantId}/classes/${classId}/sections/${sectionId}/students/${studentId}`
+      : `/academic/tenants/${tenantId}/classes/${classId}/students/${studentId}`;
+    return apiClient.patch(endpoint, { status });
   },
 
   updateStudent: async (
@@ -353,6 +357,17 @@ export const academicApi = {
       `/academic/tenants/${tenantId}/assignments/${assignmentId}`
     );
     return true;
+  },
+
+  getStaffingStatus: async (
+    tenantId: string,
+    academicYearId?: string | null
+  ): Promise<StaffingStatusResponse> => {
+    const res = (await apiClient.get(
+      `/academic/tenants/${tenantId}/teachers/staffing-status`,
+      { params: { academic_year_id: academicYearId || undefined } }
+    )) as any;
+    return res.data || res;
   },
 
   // ==========================================

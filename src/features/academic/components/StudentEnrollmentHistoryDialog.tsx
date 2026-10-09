@@ -93,7 +93,7 @@ export const StudentEnrollmentHistoryDialog: React.FC<StudentEnrollmentHistoryDi
                     Class: {item.class_name} {item.section_name ? `(Sec ${item.section_name})` : ''}
                   </div>
                   <div className="text-[10px] text-muted-foreground/80 text-right">
-                    {new Date(item.date).toLocaleDateString()}
+                    {item.date || (item as any).created_at ? new Date(item.date || (item as any).created_at).toLocaleDateString() : 'N/A'}
                   </div>
                 </div>
               ))}

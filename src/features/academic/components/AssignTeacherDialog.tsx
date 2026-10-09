@@ -25,6 +25,7 @@ interface AssignTeacherDialogProps {
   initialMode?: 'subject' | 'class_teacher';
   defaultClassId?: string;
   defaultSubjectId?: string;
+  defaultSectionId?: string;
 }
 
 export const AssignTeacherDialog: React.FC<AssignTeacherDialogProps> = ({
@@ -35,6 +36,7 @@ export const AssignTeacherDialog: React.FC<AssignTeacherDialogProps> = ({
   initialMode = 'subject',
   defaultClassId,
   defaultSubjectId,
+  defaultSectionId,
 }) => {
   const [mode, setMode] = useState<'subject' | 'class_teacher'>(initialMode);
   const [selectedClassId, setSelectedClassId] = useState<string>(
@@ -44,10 +46,24 @@ export const AssignTeacherDialog: React.FC<AssignTeacherDialogProps> = ({
     const cls = classes.find((c) => c.id === (defaultClassId || classes[0]?.id));
     return defaultSubjectId || cls?.subjects[0]?.id || '';
   });
-  const [selectedSectionId, setSelectedSectionId] = useState<string>('');
+  const [selectedSectionId, setSelectedSectionId] = useState<string>(
+    () => defaultSectionId || ''
+  );
   const [teacherSource, setTeacherSource] = useState<'roster' | 'phone'>('roster');
   const [selectedTeacherId, setSelectedTeacherId] = useState<string>('');
   const [teacherPhone, setTeacherPhone] = useState<string>('');
+
+  React.useEffect(() => {
+    if (isOpen) {
+      setMode(initialMode);
+      setSelectedClassId(defaultClassId || classes[0]?.id || '');
+      const cls = classes.find((c) => c.id === (defaultClassId || classes[0]?.id));
+      setSelectedSubjectId(defaultSubjectId || cls?.subjects[0]?.id || '');
+      setSelectedSectionId(defaultSectionId || '');
+      setSelectedTeacherId('');
+      setTeacherPhone('');
+    }
+  }, [isOpen, initialMode, defaultClassId, defaultSubjectId, defaultSectionId, classes]);
 
   const { data: members = [] } = useMembers(tenantId, 'TEACHER');
   const teachers = members.filter((m) => m.roles.includes('TEACHER'));
@@ -100,7 +116,7 @@ export const AssignTeacherDialog: React.FC<AssignTeacherDialogProps> = ({
     const payload = {
       teacher_id: teacherSource === 'roster' ? selectedTeacherId : undefined,
       teacher_phone: teacherSource === 'phone' ? teacherPhone.trim() : undefined,
-      section_id: mode === 'class_teacher' ? (selectedSectionId || undefined) : undefined,
+      section_id: selectedSectionId || undefined,
     };
 
     try {
@@ -205,31 +221,24 @@ export const AssignTeacherDialog: React.FC<AssignTeacherDialogProps> = ({
           </div>
 
           {/* Section Select */}
-          {mode === 'class_teacher' ? (
-            <div className="space-y-1.5">
-              <div className="flex items-center justify-between">
-                <Label className="text-xs font-semibold">Section (Optional)</Label>
-                <span className="text-[10px] text-muted-foreground">Applies to all if unselected</span>
-              </div>
-              <select
-                value={selectedSectionId}
-                onChange={(e) => setSelectedSectionId(e.target.value)}
-                className="w-full h-10 px-3 rounded-lg border border-input bg-background text-sm focus:outline-none focus:ring-2 focus:ring-primary"
-              >
-                <option value="">All Sections / Entire Class</option>
-                {sections.map((s) => (
-                  <option key={s.id} value={s.id}>
-                    Section {s.name}
-                  </option>
-                ))}
-              </select>
+          <div className="space-y-1.5">
+            <div className="flex items-center justify-between">
+              <Label className="text-xs font-semibold">Section (Optional)</Label>
+              <span className="text-[10px] text-muted-foreground">Applies to all if unselected</span>
             </div>
-          ) : (
-            <div className="p-2.5 rounded-lg bg-muted/40 border border-border/60 text-xs text-muted-foreground flex items-center justify-between">
-              <span>Section Scope:</span>
-              <span className="font-semibold text-foreground">All Sections (Class-Wide)</span>
-            </div>
-          )}
+            <select
+              value={selectedSectionId}
+              onChange={(e) => setSelectedSectionId(e.target.value)}
+              className="w-full h-10 px-3 rounded-lg border border-input bg-background text-sm focus:outline-none focus:ring-2 focus:ring-primary"
+            >
+              <option value="">All Sections (Class-Wide)</option>
+              {sections.map((s) => (
+                <option key={s.id} value={s.id}>
+                  Section {s.name}
+                </option>
+              ))}
+            </select>
+          </div>
 
           {/* Subject Select (Only in Subject Teacher mode) */}
           {mode === 'subject' && (

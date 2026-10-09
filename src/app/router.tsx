@@ -179,6 +179,9 @@ const subjectsRoute = createRoute({
 const assignmentsRoute = createRoute({
   getParentRoute: () => protectedLayoutRoute,
   path: '/academic/assignments',
+  validateSearch: (search: Record<string, unknown>): { filter?: string } => ({
+    filter: typeof search.filter === 'string' ? search.filter : undefined,
+  }),
   component: () => (
     <DisallowedRoleGuard disallowedRoles={['ACCOUNTANT']}>
       <TeacherAssignmentsPage />

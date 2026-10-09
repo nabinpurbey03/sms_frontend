@@ -13,6 +13,10 @@ export interface AcademicYear {
 
 export type AcademicYearResponse = AcademicYear;
 
+export function isAcademicYearClosed(year: AcademicYear): boolean {
+  return year.status === 'CLOSED' || year.status === 'COMPLETED' || Boolean(year.is_closed);
+}
+
 export interface AcademicYearCreateDTO {
   name: string;
   start_date: string;

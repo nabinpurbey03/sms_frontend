@@ -291,6 +291,7 @@ export const StudentsPage: React.FC = () => {
       tenantId: activeTenantId,
       classId: studentToDelete.class_id,
       studentId: studentToDelete.id,
+      sectionId: studentToDelete.section_id,
     });
     setStudentToDelete(null);
   };
@@ -601,6 +602,7 @@ export const StudentsPage: React.FC = () => {
                                   updateStatusMutation.mutate({
                                     tenantId: activeTenantId!,
                                     classId: st.class_id,
+                                    sectionId: st.section_id,
                                     studentId: st.id,
                                     status: 'ACTIVE',
                                   })
@@ -615,6 +617,7 @@ export const StudentsPage: React.FC = () => {
                                   updateStatusMutation.mutate({
                                     tenantId: activeTenantId!,
                                     classId: st.class_id,
+                                    sectionId: st.section_id,
                                     studentId: st.id,
                                     status: 'TRANSFERRED',
                                   })
@@ -629,6 +632,7 @@ export const StudentsPage: React.FC = () => {
                                   updateStatusMutation.mutate({
                                     tenantId: activeTenantId!,
                                     classId: st.class_id,
+                                    sectionId: st.section_id,
                                     studentId: st.id,
                                     status: 'GRADUATED',
                                   })
@@ -643,6 +647,7 @@ export const StudentsPage: React.FC = () => {
                                   updateStatusMutation.mutate({
                                     tenantId: activeTenantId!,
                                     classId: st.class_id,
+                                    sectionId: st.section_id,
                                     studentId: st.id,
                                     status: 'SUSPENDED',
                                   })

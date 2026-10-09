@@ -20,6 +20,7 @@ export const STUDENTS_QUERY_KEY = 'academic_students';
 export const SUBJECTS_QUERY_KEY = 'academic_subjects';
 export const SECTION_ELIGIBILITY_KEY = 'section_eligibility';
 export const ASSIGNMENTS_QUERY_KEY = 'academic_assignments';
+export const STAFFING_STATUS_KEY = 'staffing_status';
 export const MY_TEACHER_ASSIGNMENTS_QUERY_KEY = 'my_teacher_assignments';
 export const STUDENT_REMARKS_QUERY_KEY = 'student_remarks';
 export const SECTION_NOTICES_QUERY_KEY = 'section_notices';
@@ -348,11 +349,13 @@ export const useDeleteStudent = () => {
       tenantId,
       classId,
       studentId,
+      sectionId,
     }: {
       tenantId: string;
       classId: string;
       studentId: string;
-    }) => academicApi.deleteStudent(tenantId, classId, studentId),
+      sectionId?: string | null;
+    }) => academicApi.deleteStudent(tenantId, classId, studentId, sectionId),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: [CLASSES_QUERY_KEY] });
       queryClient.invalidateQueries({ queryKey: [STUDENTS_QUERY_KEY] });
@@ -378,12 +381,14 @@ export const useUpdateStudentStatus = () => {
       classId,
       studentId,
       status,
+      sectionId,
     }: {
       tenantId: string;
       classId: string;
       studentId: string;
       status: AcademicStudent['status'];
-    }) => academicApi.updateStudentStatus(tenantId, classId, studentId, status),
+      sectionId?: string | null;
+    }) => academicApi.updateStudentStatus(tenantId, classId, studentId, status, sectionId),
     onSuccess: (updated) => {
       queryClient.invalidateQueries({ queryKey: [CLASSES_QUERY_KEY] });
       queryClient.invalidateQueries({ queryKey: [STUDENTS_QUERY_KEY] });
@@ -585,6 +590,18 @@ export const useAssignments = (
   });
 };
 
+export const useStaffingStatus = (
+  tenantId: string | null,
+  academicYearId?: string | null
+) => {
+  return useQuery({
+    queryKey: [STAFFING_STATUS_KEY, tenantId, academicYearId],
+    queryFn: () => academicApi.getStaffingStatus(tenantId!, academicYearId),
+    enabled: !!tenantId,
+    staleTime: 1000 * 30,
+  });
+};
+
 export const useAssignClassTeacher = () => {
   const queryClient = useQueryClient();
   return useMutation({
@@ -599,6 +616,7 @@ export const useAssignClassTeacher = () => {
     }) => academicApi.assignClassTeacher(tenantId, classId, data),
     onSuccess: (_, { tenantId }) => {
       queryClient.invalidateQueries({ queryKey: [ASSIGNMENTS_QUERY_KEY, tenantId] });
+      queryClient.invalidateQueries({ queryKey: [STAFFING_STATUS_KEY, tenantId] });
       toast.success('Class teacher appointed successfully');
     },
     onError: (err: any) => {
@@ -623,6 +641,7 @@ export const useAssignSubjectTeacher = () => {
     }) => academicApi.assignSubjectTeacher(tenantId, classId, subjectId, data),
     onSuccess: (_, { tenantId }) => {
       queryClient.invalidateQueries({ queryKey: [ASSIGNMENTS_QUERY_KEY, tenantId] });
+      queryClient.invalidateQueries({ queryKey: [STAFFING_STATUS_KEY, tenantId] });
       toast.success('Subject teacher assigned successfully');
     },
     onError: (err: any) => {
@@ -643,6 +662,7 @@ export const useDeleteAssignment = () => {
     }) => academicApi.deleteAssignment(tenantId, assignmentId),
     onSuccess: (_, { tenantId }) => {
       queryClient.invalidateQueries({ queryKey: [ASSIGNMENTS_QUERY_KEY, tenantId] });
+      queryClient.invalidateQueries({ queryKey: [STAFFING_STATUS_KEY, tenantId] });
       toast.success('Teacher assignment removed');
     },
     onError: (err: any) => {

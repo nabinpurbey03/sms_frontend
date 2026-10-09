@@ -2,6 +2,7 @@ import React, { useState } from 'react';
 import { useAuth } from '@/auth/useAuth';
 import { usePermission } from '@/auth/usePermission';
 import { useAcademicYears, useSetCurrentAcademicYear, useCloseAcademicYear } from '../hooks';
+import { isAcademicYearClosed } from '../types';
 import { AcademicYearFormDialog } from '../components/AcademicYearFormDialog';
 import { AcademicYearExpiryBanner } from '../components/AcademicYearExpiryBanner';
 import { PlatformRolloverDialog } from '../components/PlatformRolloverDialog';
@@ -266,64 +267,82 @@ export const AcademicYearsPage: React.FC<AcademicYearsPageProps> = ({
                 </TableRow>
               </TableHeader>
               <TableBody>
-                {years.map((year) => (
-                  <TableRow key={year.id}>
-                    <TableCell className="font-medium">{year.name}</TableCell>
-                    <TableCell>
-                      <span className="text-sm">
-                        {formatDualDateRange(year.start_date, year.end_date, calendarSystem)}
-                      </span>
-                    </TableCell>
-                    <TableCell>
-                      <div className="flex items-center gap-2">
-                        {year.is_current && (
-                          <Badge variant="success">
-                            Current
-                          </Badge>
-                        )}
-                        {year.is_closed && (
-                          <Badge variant="secondary">
-                            Closed
-                          </Badge>
-                        )}
-                        {!year.is_current && !year.is_closed && (
-                          <Badge variant="outline">
-                            Inactive
-                          </Badge>
-                        )}
-                      </div>
-                    </TableCell>
-                    {canManage && (
-                      <TableCell className="text-right">
-                        <div className="flex items-center justify-end gap-2">
-                          {!year.is_current && !year.is_closed && (
-                            <Button
-                              variant="outline"
-                              size="sm"
-                              onClick={() => handleSetCurrent(year.id, year.name)}
-                              disabled={processingId === year.id}
-                            >
-                              <CheckCircle2 className="w-4 h-4 mr-1" />
-                              Set Current
-                            </Button>
+                {years.map((year) => {
+                  const isClosed = isAcademicYearClosed(year);
+                  return (
+                    <TableRow key={year.id}>
+                      <TableCell className="font-medium">{year.name}</TableCell>
+                      <TableCell>
+                        <span className="text-sm">
+                          {formatDualDateRange(year.start_date, year.end_date, calendarSystem)}
+                        </span>
+                      </TableCell>
+                      <TableCell>
+                        <div className="flex items-center gap-2">
+                          {year.is_current && (
+                            <Badge variant="success">
+                              Current
+                            </Badge>
                           )}
-                          {!year.is_closed && (
-                            <Button
-                              variant="outline"
-                              size="sm"
-                              onClick={() => handleCloseYear(year.id, year.name)}
-                              disabled={processingId === year.id || year.is_current}
-                              title={year.is_current ? "Cannot close the current active year" : "Close this year"}
-                            >
-                              <Lock className="w-4 h-4 mr-1" />
-                              Close
-                            </Button>
+                          {isClosed && (
+                            <Badge variant="secondary">
+                              Closed
+                            </Badge>
+                          )}
+                          {!year.is_current && !isClosed && (
+                            <Badge variant="outline">
+                              Upcoming
+                            </Badge>
                           )}
                         </div>
                       </TableCell>
-                    )}
-                  </TableRow>
-                ))}
+                      {canManage && (
+                        <TableCell className="text-right">
+                          <div className="flex items-center justify-end gap-2">
+                            {isClosed ? (
+                              <span className="text-xs text-muted-foreground italic">
+                                Archived
+                              </span>
+                            ) : year.is_current ? (
+                              <Button
+                                variant="outline"
+                                size="sm"
+                                onClick={() => setIsTenantRolloverOpen(true)}
+                                className="text-amber-700 dark:text-amber-400 border-amber-500/40 hover:bg-amber-500/10"
+                                title="Close this session and rollover students into a new academic year"
+                              >
+                                <RefreshCw className="w-3.5 h-3.5 mr-1" />
+                                Rollover / Close
+                              </Button>
+                            ) : (
+                              <>
+                                <Button
+                                  variant="outline"
+                                  size="sm"
+                                  onClick={() => handleSetCurrent(year.id, year.name)}
+                                  disabled={processingId === year.id}
+                                >
+                                  <CheckCircle2 className="w-4 h-4 mr-1" />
+                                  Set Current
+                                </Button>
+                                <Button
+                                  variant="outline"
+                                  size="sm"
+                                  onClick={() => handleCloseYear(year.id, year.name)}
+                                  disabled={processingId === year.id}
+                                  title="Close this upcoming session without activating"
+                                >
+                                  <Lock className="w-4 h-4 mr-1" />
+                                  Close
+                                </Button>
+                              </>
+                            )}
+                          </div>
+                        </TableCell>
+                      )}
+                    </TableRow>
+                  );
+                })}
               </TableBody>
             </Table>
           </div>
