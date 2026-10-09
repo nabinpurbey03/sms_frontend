@@ -21,6 +21,7 @@ import type {
   FeePayment,
   FeePaymentCreateDTO,
   FeePaymentFilters,
+  PaymentFilterParams,
   ReceiptDocument,
   ConsolidatedReceiptDocument,
   StudentLedgerResponse,
@@ -32,6 +33,9 @@ import type {
   StudentDuesBreakdown,
   LateFeeCalculation,
 } from './types';
+
+export type { PaymentFilterParams };
+
 
 export interface PaginatedResult<T> {
   items: T[];
@@ -197,7 +201,11 @@ export const financeApi = {
     tenantId: string,
     params?: FeePaymentFilters
   ): Promise<PaginatedResult<FeePayment>> => {
-    const res = (await apiClient.get(`/finance/tenants/${tenantId}/payments`, { params })) as any;
+    const queryParams: Record<string, any> = { ...params };
+    if (params?.has_discount !== undefined) {
+      queryParams.has_discount = params.has_discount ? 'true' : 'false';
+    }
+    const res = (await apiClient.get(`/finance/tenants/${tenantId}/payments`, { params: queryParams })) as any;
     if (res && res.meta) {
       return { items: res.data || [], meta: res.meta };
     }

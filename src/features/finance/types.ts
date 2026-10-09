@@ -453,10 +453,14 @@ export interface FeeBillFilters {
 export interface FeePaymentFilters {
   student_id?: string;
   payment_method?: string;
+  has_discount?: boolean;
   search?: string;
   page?: number;
   page_size?: number;
 }
+
+export type PaymentFilterParams = FeePaymentFilters;
+
 
 export interface FinanceClassSection {
   section_id: string;

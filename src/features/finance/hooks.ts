@@ -14,7 +14,11 @@ import type {
   FeeBillFilters,
   FeePaymentCreateDTO,
   FeePaymentFilters,
+  PaymentFilterParams,
 } from './types';
+
+export type { PaymentFilterParams };
+
 
 import { academicApi } from '@/features/academic/api';
 import type { ClassWithDetails } from '@/features/academic/types';
@@ -193,6 +197,7 @@ export const usePayments = (tenantId: string | null, params?: FeePaymentFilters)
       tenantId,
       params?.student_id,
       params?.payment_method,
+      params?.has_discount,
       params?.search,
       params?.page,
       params?.page_size,
