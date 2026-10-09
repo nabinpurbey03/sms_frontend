@@ -1,5 +1,5 @@
 import React, { useState, useMemo } from 'react';
-import { useParams, Link } from '@tanstack/react-router';
+import { useParams } from '@tanstack/react-router';
 import { useAuth } from '@/auth/useAuth';
 import { useCurrentAcademicYear } from '@/features/academic-year/hooks/useCurrentAcademicYear';
 import { useStudentLedger, useRecordPayment } from '../hooks';
@@ -13,13 +13,13 @@ import {
   Calendar,
   Loader2,
   Receipt,
-  ArrowLeft,
   Coins,
   CheckCircle2,
   Clock,
   AlertCircle,
   ArrowUpDown,
   Layers,
+  Tag,
 } from 'lucide-react';
 import type { FeeBill, FeePayment } from '../types';
 import { PaymentCollectDialog } from '../components/PaymentCollectDialog';
@@ -57,6 +57,11 @@ export const StudentLedgerPage: React.FC = () => {
   const totalBilled = Number(ledger?.total_billed || 0);
   const totalPaid = Number(ledger?.total_paid || 0);
   const totalDue = Number(ledger?.total_due || 0);
+  const totalDiscount = Number(
+    ledger?.total_discount ??
+      ledger?.payments?.reduce((acc, p) => acc + Number(p.discount_amount || 0), 0) ??
+      0
+  );
 
   // Chronologically sorted bills (Baishakh -> Chaitra by default)
   const sortedBills = useMemo(() => {
@@ -196,9 +201,18 @@ export const StudentLedgerPage: React.FC = () => {
           {/* Student Profile & Overview Card */}
           <div className="p-4 rounded-xl border bg-card shadow-2xs flex flex-col md:flex-row md:items-center justify-between gap-4">
             <div className="space-y-1">
-              <div className="flex items-center gap-2">
+              <div className="flex items-center gap-2 flex-wrap">
                 <h2 className="text-lg font-bold text-foreground">{ledger.student_name}</h2>
                 {ledger.class_name && <Badge variant="outline">{ledger.class_name}</Badge>}
+                {totalDiscount > 0 && (
+                  <Badge
+                    variant="outline"
+                    className="bg-amber-500/10 text-amber-600 dark:text-amber-400 border-amber-500/30 font-medium text-xs gap-1 py-0.5"
+                  >
+                    <Tag className="w-3 h-3" />
+                    Concession Beneficiary: NPR {totalDiscount.toLocaleString('en-IN', { minimumFractionDigits: 2 })} Waived
+                  </Badge>
+                )}
               </div>
               <p className="text-xs text-muted-foreground">
                 Student ID: <span className="font-mono">{ledger.student_id}</span>
@@ -207,7 +221,7 @@ export const StudentLedgerPage: React.FC = () => {
           </div>
 
           {/* KPI Summary Cards */}
-          <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
             <Card className="border-border/60">
               <CardHeader className="p-4 pb-1">
                 <CardTitle className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">
@@ -233,6 +247,20 @@ export const StudentLedgerPage: React.FC = () => {
                   NPR {totalPaid.toLocaleString('en-IN', { minimumFractionDigits: 2 })}
                 </div>
                 <p className="text-[11px] text-muted-foreground mt-0.5">Confirmed receipts cleared</p>
+              </CardContent>
+            </Card>
+
+            <Card className="border-border/60">
+              <CardHeader className="p-4 pb-1">
+                <CardTitle className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">
+                  Total Concessions / Waivers
+                </CardTitle>
+              </CardHeader>
+              <CardContent className="p-4 pt-1">
+                <div className="text-xl font-bold font-mono text-amber-600 dark:text-amber-400">
+                  NPR {totalDiscount.toLocaleString('en-IN', { minimumFractionDigits: 2 })}
+                </div>
+                <p className="text-[11px] text-muted-foreground mt-0.5">Authorized fee deductions granted</p>
               </CardContent>
             </Card>
 
@@ -417,6 +445,11 @@ export const StudentLedgerPage: React.FC = () => {
                             <span className="font-mono text-emerald-600 font-medium">
                               NPR {Number(b.paid_amount).toFixed(2)}
                             </span>
+                            {Number(b.discount_amount || 0) > 0 && (
+                              <span className="font-mono text-amber-600 dark:text-amber-400 font-medium ml-1.5">
+                                (Waived: NPR {Number(b.discount_amount).toFixed(2)})
+                              </span>
+                            )}
                           </div>
                           <div className="flex items-center gap-1.5">
                             {due > 0 ? (
@@ -486,6 +519,7 @@ export const StudentLedgerPage: React.FC = () => {
                           <th className="py-2.5 px-3">Due Date</th>
                           <th className="py-2.5 px-3 text-right">Subtotal</th>
                           <th className="py-2.5 px-3 text-right">Payable</th>
+                          <th className="py-2.5 px-3 text-right">Discount / Waived</th>
                           <th className="py-2.5 px-3 text-right">Paid</th>
                           <th className="py-2.5 px-3 text-right">Balance Due</th>
                           <th className="py-2.5 px-3 text-center">Status</th>
@@ -524,6 +558,15 @@ export const StudentLedgerPage: React.FC = () => {
                               </td>
                               <td className="py-2.5 px-3 text-right font-mono font-semibold">
                                 {Number(b.total_payable).toFixed(2)}
+                              </td>
+                              <td className="py-2.5 px-3 text-right font-mono text-xs">
+                                {Number(b.discount_amount || 0) > 0 ? (
+                                  <span className="font-semibold text-amber-600 dark:text-amber-400">
+                                    -NPR {Number(b.discount_amount).toFixed(2)}
+                                  </span>
+                                ) : (
+                                  <span className="text-muted-foreground">—</span>
+                                )}
                               </td>
                               <td className="py-2.5 px-3 text-right font-mono text-emerald-600 font-medium">
                                 {Number(b.paid_amount).toFixed(2)}
@@ -711,7 +754,7 @@ export const StudentLedgerPage: React.FC = () => {
         onClose={() => setActiveCollectBill(null)}
         bill={activeCollectBill}
         studentName={ledger?.student_name}
-        className={ledger?.class_name}
+        className={ledger?.class_name || undefined}
         onSubmit={async (data) => recordPaymentMutation.mutateAsync(data)}
         isLoading={recordPaymentMutation.isPending}
         onPaymentSuccess={(payment: FeePayment) => {
@@ -729,7 +772,7 @@ export const StudentLedgerPage: React.FC = () => {
           totalAccountDue={totalDue}
           unpaidBills={unpaidBills}
           studentName={ledger.student_name}
-          className={ledger.class_name}
+          className={ledger.class_name || undefined}
           tenantId={activeTenantId}
           onSubmit={async (data) => recordPaymentMutation.mutateAsync(data)}
           isLoading={recordPaymentMutation.isPending}
@@ -752,7 +795,7 @@ export const StudentLedgerPage: React.FC = () => {
           tenantId={activeTenantId}
           studentId={studentId}
           studentName={ledger.student_name}
-          className={ledger.class_name}
+          className={ledger.class_name || undefined}
           academicYearName={currentYear?.name}
           bills={sortedBills}
           payments={ledger.payments}

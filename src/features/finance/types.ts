@@ -420,10 +420,11 @@ export interface ConsolidatedReceiptDocument {
 export interface StudentLedgerResponse {
   student_id: string;
   student_name: string;
-  class_name?: string;
+  class_name?: string | null;
   total_billed: number | string;
   total_paid: number | string;
   total_due: number | string;
+  total_discount?: number | string;
   bills: FeeBill[];
   payments: FeePayment[];
 }
