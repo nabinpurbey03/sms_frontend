@@ -16,3 +16,4 @@ export * from './PrintableBillModal';
 export * from './PrintableReceiptModal';
 export * from './PrintableStatementModal';
 export * from './CancelBillDialog';
+export * from './SessionArchiveSelect';

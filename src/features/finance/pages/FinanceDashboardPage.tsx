@@ -37,6 +37,7 @@ import {
   ShieldAlert,
   Tag,
   BadgePercent,
+  GraduationCap,
 } from 'lucide-react';
 import { FeeStructureDialog } from '../components/FeeStructureDialog';
 import { PrintableReceiptModal } from '../components/PrintableReceiptModal';
@@ -85,6 +86,10 @@ export const FinanceDashboardPage: React.FC = () => {
   const yearDiscounts = Number(summary?.total_discount_year || 0);
   const monthDiscounts = Number(summary?.total_discount_month || 0);
   const discountedStudentsCount = summary?.total_discounted_students_count || 0;
+  const openingArrears = Number(summary?.total_opening_arrears || 0);
+  const alumniDues = Number(summary?.total_alumni_dues || 0);
+  const isNewSessionUnbilled = Boolean(summary?.is_new_session_unbilled);
+  const activeSessionDues = Math.max(0, outstandingDues - openingArrears - alumniDues);
 
   // Analytical derivations
   const totalInvoiced = yearCollected + outstandingDues;
@@ -200,6 +205,79 @@ export const FinanceDashboardPage: React.FC = () => {
         </div>
       </div>
 
+      {/* Post-Rollover Session Onboarding Banner */}
+      {isNewSessionUnbilled && (
+        <div className="rounded-2xl border border-amber-500/30 bg-gradient-to-r from-amber-500/10 via-indigo-500/10 to-background dark:from-amber-950/40 dark:via-indigo-950/30 dark:to-card p-5 sm:p-6 shadow-xs transition-all flex flex-col lg:flex-row lg:items-center justify-between gap-6">
+          <div className="space-y-3">
+            <div className="flex items-center gap-2.5">
+              <div className="p-2.5 rounded-xl bg-amber-500/20 text-amber-600 dark:text-amber-400 border border-amber-500/30 shrink-0">
+                <Sparkles className="w-5 h-5" />
+              </div>
+              <div>
+                <div className="flex items-center gap-2">
+                  <h3 className="text-base sm:text-lg font-bold tracking-tight text-foreground">
+                    New Academic Session Active
+                  </h3>
+                  <Badge variant="outline" className="border-amber-500/40 text-amber-700 dark:text-amber-300 bg-amber-500/10 text-[10px] font-semibold uppercase">
+                    Unbilled Session
+                  </Badge>
+                </div>
+                <p className="text-xs sm:text-sm text-muted-foreground mt-0.5">
+                  New Academic Session Active — 0 invoices generated yet for this session.
+                </p>
+              </div>
+            </div>
+
+            {/* Metrics */}
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 pt-1">
+              <div className="flex items-center gap-3 p-3 rounded-xl bg-background/80 dark:bg-card/80 border border-border/60 shadow-2xs">
+                <div className="p-2 rounded-lg bg-amber-500/10 text-amber-600 dark:text-amber-400">
+                  <Layers className="w-4 h-4" />
+                </div>
+                <div>
+                  <span className="text-[10px] uppercase font-bold tracking-wider text-muted-foreground block">
+                    Opening Arrears (Active Students)
+                  </span>
+                  <span className="text-sm font-extrabold font-mono text-foreground">
+                    {formatCurrency(summary?.total_opening_arrears ?? 0)}
+                  </span>
+                </div>
+              </div>
+
+              <div className="flex items-center gap-3 p-3 rounded-xl bg-background/80 dark:bg-card/80 border border-border/60 shadow-2xs">
+                <div className="p-2 rounded-lg bg-indigo-500/10 text-indigo-600 dark:text-indigo-400">
+                  <GraduationCap className="w-4 h-4" />
+                </div>
+                <div>
+                  <span className="text-[10px] uppercase font-bold tracking-wider text-muted-foreground block">
+                    Alumni Dues (Graduated Students)
+                  </span>
+                  <span className="text-sm font-extrabold font-mono text-foreground">
+                    {formatCurrency(summary?.total_alumni_dues ?? 0)}
+                  </span>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          {/* Quick Actions */}
+          <div className="flex flex-wrap sm:flex-nowrap lg:flex-col gap-2.5 shrink-0 justify-end">
+            <Link to="/finance/bills">
+              <Button className="w-full gap-2 text-xs font-semibold shadow-xs bg-indigo-600 hover:bg-indigo-700 text-white cursor-pointer">
+                <Sparkles className="w-4 h-4" />
+                Generate Session Bills
+              </Button>
+            </Link>
+            <Link to={'/finance/alumni-clearance' as any}>
+              <Button variant="outline" className="w-full gap-2 text-xs font-medium border-amber-500/30 hover:bg-amber-500/10 text-amber-800 dark:text-amber-300 cursor-pointer">
+                <GraduationCap className="w-4 h-4" />
+                View Alumni Clearance
+              </Button>
+            </Link>
+          </div>
+        </div>
+      )}
+
       {/* 2. Top Analytics Suite (Shifted to Prominent Top) */}
       <section className="space-y-4" aria-label="Financial Analytics and Key Performance Indicators">
         {/* KPI Summary Cards Grid */}
@@ -294,6 +372,28 @@ export const FinanceDashboardPage: React.FC = () => {
                 </span>
                 <span className="text-[11px] text-muted-foreground">Unpaid / partial bills</span>
               </div>
+              {(openingArrears > 0 || alumniDues > 0) && (
+                <div className="mt-2.5 pt-2 border-t border-border/50 text-[10px] space-y-1">
+                  <div className="flex justify-between items-center text-muted-foreground">
+                    <span>Active Session:</span>
+                    <span className="font-mono font-medium text-foreground">
+                      {formatCurrency(activeSessionDues)}
+                    </span>
+                  </div>
+                  <div className="flex justify-between items-center text-amber-600 dark:text-amber-400">
+                    <span>Prior Arrears:</span>
+                    <span className="font-mono font-medium">
+                      {formatCurrency(summary?.total_opening_arrears ?? 0)}
+                    </span>
+                  </div>
+                  <div className="flex justify-between items-center text-purple-600 dark:text-purple-400">
+                    <span>Alumni Dues:</span>
+                    <span className="font-mono font-medium">
+                      {formatCurrency(summary?.total_alumni_dues ?? 0)}
+                    </span>
+                  </div>
+                </div>
+              )}
             </CardContent>
           </Card>
 

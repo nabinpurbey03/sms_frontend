@@ -435,6 +435,9 @@ export interface FinanceDashboardSummary {
   total_collected_month: number | string;
   total_collected_year: number | string;
   total_outstanding_dues: number | string;
+  total_opening_arrears?: number | string;
+  total_alumni_dues?: number | string;
+  is_new_session_unbilled?: boolean;
   collection_rate_percent: number;
   total_defaulters_count: number;
   recent_payments: FeePayment[];
@@ -449,6 +452,7 @@ export interface FeeBillFilters {
   status?: string;
   billing_month?: string;
   search?: string;
+  academic_year_id?: string;
   page?: number;
   page_size?: number;
 }
@@ -458,6 +462,7 @@ export interface FeePaymentFilters {
   payment_method?: string;
   has_discount?: boolean;
   search?: string;
+  academic_year_id?: string;
   page?: number;
   page_size?: number;
 }

@@ -952,3 +952,6 @@ export const useCleanupEmptySections = () => {
   });
 };
 
+export { useAcademicYears } from '@/features/academic-year/hooks';
+
+

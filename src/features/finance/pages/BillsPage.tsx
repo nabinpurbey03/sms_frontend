@@ -2,8 +2,8 @@ import React, { useState } from 'react';
 import { Link } from '@tanstack/react-router';
 import { useAuth } from '@/auth/useAuth';
 import { useCurrentAcademicYear } from '@/features/academic-year/hooks/useCurrentAcademicYear';
-import { useClasses } from '@/features/academic/hooks';
-import { useBills } from '../hooks';
+import { useClasses, useAcademicYears } from '@/features/academic/hooks';
+import { useBills, useCancelBill } from '../hooks';
 import { Card } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -17,8 +17,14 @@ import {
   Filter,
   Tag,
   BookOpen,
+  Archive,
+  Ban,
+  Sparkles,
 } from 'lucide-react';
 import type { FeeBill, BillStatus } from '../types';
+import { SessionArchiveSelect } from '../components/SessionArchiveSelect';
+import { CancelBillDialog } from '../components/CancelBillDialog';
+import { cn } from '@/lib/utils';
 import {
   Tooltip,
   TooltipContent,
@@ -37,16 +43,35 @@ export const BillsPage: React.FC = () => {
   const classes = classesData || [];
 
   // Filters State
+  const [selectedArchiveYearId, setSelectedArchiveYearId] = useState<string | undefined>(undefined);
+  const [billToCancel, setBillToCancel] = useState<FeeBill | null>(null);
   const [search, setSearch] = useState('');
   const [classFilter, setClassFilter] = useState('');
   const [statusFilter, setStatusFilter] = useState('');
   const [page, setPage] = useState(1);
+
+  const { data: academicYears = [] } = useAcademicYears(activeTenantId);
+  const selectedYear = academicYears.find((y) => y.id === selectedArchiveYearId) || (selectedArchiveYearId ? null : currentYear);
+  const isArchived = Boolean(selectedArchiveYearId && currentYear && selectedArchiveYearId !== currentYear.id);
+
+  const cancelBillMutation = useCancelBill(activeTenantId);
+
+  const handleConfirmCancel = async () => {
+    if (!billToCancel) return;
+    try {
+      await cancelBillMutation.mutateAsync(billToCancel.id);
+      setBillToCancel(null);
+    } catch {
+      // Handled by mutation toast
+    }
+  };
 
   // Queries
   const { data: billsData, isLoading } = useBills(activeTenantId, {
     search: search.trim() || undefined,
     class_id: classFilter || undefined,
     status: statusFilter || undefined,
+    academic_year_id: selectedArchiveYearId,
     page,
     page_size: 25,
   });
@@ -125,10 +150,35 @@ export const BillsPage: React.FC = () => {
         </div>
 
         <div className="flex flex-wrap items-center gap-2.5">
-          <div className="flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-primary/10 border border-primary/20 text-xs font-semibold text-primary">
-            <Calendar className="w-3.5 h-3.5 text-primary" />
-            <span>Session: {currentYear?.name || 'Active Session'}</span>
-          </div>
+          <SessionArchiveSelect
+            value={selectedArchiveYearId}
+            onChange={(id) => {
+              setSelectedArchiveYearId(id);
+              setPage(1);
+            }}
+          />
+
+          {isArchived ? (
+            <Button
+              size="sm"
+              disabled
+              className="gap-1.5 text-xs font-semibold opacity-50 cursor-not-allowed"
+              title="Bill creation is disabled for archived sessions"
+            >
+              <Sparkles className="w-3.5 h-3.5" />
+              Generate Bills
+            </Button>
+          ) : (
+            <Link to="/finance/batch-billing">
+              <Button
+                size="sm"
+                className="gap-1.5 text-xs font-semibold shadow-xs cursor-pointer bg-primary hover:bg-primary/90 text-primary-foreground"
+              >
+                <Sparkles className="w-3.5 h-3.5" />
+                Generate Bills
+              </Button>
+            </Link>
+          )}
         </div>
       </div>
 
@@ -182,6 +232,30 @@ export const BillsPage: React.FC = () => {
           </select>
         </div>
       </div>
+
+      {/* Sticky Archived Session Banner */}
+      {isArchived && (
+        <div className="sticky top-0 z-10 rounded-xl border border-amber-500/40 bg-amber-500/15 dark:bg-amber-950/80 backdrop-blur-md p-3.5 flex flex-col sm:flex-row sm:items-center justify-between gap-3 text-xs shadow-xs text-amber-950 dark:text-amber-200">
+          <div className="flex items-center gap-2.5">
+            <Archive className="w-4 h-4 text-amber-600 dark:text-amber-400 shrink-0" />
+            <div>
+              <span className="font-bold">
+                Viewing Archived Session {selectedYear?.name ? `(${selectedYear.name})` : ''} (Read-Only)
+              </span>
+              <span className="mx-1.5 hidden sm:inline">—</span>
+              <span className="text-amber-900/90 dark:text-amber-300 block sm:inline mt-0.5 sm:mt-0">
+                Creation and cancellation of bills are disabled for past sessions.
+              </span>
+            </div>
+          </div>
+          <Badge
+            variant="outline"
+            className="border-amber-500/40 bg-amber-500/20 text-amber-900 dark:text-amber-200 text-[10px] font-bold shrink-0 uppercase w-fit"
+          >
+            Read-Only Archive
+          </Badge>
+        </div>
+      )}
 
       {/* Bills Data Table */}
       {isLoading ? (
@@ -298,20 +372,49 @@ export const BillsPage: React.FC = () => {
                       </td>
                       <td className="py-2.5 px-3 text-center">{getStatusBadge(b.status, discount)}</td>
                       <td className="py-2.5 px-3 text-right">
-                        <Button
-                          asChild
-                          size="sm"
-                          variant="outline"
-                          className="h-7 text-xs gap-1.5 px-2.5 font-medium hover:bg-primary/5 hover:text-primary hover:border-primary/40 transition-colors shadow-2xs cursor-pointer"
-                        >
-                          <Link
-                            to="/finance/ledger/$studentId"
-                            params={{ studentId: b.student_id }}
+                        <div className="flex items-center justify-end gap-1.5">
+                          <Button
+                            asChild
+                            size="sm"
+                            variant="outline"
+                            className="h-7 text-xs gap-1.5 px-2.5 font-medium hover:bg-primary/5 hover:text-primary hover:border-primary/40 transition-colors shadow-2xs cursor-pointer"
                           >
-                            <BookOpen className="w-3.5 h-3.5 text-primary" />
-                            <span>View Ledger</span>
-                          </Link>
-                        </Button>
+                            <Link
+                              to="/finance/ledger/$studentId"
+                              params={{ studentId: b.student_id }}
+                            >
+                              <BookOpen className="w-3.5 h-3.5 text-primary" />
+                              <span>View Ledger</span>
+                            </Link>
+                          </Button>
+
+                          {b.status !== 'CANCELLED' && b.status !== 'PAID' && (
+                            isArchived ? (
+                              <Button
+                                size="sm"
+                                variant="ghost"
+                                disabled
+                                className="h-7 text-xs px-2 text-muted-foreground opacity-40 cursor-not-allowed"
+                                title="Cancellation disabled for archived sessions"
+                              >
+                                <Ban className="w-3.5 h-3.5" />
+                                <span className="sr-only sm:not-sr-only sm:inline-block">Cancel</span>
+                              </Button>
+                            ) : (
+                              <Button
+                                size="sm"
+                                variant="ghost"
+                                disabled={cancelBillMutation.isPending}
+                                onClick={() => setBillToCancel(b)}
+                                title="Void and cancel fee bill"
+                                className="h-7 text-xs px-2 text-destructive hover:bg-destructive/10 hover:text-destructive cursor-pointer"
+                              >
+                                <Ban className="w-3.5 h-3.5" />
+                                <span className="sr-only sm:not-sr-only sm:inline-block">Cancel</span>
+                              </Button>
+                            )
+                          )}
+                        </div>
                       </td>
                     </tr>
                   );
@@ -350,6 +453,15 @@ export const BillsPage: React.FC = () => {
           )}
         </div>
       )}
+
+      {/* Cancel Bill Dialog */}
+      <CancelBillDialog
+        bill={billToCancel}
+        isOpen={Boolean(billToCancel)}
+        onClose={() => setBillToCancel(null)}
+        onConfirm={handleConfirmCancel}
+        isPending={cancelBillMutation.isPending}
+      />
     </div>
   );
 };

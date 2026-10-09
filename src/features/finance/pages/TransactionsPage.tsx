@@ -2,6 +2,7 @@ import React, { useState } from 'react';
 import { useSearch, useNavigate } from '@tanstack/react-router';
 import { useAuth } from '@/auth/useAuth';
 import { useCurrentAcademicYear } from '@/features/academic-year/hooks/useCurrentAcademicYear';
+import { useAcademicYears } from '@/features/academic/hooks';
 import { usePayments } from '../hooks';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -13,10 +14,13 @@ import {
   Loader2,
   Calendar,
   BadgePercent,
+  Archive,
 } from 'lucide-react';
 import { PrintableReceiptModal } from '../components/PrintableReceiptModal';
+import { SessionArchiveSelect } from '../components/SessionArchiveSelect';
 import { useCalendarPreferenceStore } from '@/stores/calendarPreferenceStore';
 import { formatDualDate } from '@/features/school-settings/utils/nepaliDate';
+import { cn } from '@/lib/utils';
 
 type TransactionTab = 'all' | 'discounts';
 
@@ -24,6 +28,7 @@ export const TransactionsPage: React.FC = () => {
   const { activeTenantId } = useAuth();
   const { calendarSystem } = useCalendarPreferenceStore();
   const { currentYear } = useCurrentAcademicYear(activeTenantId);
+  const { data: academicYears = [] } = useAcademicYears(activeTenantId);
 
   // Router search & active tab state
   const searchParams = useSearch({ strict: false }) as { tab?: string };
@@ -31,9 +36,13 @@ export const TransactionsPage: React.FC = () => {
   const currentTab: TransactionTab = searchParams?.tab === 'discounts' ? 'discounts' : 'all';
 
   // Filter States
+  const [selectedArchiveYearId, setSelectedArchiveYearId] = useState<string | undefined>(undefined);
   const [search, setSearch] = useState('');
   const [paymentMethod, setPaymentMethod] = useState('');
   const [page, setPage] = useState(1);
+
+  const selectedYear = academicYears.find((y) => y.id === selectedArchiveYearId) || (selectedArchiveYearId ? null : currentYear);
+  const isArchived = Boolean(selectedArchiveYearId && currentYear && selectedArchiveYearId !== currentYear.id);
 
   const handleTabChange = (tab: TransactionTab) => {
     setPage(1);
@@ -48,6 +57,7 @@ export const TransactionsPage: React.FC = () => {
     search: search.trim() || undefined,
     payment_method: paymentMethod || undefined,
     has_discount: currentTab === 'discounts' ? true : undefined,
+    academic_year_id: selectedArchiveYearId,
     page,
     page_size: 25,
   });
@@ -78,9 +88,16 @@ export const TransactionsPage: React.FC = () => {
           </p>
         </div>
 
-        <div className="flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-primary/10 border border-primary/20 text-xs font-semibold text-primary">
-          <Calendar className="w-3.5 h-3.5 text-primary" />
-          <span>Session: {currentYear?.name || 'Active Session'}</span>
+        <div
+          className={cn(
+            'flex items-center gap-1.5 px-3 py-1.5 rounded-full border text-xs font-semibold',
+            isArchived
+              ? 'bg-amber-500/10 border-amber-500/30 text-amber-900 dark:text-amber-200'
+              : 'bg-primary/10 border-primary/20 text-primary'
+          )}
+        >
+          <Calendar className={cn('w-3.5 h-3.5', isArchived ? 'text-amber-600 dark:text-amber-400' : 'text-primary')} />
+          <span>Session: {selectedYear?.name || currentYear?.name || 'Active Session'}</span>
         </div>
       </div>
 
@@ -166,7 +183,7 @@ export const TransactionsPage: React.FC = () => {
       )}
 
       {/* Filter and Search Bar */}
-      <div className="p-3.5 rounded-xl border bg-card flex flex-col sm:flex-row items-center gap-3">
+      <div className="p-3.5 rounded-xl border bg-card flex flex-col md:flex-row items-center gap-3">
         <div className="relative flex-1 w-full">
           <Search className="absolute left-3 top-2.5 w-4 h-4 text-muted-foreground" />
           <Input
@@ -180,21 +197,47 @@ export const TransactionsPage: React.FC = () => {
           />
         </div>
 
-        <select
-          value={paymentMethod}
-          onChange={(e) => {
-            setPaymentMethod(e.target.value);
-            setPage(1);
-          }}
-          className="h-9 rounded-md border border-input bg-background px-3 py-1 text-xs shadow-xs focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring w-full sm:w-44"
-        >
-          <option value="">All Payment Modes</option>
-          <option value="CASH">Cash</option>
-          <option value="BANK_TRANSFER">Bank Transfer</option>
-          <option value="CHEQUE">Cheque</option>
-          <option value="OTHER">Other</option>
-        </select>
+        <div className="flex flex-col sm:flex-row items-center gap-2.5 w-full md:w-auto">
+          <select
+            value={paymentMethod}
+            onChange={(e) => {
+              setPaymentMethod(e.target.value);
+              setPage(1);
+            }}
+            className="h-9 rounded-md border border-input bg-background px-3 py-1 text-xs shadow-xs focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring w-full sm:w-44"
+          >
+            <option value="">All Payment Modes</option>
+            <option value="CASH">Cash</option>
+            <option value="BANK_TRANSFER">Bank Transfer</option>
+            <option value="CHEQUE">Cheque</option>
+            <option value="OTHER">Other</option>
+          </select>
+
+          <SessionArchiveSelect
+            value={selectedArchiveYearId}
+            onChange={(id) => {
+              setSelectedArchiveYearId(id);
+              setPage(1);
+            }}
+          />
+        </div>
       </div>
+
+      {/* Archived Session Info Banner */}
+      {isArchived && (
+        <div className="rounded-xl border border-amber-500/40 bg-amber-500/10 p-3.5 flex items-center gap-3 text-xs text-amber-950 dark:text-amber-200">
+          <Archive className="w-4 h-4 text-amber-600 dark:text-amber-400 shrink-0" />
+          <div>
+            <span className="font-bold">
+              Viewing Archived Session {selectedYear?.name ? `(${selectedYear.name})` : ''}
+            </span>
+            <span className="mx-1.5">—</span>
+            <span className="text-amber-900/90 dark:text-amber-300">
+              Showing historical payments and receipt records for this archived academic year.
+            </span>
+          </div>
+        </div>
+      )}
 
       {/* Transactions Table */}
       {isLoading ? (
