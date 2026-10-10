@@ -20,7 +20,9 @@ import {
   Archive,
   Ban,
   Sparkles,
+  Download,
 } from 'lucide-react';
+import { toast } from 'sonner';
 import type { FeeBill, BillStatus } from '../types';
 import { SessionArchiveSelect } from '../components/SessionArchiveSelect';
 import { CancelBillDialog } from '../components/CancelBillDialog';
@@ -34,6 +36,7 @@ import {
 import { useCalendarPreferenceStore } from '@/stores/calendarPreferenceStore';
 import { formatDate } from '@/features/school-settings/utils/nepaliDate';
 import { formatStudentFullName } from '../utils/cashierUtils';
+import { exportBillsToCsv } from '../utils/exportCsv';
 
 export const BillsPage: React.FC = () => {
   const { activeTenantId } = useAuth();
@@ -78,6 +81,15 @@ export const BillsPage: React.FC = () => {
 
   const bills = billsData?.items || [];
   const meta = billsData?.meta;
+
+  const handleExportCsv = () => {
+    if (!bills || bills.length === 0) {
+      toast.info('No fee bills found to export.');
+      return;
+    }
+    const dateStr = new Date().toISOString().split('T')[0];
+    exportBillsToCsv(bills, `bills-export-${dateStr}`);
+  };
 
   const getStatusBadge = (status: BillStatus, discountAmt: number = 0) => {
     switch (status) {
@@ -157,6 +169,18 @@ export const BillsPage: React.FC = () => {
               setPage(1);
             }}
           />
+
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={handleExportCsv}
+            disabled={bills.length === 0 || isLoading}
+            className="gap-1.5 text-xs font-semibold shadow-2xs cursor-pointer"
+            title={bills.length === 0 ? 'No bills to export' : 'Export current bills to CSV'}
+          >
+            <Download className="w-3.5 h-3.5" />
+            Export CSV
+          </Button>
 
           {isArchived ? (
             <Button

@@ -15,11 +15,14 @@ import {
   Calendar,
   BadgePercent,
   Archive,
+  Download,
 } from 'lucide-react';
+import { toast } from 'sonner';
 import { PrintableReceiptModal } from '../components/PrintableReceiptModal';
 import { SessionArchiveSelect } from '../components/SessionArchiveSelect';
 import { useCalendarPreferenceStore } from '@/stores/calendarPreferenceStore';
 import { formatDualDate } from '@/features/school-settings/utils/nepaliDate';
+import { exportPaymentsToCsv } from '../utils/exportCsv';
 import { cn } from '@/lib/utils';
 
 type TransactionTab = 'all' | 'discounts';
@@ -64,6 +67,15 @@ export const TransactionsPage: React.FC = () => {
 
   const payments = paymentsData?.items || [];
   const meta = paymentsData?.meta;
+
+  const handleExportCsv = () => {
+    if (!payments || payments.length === 0) {
+      toast.info('No payment records found to export.');
+      return;
+    }
+    const dateStr = new Date().toISOString().split('T')[0];
+    exportPaymentsToCsv(payments, `transactions-export-${dateStr}`);
+  };
 
   // Concession volume calculation for current view
   const totalConcessionVolume = payments.reduce((acc, p) => {
@@ -220,6 +232,18 @@ export const TransactionsPage: React.FC = () => {
               setPage(1);
             }}
           />
+
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={handleExportCsv}
+            disabled={payments.length === 0 || isLoading}
+            className="h-9 gap-1.5 text-xs font-semibold shadow-2xs whitespace-nowrap w-full sm:w-auto cursor-pointer"
+            title={payments.length === 0 ? 'No transactions to export' : 'Export current payments to CSV'}
+          >
+            <Download className="w-3.5 h-3.5" />
+            Export CSV
+          </Button>
         </div>
       </div>
 
