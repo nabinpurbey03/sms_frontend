@@ -11,6 +11,8 @@ import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/com
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Input } from '@/components/ui/input';
+import { Tabs, TabsList, TabsTrigger, TabsContent } from '@/components/ui/tabs';
+import { Skeleton } from '@/components/ui/skeleton';
 import {
   Wallet,
   TrendingUp,
@@ -23,13 +25,10 @@ import {
   Coins,
   Receipt,
   Printer,
-  Loader2,
   Calendar,
   LayoutDashboard,
   ArrowUpRight,
-  AlertTriangle,
   Search,
-  CheckCircle2,
   ArrowRight,
   Activity,
   Layers,
@@ -38,12 +37,21 @@ import {
   Tag,
   BadgePercent,
   GraduationCap,
+  RefreshCw,
+  Copy,
+  Check,
+  X,
+  AlertTriangle,
 } from 'lucide-react';
 import { FeeStructureDialog } from '../components/FeeStructureDialog';
 import { PrintableReceiptModal } from '../components/PrintableReceiptModal';
 import { useCalendarPreferenceStore } from '@/stores/calendarPreferenceStore';
 import { formatDate } from '@/features/school-settings/utils/nepaliDate';
-import { formatCurrency, formatCompactCurrency } from '../utils/cashierUtils';
+import {
+  formatCurrency,
+  formatCompactCurrency,
+  formatCompactNumber,
+} from '../utils/cashierUtils';
 
 const getPaymentMethodBadgeClass = (method: string): string => {
   switch (method?.toUpperCase()) {
@@ -53,9 +61,31 @@ const getPaymentMethodBadgeClass = (method: string): string => {
       return 'bg-blue-500/10 text-blue-600 dark:text-blue-400 border-blue-500/20';
     case 'CHEQUE':
       return 'bg-amber-500/10 text-amber-600 dark:text-amber-400 border-amber-500/20';
+    case 'DIGITAL_WALLET':
+    case 'ESEWA':
+    case 'KHALTI':
+      return 'bg-purple-500/10 text-purple-600 dark:text-purple-400 border-purple-500/20';
     case 'OTHER':
     default:
       return 'bg-muted text-muted-foreground border-border/60';
+  }
+};
+
+const getChannelBarColor = (method: string): string => {
+  switch (method?.toUpperCase()) {
+    case 'CASH':
+      return 'bg-emerald-500';
+    case 'BANK_TRANSFER':
+      return 'bg-blue-500';
+    case 'CHEQUE':
+      return 'bg-amber-500';
+    case 'DIGITAL_WALLET':
+    case 'ESEWA':
+    case 'KHALTI':
+      return 'bg-purple-500';
+    case 'OTHER':
+    default:
+      return 'bg-slate-400 dark:bg-slate-600';
   }
 };
 
@@ -63,14 +93,22 @@ export const FinanceDashboardPage: React.FC = () => {
   const { activeTenantId, activeRole } = useAuth();
   const { calendarSystem } = useCalendarPreferenceStore();
   const { currentYear, isLoading: isLoadingYear } = useCurrentAcademicYear(activeTenantId);
-  const { data: summary, isLoading: isLoadingSummary } = useFinanceDashboardSummary(activeTenantId);
+  const {
+    data: summary,
+    isLoading: isLoadingSummary,
+    isFetching: isFetchingSummary,
+    isError: isSummaryError,
+    refetch: refetchSummary,
+  } = useFinanceDashboardSummary(activeTenantId);
 
   // Dialog States
   const [isFeeStructureOpen, setIsFeeStructureOpen] = useState(false);
   const [selectedReceiptPaymentId, setSelectedReceiptPaymentId] = useState<string | null>(null);
 
-  // Local Search for recent payments
+  // Tab & Search States
+  const [activeTab, setActiveTab] = useState<'collections' | 'concessions'>('collections');
   const [searchQuery, setSearchQuery] = useState('');
+  const [copiedReceipt, setCopiedReceipt] = useState<string | null>(null);
 
   // Mutations
   const createFeeStructureMutation = useCreateFeeStructure(activeTenantId);
@@ -131,6 +169,25 @@ export const FinanceDashboardPage: React.FC = () => {
     });
   }, [recentPayments, searchQuery]);
 
+  const filteredConcessionPayments = useMemo(() => {
+    if (!searchQuery.trim()) return concessionPayments;
+    const q = searchQuery.toLowerCase().trim();
+    return concessionPayments.filter((p) => {
+      const receiptMatch = p.receipt_number?.toLowerCase().includes(q);
+      const studentMatch = p.student_name?.toLowerCase().includes(q);
+      const billMatch = p.bill_number?.toLowerCase().includes(q);
+      const cashierMatch = p.received_by_name?.toLowerCase().includes(q);
+      return receiptMatch || studentMatch || billMatch || cashierMatch;
+    });
+  }, [concessionPayments, searchQuery]);
+
+  const handleCopyReceipt = (receiptNo: string, e: React.MouseEvent) => {
+    e.stopPropagation();
+    navigator.clipboard.writeText(receiptNo);
+    setCopiedReceipt(receiptNo);
+    setTimeout(() => setCopiedReceipt(null), 2000);
+  };
+
   const isAccountant = activeRole === 'ACCOUNTANT';
   const pageTitle = isAccountant ? 'Dashboard' : 'Finance Dashboard';
 
@@ -141,14 +198,18 @@ export const FinanceDashboardPage: React.FC = () => {
         <div>
           <div className="flex items-center gap-2.5">
             <div className="p-2 rounded-xl bg-primary/10 text-primary border border-primary/20">
-              <LayoutDashboard className="w-5 h-5" />
+              <LayoutDashboard className="w-5 h-5" aria-hidden="true" />
             </div>
             <div>
               <div className="flex items-center gap-2">
                 <h1 className="text-xl sm:text-2xl font-bold tracking-tight text-foreground">
                   {pageTitle}
                 </h1>
-                <Badge variant="outline" className="text-[10px] font-semibold tracking-wide uppercase px-2 py-0.5 border-primary/30 text-primary bg-primary/5">
+                <Badge
+                  variant="outline"
+                  className="text-[10px] font-semibold tracking-wide uppercase px-2 py-0.5 border-emerald-500/30 text-emerald-600 dark:text-emerald-400 bg-emerald-500/10 flex items-center gap-1"
+                >
+                  <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse" aria-hidden="true" />
                   Live Finance
                 </Badge>
               </div>
@@ -159,15 +220,32 @@ export const FinanceDashboardPage: React.FC = () => {
           </div>
         </div>
 
-        <div className="flex flex-wrap items-center gap-2.5">
+        <div className="flex flex-wrap items-center gap-2">
+          {/* Refresh Action */}
+          <Button
+            size="sm"
+            variant="ghost"
+            onClick={() => refetchSummary()}
+            disabled={isFetchingSummary}
+            className="h-8 px-2 text-xs text-muted-foreground hover:text-foreground cursor-pointer"
+            title="Refresh dashboard metrics"
+            aria-label="Refresh financial data"
+          >
+            <RefreshCw
+              className={`w-3.5 h-3.5 ${isFetchingSummary ? 'animate-spin text-primary' : ''}`}
+              aria-hidden="true"
+            />
+            <span className="ml-1 text-xs hidden sm:inline">Sync</span>
+          </Button>
+
           {/* Academic Session Indicator */}
           <div
             className="flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-muted/60 border border-border/60 text-xs font-semibold text-foreground/80 shadow-2xs"
             title="Active academic session"
           >
-            <Calendar className="w-3.5 h-3.5 text-primary" />
+            <Calendar className="w-3.5 h-3.5 text-primary shrink-0" aria-hidden="true" />
             <span>
-              Session: {isLoadingYear ? 'Loading...' : currentYear?.name || 'Active Session'}
+              {isLoadingYear ? 'Loading...' : currentYear?.name || 'Active Session'}
             </span>
           </div>
 
@@ -175,9 +253,9 @@ export const FinanceDashboardPage: React.FC = () => {
           <Link to="/finance/bills">
             <Button
               size="sm"
-              className="gap-1.5 text-xs font-semibold shadow-xs cursor-pointer bg-emerald-600 hover:bg-emerald-700 text-white"
+              className="gap-1.5 text-xs font-semibold shadow-xs cursor-pointer bg-emerald-600 hover:bg-emerald-700 text-white focus-visible:ring-2 focus-visible:ring-emerald-500"
             >
-              <CreditCard className="w-3.5 h-3.5" />
+              <CreditCard className="w-3.5 h-3.5" aria-hidden="true" />
               Collect Payment
             </Button>
           </Link>
@@ -188,7 +266,7 @@ export const FinanceDashboardPage: React.FC = () => {
               variant="outline"
               className="gap-1.5 text-xs font-medium shadow-2xs cursor-pointer hover:bg-accent"
             >
-              <Sparkles className="w-3.5 h-3.5 text-primary" />
+              <Sparkles className="w-3.5 h-3.5 text-primary" aria-hidden="true" />
               Batch Invoicing
             </Button>
           </Link>
@@ -199,11 +277,37 @@ export const FinanceDashboardPage: React.FC = () => {
             onClick={() => setIsFeeStructureOpen(true)}
             className="gap-1.5 text-xs font-medium shadow-2xs cursor-pointer hover:bg-accent"
           >
-            <Plus className="w-3.5 h-3.5" />
+            <Plus className="w-3.5 h-3.5" aria-hidden="true" />
             Fee Head
           </Button>
         </div>
       </div>
+
+      {/* Error Alert Banner */}
+      {isSummaryError && (
+        <div className="p-4 rounded-xl border border-destructive/30 bg-destructive/10 text-destructive flex flex-col sm:flex-row sm:items-center justify-between gap-3 shadow-2xs">
+          <div className="flex items-start sm:items-center gap-3">
+            <AlertTriangle className="w-5 h-5 shrink-0 mt-0.5 sm:mt-0" aria-hidden="true" />
+            <div>
+              <p className="text-xs sm:text-sm font-semibold">
+                Failed to load live finance summary.
+              </p>
+              <p className="text-[11px] opacity-80 mt-0.5">
+                A network or server error occurred while retrieving real-time ledger metrics.
+              </p>
+            </div>
+          </div>
+          <Button
+            size="sm"
+            variant="outline"
+            onClick={() => refetchSummary()}
+            className="gap-1.5 text-xs font-semibold shrink-0 cursor-pointer self-start sm:self-auto"
+          >
+            <RefreshCw className="w-3.5 h-3.5" aria-hidden="true" />
+            Retry Connection
+          </Button>
+        </div>
+      )}
 
       {/* Post-Rollover Session Onboarding Banner */}
       {isNewSessionUnbilled && (
@@ -211,7 +315,7 @@ export const FinanceDashboardPage: React.FC = () => {
           <div className="space-y-3">
             <div className="flex items-center gap-2.5">
               <div className="p-2.5 rounded-xl bg-amber-500/20 text-amber-600 dark:text-amber-400 border border-amber-500/30 shrink-0">
-                <Sparkles className="w-5 h-5" />
+                <Sparkles className="w-5 h-5" aria-hidden="true" />
               </div>
               <div>
                 <div className="flex items-center gap-2">
@@ -232,13 +336,13 @@ export const FinanceDashboardPage: React.FC = () => {
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 pt-1">
               <div className="flex items-center gap-3 p-3 rounded-xl bg-background/80 dark:bg-card/80 border border-border/60 shadow-2xs">
                 <div className="p-2 rounded-lg bg-amber-500/10 text-amber-600 dark:text-amber-400">
-                  <Layers className="w-4 h-4" />
+                  <Layers className="w-4 h-4" aria-hidden="true" />
                 </div>
                 <div>
                   <span className="text-[10px] uppercase font-bold tracking-wider text-muted-foreground block">
                     Opening Arrears (Active Students)
                   </span>
-                  <span className="text-sm font-extrabold font-mono text-foreground">
+                  <span className="text-sm font-extrabold font-mono tabular-nums text-foreground">
                     {formatCurrency(summary?.total_opening_arrears ?? 0)}
                   </span>
                 </div>
@@ -246,13 +350,13 @@ export const FinanceDashboardPage: React.FC = () => {
 
               <div className="flex items-center gap-3 p-3 rounded-xl bg-background/80 dark:bg-card/80 border border-border/60 shadow-2xs">
                 <div className="p-2 rounded-lg bg-indigo-500/10 text-indigo-600 dark:text-indigo-400">
-                  <GraduationCap className="w-4 h-4" />
+                  <GraduationCap className="w-4 h-4" aria-hidden="true" />
                 </div>
                 <div>
                   <span className="text-[10px] uppercase font-bold tracking-wider text-muted-foreground block">
                     Alumni Dues (Graduated Students)
                   </span>
-                  <span className="text-sm font-extrabold font-mono text-foreground">
+                  <span className="text-sm font-extrabold font-mono tabular-nums text-foreground">
                     {formatCurrency(summary?.total_alumni_dues ?? 0)}
                   </span>
                 </div>
@@ -264,13 +368,13 @@ export const FinanceDashboardPage: React.FC = () => {
           <div className="flex flex-wrap sm:flex-nowrap lg:flex-col gap-2.5 shrink-0 justify-end">
             <Link to="/finance/bills">
               <Button className="w-full gap-2 text-xs font-semibold shadow-xs bg-indigo-600 hover:bg-indigo-700 text-white cursor-pointer">
-                <Sparkles className="w-4 h-4" />
+                <Sparkles className="w-4 h-4" aria-hidden="true" />
                 Generate Session Bills
               </Button>
             </Link>
             <Link to={'/finance/alumni-clearance' as any}>
               <Button variant="outline" className="w-full gap-2 text-xs font-medium border-amber-500/30 hover:bg-amber-500/10 text-amber-800 dark:text-amber-300 cursor-pointer">
-                <GraduationCap className="w-4 h-4" />
+                <GraduationCap className="w-4 h-4" aria-hidden="true" />
                 View Alumni Clearance
               </Button>
             </Link>
@@ -278,198 +382,194 @@ export const FinanceDashboardPage: React.FC = () => {
         </div>
       )}
 
-      {/* 2. Top Analytics Suite (Shifted to Prominent Top) */}
+      {/* 2. Top Analytics Suite - Symmetrical 5 KPI Cards */}
       <section className="space-y-4" aria-label="Financial Analytics and Key Performance Indicators">
-        {/* KPI Summary Cards Grid */}
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-5 gap-4">
-          {/* KPI 1: This Month Collection */}
-          <Card className="relative overflow-hidden border-border/60 hover:shadow-xs transition-shadow">
-            <div className="absolute top-0 left-0 right-0 h-1 bg-emerald-500" />
-            <CardHeader className="flex flex-row items-center justify-between p-4 pb-2 space-y-0">
-              <span className="text-[11px] font-bold text-muted-foreground uppercase tracking-wider">
-                This Month Collection
-              </span>
-              <div className="p-2 bg-emerald-500/10 text-emerald-600 rounded-lg">
-                <TrendingUp className="h-4 w-4" />
-              </div>
-            </CardHeader>
-            <CardContent className="p-4 pt-1">
-              <div
-                className="text-xl sm:text-2xl font-bold font-mono text-foreground"
-                title={formatCurrency(monthCollected)}
-              >
-                {isLoadingSummary ? (
-                  <Loader2 className="w-5 h-5 animate-spin text-muted-foreground" />
-                ) : (
-                  formatCompactCurrency(monthCollected)
-                )}
-              </div>
-              <div className="flex items-center gap-1.5 mt-1.5">
-                <span className="inline-flex items-center text-[10px] font-semibold text-emerald-600 bg-emerald-500/10 px-1.5 py-0.5 rounded">
-                  Current Month
-                </span>
-                <span className="text-[11px] text-muted-foreground">Realized cash flow</span>
-              </div>
-            </CardContent>
-          </Card>
-
-          {/* KPI 2: Session Cumulative Collection */}
-          <Card className="relative overflow-hidden border-border/60 hover:shadow-xs transition-shadow">
-            <div className="absolute top-0 left-0 right-0 h-1 bg-blue-500" />
-            <CardHeader className="flex flex-row items-center justify-between p-4 pb-2 space-y-0">
-              <span className="text-[11px] font-bold text-muted-foreground uppercase tracking-wider">
-                Session Collection
-              </span>
-              <div className="p-2 bg-blue-500/10 text-blue-600 rounded-lg">
-                <Wallet className="h-4 w-4" />
-              </div>
-            </CardHeader>
-            <CardContent className="p-4 pt-1">
-              <div
-                className="text-xl sm:text-2xl font-bold font-mono text-foreground"
-                title={formatCurrency(yearCollected)}
-              >
-                {isLoadingSummary ? (
-                  <Loader2 className="w-5 h-5 animate-spin text-muted-foreground" />
-                ) : (
-                  formatCompactCurrency(yearCollected)
-                )}
-              </div>
-              <div className="flex items-center gap-1.5 mt-1.5">
-                <span className="inline-flex items-center text-[10px] font-semibold text-blue-600 bg-blue-500/10 px-1.5 py-0.5 rounded">
-                  Cumulative
-                </span>
-                <span className="text-[11px] text-muted-foreground">Active session inflow</span>
-              </div>
-            </CardContent>
-          </Card>
-
-          {/* KPI 3: Outstanding Receivables / Dues */}
-          <Card className="relative overflow-hidden border-border/60 hover:shadow-xs transition-shadow">
-            <div className="absolute top-0 left-0 right-0 h-1 bg-rose-500" />
-            <CardHeader className="flex flex-row items-center justify-between p-4 pb-2 space-y-0">
-              <span className="text-[11px] font-bold text-muted-foreground uppercase tracking-wider">
-                Outstanding Dues
-              </span>
-              <div className="p-2 bg-rose-500/10 text-rose-600 rounded-lg">
-                <AlertCircle className="h-4 w-4" />
-              </div>
-            </CardHeader>
-            <CardContent className="p-4 pt-1">
-              <div
-                className="text-xl sm:text-2xl font-bold font-mono text-rose-600"
-                title={formatCurrency(outstandingDues)}
-              >
-                {isLoadingSummary ? (
-                  <Loader2 className="w-5 h-5 animate-spin text-muted-foreground" />
-                ) : (
-                  formatCompactCurrency(outstandingDues)
-                )}
-              </div>
-              <div className="flex items-center gap-1.5 mt-1.5">
-                <span className="inline-flex items-center text-[10px] font-semibold text-rose-600 bg-rose-500/10 px-1.5 py-0.5 rounded">
-                  {defaultersCount} Delinquent
-                </span>
-                <span className="text-[11px] text-muted-foreground">Unpaid / partial bills</span>
-              </div>
-              {(openingArrears > 0 || alumniDues > 0) && (
-                <div className="mt-2.5 pt-2 border-t border-border/50 text-[10px] space-y-1">
-                  <div className="flex justify-between items-center text-muted-foreground">
-                    <span>Active Session:</span>
-                    <span className="font-mono font-medium text-foreground">
-                      {formatCurrency(activeSessionDues)}
-                    </span>
-                  </div>
-                  <div className="flex justify-between items-center text-amber-600 dark:text-amber-400">
-                    <span>Prior Arrears:</span>
-                    <span className="font-mono font-medium">
-                      {formatCurrency(summary?.total_opening_arrears ?? 0)}
-                    </span>
-                  </div>
-                  <div className="flex justify-between items-center text-purple-600 dark:text-purple-400">
-                    <span>Alumni Dues:</span>
-                    <span className="font-mono font-medium">
-                      {formatCurrency(summary?.total_alumni_dues ?? 0)}
-                    </span>
-                  </div>
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-5 gap-3.5">
+          {isLoadingSummary ? (
+            Array.from({ length: 5 }).map((_, idx) => (
+              <Card key={`kpi-skeleton-${idx}`} className="border-border/60 p-4 space-y-2.5">
+                <div className="flex justify-between items-center">
+                  <Skeleton className="h-3 w-24" />
+                  <Skeleton className="h-6 w-6 rounded-lg" />
                 </div>
-              )}
-            </CardContent>
-          </Card>
-
-          {/* KPI 4: Total Concessions & Waivers */}
-          <Card className="relative overflow-hidden border-border/60 hover:shadow-xs transition-shadow">
-            <div className="absolute top-0 left-0 right-0 h-1 bg-amber-500" />
-            <CardHeader className="flex flex-row items-center justify-between p-4 pb-2 space-y-0">
-              <span className="text-[11px] font-bold text-muted-foreground uppercase tracking-wider">
-                Total Concessions &amp; Waivers
-              </span>
-              <div className="p-2 bg-amber-500/10 text-amber-600 dark:text-amber-400 rounded-lg border border-amber-500/20">
-                <Tag className="h-4 w-4" />
-              </div>
-            </CardHeader>
-            <CardContent className="p-4 pt-1">
-              <div
-                className="text-xl sm:text-2xl font-bold font-mono text-amber-600 dark:text-amber-400"
-                title={`NPR ${yearDiscounts.toLocaleString('en-IN', { minimumFractionDigits: 2 })}`}
-              >
-                {isLoadingSummary ? (
-                  <Loader2 className="w-5 h-5 animate-spin text-muted-foreground" />
-                ) : (
-                  `NPR ${yearDiscounts.toLocaleString('en-IN', { minimumFractionDigits: 2 })}`
-                )}
-              </div>
-              <div className="flex flex-col gap-1 mt-1.5">
-                <div className="flex items-center gap-1.5 flex-wrap">
-                  <span className="inline-flex items-center text-[10px] font-semibold text-amber-600 dark:text-amber-400 bg-amber-500/10 px-1.5 py-0.5 rounded border border-amber-500/20">
-                    This Month: NPR {monthDiscounts.toLocaleString('en-IN', { minimumFractionDigits: 2 })}
+                <Skeleton className="h-7 w-28" />
+                <Skeleton className="h-3.5 w-36" />
+              </Card>
+            ))
+          ) : (
+            <>
+              {/* KPI 1: This Month Collection */}
+              <Card className="relative overflow-hidden border-border/60 hover:shadow-xs transition-shadow">
+                <div className="absolute top-0 left-0 right-0 h-1 bg-gradient-to-r from-emerald-500 to-teal-400" />
+                <CardHeader className="flex flex-row items-center justify-between p-4 pb-1.5 space-y-0">
+                  <span className="text-[11px] font-bold text-muted-foreground uppercase tracking-wider truncate">
+                    This Month Collection
                   </span>
-                </div>
-                <span className="text-[11px] text-muted-foreground">
-                  {discountedStudentsCount} student{discountedStudentsCount === 1 ? '' : 's'} benefited
-                </span>
-              </div>
-            </CardContent>
-          </Card>
+                  <div className="p-1.5 bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 rounded-lg shrink-0">
+                    <TrendingUp className="h-3.5 w-3.5" aria-hidden="true" />
+                  </div>
+                </CardHeader>
+                <CardContent className="p-4 pt-0 space-y-1.5">
+                  <div className="flex items-baseline gap-1" title={formatCurrency(monthCollected)}>
+                    <span className="text-xs font-semibold text-muted-foreground uppercase">NPR</span>
+                    <span className="text-xl sm:text-2xl font-bold tracking-tight text-foreground font-sans tabular-nums">
+                      {formatCompactNumber(monthCollected)}
+                    </span>
+                  </div>
+                  <div className="flex items-center gap-1.5">
+                    <span className="inline-flex items-center text-[10px] font-semibold text-emerald-600 dark:text-emerald-400 bg-emerald-500/10 px-1.5 py-0.5 rounded">
+                      Current Month
+                    </span>
+                    <span className="text-[11px] text-muted-foreground truncate">Realized cash flow</span>
+                  </div>
+                </CardContent>
+              </Card>
 
-          {/* KPI 5: Collection Efficiency */}
-          <Card className="relative overflow-hidden border-border/60 hover:shadow-xs transition-shadow">
-            <div className="absolute top-0 left-0 right-0 h-1 bg-purple-500" />
-            <CardHeader className="flex flex-row items-center justify-between p-4 pb-2 space-y-0">
-              <span className="text-[11px] font-bold text-muted-foreground uppercase tracking-wider">
-                Collection Efficiency
-              </span>
-              <div className="p-2 bg-purple-500/10 text-purple-600 rounded-lg">
-                <Percent className="h-4 w-4" />
-              </div>
-            </CardHeader>
-            <CardContent className="p-4 pt-1">
-              <div className="text-xl sm:text-2xl font-bold font-mono text-foreground flex items-baseline gap-2">
-                {isLoadingSummary ? (
-                  <Loader2 className="w-5 h-5 animate-spin text-muted-foreground" />
-                ) : (
-                  <>
-                    <span>{collectionRate.toFixed(1)}%</span>
+              {/* KPI 2: Session Cumulative Collection */}
+              <Card className="relative overflow-hidden border-border/60 hover:shadow-xs transition-shadow">
+                <div className="absolute top-0 left-0 right-0 h-1 bg-gradient-to-r from-blue-500 to-cyan-400" />
+                <CardHeader className="flex flex-row items-center justify-between p-4 pb-1.5 space-y-0">
+                  <span className="text-[11px] font-bold text-muted-foreground uppercase tracking-wider truncate">
+                    Session Collection
+                  </span>
+                  <div className="p-1.5 bg-blue-500/10 text-blue-600 dark:text-blue-400 rounded-lg shrink-0">
+                    <Wallet className="h-3.5 w-3.5" aria-hidden="true" />
+                  </div>
+                </CardHeader>
+                <CardContent className="p-4 pt-0 space-y-1.5">
+                  <div className="flex items-baseline gap-1" title={formatCurrency(yearCollected)}>
+                    <span className="text-xs font-semibold text-muted-foreground uppercase">NPR</span>
+                    <span className="text-xl sm:text-2xl font-bold tracking-tight text-foreground font-sans tabular-nums">
+                      {formatCompactNumber(yearCollected)}
+                    </span>
+                  </div>
+                  <div className="flex items-center gap-1.5">
+                    <span className="inline-flex items-center text-[10px] font-semibold text-blue-600 dark:text-blue-400 bg-blue-500/10 px-1.5 py-0.5 rounded">
+                      Cumulative
+                    </span>
+                    <span className="text-[11px] text-muted-foreground truncate">Active session inflow</span>
+                  </div>
+                </CardContent>
+              </Card>
+
+              {/* KPI 3: Outstanding Receivables / Dues */}
+              <Card className="relative overflow-hidden border-border/60 hover:shadow-xs transition-shadow">
+                <div className="absolute top-0 left-0 right-0 h-1 bg-gradient-to-r from-rose-500 to-red-400" />
+                <CardHeader className="flex flex-row items-center justify-between p-4 pb-1.5 space-y-0">
+                  <span className="text-[11px] font-bold text-muted-foreground uppercase tracking-wider truncate">
+                    Outstanding Dues
+                  </span>
+                  <div className="p-1.5 bg-rose-500/10 text-rose-600 dark:text-rose-400 rounded-lg shrink-0">
+                    <AlertCircle className="h-3.5 w-3.5" aria-hidden="true" />
+                  </div>
+                </CardHeader>
+                <CardContent className="p-4 pt-0 space-y-1.5">
+                  <div
+                    className="flex items-baseline gap-1"
+                    title={`Total Outstanding: ${formatCurrency(outstandingDues)}${
+                      openingArrears > 0 || alumniDues > 0
+                        ? `\n• Active Session: ${formatCurrency(activeSessionDues)}\n• Prior Arrears: ${formatCurrency(openingArrears)}\n• Alumni Dues: ${formatCurrency(alumniDues)}`
+                        : ''
+                    }`}
+                  >
+                    <span className="text-xs font-semibold text-rose-600/70 dark:text-rose-400/70 uppercase">NPR</span>
+                    <span className="text-xl sm:text-2xl font-bold tracking-tight text-rose-600 dark:text-rose-400 font-sans tabular-nums">
+                      {formatCompactNumber(outstandingDues)}
+                    </span>
+                  </div>
+                  <div className="flex items-center gap-1.5">
+                    <span className="inline-flex items-center text-[10px] font-semibold text-rose-600 dark:text-rose-400 bg-rose-500/10 px-1.5 py-0.5 rounded">
+                      {defaultersCount} Delinquent
+                    </span>
+                    <span className="text-[11px] text-muted-foreground truncate">Unpaid / partial bills</span>
+                  </div>
+                </CardContent>
+              </Card>
+
+              {/* KPI 4: Total Concessions & Waivers (Compact label) */}
+              <Card className="relative overflow-hidden border-border/60 hover:shadow-xs transition-shadow">
+                <div className="absolute top-0 left-0 right-0 h-1 bg-gradient-to-r from-amber-500 to-yellow-400" />
+                <CardHeader className="flex flex-row items-center justify-between p-4 pb-1.5 space-y-0">
+                  <span className="text-[11px] font-bold text-muted-foreground uppercase tracking-wider truncate" title="Total Concessions & Waivers">
+                    Fee Concessions
+                  </span>
+                  <div className="p-1.5 bg-amber-500/10 text-amber-600 dark:text-amber-400 rounded-lg border border-amber-500/20 shrink-0">
+                    <Tag className="h-3.5 w-3.5" aria-hidden="true" />
+                  </div>
+                </CardHeader>
+                <CardContent className="p-4 pt-0 space-y-1.5">
+                  <div className="flex items-baseline gap-1" title={formatCurrency(yearDiscounts)}>
+                    <span className="text-xs font-semibold text-amber-600/70 dark:text-amber-400/70 uppercase">NPR</span>
+                    <span className="text-xl sm:text-2xl font-bold tracking-tight text-amber-600 dark:text-amber-400 font-sans tabular-nums">
+                      {formatCompactNumber(yearDiscounts)}
+                    </span>
+                  </div>
+                  <div className="flex items-center gap-1.5">
+                    <span className="inline-flex items-center text-[10px] font-semibold text-amber-600 dark:text-amber-400 bg-amber-500/10 px-1.5 py-0.5 rounded border border-amber-500/20 font-sans tabular-nums">
+                      Month: {formatCompactCurrency(monthDiscounts)}
+                    </span>
+                    <span className="text-[11px] text-muted-foreground truncate">
+                      {discountedStudentsCount} student{discountedStudentsCount === 1 ? '' : 's'}
+                    </span>
+                  </div>
+                </CardContent>
+              </Card>
+
+              {/* KPI 5: Collection Efficiency */}
+              <Card className="relative overflow-hidden border-border/60 hover:shadow-xs transition-shadow">
+                <div className="absolute top-0 left-0 right-0 h-1 bg-gradient-to-r from-purple-500 to-pink-400" />
+                <CardHeader className="flex flex-row items-center justify-between p-4 pb-1.5 space-y-0">
+                  <span className="text-[11px] font-bold text-muted-foreground uppercase tracking-wider truncate">
+                    Collection Rate
+                  </span>
+                  <div className="p-1.5 bg-purple-500/10 text-purple-600 dark:text-purple-400 rounded-lg shrink-0">
+                    <Percent className="h-3.5 w-3.5" aria-hidden="true" />
+                  </div>
+                </CardHeader>
+                <CardContent className="p-4 pt-0 space-y-1.5">
+                  <div className="flex items-baseline gap-1.5">
+                    <span className="text-xl sm:text-2xl font-bold tracking-tight text-foreground font-sans tabular-nums">
+                      {collectionRate.toFixed(1)}%
+                    </span>
                     <span className="text-[11px] font-normal text-muted-foreground">
                       of invoiced
                     </span>
-                  </>
-                )}
-              </div>
-              <div className="w-full bg-muted rounded-full h-2 mt-2.5 overflow-hidden">
-                <div
-                  className={`h-2 rounded-full transition-all duration-500 ${
-                    collectionRate >= 80
-                      ? 'bg-emerald-500'
-                      : collectionRate >= 50
-                      ? 'bg-amber-500'
-                      : 'bg-rose-500'
-                  }`}
-                  style={{ width: `${Math.min(100, Math.max(0, collectionRate))}%` }}
-                />
-              </div>
-            </CardContent>
-          </Card>
+                  </div>
+                  <div
+                    className="w-full bg-muted rounded-full h-1.5 overflow-hidden"
+                    role="progressbar"
+                    aria-valuenow={Math.round(collectionRate)}
+                    aria-valuemin={0}
+                    aria-valuemax={100}
+                    aria-label="Collection efficiency rate"
+                  >
+                    <div
+                      className={`h-1.5 rounded-full transition-all duration-500 ${
+                        collectionRate >= 80
+                          ? 'bg-emerald-500'
+                          : collectionRate >= 50
+                          ? 'bg-amber-500'
+                          : 'bg-rose-500'
+                      }`}
+                      style={{ width: `${Math.min(100, Math.max(0, collectionRate))}%` }}
+                    />
+                  </div>
+                  <div className="flex items-center justify-between text-[11px] text-muted-foreground pt-0.5">
+                    <span>Benchmark: &gt;85%</span>
+                    <span className={`text-[10px] font-semibold px-1 py-0.2 rounded ${
+                      collectionRate >= 80
+                        ? 'text-emerald-600 bg-emerald-500/10'
+                        : collectionRate >= 50
+                        ? 'text-amber-600 bg-amber-500/10'
+                        : 'text-rose-600 bg-rose-500/10'
+                    }`}>
+                      {collectionRate >= 80 ? 'Optimal' : collectionRate >= 50 ? 'Moderate' : 'Action Needed'}
+                    </span>
+                  </div>
+                </CardContent>
+              </Card>
+            </>
+          )}
         </div>
 
         {/* Financial Health Breakdown & Velocity Pulse */}
@@ -480,7 +580,7 @@ export const FinanceDashboardPage: React.FC = () => {
               <div className="flex items-center justify-between">
                 <div>
                   <CardTitle className="text-sm font-bold text-foreground flex items-center gap-2">
-                    <Activity className="w-4 h-4 text-primary" />
+                    <Activity className="w-4 h-4 text-primary" aria-hidden="true" />
                     Revenue Realization & Recovery Health
                   </CardTitle>
                   <CardDescription className="text-xs text-muted-foreground mt-0.5">
@@ -489,7 +589,7 @@ export const FinanceDashboardPage: React.FC = () => {
                 </div>
                 <Badge
                   variant="outline"
-                  className="font-mono text-xs"
+                  className="font-mono tabular-nums text-xs"
                   title={formatCurrency(totalInvoiced)}
                 >
                   Total Invoiced: {formatCompactCurrency(totalInvoiced)}
@@ -501,15 +601,22 @@ export const FinanceDashboardPage: React.FC = () => {
               <div className="space-y-1.5">
                 <div className="flex justify-between text-xs font-semibold">
                   <span className="text-emerald-600 dark:text-emerald-400 flex items-center gap-1.5">
-                    <span className="w-2.5 h-2.5 rounded-full bg-emerald-500 inline-block" />
+                    <span className="w-2.5 h-2.5 rounded-full bg-emerald-500 inline-block" aria-hidden="true" />
                     Realized ({realizedPercent}%)
                   </span>
                   <span className="text-rose-600 dark:text-rose-400 flex items-center gap-1.5">
-                    <span className="w-2.5 h-2.5 rounded-full bg-rose-500 inline-block" />
+                    <span className="w-2.5 h-2.5 rounded-full bg-rose-500 inline-block" aria-hidden="true" />
                     Outstanding Dues ({duePercent}%)
                   </span>
                 </div>
-                <div className="h-3 w-full rounded-full bg-muted overflow-hidden flex">
+                <div
+                  className="h-3 w-full rounded-full bg-muted overflow-hidden flex"
+                  role="progressbar"
+                  aria-valuenow={realizedPercent}
+                  aria-valuemin={0}
+                  aria-valuemax={100}
+                  aria-label="Revenue realization versus outstanding receivables"
+                >
                   <div
                     className="bg-emerald-500 h-full transition-all duration-500"
                     style={{ width: `${realizedPercent}%` }}
@@ -523,43 +630,56 @@ export const FinanceDashboardPage: React.FC = () => {
                 </div>
               </div>
 
-              {/* Metric Breakdown Grid */}
-              <div className="grid grid-cols-2 sm:grid-cols-3 gap-3 pt-2 border-t border-border/40">
+              {/* Metric Breakdown Grid - 4 Columns */}
+              <div className="grid grid-cols-2 sm:grid-cols-4 gap-2.5 pt-2 border-t border-border/40">
                 <div className="p-2.5 rounded-lg bg-muted/40 border border-border/50">
                   <span className="text-[10px] font-bold text-muted-foreground uppercase block">
                     Cash Realized
                   </span>
                   <span
-                    className="text-sm font-bold font-mono text-emerald-600 dark:text-emerald-400 block mt-0.5"
+                    className="text-sm font-bold font-sans tabular-nums text-emerald-600 dark:text-emerald-400 block mt-0.5"
                     title={formatCurrency(yearCollected)}
                   >
                     {formatCompactCurrency(yearCollected)}
                   </span>
-                  <span className="text-[10px] text-muted-foreground">Bank & Cash Inflow</span>
+                  <span className="text-[10px] text-muted-foreground">Inflow</span>
                 </div>
 
                 <div className="p-2.5 rounded-lg bg-muted/40 border border-border/50">
                   <span className="text-[10px] font-bold text-muted-foreground uppercase block">
-                    Pending Dues
+                    Active Session
                   </span>
                   <span
-                    className="text-sm font-bold font-mono text-rose-600 dark:text-rose-400 block mt-0.5"
-                    title={formatCurrency(outstandingDues)}
+                    className="text-sm font-bold font-sans tabular-nums text-rose-600 dark:text-rose-400 block mt-0.5"
+                    title={formatCurrency(activeSessionDues)}
                   >
-                    {formatCompactCurrency(outstandingDues)}
+                    {formatCompactCurrency(activeSessionDues)}
                   </span>
                   <span className="text-[10px] text-muted-foreground">{defaultersCount} Accounts</span>
                 </div>
 
-                <div className="p-2.5 rounded-lg bg-muted/40 border border-border/50 col-span-2 sm:col-span-1">
+                <div className="p-2.5 rounded-lg bg-muted/40 border border-border/50">
+                  <span className="text-[10px] font-bold text-muted-foreground uppercase block">
+                    Prior & Alumni
+                  </span>
+                  <span
+                    className="text-sm font-bold font-sans tabular-nums text-amber-600 dark:text-amber-400 block mt-0.5"
+                    title={`Prior Arrears: ${formatCurrency(openingArrears)} | Alumni: ${formatCurrency(alumniDues)}`}
+                  >
+                    {formatCompactCurrency(openingArrears + alumniDues)}
+                  </span>
+                  <span className="text-[10px] text-muted-foreground">Arrears</span>
+                </div>
+
+                <div className="p-2.5 rounded-lg bg-muted/40 border border-border/50">
                   <span className="text-[10px] font-bold text-muted-foreground uppercase block">
                     Target Recovery
                   </span>
-                  <span className="text-sm font-bold font-mono text-foreground block mt-0.5">
+                  <span className="text-sm font-bold font-sans text-foreground block mt-0.5 truncate">
                     {collectionRate >= 80 ? 'Optimal' : collectionRate >= 50 ? 'Moderate' : 'Action Needed'}
                   </span>
                   <span className="text-[10px] text-muted-foreground">
-                    Benchmark: &gt; 85%
+                    &gt; 85% Benchmark
                   </span>
                 </div>
               </div>
@@ -572,14 +692,14 @@ export const FinanceDashboardPage: React.FC = () => {
               <div className="flex items-center justify-between">
                 <div>
                   <CardTitle className="text-sm font-bold text-foreground flex items-center gap-2">
-                    <Banknote className="w-4 h-4 text-emerald-600" />
+                    <Banknote className="w-4 h-4 text-emerald-600 dark:text-emerald-400" aria-hidden="true" />
                     Payment Channels & Velocity
                   </CardTitle>
                   <CardDescription className="text-xs text-muted-foreground mt-0.5">
                     Recent receipts breakdown by payment gateway & mode.
                   </CardDescription>
                 </div>
-                <span className="text-xs font-semibold text-muted-foreground">
+                <span className="text-xs font-semibold text-muted-foreground font-sans tabular-nums">
                   {recentPayments.length} Recent
                 </span>
               </div>
@@ -592,7 +712,7 @@ export const FinanceDashboardPage: React.FC = () => {
                     Recent Collections Total
                   </span>
                   <span
-                    className="text-sm font-bold font-mono text-primary block"
+                    className="text-sm font-bold font-sans tabular-nums text-primary block"
                     title={formatCurrency(recentTotal)}
                   >
                     {formatCompactCurrency(recentTotal)}
@@ -603,7 +723,7 @@ export const FinanceDashboardPage: React.FC = () => {
                     Avg. Transaction
                   </span>
                   <span
-                    className="text-sm font-bold font-mono text-foreground block"
+                    className="text-sm font-bold font-sans tabular-nums text-foreground block"
                     title={formatCurrency(avgReceipt)}
                   >
                     {formatCompactCurrency(avgReceipt)}
@@ -611,36 +731,63 @@ export const FinanceDashboardPage: React.FC = () => {
                 </div>
               </div>
 
+              {/* Segmented Volume Share Bar */}
+              {channelBreakdown.length > 0 && recentTotal > 0 && (
+                <div className="space-y-1.5 pt-0.5">
+                  <div className="flex justify-between items-center text-[10px] font-bold uppercase tracking-wider text-muted-foreground">
+                    <span>Channel Mix (% Volume)</span>
+                    <span className="font-sans tabular-nums">{channelBreakdown.length} Mode{channelBreakdown.length > 1 ? 's' : ''}</span>
+                  </div>
+                  <div
+                    className="h-2 w-full rounded-full bg-muted overflow-hidden flex"
+                    role="progressbar"
+                    aria-label="Payment channels volume share distribution"
+                  >
+                    {channelBreakdown.map(([method, data]) => {
+                      const pct = Math.max(2, (data.total / recentTotal) * 100);
+                      return (
+                        <div
+                          key={`bar-${method}`}
+                          className={`h-full transition-all duration-500 ${getChannelBarColor(method)}`}
+                          style={{ width: `${pct}%` }}
+                          title={`${method}: ${((data.total / recentTotal) * 100).toFixed(1)}% (${formatCurrency(data.total)})`}
+                        />
+                      );
+                    })}
+                  </div>
+                </div>
+              )}
+
               {/* Payment Mode Pills */}
               <div className="space-y-1.5 pt-1">
-                <span className="text-[11px] font-semibold text-muted-foreground block">
-                  Active Channels in Session:
-                </span>
                 {channelBreakdown.length === 0 ? (
                   <p className="text-xs text-muted-foreground italic py-1">
                     No transactions recorded yet.
                   </p>
                 ) : (
                   <div className="flex flex-wrap gap-2">
-                    {channelBreakdown.map(([method, data]) => (
-                      <div
-                        key={method}
-                        className={`flex items-center gap-1.5 px-2.5 py-1 rounded-lg border text-xs font-semibold ${getPaymentMethodBadgeClass(
-                          method
-                        )}`}
-                      >
-                        <span>{method}</span>
-                        <span className="font-mono text-[10px] opacity-80">
-                          ({data.count})
-                        </span>
-                        <span
-                          className="font-mono text-[11px] font-bold ml-1"
-                          title={formatCurrency(data.total)}
+                    {channelBreakdown.map(([method, data]) => {
+                      const pct = recentTotal > 0 ? Math.round((data.total / recentTotal) * 100) : 0;
+                      return (
+                        <div
+                          key={method}
+                          className={`flex items-center gap-1.5 px-2.5 py-1 rounded-lg border text-xs font-semibold ${getPaymentMethodBadgeClass(
+                            method
+                          )}`}
                         >
-                          {formatCompactCurrency(data.total)}
-                        </span>
-                      </div>
-                    ))}
+                          <span>{method}</span>
+                          <span className="font-sans text-[10px] opacity-75">
+                            ({pct}%)
+                          </span>
+                          <span
+                            className="font-sans tabular-nums text-[11px] font-bold ml-0.5"
+                            title={formatCurrency(data.total)}
+                          >
+                            {formatCompactCurrency(data.total)}
+                          </span>
+                        </div>
+                      );
+                    })}
                   </div>
                 )}
               </div>
@@ -648,11 +795,11 @@ export const FinanceDashboardPage: React.FC = () => {
           </Card>
         </div>
 
-        {/* Defaulter Action Callout (Rendered when outstanding bills exist) */}
+        {/* Defaulter Action Callout */}
         {defaultersCount > 0 && (
           <div className="p-3.5 rounded-xl border border-amber-500/30 bg-amber-500/10 text-amber-900 dark:text-amber-200 flex flex-col sm:flex-row sm:items-center justify-between gap-3 text-xs shadow-2xs">
             <div className="flex items-start sm:items-center gap-2.5">
-              <ShieldAlert className="w-5 h-5 text-amber-600 dark:text-amber-400 shrink-0 mt-0.5 sm:mt-0" />
+              <ShieldAlert className="w-5 h-5 text-amber-600 dark:text-amber-400 shrink-0 mt-0.5 sm:mt-0" aria-hidden="true" />
               <div>
                 <span className="font-bold block" title={formatCurrency(outstandingDues)}>
                   {defaultersCount} Students have Overdue Fees ({formatCompactCurrency(outstandingDues)} outstanding)
@@ -667,7 +814,7 @@ export const FinanceDashboardPage: React.FC = () => {
               className="shrink-0 inline-flex items-center gap-1 px-3 py-1.5 rounded-lg bg-amber-600 hover:bg-amber-700 text-white font-semibold text-xs shadow-xs transition-colors self-start sm:self-auto cursor-pointer"
             >
               Inspect Overdue Invoices
-              <ArrowRight className="w-3.5 h-3.5" />
+              <ArrowRight className="w-3.5 h-3.5" aria-hidden="true" />
             </Link>
           </div>
         )}
@@ -685,10 +832,10 @@ export const FinanceDashboardPage: React.FC = () => {
             className="p-4 rounded-xl border border-border/60 bg-card hover:border-emerald-500/50 hover:bg-accent/40 transition-all duration-200 flex flex-col justify-between group cursor-pointer shadow-2xs"
           >
             <div className="flex items-start justify-between">
-              <div className="p-2.5 rounded-xl bg-emerald-500/10 text-emerald-600 group-hover:scale-105 transition-transform">
-                <CreditCard className="w-5 h-5" />
+              <div className="p-2.5 rounded-xl bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 group-hover:scale-105 transition-transform">
+                <CreditCard className="w-5 h-5" aria-hidden="true" />
               </div>
-              <Badge variant="outline" className="text-[10px] font-semibold border-emerald-500/30 text-emerald-600 bg-emerald-500/5">
+              <Badge variant="outline" className="text-[10px] font-semibold border-emerald-500/30 text-emerald-600 dark:text-emerald-400 bg-emerald-500/5">
                 Instant Receipt
               </Badge>
             </div>
@@ -702,7 +849,7 @@ export const FinanceDashboardPage: React.FC = () => {
             </div>
             <div className="mt-3 pt-2.5 border-t border-border/40 flex items-center text-xs font-semibold text-emerald-600 dark:text-emerald-400 group-hover:translate-x-1 transition-transform">
               View &amp; Collect Bills
-              <ArrowUpRight className="w-3.5 h-3.5 ml-1" />
+              <ArrowUpRight className="w-3.5 h-3.5 ml-1" aria-hidden="true" />
             </div>
           </Link>
 
@@ -712,10 +859,10 @@ export const FinanceDashboardPage: React.FC = () => {
             className="p-4 rounded-xl border border-border/60 bg-card hover:border-blue-500/50 hover:bg-accent/40 transition-all duration-200 flex flex-col justify-between group cursor-pointer shadow-2xs"
           >
             <div className="flex items-start justify-between">
-              <div className="p-2.5 rounded-xl bg-blue-500/10 text-blue-600 group-hover:scale-105 transition-transform">
-                <FileText className="w-5 h-5" />
+              <div className="p-2.5 rounded-xl bg-blue-500/10 text-blue-600 dark:text-blue-400 group-hover:scale-105 transition-transform">
+                <FileText className="w-5 h-5" aria-hidden="true" />
               </div>
-              <Badge variant="outline" className="text-[10px] font-semibold border-blue-500/30 text-blue-600 bg-blue-500/5">
+              <Badge variant="outline" className="text-[10px] font-semibold border-blue-500/30 text-blue-600 dark:text-blue-400 bg-blue-500/5">
                 Student Invoices
               </Badge>
             </div>
@@ -729,7 +876,7 @@ export const FinanceDashboardPage: React.FC = () => {
             </div>
             <div className="mt-3 pt-2.5 border-t border-border/40 flex items-center text-xs font-semibold text-blue-600 dark:text-blue-400 group-hover:translate-x-1 transition-transform">
               Manage Invoices
-              <ArrowUpRight className="w-3.5 h-3.5 ml-1" />
+              <ArrowUpRight className="w-3.5 h-3.5 ml-1" aria-hidden="true" />
             </div>
           </Link>
 
@@ -739,10 +886,10 @@ export const FinanceDashboardPage: React.FC = () => {
             className="p-4 rounded-xl border border-border/60 bg-card hover:border-amber-500/50 hover:bg-accent/40 transition-all duration-200 flex flex-col justify-between group cursor-pointer shadow-2xs"
           >
             <div className="flex items-start justify-between">
-              <div className="p-2.5 rounded-xl bg-amber-500/10 text-amber-600 group-hover:scale-105 transition-transform">
-                <Coins className="w-5 h-5" />
+              <div className="p-2.5 rounded-xl bg-amber-500/10 text-amber-600 dark:text-amber-400 group-hover:scale-105 transition-transform">
+                <Coins className="w-5 h-5" aria-hidden="true" />
               </div>
-              <Badge variant="outline" className="text-[10px] font-semibold border-amber-500/30 text-amber-600 bg-amber-500/5">
+              <Badge variant="outline" className="text-[10px] font-semibold border-amber-500/30 text-amber-600 dark:text-amber-400 bg-amber-500/5">
                 Session Config
               </Badge>
             </div>
@@ -756,7 +903,7 @@ export const FinanceDashboardPage: React.FC = () => {
             </div>
             <div className="mt-3 pt-2.5 border-t border-border/40 flex items-center text-xs font-semibold text-amber-600 dark:text-amber-400 group-hover:translate-x-1 transition-transform">
               Configure Rates
-              <ArrowUpRight className="w-3.5 h-3.5 ml-1" />
+              <ArrowUpRight className="w-3.5 h-3.5 ml-1" aria-hidden="true" />
             </div>
           </Link>
 
@@ -766,10 +913,10 @@ export const FinanceDashboardPage: React.FC = () => {
             className="p-4 rounded-xl border border-border/60 bg-card hover:border-purple-500/50 hover:bg-accent/40 transition-all duration-200 flex flex-col justify-between group cursor-pointer shadow-2xs"
           >
             <div className="flex items-start justify-between">
-              <div className="p-2.5 rounded-xl bg-purple-500/10 text-purple-600 group-hover:scale-105 transition-transform">
-                <Receipt className="w-5 h-5" />
+              <div className="p-2.5 rounded-xl bg-purple-500/10 text-purple-600 dark:text-purple-400 group-hover:scale-105 transition-transform">
+                <Receipt className="w-5 h-5" aria-hidden="true" />
               </div>
-              <Badge variant="outline" className="text-[10px] font-semibold border-purple-500/30 text-purple-600 bg-purple-500/5">
+              <Badge variant="outline" className="text-[10px] font-semibold border-purple-500/30 text-purple-600 dark:text-purple-400 bg-purple-500/5">
                 Audit Trail
               </Badge>
             </div>
@@ -783,262 +930,391 @@ export const FinanceDashboardPage: React.FC = () => {
             </div>
             <div className="mt-3 pt-2.5 border-t border-border/40 flex items-center text-xs font-semibold text-purple-600 dark:text-purple-400 group-hover:translate-x-1 transition-transform">
               Transaction Log
-              <ArrowUpRight className="w-3.5 h-3.5 ml-1" />
+              <ArrowUpRight className="w-3.5 h-3.5 ml-1" aria-hidden="true" />
             </div>
           </Link>
         </div>
       </section>
 
-      {/* 4. Recent Collections Ledger */}
-      <section className="space-y-3" aria-label="Recent Collections Ledger">
-        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
-          <div>
-            <h2 className="text-sm font-bold text-foreground flex items-center gap-2">
-              <Receipt className="w-4 h-4 text-primary" />
-              Recent Fee Collections
-            </h2>
-            <p className="text-xs text-muted-foreground mt-0.5">
-              Latest transactions recorded across all payment channels.
-            </p>
-          </div>
+      {/* 4. Unified Financial Activity Hub (Tabbed Collections & Concessions) */}
+      <section className="space-y-3" aria-label="Financial Activity and Ledger Hub">
+        <Tabs
+          value={activeTab}
+          onValueChange={(val) => setActiveTab(val as 'collections' | 'concessions')}
+          className="space-y-4"
+        >
+          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 border-b border-border/40 pb-3">
+            <TabsList className="h-9">
+              <TabsTrigger value="collections" className="gap-2 text-xs">
+                <Receipt className="w-3.5 h-3.5 text-primary" aria-hidden="true" />
+                <span>Recent Collections</span>
+                <span className="px-1.5 py-0.2 rounded-full bg-primary/10 text-primary text-[10px] font-sans tabular-nums">
+                  {recentPayments.length}
+                </span>
+              </TabsTrigger>
+              <TabsTrigger value="concessions" className="gap-2 text-xs">
+                <BadgePercent className="w-3.5 h-3.5 text-amber-600 dark:text-amber-400" aria-hidden="true" />
+                <span>Concessions & Waivers</span>
+                <span className="px-1.5 py-0.2 rounded-full bg-amber-500/10 text-amber-700 dark:text-amber-300 text-[10px] font-sans tabular-nums">
+                  {concessionPayments.length}
+                </span>
+              </TabsTrigger>
+            </TabsList>
 
-          <div className="flex items-center gap-2">
-            <div className="relative w-48 sm:w-60">
-              <Search className="w-3.5 h-3.5 absolute left-2.5 top-1/2 -translate-y-1/2 text-muted-foreground" />
-              <Input
-                placeholder="Search receipt, student..."
-                value={searchQuery}
-                onChange={(e) => setSearchQuery(e.target.value)}
-                className="h-8 pl-8 text-xs bg-card"
-              />
-            </div>
+            <div className="flex items-center gap-2">
+              <div className="relative w-full sm:w-64">
+                <Search className="w-3.5 h-3.5 absolute left-2.5 top-1/2 -translate-y-1/2 text-muted-foreground" aria-hidden="true" />
+                <Input
+                  placeholder="Search receipt, student..."
+                  value={searchQuery}
+                  onChange={(e) => setSearchQuery(e.target.value)}
+                  className="h-8 pl-8 pr-7 text-xs bg-card"
+                  aria-label="Filter recent transactions"
+                />
+                {searchQuery && (
+                  <button
+                    type="button"
+                    onClick={() => setSearchQuery('')}
+                    className="absolute right-2 top-1/2 -translate-y-1/2 p-0.5 rounded-full hover:bg-muted text-muted-foreground hover:text-foreground cursor-pointer"
+                    aria-label="Clear search input"
+                  >
+                    <X className="w-3.5 h-3.5" aria-hidden="true" />
+                  </button>
+                )}
+              </div>
 
-            <Link
-              to="/finance/transactions"
-              className="text-xs text-primary hover:underline font-semibold shrink-0 ml-1"
-            >
-              All Transactions →
-            </Link>
-          </div>
-        </div>
-
-        {isLoadingSummary ? (
-          <div className="p-8 text-center text-xs text-muted-foreground border rounded-xl bg-card">
-            <Loader2 className="w-5 h-5 animate-spin mx-auto text-primary mb-2" />
-            Loading recent payments...
-          </div>
-        ) : filteredRecentPayments.length === 0 ? (
-          <div className="p-8 text-center text-xs text-muted-foreground border border-dashed rounded-xl bg-card space-y-2">
-            <div className="p-3 rounded-full bg-muted/60 text-muted-foreground w-fit mx-auto">
-              <Receipt className="w-6 h-6" />
-            </div>
-            <p className="font-medium text-foreground">
-              {searchQuery ? 'No payments matching your search.' : 'No payments recorded in this academic session yet.'}
-            </p>
-            <p className="text-muted-foreground text-[11px]">
-              Use "Collect Payment" to record a new fee transaction and issue a receipt.
-            </p>
-          </div>
-        ) : (
-          <div className="border border-border/60 rounded-xl overflow-hidden bg-card shadow-2xs">
-            <div className="overflow-x-auto">
-              <table className="w-full text-xs text-left">
-                <thead className="bg-muted/50 border-b border-border/60 text-muted-foreground font-semibold">
-                  <tr>
-                    <th className="py-2.5 px-4">Receipt #</th>
-                    <th className="py-2.5 px-4">Student</th>
-                    <th className="py-2.5 px-4">Bill Ref</th>
-                    <th className="py-2.5 px-4">Payment Method</th>
-                    <th className="py-2.5 px-4">Date</th>
-                    <th className="py-2.5 px-4 text-right">Amount Paid</th>
-                    <th className="py-2.5 px-4 text-right">Action</th>
-                  </tr>
-                </thead>
-                <tbody className="divide-y divide-border/40">
-                  {filteredRecentPayments.map((p) => (
-                    <tr key={p.id} className="hover:bg-muted/30 transition-colors">
-                      <td className="py-2.5 px-4 font-mono font-bold text-foreground">
-                        {p.receipt_number}
-                      </td>
-                      <td className="py-2.5 px-4 font-medium text-foreground">
-                        {p.student_name || 'Student'}
-                      </td>
-                      <td className="py-2.5 px-4 font-mono text-muted-foreground">
-                        {p.bill_number ? (
-                          <Link
-                            to="/finance/bills"
-                            className="hover:underline hover:text-primary"
-                          >
-                            {p.bill_number}
-                          </Link>
-                        ) : (
-                          '—'
-                        )}
-                      </td>
-                      <td className="py-2.5 px-4">
-                        <span
-                          className={`inline-flex items-center px-2 py-0.5 rounded-md border text-[10px] font-semibold uppercase font-mono ${getPaymentMethodBadgeClass(
-                            p.payment_method
-                          )}`}
-                        >
-                          {p.payment_method}
-                        </span>
-                      </td>
-                      <td className="py-2.5 px-4 text-muted-foreground whitespace-nowrap">
-                        {formatDate(p.payment_date, calendarSystem)}
-                      </td>
-                      <td className="py-2.5 px-4 text-right font-mono font-bold text-emerald-600 dark:text-emerald-400">
-                        {formatCurrency(p.amount_paid)}
-                      </td>
-                      <td className="py-2.5 px-4 text-right">
-                        <Button
-                          variant="ghost"
-                          size="sm"
-                          onClick={() => setSelectedReceiptPaymentId(p.id)}
-                          className="h-7 text-xs gap-1.5 cursor-pointer hover:bg-primary/10 hover:text-primary"
-                          aria-label={`Print receipt for ${p.receipt_number}`}
-                        >
-                          <Printer className="w-3.5 h-3.5" />
-                          <span>Receipt</span>
-                        </Button>
-                      </td>
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
+              {activeTab === 'collections' ? (
+                <Link
+                  to="/finance/transactions"
+                  className="text-xs text-primary hover:underline font-semibold shrink-0 ml-1 inline-flex items-center gap-0.5"
+                >
+                  <span>All</span>
+                  <ArrowRight className="w-3 h-3" aria-hidden="true" />
+                </Link>
+              ) : (
+                <Link
+                  to="/finance/transactions"
+                  search={{ tab: 'discounts' }}
+                  className="text-xs text-amber-600 dark:text-amber-400 hover:underline font-semibold shrink-0 ml-1 inline-flex items-center gap-0.5"
+                >
+                  <span>Register</span>
+                  <ArrowRight className="w-3 h-3" aria-hidden="true" />
+                </Link>
+              )}
             </div>
           </div>
-        )}
-      </section>
 
-      {/* 5. Recent Concessions & Waivers Audit Feed */}
-      <section className="space-y-3" aria-label="Recent Concessions & Waivers Audit Feed">
-        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
-          <div>
-            <h2 className="text-sm font-bold text-foreground flex items-center gap-2">
-              <BadgePercent className="w-4 h-4 text-amber-600 dark:text-amber-400" />
-              Recent Concessions &amp; Waivers Audit
-            </h2>
-            <p className="text-xs text-muted-foreground mt-0.5">
-              Live audit trail of fee discounts, percentage waivers, and scholarship credits granted at receipt issuance.
-            </p>
-          </div>
-
-          <Link
-            to="/finance/transactions"
-            search={{ tab: 'discounts' }}
-            className="inline-flex items-center gap-1.5 text-xs text-amber-600 hover:text-amber-700 dark:text-amber-400 dark:hover:text-amber-300 font-semibold group"
-          >
-            <span>View Full Concession Register</span>
-            <ArrowRight className="w-3.5 h-3.5 group-hover:translate-x-0.5 transition-transform" />
-          </Link>
-        </div>
-
-        {concessionPayments.length === 0 ? (
-          <div className="p-6 text-center text-xs text-muted-foreground border border-dashed rounded-xl bg-card space-y-1.5">
-            <div className="p-2.5 rounded-full bg-amber-500/10 text-amber-600 dark:text-amber-400 w-fit mx-auto border border-amber-500/20">
-              <Tag className="w-5 h-5" />
-            </div>
-            <p className="font-medium text-foreground">
-              No recent fee waivers recorded
-            </p>
-            <p className="text-muted-foreground text-[11px]">
-              Discounts applied during billing payments will appear here with student details, receipt reference, and approving cashier.
-            </p>
-          </div>
-        ) : (
-          <div className="border border-border/60 rounded-xl overflow-hidden bg-card shadow-2xs">
-            <div className="overflow-x-auto">
-              <table className="w-full text-xs text-left">
-                <thead className="bg-amber-500/5 border-b border-border/60 text-muted-foreground font-semibold">
-                  <tr>
-                    <th className="py-2.5 px-4">Receipt #</th>
-                    <th className="py-2.5 px-4">Student</th>
-                    <th className="py-2.5 px-4">Concession / Waiver</th>
-                    <th className="py-2.5 px-4">Type</th>
-                    <th className="py-2.5 px-4">Approved / Handled By</th>
-                    <th className="py-2.5 px-4">Date</th>
-                    <th className="py-2.5 px-4 text-right">Net Paid</th>
-                    <th className="py-2.5 px-4 text-right">Action</th>
-                  </tr>
-                </thead>
-                <tbody className="divide-y divide-border/40">
-                  {concessionPayments.map((p) => {
-                    const discountAmt = Number(p.discount_amount || 0);
-                    const discountRate = p.discount_rate;
-                    const isPercent = p.discount_type === 'PERCENT';
-                    const discountTypeLabel = isPercent
-                      ? `${discountRate ?? ''}% Waiver`
-                      : 'Fixed Discount';
-
-                    return (
-                      <tr key={`concession-${p.id}`} className="hover:bg-amber-500/5 transition-colors">
-                        <td className="py-2.5 px-4 font-mono font-bold text-foreground">
-                          {p.receipt_number}
-                        </td>
-                        <td className="py-2.5 px-4">
-                          <div className="font-medium text-foreground">
-                            {p.student_name || 'Student'}
-                          </div>
-                          {p.bill_number && (
-                            <span className="font-mono text-[10px] text-muted-foreground block">
-                              Bill: {p.bill_number}
-                            </span>
-                          )}
-                        </td>
-                        <td className="py-2.5 px-4">
-                          <span className="inline-flex items-center gap-1 font-mono font-bold text-amber-600 dark:text-amber-400 bg-amber-500/10 border border-amber-500/20 px-2 py-0.5 rounded text-[11px]">
-                            -NPR {discountAmt.toFixed(2)}
-                          </span>
-                        </td>
-                        <td className="py-2.5 px-4">
-                          <Badge variant="outline" className="text-[10px] font-semibold border-amber-500/30 text-amber-700 dark:text-amber-300 bg-amber-500/10">
-                            {discountTypeLabel}
-                          </Badge>
-                        </td>
-                        <td className="py-2.5 px-4 text-muted-foreground">
-                          <span className="inline-flex items-center gap-1">
-                            Received by {p.received_by_name || 'Cashier'}
-                          </span>
-                        </td>
-                        <td className="py-2.5 px-4 text-muted-foreground whitespace-nowrap">
-                          {formatDate(p.payment_date, calendarSystem)}
-                        </td>
-                        <td className="py-2.5 px-4 text-right font-mono font-bold text-emerald-600 dark:text-emerald-400">
-                          {formatCurrency(p.amount_paid)}
-                        </td>
-                        <td className="py-2.5 px-4 text-right">
-                          <Button
-                            variant="ghost"
-                            size="sm"
-                            onClick={() => setSelectedReceiptPaymentId(p.id)}
-                            className="h-7 text-xs gap-1.5 cursor-pointer hover:bg-amber-500/10 hover:text-amber-700 dark:hover:text-amber-300"
-                            aria-label={`Print receipt for ${p.receipt_number}`}
-                          >
-                            <Printer className="w-3.5 h-3.5" />
-                            <span>Receipt</span>
-                          </Button>
-                        </td>
+          {/* TAB 1: Recent Collections */}
+          <TabsContent value="collections" className="space-y-3 mt-0">
+            {isLoadingSummary ? (
+              <div className="border border-border/60 rounded-xl overflow-hidden bg-card p-4 space-y-3">
+                {Array.from({ length: 4 }).map((_, i) => (
+                  <div key={`skel-row-${i}`} className="flex items-center justify-between py-2 border-b border-border/30 last:border-0">
+                    <Skeleton className="h-4 w-28" />
+                    <Skeleton className="h-4 w-36" />
+                    <Skeleton className="h-4 w-20" />
+                    <Skeleton className="h-4 w-16" />
+                    <Skeleton className="h-6 w-16 rounded-md" />
+                  </div>
+                ))}
+              </div>
+            ) : filteredRecentPayments.length === 0 ? (
+              <div className="p-8 text-center text-xs text-muted-foreground border border-dashed rounded-xl bg-card space-y-2">
+                <div className="p-3 rounded-full bg-muted/60 text-muted-foreground w-fit mx-auto">
+                  <Receipt className="w-6 h-6" aria-hidden="true" />
+                </div>
+                <p className="font-medium text-foreground">
+                  {searchQuery ? 'No payments matching your search.' : 'No payments recorded in this academic session yet.'}
+                </p>
+                <p className="text-muted-foreground text-[11px]">
+                  {searchQuery
+                    ? 'Check your receipt number or student name query, or reset the filter.'
+                    : 'Use "Collect Payment" to record a new fee transaction and issue a receipt.'}
+                </p>
+                {searchQuery && (
+                  <Button
+                    size="sm"
+                    variant="outline"
+                    onClick={() => setSearchQuery('')}
+                    className="text-xs mt-2 h-7"
+                  >
+                    Clear Filter
+                  </Button>
+                )}
+              </div>
+            ) : (
+              <div className="border border-border/60 rounded-xl overflow-hidden bg-card shadow-2xs">
+                <div className="overflow-x-auto">
+                  <table className="w-full text-xs text-left" aria-label="Recent Collections Ledger">
+                    <thead className="bg-muted/50 border-b border-border/60 text-muted-foreground font-semibold">
+                      <tr>
+                        <th scope="col" className="py-2.5 px-4">Receipt #</th>
+                        <th scope="col" className="py-2.5 px-4">Student</th>
+                        <th scope="col" className="py-2.5 px-4">Bill Ref</th>
+                        <th scope="col" className="py-2.5 px-4">Payment Method</th>
+                        <th scope="col" className="py-2.5 px-4">Date</th>
+                        <th scope="col" className="py-2.5 px-4 text-right">Amount Paid</th>
+                        <th scope="col" className="py-2.5 px-4 text-right">Action</th>
                       </tr>
-                    );
-                  })}
-                </tbody>
-              </table>
-            </div>
-            <div className="p-3 bg-muted/30 border-t border-border/60 flex items-center justify-between text-xs text-muted-foreground">
-              <span>
-                Showing {concessionPayments.length} recent discounted transaction{concessionPayments.length === 1 ? '' : 's'}
-              </span>
-              <Link
-                to="/finance/transactions"
-                search={{ tab: 'discounts' }}
-                className="font-semibold text-amber-600 dark:text-amber-400 hover:underline inline-flex items-center gap-1"
-              >
-                View Full Concession Register →
-              </Link>
-            </div>
-          </div>
-        )}
+                    </thead>
+                    <tbody className="divide-y divide-border/40">
+                      {filteredRecentPayments.map((p) => (
+                        <tr key={p.id} className="hover:bg-muted/30 transition-colors">
+                          <td className="py-2.5 px-4 font-mono font-bold text-foreground">
+                            <div className="flex items-center gap-1.5">
+                              <span>{p.receipt_number}</span>
+                              <button
+                                type="button"
+                                onClick={(e) => handleCopyReceipt(p.receipt_number, e)}
+                                className="p-1 rounded hover:bg-muted text-muted-foreground hover:text-foreground cursor-pointer transition-colors"
+                                title="Copy receipt number"
+                                aria-label={`Copy receipt ${p.receipt_number}`}
+                              >
+                                {copiedReceipt === p.receipt_number ? (
+                                  <Check className="w-3 h-3 text-emerald-500" aria-hidden="true" />
+                                ) : (
+                                  <Copy className="w-3 h-3 opacity-60 hover:opacity-100" aria-hidden="true" />
+                                )}
+                              </button>
+                            </div>
+                          </td>
+                          <td className="py-2.5 px-4 font-medium text-foreground">
+                            {p.student_id ? (
+                              <Link
+                                to="/finance/ledger/$studentId"
+                                params={{ studentId: p.student_id }}
+                                className="hover:underline hover:text-primary inline-flex items-center gap-1 group font-medium"
+                                title={`View student ledger for ${p.student_name || 'Student'}`}
+                              >
+                                <span>{p.student_name || 'Student'}</span>
+                                <ArrowUpRight className="w-2.5 h-2.5 opacity-0 group-hover:opacity-100 transition-opacity text-primary" aria-hidden="true" />
+                              </Link>
+                            ) : (
+                              <span>{p.student_name || 'Student'}</span>
+                            )}
+                          </td>
+                          <td className="py-2.5 px-4 font-mono text-muted-foreground">
+                            {p.bill_number ? (
+                              <Link
+                                to="/finance/bills"
+                                className="hover:underline hover:text-primary inline-flex items-center gap-1 group"
+                                title={`View bill ${p.bill_number}`}
+                              >
+                                <span>{p.bill_number}</span>
+                                <ArrowUpRight className="w-2.5 h-2.5 opacity-0 group-hover:opacity-100 transition-opacity" aria-hidden="true" />
+                              </Link>
+                            ) : (
+                              '—'
+                            )}
+                          </td>
+                          <td className="py-2.5 px-4">
+                            <span
+                              className={`inline-flex items-center px-2 py-0.5 rounded-md border text-[10px] font-semibold uppercase font-mono ${getPaymentMethodBadgeClass(
+                                p.payment_method
+                              )}`}
+                            >
+                              {p.payment_method}
+                            </span>
+                          </td>
+                          <td className="py-2.5 px-4 text-muted-foreground whitespace-nowrap">
+                            {formatDate(p.payment_date, calendarSystem)}
+                          </td>
+                          <td className="py-2.5 px-4 text-right font-sans tabular-nums font-bold text-emerald-600 dark:text-emerald-400">
+                            {formatCurrency(p.amount_paid)}
+                          </td>
+                          <td className="py-2.5 px-4 text-right">
+                            <Button
+                              variant="ghost"
+                              size="sm"
+                              onClick={() => setSelectedReceiptPaymentId(p.id)}
+                              className="h-7 text-xs gap-1.5 cursor-pointer hover:bg-primary/10 hover:text-primary"
+                              aria-label={`Print receipt for ${p.receipt_number}`}
+                            >
+                              <Printer className="w-3.5 h-3.5" aria-hidden="true" />
+                              <span>Receipt</span>
+                            </Button>
+                          </td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                </div>
+                <div className="p-3 bg-muted/30 border-t border-border/60 flex items-center justify-between text-xs text-muted-foreground">
+                  <span>
+                    Showing {filteredRecentPayments.length} of {recentPayments.length} recent collections
+                  </span>
+                  <Link
+                    to="/finance/transactions"
+                    className="font-semibold text-primary hover:underline inline-flex items-center gap-1"
+                  >
+                    Full Transaction History →
+                  </Link>
+                </div>
+              </div>
+            )}
+          </TabsContent>
+
+          {/* TAB 2: Recent Concessions & Waivers Audit */}
+          <TabsContent value="concessions" className="space-y-3 mt-0">
+            {isLoadingSummary ? (
+              <div className="border border-border/60 rounded-xl overflow-hidden bg-card p-4 space-y-3">
+                {Array.from({ length: 4 }).map((_, i) => (
+                  <div key={`skel-concession-${i}`} className="flex items-center justify-between py-2 border-b border-border/30 last:border-0">
+                    <Skeleton className="h-4 w-28" />
+                    <Skeleton className="h-4 w-36" />
+                    <Skeleton className="h-4 w-24" />
+                    <Skeleton className="h-4 w-16" />
+                    <Skeleton className="h-6 w-16 rounded-md" />
+                  </div>
+                ))}
+              </div>
+            ) : filteredConcessionPayments.length === 0 ? (
+              <div className="p-8 text-center text-xs text-muted-foreground border border-dashed rounded-xl bg-card space-y-2">
+                <div className="p-3 rounded-full bg-amber-500/10 text-amber-600 dark:text-amber-400 w-fit mx-auto border border-amber-500/20">
+                  <Tag className="w-6 h-6" aria-hidden="true" />
+                </div>
+                <p className="font-medium text-foreground">
+                  {searchQuery ? 'No fee concessions matching your search.' : 'No recent fee waivers recorded.'}
+                </p>
+                <p className="text-muted-foreground text-[11px]">
+                  Discounts applied during billing payments will appear here with student details, receipt reference, and approving cashier.
+                </p>
+                {searchQuery && (
+                  <Button
+                    size="sm"
+                    variant="outline"
+                    onClick={() => setSearchQuery('')}
+                    className="text-xs mt-2 h-7"
+                  >
+                    Clear Filter
+                  </Button>
+                )}
+              </div>
+            ) : (
+              <div className="border border-border/60 rounded-xl overflow-hidden bg-card shadow-2xs">
+                <div className="overflow-x-auto">
+                  <table className="w-full text-xs text-left" aria-label="Recent Concessions and Waivers Audit Feed">
+                    <thead className="bg-amber-500/5 border-b border-border/60 text-muted-foreground font-semibold">
+                      <tr>
+                        <th scope="col" className="py-2.5 px-4">Receipt #</th>
+                        <th scope="col" className="py-2.5 px-4">Student</th>
+                        <th scope="col" className="py-2.5 px-4">Concession / Waiver</th>
+                        <th scope="col" className="py-2.5 px-4">Type</th>
+                        <th scope="col" className="py-2.5 px-4">Approved / Handled By</th>
+                        <th scope="col" className="py-2.5 px-4">Date</th>
+                        <th scope="col" className="py-2.5 px-4 text-right">Net Paid</th>
+                        <th scope="col" className="py-2.5 px-4 text-right">Action</th>
+                      </tr>
+                    </thead>
+                    <tbody className="divide-y divide-border/40">
+                      {filteredConcessionPayments.map((p) => {
+                        const discountAmt = Number(p.discount_amount || 0);
+                        const discountRate = p.discount_rate;
+                        const isPercent = p.discount_type === 'PERCENT';
+                        const discountTypeLabel = isPercent
+                          ? `${discountRate ?? ''}% Waiver`
+                          : 'Fixed Discount';
+
+                        return (
+                          <tr key={`concession-${p.id}`} className="hover:bg-amber-500/5 transition-colors">
+                            <td className="py-2.5 px-4 font-mono font-bold text-foreground">
+                              <div className="flex items-center gap-1.5">
+                                <span>{p.receipt_number}</span>
+                                <button
+                                  type="button"
+                                  onClick={(e) => handleCopyReceipt(p.receipt_number, e)}
+                                  className="p-1 rounded hover:bg-muted text-muted-foreground hover:text-foreground cursor-pointer transition-colors"
+                                  title="Copy receipt number"
+                                  aria-label={`Copy receipt ${p.receipt_number}`}
+                                >
+                                  {copiedReceipt === p.receipt_number ? (
+                                    <Check className="w-3 h-3 text-emerald-500" aria-hidden="true" />
+                                  ) : (
+                                    <Copy className="w-3 h-3 opacity-60 hover:opacity-100" aria-hidden="true" />
+                                  )}
+                                </button>
+                              </div>
+                            </td>
+                            <td className="py-2.5 px-4">
+                              {p.student_id ? (
+                                <Link
+                                  to="/finance/ledger/$studentId"
+                                  params={{ studentId: p.student_id }}
+                                  className="hover:underline hover:text-primary inline-flex items-center gap-1 group font-medium text-foreground"
+                                  title={`View student ledger for ${p.student_name || 'Student'}`}
+                                >
+                                  <span>{p.student_name || 'Student'}</span>
+                                  <ArrowUpRight className="w-2.5 h-2.5 opacity-0 group-hover:opacity-100 transition-opacity text-primary" aria-hidden="true" />
+                                </Link>
+                              ) : (
+                                <div className="font-medium text-foreground">
+                                  {p.student_name || 'Student'}
+                                </div>
+                              )}
+                              {p.bill_number && (
+                                <Link
+                                  to="/finance/bills"
+                                  className="font-mono text-[10px] text-muted-foreground hover:underline hover:text-primary block"
+                                >
+                                  Bill: {p.bill_number}
+                                </Link>
+                              )}
+                            </td>
+                            <td className="py-2.5 px-4">
+                              <span className="inline-flex items-center gap-1 font-sans tabular-nums font-bold text-amber-600 dark:text-amber-400 bg-amber-500/10 border border-amber-500/20 px-2 py-0.5 rounded text-[11px]">
+                                -{formatCurrency(discountAmt)}
+                              </span>
+                            </td>
+                            <td className="py-2.5 px-4">
+                              <Badge variant="outline" className="text-[10px] font-semibold border-amber-500/30 text-amber-700 dark:text-amber-300 bg-amber-500/10">
+                                {discountTypeLabel}
+                              </Badge>
+                            </td>
+                            <td className="py-2.5 px-4 text-muted-foreground">
+                              <span className="inline-flex items-center gap-1">
+                                Received by {p.received_by_name || 'Cashier'}
+                              </span>
+                            </td>
+                            <td className="py-2.5 px-4 text-muted-foreground whitespace-nowrap">
+                              {formatDate(p.payment_date, calendarSystem)}
+                            </td>
+                            <td className="py-2.5 px-4 text-right font-sans tabular-nums font-bold text-emerald-600 dark:text-emerald-400">
+                              {formatCurrency(p.amount_paid)}
+                            </td>
+                            <td className="py-2.5 px-4 text-right">
+                              <Button
+                                variant="ghost"
+                                size="sm"
+                                onClick={() => setSelectedReceiptPaymentId(p.id)}
+                                className="h-7 text-xs gap-1.5 cursor-pointer hover:bg-amber-500/10 hover:text-amber-700 dark:hover:text-amber-300"
+                                aria-label={`Print receipt for ${p.receipt_number}`}
+                              >
+                                <Printer className="w-3.5 h-3.5" aria-hidden="true" />
+                                <span>Receipt</span>
+                              </Button>
+                            </td>
+                          </tr>
+                        );
+                      })}
+                    </tbody>
+                  </table>
+                </div>
+                <div className="p-3 bg-muted/30 border-t border-border/60 flex items-center justify-between text-xs text-muted-foreground">
+                  <span>
+                    Showing {filteredConcessionPayments.length} of {concessionPayments.length} recent discounted transactions
+                  </span>
+                  <Link
+                    to="/finance/transactions"
+                    search={{ tab: 'discounts' }}
+                    className="font-semibold text-amber-600 dark:text-amber-400 hover:underline inline-flex items-center gap-1"
+                  >
+                    View Full Concession Register →
+                  </Link>
+                </div>
+              </div>
+            )}
+          </TabsContent>
+        </Tabs>
       </section>
 
       {/* 5. Modals & Dialogs */}
