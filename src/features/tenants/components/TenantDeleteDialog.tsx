@@ -48,14 +48,14 @@ export const TenantDeleteDialog: React.FC<TenantDeleteDialogProps> = ({
 
   return (
     <Dialog open={open} onOpenChange={handleOpenChange}>
-      <DialogContent className="sm:max-w-[480px] p-0 rounded-2xl border-destructive/30 shadow-2xl overflow-hidden">
+      <DialogContent className="sm:max-w-md p-0 rounded-2xl border-destructive/30 shadow-2xl overflow-hidden">
         <DialogHeader className="p-5 sm:p-6 pb-4 border-b bg-destructive/5">
           <div className="flex items-center gap-3">
-            <div className="flex h-11 w-11 items-center justify-center rounded-2xl bg-destructive/15 text-destructive shrink-0">
-              <AlertTriangle className="h-6 w-6" />
+            <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-destructive/15 text-destructive border border-destructive/20 shrink-0 shadow-2xs">
+              <AlertTriangle className="h-5 w-5" />
             </div>
             <div>
-              <DialogTitle className="text-base font-bold text-destructive">
+              <DialogTitle className="text-lg font-bold tracking-tight text-destructive">
                 Hard Delete School Tenant
               </DialogTitle>
               <DialogDescription className="text-xs text-muted-foreground">

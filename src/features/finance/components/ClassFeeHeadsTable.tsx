@@ -374,7 +374,7 @@ export const ClassFeeHeadsTable: React.FC<ClassFeeHeadsTableProps> = ({
               It will no longer be included in batch fee generation for this class.
             </DialogDescription>
           </DialogHeader>
-          <DialogFooter className="gap-2 sm:gap-0">
+          <DialogFooter className="gap-2">
             <Button
               variant="outline"
               size="sm"

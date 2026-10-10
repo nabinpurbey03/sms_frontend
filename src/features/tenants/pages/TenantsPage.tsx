@@ -8,6 +8,8 @@ import {
   ShieldCheck,
   RefreshCw,
   Loader2,
+  Building2,
+  AlertTriangle,
 } from 'lucide-react';
 import { useAuth } from '@/auth/useAuth';
 import { usePermission } from '@/auth/usePermission';
@@ -423,22 +425,40 @@ export const TenantsPage: React.FC = () => {
       )}
 
       <Dialog open={!!statusDialogTenant} onOpenChange={(open) => !open && setStatusDialogTenant(null)}>
-        <DialogContent className="sm:max-w-[400px]">
+        <DialogContent className="sm:max-w-md">
           <DialogHeader>
-            <DialogTitle>
-              {statusDialogTenant?.is_active ? 'Suspend School?' : 'Activate School?'}
-            </DialogTitle>
-            <DialogDescription>
-              {statusDialogTenant?.is_active
-                ? 'Suspend this school? Users will be unable to log in until reactivated.'
-                : 'Reactivate this school? Users will be able to log in again.'}
-            </DialogDescription>
+            <div className="flex items-center gap-3">
+              <div
+                className={`w-10 h-10 rounded-xl border flex items-center justify-center shrink-0 shadow-2xs ${
+                  statusDialogTenant?.is_active
+                    ? 'bg-amber-500/10 text-amber-600 dark:text-amber-400 border-amber-500/20'
+                    : 'bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border-emerald-500/20'
+                }`}
+              >
+                {statusDialogTenant?.is_active ? (
+                  <AlertTriangle className="w-5 h-5" />
+                ) : (
+                  <Building2 className="w-5 h-5" />
+                )}
+              </div>
+              <div>
+                <DialogTitle className="text-lg font-bold tracking-tight text-foreground">
+                  {statusDialogTenant?.is_active ? 'Suspend School?' : 'Activate School?'}
+                </DialogTitle>
+                <DialogDescription className="text-xs text-muted-foreground leading-relaxed">
+                  {statusDialogTenant?.is_active
+                    ? 'Suspend this school? Users will be unable to log in until reactivated.'
+                    : 'Reactivate this school? Users will be able to log in again.'}
+                </DialogDescription>
+              </div>
+            </div>
           </DialogHeader>
-          <DialogFooter>
+          <DialogFooter className="gap-2 pt-2 border-t border-border/50">
             <Button
               variant="outline"
               onClick={() => setStatusDialogTenant(null)}
               disabled={statusMutation.isPending}
+              className="h-9 text-xs font-medium cursor-pointer"
             >
               Cancel
             </Button>
@@ -446,9 +466,10 @@ export const TenantsPage: React.FC = () => {
               variant={statusDialogTenant?.is_active ? 'destructive' : 'default'}
               onClick={handleConfirmStatusChange}
               disabled={statusMutation.isPending}
+              className="h-9 text-xs font-semibold gap-1.5 shadow-2xs cursor-pointer"
             >
-              {statusMutation.isPending && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-              {statusDialogTenant?.is_active ? 'Suspend' : 'Activate'}
+              {statusMutation.isPending && <Loader2 className="w-3.5 h-3.5 animate-spin" />}
+              <span>{statusDialogTenant?.is_active ? 'Suspend School' : 'Activate School'}</span>
             </Button>
           </DialogFooter>
         </DialogContent>

@@ -95,7 +95,11 @@ export const PrintableReceiptModal: React.FC<PrintableReceiptModalProps> = ({
 
       <Dialog open={isOpen} onOpenChange={(open) => !open && onClose()}>
         {/* [&>button:last-child]:hidden hides the default DialogPrimitive.Close button so there is only ONE close button in the header bar */}
-        <DialogContent className="sm:max-w-3xl lg:max-w-4xl max-h-[92vh] overflow-y-auto p-0 border border-border/80 bg-background text-foreground [&>button:last-child]:hidden shadow-2xl">
+        <DialogContent className="sm:max-w-4xl max-h-[92vh] overflow-y-auto p-0 border border-border/80 bg-background text-foreground [&>button:last-child]:hidden shadow-2xl">
+          <DialogTitle className="sr-only">Payment Receipt Preview</DialogTitle>
+          <DialogDescription className="sr-only">
+            Printable preview of official school fee payment receipt.
+          </DialogDescription>
           {/* Header Action Bar */}
           <div className="flex items-center justify-between px-5 py-3 border-b bg-muted/40 no-print sticky top-0 z-20 backdrop-blur-sm">
             <div className="flex items-center gap-2.5">

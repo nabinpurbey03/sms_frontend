@@ -10,7 +10,7 @@ import {
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-import { BookOpen, Plus } from 'lucide-react';
+import { BookOpen, Plus, Loader2 } from 'lucide-react';
 import { toast } from 'sonner';
 import type { ClassWithDetails, SubjectCreateDTO } from '../types';
 
@@ -67,10 +67,10 @@ export const SubjectCreateGlobalDialog: React.FC<SubjectCreateGlobalDialogProps>
       <DialogContent className="sm:max-w-md">
         <form onSubmit={handleSubmit}>
           <DialogHeader>
-            <div className="w-10 h-10 rounded-full bg-primary/10 text-primary flex items-center justify-center mb-2">
+            <div className="w-10 h-10 rounded-xl bg-primary/10 text-primary border border-primary/20 flex items-center justify-center mb-1 shadow-2xs">
               <BookOpen className="w-5 h-5" />
             </div>
-            <DialogTitle className="text-lg font-bold text-foreground">
+            <DialogTitle className="text-lg font-bold tracking-tight text-foreground">
               Add Curriculum Subject
             </DialogTitle>
             <DialogDescription className="text-xs text-muted-foreground leading-relaxed">
@@ -133,23 +133,27 @@ export const SubjectCreateGlobalDialog: React.FC<SubjectCreateGlobalDialogProps>
             </div>
           </div>
 
-          <DialogFooter className="gap-2 sm:gap-0 pt-2">
+          <DialogFooter className="gap-2 pt-2 border-t border-border/50">
             <Button
               type="button"
               variant="outline"
               onClick={onClose}
               disabled={isLoading}
-              className="text-xs"
+              className="h-9 text-xs font-medium cursor-pointer"
             >
               Cancel
             </Button>
             <Button
               type="submit"
               disabled={isLoading || !name.trim() || !selectedClassId}
-              className="text-xs gap-1.5"
+              className="h-9 text-xs font-semibold gap-1.5 shadow-2xs cursor-pointer"
             >
-              <Plus className="w-3.5 h-3.5" />
-              {isLoading ? 'Adding...' : 'Add Subject'}
+              {isLoading ? (
+                <Loader2 className="w-3.5 h-3.5 animate-spin" />
+              ) : (
+                <Plus className="w-3.5 h-3.5" />
+              )}
+              <span>{isLoading ? 'Adding...' : 'Add Subject'}</span>
             </Button>
           </DialogFooter>
         </form>

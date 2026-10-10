@@ -8,7 +8,7 @@ import {
   DialogFooter,
 } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
-import { AlertTriangle } from 'lucide-react';
+import { AlertTriangle, Loader2 } from 'lucide-react';
 import type { AcademicStudent } from '../types';
 
 interface StudentDeleteDialogProps {
@@ -36,10 +36,10 @@ export const StudentDeleteDialog: React.FC<StudentDeleteDialogProps> = ({
     <Dialog open={isOpen} onOpenChange={(open) => !open && onClose()}>
       <DialogContent className="sm:max-w-md">
         <DialogHeader>
-          <div className="w-10 h-10 rounded-full bg-destructive/15 text-destructive flex items-center justify-center mb-2">
+          <div className="w-10 h-10 rounded-xl bg-destructive/10 text-destructive border border-destructive/20 flex items-center justify-center mb-1 shadow-2xs">
             <AlertTriangle className="w-5 h-5" />
           </div>
-          <DialogTitle className="text-lg font-bold text-foreground">
+          <DialogTitle className="text-lg font-bold tracking-tight text-foreground">
             Remove Student from Roster
           </DialogTitle>
           <DialogDescription className="text-xs text-muted-foreground leading-relaxed">
@@ -64,13 +64,13 @@ export const StudentDeleteDialog: React.FC<StudentDeleteDialogProps> = ({
           </ul>
         </div>
 
-        <DialogFooter className="gap-2 sm:gap-0 pt-2">
+        <DialogFooter className="gap-2 pt-2 border-t border-border/50">
           <Button
             type="button"
             variant="outline"
             onClick={onClose}
             disabled={isLoading}
-            className="text-xs"
+            className="h-9 text-xs font-medium cursor-pointer"
           >
             Cancel
           </Button>
@@ -79,9 +79,10 @@ export const StudentDeleteDialog: React.FC<StudentDeleteDialogProps> = ({
             variant="destructive"
             onClick={onConfirm}
             disabled={isLoading}
-            className="text-xs"
+            className="h-9 text-xs font-semibold gap-1.5 shadow-2xs cursor-pointer"
           >
-            {isLoading ? 'Removing...' : 'Confirm Remove'}
+            {isLoading && <Loader2 className="w-3.5 h-3.5 animate-spin" />}
+            <span>{isLoading ? 'Removing...' : 'Confirm Remove'}</span>
           </Button>
         </DialogFooter>
       </DialogContent>

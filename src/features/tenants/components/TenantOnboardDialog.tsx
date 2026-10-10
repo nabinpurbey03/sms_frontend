@@ -146,14 +146,14 @@ export const TenantOnboardDialog: React.FC<TenantOnboardDialogProps> = ({
       if (onboardMutation.isPending) return;
       onOpenChange(openVal);
     }}>
-      <DialogContent className="sm:max-w-[620px] max-h-[90vh] overflow-y-auto p-0 gap-0 rounded-2xl border-border/70 shadow-2xl">
+      <DialogContent className="sm:max-w-xl max-h-[90vh] overflow-y-auto p-0 gap-0 rounded-2xl border-border/70 shadow-2xl">
         <DialogHeader className="p-5 sm:p-6 pb-4 border-b">
-          <div className="flex items-center gap-2.5">
-            <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-primary/10 text-primary">
+          <div className="flex items-center gap-3">
+            <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-primary/10 text-primary border border-primary/20 shrink-0 shadow-2xs">
               {step === 3 ? <Sparkles className="h-5 w-5" /> : <Building2 className="h-5 w-5" />}
             </div>
             <div>
-              <DialogTitle className="text-lg font-bold text-foreground">
+              <DialogTitle className="text-lg font-bold tracking-tight text-foreground">
                 {step === 3 ? 'School Onboarded Successfully' : 'Onboard New School Tenant'}
               </DialogTitle>
               <DialogDescription className="text-xs text-muted-foreground">

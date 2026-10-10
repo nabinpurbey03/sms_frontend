@@ -1043,7 +1043,7 @@ export const FeeStructureDialog: React.FC<FeeStructureDialogProps> = ({
           </div>
 
           {/* 3. Footer */}
-          <DialogFooter className="p-4 sm:p-5 border-t border-border/60 bg-muted/20 shrink-0 gap-2 sm:gap-0">
+          <DialogFooter className="p-4 sm:p-5 border-t border-border/60 bg-muted/20 shrink-0 gap-2">
             <Button
               type="button"
               variant="outline"

@@ -129,14 +129,14 @@ export const TenantAdminAssignDialog: React.FC<TenantAdminAssignDialogProps> = (
 
   return (
     <Dialog open={open} onOpenChange={handleOpenChange}>
-      <DialogContent className="sm:max-w-[500px] p-0 rounded-2xl border-border shadow-2xl overflow-hidden">
+      <DialogContent className="sm:max-w-lg p-0 rounded-2xl border-border shadow-2xl overflow-hidden">
         <DialogHeader className="p-5 sm:p-6 pb-4 border-b bg-muted/20">
           <div className="flex items-center gap-3">
-            <div className="flex h-11 w-11 items-center justify-center rounded-2xl bg-primary/10 text-primary shrink-0">
-              <ShieldCheck className="h-6 w-6" />
+            <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-primary/10 text-primary border border-primary/20 shrink-0 shadow-2xs">
+              <ShieldCheck className="h-5 w-5" />
             </div>
             <div>
-              <DialogTitle className="text-base font-bold text-foreground">
+              <DialogTitle className="text-lg font-bold tracking-tight text-foreground">
                 Assign School Administrator
               </DialogTitle>
               <DialogDescription className="text-xs text-muted-foreground mt-0.5">
@@ -249,7 +249,7 @@ export const TenantAdminAssignDialog: React.FC<TenantAdminAssignDialogProps> = (
             </div>
           </div>
 
-          <DialogFooter className="p-4 border-t bg-muted/10 gap-2 sm:gap-0">
+          <DialogFooter className="p-4 border-t bg-muted/10 gap-2">
             <Button
               type="button"
               variant="outline"

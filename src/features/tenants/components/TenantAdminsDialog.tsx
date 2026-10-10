@@ -64,16 +64,16 @@ export const TenantAdminsDialog: React.FC<TenantAdminsDialogProps> = ({
   return (
     <>
       <Dialog open={open} onOpenChange={onOpenChange}>
-        <DialogContent className="sm:max-w-[620px] p-0 rounded-2xl border-border shadow-2xl overflow-hidden">
+        <DialogContent className="sm:max-w-xl p-0 rounded-2xl border-border shadow-2xl overflow-hidden">
           {/* Header */}
           <DialogHeader className="p-5 sm:p-6 pb-4 border-b bg-muted/20">
             <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
               <div className="flex items-center gap-3">
-                <div className="flex h-11 w-11 items-center justify-center rounded-2xl bg-primary/10 text-primary shrink-0">
-                  <Shield className="h-6 w-6" />
+                <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-primary/10 text-primary border border-primary/20 shrink-0 shadow-2xs">
+                  <Shield className="h-5 w-5" />
                 </div>
                 <div>
-                  <DialogTitle className="text-base font-bold text-foreground">
+                  <DialogTitle className="text-lg font-bold tracking-tight text-foreground">
                     School Administrators
                   </DialogTitle>
                   <DialogDescription className="text-xs text-muted-foreground mt-0.5">

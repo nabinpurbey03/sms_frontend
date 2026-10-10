@@ -32,7 +32,7 @@ interface MemberRoleDialogProps {
   canManageRoles?: boolean;
 }
 
-const ALL_ROLES: Array<{
+const ALL_ROLES_METADATA: Array<{
   id: MemberRole;
   label: string;
   desc: string;
@@ -57,18 +57,21 @@ const ALL_ROLES: Array<{
     icon: Wallet,
   },
   {
-    id: 'PARENT',
-    label: 'Parent',
-    desc: 'View linked children attendance & reports',
-    icon: HeartHandshake,
-  },
-  {
     id: 'ADMIN',
     label: 'School Admin',
     desc: 'Full administrative authority for this school tenant',
     icon: ShieldCheck,
   },
+  {
+    id: 'PARENT',
+    label: 'Parent',
+    desc: 'View linked children attendance & reports',
+    icon: HeartHandshake,
+  },
 ];
+
+// Only staff permissions can be directly granted. Parent role is managed strictly via student links.
+const ASSIGNABLE_ROLES = ALL_ROLES_METADATA.filter((r) => r.id !== 'PARENT');
 
 export const MemberRoleDialog: React.FC<MemberRoleDialogProps> = ({
   member,
@@ -86,7 +89,7 @@ export const MemberRoleDialog: React.FC<MemberRoleDialogProps> = ({
   if (!member) return null;
 
   const currentRoles = member.roles;
-  const availableRoles = ALL_ROLES.filter((r) => !currentRoles.includes(r.id));
+  const availableRoles = ASSIGNABLE_ROLES.filter((r) => !currentRoles.includes(r.id));
 
   const handleAssign = async () => {
     if (!selectedNewRole) return;
@@ -148,47 +151,64 @@ export const MemberRoleDialog: React.FC<MemberRoleDialogProps> = ({
             <Label className="text-xs font-semibold text-foreground">Current Active Roles</Label>
             <div className="space-y-2">
               {currentRoles.map((role) => {
-                const roleDef = ALL_ROLES.find((r) => r.id === role);
+                const roleDef = ALL_ROLES_METADATA.find((r) => r.id === role);
                 const Icon = roleDef?.icon || Shield;
                 const isOnlyRole = currentRoles.length === 1;
+                const isParentRole = role === 'PARENT';
 
                 return (
                   <div
                     key={role}
                     className="flex items-center justify-between p-3 rounded-xl border border-border/70 bg-muted/20 gap-3 min-w-0"
                   >
-                    <div className="flex items-center gap-3 min-w-0">
+                    <div className="flex items-center gap-3 min-w-0 flex-1">
                       <div className="p-2 rounded-lg bg-primary/10 text-primary border border-primary/20 shrink-0">
                         <Icon className="w-4 h-4" />
                       </div>
-                      <div className="min-w-0">
-                        <p className="text-xs font-semibold text-foreground truncate">
-                          {roleDef?.label || role}
-                        </p>
+                      <div className="min-w-0 flex-1">
+                        <div className="flex items-center gap-1.5 flex-wrap">
+                          <p className="text-xs font-semibold text-foreground truncate">
+                            {roleDef?.label || role}
+                          </p>
+                          {isParentRole && (
+                            <span className="text-[10px] font-medium text-blue-700 dark:text-blue-300 bg-blue-500/10 border border-blue-500/20 px-1.5 py-0.2 rounded-full">
+                              Linked via Student
+                            </span>
+                          )}
+                        </div>
                         <p className="text-[11px] text-muted-foreground truncate">
                           {roleDef?.desc || 'Custom assigned tenant role'}
                         </p>
                       </div>
                     </div>
 
-                    <Button
-                      type="button"
-                      variant="ghost"
-                      size="sm"
-                      onClick={() => setRoleToRevoke(role)}
-                      disabled={!canManageRoles || isLoading || isActionLoading || isOnlyRole}
-                      title={
-                        !canManageRoles
-                          ? 'Only School Administrators have permission to revoke member roles.'
-                          : isOnlyRole
-                          ? 'A member must hold at least one role. To remove this user entirely, use Remove Member.'
-                          : 'Revoke this specific role'
-                      }
-                      className="text-xs h-8 text-destructive hover:text-destructive hover:bg-destructive/10 gap-1.5 shrink-0 disabled:opacity-40 cursor-pointer disabled:cursor-not-allowed"
-                    >
-                      <Trash2 className="w-3.5 h-3.5" />
-                      <span>Revoke</span>
-                    </Button>
+                    {isParentRole ? (
+                      <span
+                        title="Parent privileges are relationship-based. Unlink student(s) from Member Profile -> Children tab to remove this role."
+                        className="text-[11px] font-medium text-muted-foreground shrink-0 px-2 py-0.5 rounded-md bg-muted/60 border border-border/40"
+                      >
+                        Auto-managed
+                      </span>
+                    ) : (
+                      <Button
+                        type="button"
+                        variant="ghost"
+                        size="sm"
+                        onClick={() => setRoleToRevoke(role)}
+                        disabled={!canManageRoles || isLoading || isActionLoading || isOnlyRole}
+                        title={
+                          !canManageRoles
+                            ? 'Only School Administrators have permission to revoke member roles.'
+                            : isOnlyRole
+                            ? 'A member must hold at least one role. To remove this user entirely, use Remove Member.'
+                            : 'Revoke this specific role'
+                        }
+                        className="text-xs h-8 text-destructive hover:text-destructive hover:bg-destructive/10 gap-1.5 shrink-0 disabled:opacity-40 cursor-pointer disabled:cursor-not-allowed"
+                      >
+                        <Trash2 className="w-3.5 h-3.5" />
+                        <span>Revoke</span>
+                      </Button>
+                    )}
                   </div>
                 );
               })}
@@ -202,12 +222,12 @@ export const MemberRoleDialog: React.FC<MemberRoleDialogProps> = ({
             )}
           </div>
 
-          {/* Assign Additional Role */}
+          {/* Assign Additional Staff Role */}
           {availableRoles.length > 0 && (
             <div className="space-y-2 pt-3 border-t border-border/50">
               <div className="flex items-center justify-between">
                 <Label className="text-xs font-semibold text-foreground">
-                  Grant Additional Role
+                  Grant Additional Staff Role
                 </Label>
                 {!canManageRoles && (
                   <span className="text-[10px] font-medium text-amber-600 dark:text-amber-400 bg-amber-500/10 border border-amber-500/20 px-2 py-0.5 rounded-full">
@@ -222,7 +242,7 @@ export const MemberRoleDialog: React.FC<MemberRoleDialogProps> = ({
                   disabled={!canManageRoles || isLoading || isActionLoading}
                   className="flex-1 min-w-0 h-9 rounded-md border border-input bg-background px-3 py-1 text-xs shadow-xs focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring disabled:opacity-50 disabled:cursor-not-allowed"
                 >
-                  <option value="">Select a role to assign...</option>
+                  <option value="">Select a staff role to assign...</option>
                   {availableRoles.map((r) => (
                     <option key={r.id} value={r.id}>
                       {r.label}
@@ -247,7 +267,7 @@ export const MemberRoleDialog: React.FC<MemberRoleDialogProps> = ({
               </div>
               {selectedNewRole && (
                 <p className="text-[11px] text-muted-foreground">
-                  {ALL_ROLES.find((r) => r.id === selectedNewRole)?.desc}
+                  {ALL_ROLES_METADATA.find((r) => r.id === selectedNewRole)?.desc}
                 </p>
               )}
               {!canManageRoles && (
@@ -292,7 +312,7 @@ export const MemberRoleDialog: React.FC<MemberRoleDialogProps> = ({
           </p>
         </div>
 
-        <DialogFooter className="gap-2 sm:gap-0 pt-2">
+        <DialogFooter className="gap-2 pt-2">
           <Button
             type="button"
             variant="outline"

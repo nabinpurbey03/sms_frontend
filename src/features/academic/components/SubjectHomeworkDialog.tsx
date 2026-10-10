@@ -96,17 +96,17 @@ export const SubjectHomeworkDialog: React.FC<SubjectHomeworkDialogProps> = ({
 
   return (
     <Dialog open={isOpen} onOpenChange={(open) => !open && onClose()}>
-      <DialogContent className="sm:max-w-[500px]">
+      <DialogContent className="sm:max-w-lg">
         <DialogHeader>
-          <div className="flex items-center gap-2">
-            <div className="p-2 rounded-xl bg-primary/10 text-primary">
+          <div className="flex items-center gap-3">
+            <div className="w-10 h-10 rounded-xl bg-primary/10 text-primary border border-primary/20 flex items-center justify-center shrink-0 shadow-2xs">
               <Bell className="w-5 h-5" />
             </div>
             <div>
-              <DialogTitle className="text-base font-bold text-foreground">
+              <DialogTitle className="text-lg font-bold tracking-tight text-foreground">
                 Post Subject Homework / Notice
               </DialogTitle>
-              <DialogDescription className="text-xs text-muted-foreground">
+              <DialogDescription className="text-xs text-muted-foreground leading-relaxed">
                 Publish homework or updates for <strong>{subject.name}</strong> ({subject.className}).
               </DialogDescription>
             </div>
@@ -186,14 +186,14 @@ export const SubjectHomeworkDialog: React.FC<SubjectHomeworkDialogProps> = ({
             />
           </div>
 
-          <DialogFooter className="pt-2 gap-2 sm:gap-0">
+          <DialogFooter className="gap-2 pt-2 border-t border-border/50">
             <Button
               type="button"
               variant="outline"
               size="sm"
               onClick={onClose}
               disabled={createNoticeMutation.isPending}
-              className="text-xs"
+              className="h-9 text-xs font-medium cursor-pointer"
             >
               Cancel
             </Button>
@@ -201,17 +201,17 @@ export const SubjectHomeworkDialog: React.FC<SubjectHomeworkDialogProps> = ({
               type="submit"
               size="sm"
               disabled={createNoticeMutation.isPending || !title.trim() || !content.trim()}
-              className="gap-1.5 text-xs"
+              className="h-9 text-xs font-semibold gap-1.5 shadow-2xs cursor-pointer"
             >
               {createNoticeMutation.isPending ? (
                 <>
                   <Loader2 className="w-3.5 h-3.5 animate-spin" />
-                  Posting...
+                  <span>Posting...</span>
                 </>
               ) : (
                 <>
                   <Send className="w-3.5 h-3.5" />
-                  Broadcast Homework
+                  <span>Broadcast Homework</span>
                 </>
               )}
             </Button>

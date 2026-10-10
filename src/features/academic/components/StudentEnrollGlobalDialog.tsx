@@ -10,7 +10,7 @@ import {
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-import { UserPlus } from 'lucide-react';
+import { UserPlus, Loader2 } from 'lucide-react';
 import { toast } from 'sonner';
 import type { ClassWithDetails, StudentCreateDTO } from '../types';
 
@@ -112,10 +112,10 @@ export const StudentEnrollGlobalDialog: React.FC<StudentEnrollGlobalDialogProps>
       <DialogContent className="sm:max-w-md">
         <form onSubmit={handleSubmit}>
           <DialogHeader>
-            <div className="w-10 h-10 rounded-full bg-primary/10 text-primary flex items-center justify-center mb-2">
+            <div className="w-10 h-10 rounded-xl bg-primary/10 text-primary border border-primary/20 flex items-center justify-center mb-1 shadow-2xs">
               <UserPlus className="w-5 h-5" />
             </div>
-            <DialogTitle className="text-lg font-bold text-foreground">
+            <DialogTitle className="text-lg font-bold tracking-tight text-foreground">
               Enroll New Student
             </DialogTitle>
             <DialogDescription className="text-xs text-muted-foreground leading-relaxed">
@@ -215,23 +215,27 @@ export const StudentEnrollGlobalDialog: React.FC<StudentEnrollGlobalDialogProps>
             </div>
           </div>
 
-          <DialogFooter className="gap-2 sm:gap-0 pt-2">
+          <DialogFooter className="gap-2 pt-2 border-t border-border/50">
             <Button
               type="button"
               variant="outline"
               onClick={onClose}
               disabled={isLoading}
-              className="text-xs"
+              className="h-9 text-xs font-medium cursor-pointer"
             >
               Cancel
             </Button>
             <Button
               type="submit"
               disabled={isLoading || !firstName.trim() || !lastName.trim() || !selectedSectionId}
-              className="text-xs gap-1.5"
+              className="h-9 text-xs font-semibold gap-1.5 shadow-2xs cursor-pointer"
             >
-              <UserPlus className="w-3.5 h-3.5" />
-              {isLoading ? 'Enrolling...' : 'Enroll Student'}
+              {isLoading ? (
+                <Loader2 className="w-3.5 h-3.5 animate-spin" />
+              ) : (
+                <UserPlus className="w-3.5 h-3.5" />
+              )}
+              <span>{isLoading ? 'Enrolling...' : 'Enroll Student'}</span>
             </Button>
           </DialogFooter>
         </form>

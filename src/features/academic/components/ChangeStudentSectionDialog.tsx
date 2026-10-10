@@ -99,17 +99,17 @@ export const ChangeStudentSectionDialog: React.FC<ChangeStudentSectionDialogProp
 
   return (
     <Dialog open={isOpen} onOpenChange={(open) => !open && onClose()}>
-      <DialogContent className="sm:max-w-[440px]">
+      <DialogContent className="sm:max-w-md">
         <DialogHeader>
-          <div className="flex items-center gap-2">
-            <div className="p-2 rounded-lg bg-purple-500/10 text-purple-600 dark:text-purple-400">
+          <div className="flex items-center gap-3">
+            <div className="w-10 h-10 rounded-xl bg-purple-500/10 text-purple-600 dark:text-purple-400 border border-purple-500/20 flex items-center justify-center shrink-0 shadow-2xs">
               <ArrowRightLeft className="w-5 h-5" />
             </div>
             <div>
-              <DialogTitle className="text-base font-bold text-foreground">
+              <DialogTitle className="text-lg font-bold tracking-tight text-foreground">
                 Change Student Section
               </DialogTitle>
-              <DialogDescription className="text-xs text-muted-foreground">
+              <DialogDescription className="text-xs text-muted-foreground leading-relaxed">
                 Move {studentFullName} to a different section in {cls.name}.
               </DialogDescription>
             </div>
@@ -193,14 +193,14 @@ export const ChangeStudentSectionDialog: React.FC<ChangeStudentSectionDialogProp
               </p>
             </div>
 
-            <DialogFooter className="pt-2 gap-2 sm:gap-0">
+            <DialogFooter className="gap-2 pt-2 border-t border-border/50">
               <Button
                 type="button"
                 variant="outline"
                 size="sm"
                 onClick={onClose}
                 disabled={updateStudentMutation.isPending}
-                className="h-9 text-xs"
+                className="h-9 text-xs font-medium cursor-pointer"
               >
                 Cancel
               </Button>
@@ -208,17 +208,17 @@ export const ChangeStudentSectionDialog: React.FC<ChangeStudentSectionDialogProp
                 type="submit"
                 size="sm"
                 disabled={updateStudentMutation.isPending || !targetSectionId}
-                className="h-9 text-xs gap-1.5"
+                className="h-9 text-xs font-semibold gap-1.5 shadow-2xs cursor-pointer"
               >
                 {updateStudentMutation.isPending ? (
                   <>
                     <Loader2 className="w-3.5 h-3.5 animate-spin" />
-                    Transferring...
+                    <span>Transferring...</span>
                   </>
                 ) : (
                   <>
                     <ArrowRightLeft className="w-3.5 h-3.5" />
-                    Change Section
+                    <span>Change Section</span>
                   </>
                 )}
               </Button>

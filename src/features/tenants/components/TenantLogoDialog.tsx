@@ -98,14 +98,14 @@ export const TenantLogoDialog: React.FC<TenantLogoDialogProps> = ({
         onOpenChange(v);
       }}
     >
-      <DialogContent className="sm:max-w-[480px] p-0 rounded-2xl border-border/70 shadow-2xl overflow-hidden">
+      <DialogContent className="sm:max-w-md p-0 rounded-2xl border-border/70 shadow-2xl overflow-hidden">
         <DialogHeader className="p-5 sm:p-6 pb-4 border-b">
-          <div className="flex items-center gap-2.5">
-            <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-primary/10 text-primary">
+          <div className="flex items-center gap-3">
+            <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-primary/10 text-primary border border-primary/20 shrink-0 shadow-2xs">
               <Image className="h-5 w-5" />
             </div>
             <div>
-              <DialogTitle className="text-base font-bold text-foreground">
+              <DialogTitle className="text-lg font-bold tracking-tight text-foreground">
                 Upload School Brand Logo
               </DialogTitle>
               <DialogDescription className="text-xs text-muted-foreground truncate max-w-[340px]">

@@ -610,12 +610,12 @@ export const NepaliCalendarGrid: React.FC<NepaliCalendarGridProps> = ({
           if (!open) setViewingDayModal(null);
         }}
       >
-        <DialogContent className="sm:max-w-[420px] rounded-2xl p-5 shadow-xl">
+        <DialogContent className="sm:max-w-md rounded-2xl p-5 shadow-xl">
           <DialogHeader>
-            <DialogTitle className="text-base font-bold text-foreground">
+            <DialogTitle className="text-lg font-bold tracking-tight text-foreground">
               {viewingDayModal?.dateTitle}
             </DialogTitle>
-            <DialogDescription className="text-xs text-muted-foreground">
+            <DialogDescription className="text-xs text-muted-foreground leading-relaxed">
               {viewingDayModal?.events.length || 0} event(s) scheduled for this date.
             </DialogDescription>
           </DialogHeader>

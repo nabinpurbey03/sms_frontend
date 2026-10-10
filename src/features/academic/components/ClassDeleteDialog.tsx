@@ -8,7 +8,7 @@ import {
   DialogFooter,
 } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
-import { AlertTriangle } from 'lucide-react';
+import { AlertTriangle, Loader2 } from 'lucide-react';
 import type { AcademicClass } from '../types';
 
 interface ClassDeleteDialogProps {
@@ -41,10 +41,10 @@ export const ClassDeleteDialog: React.FC<ClassDeleteDialogProps> = ({
     <Dialog open={isOpen} onOpenChange={(open) => !open && onClose()}>
       <DialogContent className="sm:max-w-md">
         <DialogHeader>
-          <div className="w-10 h-10 rounded-full bg-destructive/15 text-destructive flex items-center justify-center mb-2">
+          <div className="w-10 h-10 rounded-xl bg-destructive/10 text-destructive border border-destructive/20 flex items-center justify-center mb-1 shadow-2xs">
             <AlertTriangle className="w-5 h-5" />
           </div>
-          <DialogTitle className="text-lg font-bold text-foreground">
+          <DialogTitle className="text-lg font-bold tracking-tight text-foreground">
             Delete Class: {cls.name}
           </DialogTitle>
           <DialogDescription className="text-xs text-muted-foreground leading-relaxed">
@@ -73,13 +73,13 @@ export const ClassDeleteDialog: React.FC<ClassDeleteDialogProps> = ({
           )}
         </div>
 
-        <DialogFooter className="gap-2 sm:gap-0 pt-2">
+        <DialogFooter className="gap-2 pt-2 border-t border-border/50">
           <Button
             type="button"
             variant="outline"
             onClick={onClose}
             disabled={isLoading}
-            className="text-xs"
+            className="h-9 text-xs font-medium cursor-pointer"
           >
             Cancel
           </Button>
@@ -88,9 +88,10 @@ export const ClassDeleteDialog: React.FC<ClassDeleteDialogProps> = ({
             variant="destructive"
             onClick={handleConfirm}
             disabled={isLoading}
-            className="text-xs"
+            className="h-9 text-xs font-semibold gap-1.5 shadow-2xs cursor-pointer"
           >
-            {isLoading ? 'Deleting...' : 'Confirm Deletion'}
+            {isLoading && <Loader2 className="w-3.5 h-3.5 animate-spin" />}
+            <span>{isLoading ? 'Deleting...' : 'Confirm Deletion'}</span>
           </Button>
         </DialogFooter>
       </DialogContent>

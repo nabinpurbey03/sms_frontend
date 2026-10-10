@@ -122,14 +122,14 @@ export const PrintableRosterModal: React.FC<PrintableRosterModalProps> = ({
       `}</style>
 
       <Dialog open={isOpen} onOpenChange={(open) => !open && onClose()}>
-        <DialogContent className="max-w-4xl max-h-[90vh] flex flex-col p-0 overflow-hidden">
+        <DialogContent className="sm:max-w-4xl max-h-[92vh] flex flex-col p-0 overflow-hidden">
           <DialogHeader className="p-4 border-b border-border/60 flex flex-row items-center justify-between no-print">
             <div>
-              <DialogTitle className="text-base font-bold flex items-center gap-2">
+              <DialogTitle className="text-lg font-bold tracking-tight text-foreground flex items-center gap-2">
                 <Printer className="w-4 h-4 text-primary" />
                 Section Roster & Attendance Register
               </DialogTitle>
-              <DialogDescription className="text-xs text-muted-foreground">
+              <DialogDescription className="text-xs text-muted-foreground leading-relaxed">
                 Print 31-day manual roll-call sheet or download spreadsheet for {className} - Section{' '}
                 {section?.name || 'A'}.
               </DialogDescription>

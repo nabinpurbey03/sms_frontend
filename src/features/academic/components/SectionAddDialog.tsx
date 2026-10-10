@@ -8,7 +8,7 @@ import {
   DialogFooter,
 } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
-import { Layers, CheckCircle2, Lock, AlertCircle } from 'lucide-react';
+import { Layers, CheckCircle2, Lock, AlertCircle, Loader2 } from 'lucide-react';
 import { useSectionEligibility } from '../hooks';
 import type { AcademicClass } from '../types';
 
@@ -45,11 +45,11 @@ export const SectionAddDialog: React.FC<SectionAddDialogProps> = ({
     <Dialog open={isOpen} onOpenChange={(open) => !open && onClose()}>
       <DialogContent className="sm:max-w-md">
         <DialogHeader>
-          <div className="w-10 h-10 rounded-xl bg-indigo-500/15 text-indigo-600 dark:text-indigo-400 flex items-center justify-center mb-1">
+          <div className="w-10 h-10 rounded-xl bg-indigo-500/10 text-indigo-600 dark:text-indigo-400 border border-indigo-500/20 flex items-center justify-center mb-1 shadow-2xs">
             <Layers className="w-5 h-5" />
           </div>
-          <DialogTitle className="text-lg font-bold">Add Next Section to {cls.name}</DialogTitle>
-          <DialogDescription className="text-xs text-muted-foreground">
+          <DialogTitle className="text-lg font-bold tracking-tight text-foreground">Add Next Section to {cls.name}</DialogTitle>
+          <DialogDescription className="text-xs text-muted-foreground leading-relaxed">
             Evaluate capacity and sequentially expand this class according to the 20-student policy.
           </DialogDescription>
         </DialogHeader>
@@ -103,13 +103,13 @@ export const SectionAddDialog: React.FC<SectionAddDialogProps> = ({
           )}
         </div>
 
-        <DialogFooter className="gap-2 sm:gap-0 pt-2">
+        <DialogFooter className="gap-2 pt-2 border-t border-border/50">
           <Button
             type="button"
             variant="outline"
             onClick={onClose}
             disabled={isLoading}
-            className="text-xs"
+            className="h-9 text-xs font-medium cursor-pointer"
           >
             Cancel
           </Button>
@@ -118,11 +118,14 @@ export const SectionAddDialog: React.FC<SectionAddDialogProps> = ({
               type="button"
               onClick={handleConfirm}
               disabled={isLoading || isChecking}
-              className="text-xs gap-1.5"
+              className="h-9 text-xs font-semibold gap-1.5 shadow-2xs cursor-pointer"
             >
-              {isLoading
-                ? 'Creating...'
-                : `Create Section ${eligibility.next_section_name}`}
+              {isLoading && <Loader2 className="w-3.5 h-3.5 animate-spin" />}
+              <span>
+                {isLoading
+                  ? 'Creating...'
+                  : `Create Section ${eligibility.next_section_name}`}
+              </span>
             </Button>
           )}
         </DialogFooter>

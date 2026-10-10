@@ -498,13 +498,22 @@ export const PlatformUsersPage: React.FC = () => {
       />
 
       <Dialog open={!!viewAsUser} onOpenChange={(open) => !open && setViewAsUser(null)}>
-        <DialogContent className="sm:max-w-[440px]">
+        <DialogContent className="sm:max-w-md">
           <DialogHeader>
-            <DialogTitle className="flex items-center gap-2">
-              <Eye className="h-5 w-5 text-primary" />
-              View As User Session
-            </DialogTitle>
-            <DialogDescription className="space-y-2 pt-2">
+            <div className="flex items-center gap-3">
+              <div className="w-10 h-10 rounded-xl bg-primary/10 text-primary border border-primary/20 flex items-center justify-center shrink-0 shadow-2xs">
+                <Eye className="w-5 h-5" />
+              </div>
+              <div>
+                <DialogTitle className="text-lg font-bold tracking-tight text-foreground">
+                  View As User Session
+                </DialogTitle>
+                <DialogDescription className="text-xs text-muted-foreground leading-relaxed mt-0.5">
+                  Start an audited read-only impersonation session.
+                </DialogDescription>
+              </div>
+            </div>
+            <div className="space-y-2 pt-2 text-xs text-muted-foreground">
               <p>
                 You are about to start a session viewing as{' '}
                 <span className="font-semibold text-foreground">
@@ -519,13 +528,14 @@ export const PlatformUsersPage: React.FC = () => {
                   All actions taken during this session are recorded in the audit trail for security and compliance.
                 </p>
               </div>
-            </DialogDescription>
+            </div>
           </DialogHeader>
-          <DialogFooter className="gap-2 sm:gap-0">
+          <DialogFooter className="gap-2 pt-2 border-t border-border/50">
             <Button
               variant="outline"
               onClick={() => setViewAsUser(null)}
               disabled={startViewSessionMutation.isPending}
+              className="h-9 text-xs font-medium cursor-pointer"
             >
               Cancel
             </Button>
@@ -533,11 +543,12 @@ export const PlatformUsersPage: React.FC = () => {
               variant="default"
               onClick={handleConfirmViewAs}
               disabled={startViewSessionMutation.isPending}
+              className="h-9 text-xs font-semibold gap-1.5 shadow-2xs cursor-pointer"
             >
               {startViewSessionMutation.isPending && (
-                <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                <Loader2 className="w-3.5 h-3.5 animate-spin" />
               )}
-              Start View Session
+              <span>Start View Session</span>
             </Button>
           </DialogFooter>
         </DialogContent>

@@ -1306,7 +1306,7 @@ export const ClassDetailPage: React.FC = () => {
               This will remove this subject from the class curriculum and revoke any associated teacher subject assignments.
             </p>
           </div>
-          <DialogFooter className="gap-2 sm:gap-0 pt-2">
+          <DialogFooter className="gap-2 pt-2">
             <Button
               type="button"
               variant="outline"
@@ -1367,7 +1367,7 @@ export const ClassDetailPage: React.FC = () => {
               <li>This action cannot be undone.</li>
             </ul>
           </div>
-          <DialogFooter className="gap-2 sm:gap-0 pt-2">
+          <DialogFooter className="gap-2 pt-2">
             <Button
               type="button"
               variant="outline"
@@ -1435,7 +1435,7 @@ export const ClassDetailPage: React.FC = () => {
                 />
               </div>
             </div>
-            <DialogFooter className="gap-2 sm:gap-0 pt-2">
+            <DialogFooter className="gap-2 pt-2">
               <Button
                 type="button"
                 variant="outline"

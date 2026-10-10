@@ -2,6 +2,8 @@ import React from 'react';
 import {
   Dialog,
   DialogContent,
+  DialogDescription,
+  DialogTitle,
 } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
@@ -124,7 +126,11 @@ export const PrintableStatementModal: React.FC<PrintableStatementModalProps> = (
       `}</style>
 
       <Dialog open={isOpen} onOpenChange={(open) => !open && onClose()}>
-        <DialogContent className="sm:max-w-4xl lg:max-w-5xl max-h-[92vh] overflow-y-auto p-0 border border-border/80 bg-background text-foreground [&>button:last-child]:hidden shadow-2xl">
+        <DialogContent className="sm:max-w-4xl max-h-[92vh] overflow-y-auto p-0 border border-border/80 bg-background text-foreground [&>button:last-child]:hidden shadow-2xl">
+          <DialogTitle className="sr-only">Consolidated Invoice Statement</DialogTitle>
+          <DialogDescription className="sr-only">
+            Printable preview of official consolidated invoice statement.
+          </DialogDescription>
           {/* Header Action Bar */}
           <div className="flex items-center justify-between px-5 py-3 border-b bg-muted/40 no-print sticky top-0 z-20 backdrop-blur-sm">
             <div className="flex items-center gap-2.5">

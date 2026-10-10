@@ -69,15 +69,15 @@ export const TenantLogoViewerDialog: React.FC<TenantLogoViewerDialogProps> = ({
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="sm:max-w-[520px] p-0 rounded-2xl border-border/70 shadow-2xl overflow-hidden bg-card">
+      <DialogContent className="sm:max-w-md p-0 rounded-2xl border-border/70 shadow-2xl overflow-hidden bg-card">
         {/* Header */}
         <DialogHeader className="p-5 sm:p-6 pb-4 border-b">
           <div className="flex items-center gap-3">
-            <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-primary/10 text-primary">
+            <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-primary/10 text-primary border border-primary/20 shrink-0 shadow-2xs">
               <Building2 className="h-5 w-5" />
             </div>
             <div className="min-w-0">
-              <DialogTitle className="text-base sm:text-lg font-bold truncate">
+              <DialogTitle className="text-lg font-bold tracking-tight text-foreground truncate">
                 {tenant.name || 'School Entity'} — Brand Emblem
               </DialogTitle>
               <DialogDescription className="text-xs text-muted-foreground flex items-center gap-2 mt-0.5">

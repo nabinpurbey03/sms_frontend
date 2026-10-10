@@ -351,7 +351,7 @@ export const SchoolFeeHeadsTable: React.FC<SchoolFeeHeadsTableProps> = ({
               It will no longer be included in batch invoicing for students.
             </DialogDescription>
           </DialogHeader>
-          <DialogFooter className="gap-2 sm:gap-0">
+          <DialogFooter className="gap-2">
             <Button
               variant="outline"
               size="sm"

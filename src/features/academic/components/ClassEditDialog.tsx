@@ -10,6 +10,7 @@ import {
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
+import { BookOpen, Loader2 } from 'lucide-react';
 import { toast } from 'sonner';
 import type { AcademicClass, ClassUpdateDTO } from '../types';
 
@@ -70,8 +71,11 @@ const ClassEditForm: React.FC<ClassEditDialogProps & { cls: AcademicClass }> = (
       <DialogContent className="sm:max-w-md">
         <form onSubmit={handleSubmit} className="space-y-4">
           <DialogHeader>
-            <DialogTitle className="text-lg font-bold">Rename Class</DialogTitle>
-            <DialogDescription className="text-xs text-muted-foreground">
+            <div className="w-10 h-10 rounded-xl bg-primary/10 text-primary border border-primary/20 flex items-center justify-center mb-1 shadow-2xs">
+              <BookOpen className="w-5 h-5" />
+            </div>
+            <DialogTitle className="text-lg font-bold tracking-tight text-foreground">Rename Class</DialogTitle>
+            <DialogDescription className="text-xs text-muted-foreground leading-relaxed">
               Update the display name for this academic level.
             </DialogDescription>
           </DialogHeader>
@@ -90,18 +94,23 @@ const ClassEditForm: React.FC<ClassEditDialogProps & { cls: AcademicClass }> = (
             />
           </div>
 
-          <DialogFooter className="gap-2 sm:gap-0 pt-2">
+          <DialogFooter className="gap-2 pt-2 border-t border-border/50">
             <Button
               type="button"
               variant="outline"
               onClick={onClose}
               disabled={isLoading}
-              className="text-xs"
+              className="h-9 text-xs font-medium cursor-pointer"
             >
               Cancel
             </Button>
-            <Button type="submit" disabled={isLoading} className="text-xs">
-              {isLoading ? 'Saving...' : 'Save Changes'}
+            <Button
+              type="submit"
+              disabled={isLoading}
+              className="h-9 text-xs font-semibold gap-1.5 shadow-2xs cursor-pointer"
+            >
+              {isLoading && <Loader2 className="w-3.5 h-3.5 animate-spin" />}
+              <span>{isLoading ? 'Saving...' : 'Save Changes'}</span>
             </Button>
           </DialogFooter>
         </form>

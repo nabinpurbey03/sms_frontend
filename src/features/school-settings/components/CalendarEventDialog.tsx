@@ -21,7 +21,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select';
-import { Loader2 } from 'lucide-react';
+import { Loader2, Calendar } from 'lucide-react';
 import { toast } from 'sonner';
 import { NepaliDatePicker } from './NepaliDatePicker';
 import {
@@ -195,17 +195,24 @@ export const CalendarEventDialog: React.FC<CalendarEventDialogProps> = ({
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="sm:max-w-[500px]">
+      <DialogContent className="sm:max-w-lg">
         <form onSubmit={handleSubmit(onSubmit)}>
           <DialogHeader>
-            <DialogTitle>
-              {isEditing ? 'Edit Calendar Event' : 'Add Calendar Event / Holiday'}
-            </DialogTitle>
-            <DialogDescription>
-              {isEditing
-                ? 'Update the event details and holiday status for the academic calendar.'
-                : 'Schedule holidays, examinations, vacations, and special school events.'}
-            </DialogDescription>
+            <div className="flex items-center gap-3">
+              <div className="w-10 h-10 rounded-xl bg-primary/10 text-primary border border-primary/20 flex items-center justify-center shrink-0 shadow-2xs">
+                <Calendar className="w-5 h-5" />
+              </div>
+              <div>
+                <DialogTitle className="text-lg font-bold tracking-tight text-foreground">
+                  {isEditing ? 'Edit Calendar Event' : 'Add Calendar Event / Holiday'}
+                </DialogTitle>
+                <DialogDescription className="text-xs text-muted-foreground leading-relaxed">
+                  {isEditing
+                    ? 'Update the event details and holiday status for the academic calendar.'
+                    : 'Schedule holidays, examinations, vacations, and special school events.'}
+                </DialogDescription>
+              </div>
+            </div>
           </DialogHeader>
 
           <div className="space-y-4 py-4">
@@ -334,18 +341,23 @@ export const CalendarEventDialog: React.FC<CalendarEventDialogProps> = ({
             </div>
           </div>
 
-          <DialogFooter>
+          <DialogFooter className="gap-2 pt-2 border-t border-border/50">
             <Button
               type="button"
               variant="outline"
               onClick={handleClose}
               disabled={isPending}
+              className="h-9 text-xs font-medium cursor-pointer"
             >
               Cancel
             </Button>
-            <Button type="submit" disabled={isPending}>
-              {isPending && <Loader2 className="w-4 h-4 mr-2 animate-spin" />}
-              {isEditing ? 'Save Changes' : 'Create Event'}
+            <Button
+              type="submit"
+              disabled={isPending}
+              className="h-9 text-xs font-semibold gap-1.5 shadow-2xs cursor-pointer"
+            >
+              {isPending && <Loader2 className="w-3.5 h-3.5 animate-spin" />}
+              <span>{isEditing ? 'Save Changes' : 'Create Event'}</span>
             </Button>
           </DialogFooter>
         </form>

@@ -83,17 +83,17 @@ export const EditStudentDialog: React.FC<EditStudentDialogProps> = ({
 
   return (
     <Dialog open={isOpen} onOpenChange={(open) => !open && onClose()}>
-      <DialogContent className="sm:max-w-[425px]">
+      <DialogContent className="sm:max-w-md">
         <DialogHeader>
-          <div className="flex items-center gap-2">
-            <div className="p-2 rounded-lg bg-primary/10 text-primary">
+          <div className="flex items-center gap-3">
+            <div className="w-10 h-10 rounded-xl bg-primary/10 text-primary border border-primary/20 flex items-center justify-center shrink-0 shadow-2xs">
               <UserCheck className="w-5 h-5" />
             </div>
             <div>
-              <DialogTitle className="text-base font-bold text-foreground">
+              <DialogTitle className="text-lg font-bold tracking-tight text-foreground">
                 Edit Student Name
               </DialogTitle>
-              <DialogDescription className="text-xs text-muted-foreground">
+              <DialogDescription className="text-xs text-muted-foreground leading-relaxed">
                 Update official name records for this student.
               </DialogDescription>
             </div>
@@ -143,14 +143,14 @@ export const EditStudentDialog: React.FC<EditStudentDialogProps> = ({
             />
           </div>
 
-          <DialogFooter className="pt-2 gap-2 sm:gap-0">
+          <DialogFooter className="gap-2 pt-2 border-t border-border/50">
             <Button
               type="button"
               variant="outline"
               size="sm"
               onClick={onClose}
               disabled={updateStudentMutation.isPending}
-              className="h-9 text-xs"
+              className="h-9 text-xs font-medium cursor-pointer"
             >
               Cancel
             </Button>
@@ -158,15 +158,15 @@ export const EditStudentDialog: React.FC<EditStudentDialogProps> = ({
               type="submit"
               size="sm"
               disabled={updateStudentMutation.isPending}
-              className="h-9 text-xs gap-1.5"
+              className="h-9 text-xs font-semibold gap-1.5 shadow-2xs cursor-pointer"
             >
               {updateStudentMutation.isPending ? (
                 <>
                   <Loader2 className="w-3.5 h-3.5 animate-spin" />
-                  Saving...
+                  <span>Saving...</span>
                 </>
               ) : (
-                'Save Changes'
+                <span>Save Changes</span>
               )}
             </Button>
           </DialogFooter>

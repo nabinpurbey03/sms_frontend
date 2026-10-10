@@ -2,7 +2,9 @@ import React from 'react';
 import {
   Dialog,
   DialogContent,
+  DialogDescription,
   DialogFooter,
+  DialogTitle,
 } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
@@ -143,7 +145,11 @@ export const PrintableBillModal: React.FC<PrintableBillModalProps> = ({
 
       <Dialog open={isOpen} onOpenChange={(open) => !open && onClose()}>
         {/* [&>button:last-child]:hidden hides the default DialogPrimitive.Close button from DialogContent so there is exactly ONE close button in the header bar */}
-        <DialogContent className="sm:max-w-3xl lg:max-w-4xl max-h-[92vh] overflow-y-auto p-0 border border-border/80 bg-background text-foreground [&>button:last-child]:hidden shadow-2xl">
+        <DialogContent className="sm:max-w-4xl max-h-[92vh] overflow-y-auto p-0 border border-border/80 bg-background text-foreground [&>button:last-child]:hidden shadow-2xl">
+          <DialogTitle className="sr-only">Fee Invoice Preview</DialogTitle>
+          <DialogDescription className="sr-only">
+            Printable preview of official school fee invoice document.
+          </DialogDescription>
           {/* Header Action Bar */}
           <div className="flex items-center justify-between px-5 py-3 border-b bg-muted/40 no-print sticky top-0 z-20 backdrop-blur-sm">
             <div className="flex items-center gap-2.5">

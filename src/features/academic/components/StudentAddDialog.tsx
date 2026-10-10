@@ -10,7 +10,7 @@ import {
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-import { UserPlus } from 'lucide-react';
+import { UserPlus, Loader2 } from 'lucide-react';
 import { toast } from 'sonner';
 import type { AcademicSection, StudentCreateDTO } from '../types';
 
@@ -70,11 +70,11 @@ export const StudentAddDialog: React.FC<StudentAddDialogProps> = ({
       <DialogContent className="sm:max-w-md">
         <form onSubmit={handleSubmit} className="space-y-4">
           <DialogHeader>
-            <div className="w-10 h-10 rounded-xl bg-primary/10 text-primary flex items-center justify-center mb-1">
+            <div className="w-10 h-10 rounded-xl bg-primary/10 text-primary border border-primary/20 flex items-center justify-center mb-1 shadow-2xs">
               <UserPlus className="w-5 h-5" />
             </div>
-            <DialogTitle className="text-lg font-bold">Enroll Student in {classNameTitle}</DialogTitle>
-            <DialogDescription className="text-xs text-muted-foreground">
+            <DialogTitle className="text-lg font-bold tracking-tight text-foreground">Enroll Student in {classNameTitle}</DialogTitle>
+            <DialogDescription className="text-xs text-muted-foreground leading-relaxed">
               Add an enrolled student to an active section roster.
             </DialogDescription>
           </DialogHeader>
@@ -143,18 +143,23 @@ export const StudentAddDialog: React.FC<StudentAddDialogProps> = ({
             </div>
           </div>
 
-          <DialogFooter className="gap-2 sm:gap-0 pt-2">
+          <DialogFooter className="gap-2 pt-2 border-t border-border/50">
             <Button
               type="button"
               variant="outline"
               onClick={onClose}
               disabled={isLoading}
-              className="text-xs"
+              className="h-9 text-xs font-medium cursor-pointer"
             >
               Cancel
             </Button>
-            <Button type="submit" disabled={isLoading} className="text-xs">
-              {isLoading ? 'Enrolling...' : 'Enroll Student'}
+            <Button
+              type="submit"
+              disabled={isLoading}
+              className="h-9 text-xs font-semibold gap-1.5 shadow-2xs cursor-pointer"
+            >
+              {isLoading && <Loader2 className="w-3.5 h-3.5 animate-spin" />}
+              <span>{isLoading ? 'Enrolling...' : 'Enroll Student'}</span>
             </Button>
           </DialogFooter>
         </form>

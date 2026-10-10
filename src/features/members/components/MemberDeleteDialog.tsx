@@ -60,7 +60,7 @@ export const MemberDeleteDialog: React.FC<MemberDeleteDialogProps> = ({
           </ul>
         </div>
 
-        <DialogFooter className="gap-2 sm:gap-0 pt-2">
+        <DialogFooter className="gap-2 pt-2">
           <Button
             type="button"
             variant="outline"

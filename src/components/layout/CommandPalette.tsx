@@ -3,6 +3,7 @@ import { useNavigate } from '@tanstack/react-router';
 import {
   Dialog,
   DialogContent,
+  DialogDescription,
   DialogHeader,
   DialogTitle,
 } from '@/components/ui/dialog';
@@ -127,6 +128,7 @@ export const CommandPalette: React.FC<CommandPaletteProps> = ({
       <DialogContent className="p-0 max-w-xl overflow-hidden gap-0 rounded-2xl border-border/80 shadow-2xl">
         <DialogHeader className="sr-only">
           <DialogTitle>Command Palette</DialogTitle>
+          <DialogDescription>Quick search for actions and application pages</DialogDescription>
         </DialogHeader>
 
         {/* Search Input Bar */}

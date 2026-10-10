@@ -10,7 +10,7 @@ import {
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-import { BookOpen, UserCheck, Phone } from 'lucide-react';
+import { BookOpen, UserCheck, Phone, Loader2 } from 'lucide-react';
 import { toast } from 'sonner';
 import { useMembers } from '@/features/members/hooks';
 import { useAssignClassTeacher, useAssignSubjectTeacher } from '../hooks';
@@ -142,10 +142,10 @@ export const AssignTeacherDialog: React.FC<AssignTeacherDialogProps> = ({
 
   return (
     <Dialog open={isOpen} onOpenChange={(open) => !open && onClose()}>
-      <DialogContent className="sm:max-w-md">
+      <DialogContent className="sm:max-w-lg">
         <DialogHeader>
-          <div className="flex items-center gap-2">
-            <div className="p-2 rounded-xl bg-primary/10 text-primary border border-primary/20">
+          <div className="flex items-center gap-3">
+            <div className="w-10 h-10 rounded-xl bg-primary/10 text-primary border border-primary/20 flex items-center justify-center shrink-0 shadow-2xs">
               {mode === 'class_teacher' ? (
                 <UserCheck className="w-5 h-5" />
               ) : (
@@ -153,10 +153,10 @@ export const AssignTeacherDialog: React.FC<AssignTeacherDialogProps> = ({
               )}
             </div>
             <div>
-              <DialogTitle className="text-base font-bold text-foreground">
+              <DialogTitle className="text-lg font-bold tracking-tight text-foreground">
                 {mode === 'class_teacher' ? 'Appoint Class Teacher' : 'Assign Subject Teacher'}
               </DialogTitle>
-              <DialogDescription className="text-xs text-muted-foreground">
+              <DialogDescription className="text-xs text-muted-foreground leading-relaxed">
                 {mode === 'class_teacher'
                   ? 'Set the primary teacher responsible for a class or section.'
                   : 'Assign an instructor to teach a specific subject.'}
@@ -330,30 +330,35 @@ export const AssignTeacherDialog: React.FC<AssignTeacherDialogProps> = ({
             )}
           </div>
 
-          <DialogFooter className="pt-2">
+          <DialogFooter className="gap-2 pt-2 border-t border-border/50">
             <Button
               type="button"
               variant="outline"
               onClick={onClose}
               disabled={isSubmitting}
+              className="h-9 text-xs font-medium cursor-pointer"
             >
               Cancel
             </Button>
             <Button
               type="submit"
               disabled={isSubmitting || (mode === 'subject' && subjects.length === 0)}
-              className="gap-2"
+              className="h-9 text-xs font-semibold gap-1.5 shadow-2xs cursor-pointer"
             >
-              {mode === 'class_teacher' ? (
-                <UserCheck className="w-4 h-4" />
+              {isSubmitting ? (
+                <Loader2 className="w-3.5 h-3.5 animate-spin" />
+              ) : mode === 'class_teacher' ? (
+                <UserCheck className="w-3.5 h-3.5" />
               ) : (
-                <BookOpen className="w-4 h-4" />
+                <BookOpen className="w-3.5 h-3.5" />
               )}
-              {isSubmitting
-                ? 'Saving...'
-                : mode === 'class_teacher'
-                ? 'Appoint Class Teacher'
-                : 'Assign Subject Teacher'}
+              <span>
+                {isSubmitting
+                  ? 'Saving...'
+                  : mode === 'class_teacher'
+                  ? 'Appoint Class Teacher'
+                  : 'Assign Subject Teacher'}
+              </span>
             </Button>
           </DialogFooter>
         </form>
