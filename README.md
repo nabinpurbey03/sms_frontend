@@ -141,7 +141,10 @@ A production-grade, domain-aligned **React 19 Single Page Application (SPA)** fo
     - Examination schedules & score entry (`ExamsListPage.tsx`)
     - Official report cards & printable rosters (`OfficialReportCardDocument.tsx`, `PrintableRosterModal.tsx`)
     - System Audit Logs (`AuditLogsPage.tsx`)
-- **Automated Academic Year & Smart Expiry Prompt Workflow**:
+- **Super Admin Governance & Autonomous Academic Year Rollover Workflow**:
+  - **Super Admin Exclusive Provisioning**: New academic sessions can only be created by Super Admins (`isSuperAdmin`), safeguarding school analytics against arbitrary date boundaries and desynchronized calendars. Non-super-admins cannot see the "Create Year" action.
+  - **Autonomous Tenant Rollover Wizard (`TenantRolloverDialog.tsx`)**: School Admins execute annual rollovers on their own schedule into a pre-provisioned `UPCOMING` session. Eliminates manual date pickers and text inputs, automatically rendering the locked session timeline (`formatDualDateRange`) and blocking transitions if no upcoming session has been provisioned by platform administrators yet.
+  - **Automatic Session Closure**: Executing rollover marks the outgoing session as `CLOSED` (immutable against reactivation or non-super-admin editing) and activates the target session as `ACTIVE`.
   - **Academic Year Expiry Banner (`AcademicYearExpiryBanner.tsx`)**: High-visibility WCAG AA amber alert banner automatically rendered on both the School Dashboard and Academic Sessions page when the active session reaches its end date. Gated strictly to administrative personas (`ADMIN`, `OFFICE_ADMIN`, or `MANAGE_TENANT_SETTINGS`).
   - **1-Click Rollover & Progression Modal (`QuickAcademicYearTransitionDialog.tsx`)**: Accessible Radix confirmation modal summarizing old session completion, target session activation, dual BS/AD date ranges, and live student progression count pill with an automatic student advancement toggle.
   - **Super Admin Platform BS Year Provisioner (`PlatformBsYearProvisioner.tsx`)**: Centralized provisioning widget for Super Admins to seed standard Bikram Sambat academic years (1 Baisakh to 30/31 Chaitra with auto-calculated Gregorian dates) across all schools on the platform with 1 click.
