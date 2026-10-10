@@ -235,9 +235,11 @@ export const financeApi = {
 
   getStudentLedger: async (
     tenantId: string,
-    studentId: string
+    studentId: string,
+    academicYearId?: string
   ): Promise<StudentLedgerResponse> => {
-    return apiClient.get(`/finance/tenants/${tenantId}/students/${studentId}/ledger`);
+    const params = academicYearId ? { academic_year_id: academicYearId } : undefined;
+    return apiClient.get(`/finance/tenants/${tenantId}/students/${studentId}/ledger`, { params });
   },
 
   getClassOverview: async (tenantId: string): Promise<FinanceClassOverview[]> => {

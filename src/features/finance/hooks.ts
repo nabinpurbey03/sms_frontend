@@ -229,10 +229,14 @@ export const useConsolidatedReceiptDocument = (tenantId: string | null, identifi
   });
 };
 
-export const useStudentLedger = (tenantId: string | null, studentId: string | null) => {
+export const useStudentLedger = (
+  tenantId: string | null,
+  studentId: string | null,
+  academicYearId?: string
+) => {
   return useQuery({
-    queryKey: [STUDENT_LEDGER_KEY, tenantId, studentId],
-    queryFn: () => financeApi.getStudentLedger(tenantId!, studentId!),
+    queryKey: [STUDENT_LEDGER_KEY, tenantId, studentId, academicYearId],
+    queryFn: () => financeApi.getStudentLedger(tenantId!, studentId!, academicYearId),
     enabled: !!tenantId && !!studentId,
   });
 };

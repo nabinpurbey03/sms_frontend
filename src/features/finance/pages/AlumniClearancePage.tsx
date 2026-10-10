@@ -102,7 +102,11 @@ export const AlumniClearancePage: React.FC = () => {
 
   // Fetch ledger data for modals when a student is selected
   const activeStudentIdForLedger = studentForPayment?.student_id || studentForStatement?.student_id || null;
-  const { data: activeStudentLedger, isLoading: isLedgerLoading } = useStudentLedger(activeTenantId, activeStudentIdForLedger);
+  const { data: activeStudentLedger, isLoading: isLedgerLoading } = useStudentLedger(
+    activeTenantId,
+    activeStudentIdForLedger,
+    selectedArchiveYearId || 'all'
+  );
 
   const unpaidBills = useMemo(() => {
     if (!activeStudentLedger?.bills) return [];
@@ -115,7 +119,7 @@ export const AlumniClearancePage: React.FC = () => {
   React.useEffect(() => {
     if (studentForPayment && !isLedgerLoading && activeStudentLedger) {
       if (unpaidBills.length === 0) {
-        toast.error('No unpaid bills found in current ledger for settlement; please view full student ledger.');
+        toast.error('No unpaid bills found in student ledger for settlement; student has no outstanding unpaid invoices.');
         setStudentForPayment(null);
       }
     }
