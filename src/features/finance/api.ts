@@ -35,6 +35,7 @@ import type {
   AlumniClearanceItem,
   AlumniClearanceResponse,
   AlumniClearanceParams,
+  RolloverFinancialAudit,
 } from './types';
 
 export type { PaymentFilterParams };
@@ -279,4 +280,11 @@ export const financeApi = {
   ): Promise<AlumniClearanceResponse> => {
     return apiClient.get(`/finance/tenants/${tenantId}/alumni-clearance`, { params });
   },
+
+  getRolloverFinancialAudit: async (tenantId: string): Promise<RolloverFinancialAudit> => {
+    return apiClient.get(`/finance/tenants/${tenantId}/rollover-financial-audit`);
+  },
 };
+
+export const getRolloverFinancialAudit = financeApi.getRolloverFinancialAudit;
+

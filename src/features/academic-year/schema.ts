@@ -58,6 +58,7 @@ export interface TenantAcademicYearRolloverRequest {
   end_date: string;
   copy_teacher_assignments: boolean;
   copy_student_facilities?: boolean;
+  financial_audit_acknowledged?: boolean;
   student_overrides?: StudentRolloverOverride[];
 }
 

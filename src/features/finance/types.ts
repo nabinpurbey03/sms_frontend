@@ -531,3 +531,21 @@ export interface AlumniClearanceParams {
   page_size?: number;
 }
 
+export interface RolloverFinancialAudit {
+  outgoing_academic_year_id: string;
+  outgoing_academic_year_name: string;
+  total_billed: number | string;
+  total_collected: number | string;
+  total_outstanding_dues: number | string;
+  collection_rate_percent: number;
+  total_advance_wallet_balance: number | string;
+  advance_wallet_students_count: number;
+  chronic_defaulters_count: number;
+  chronic_defaulters_due_amount: number | string;
+  cancelled_bills_count: number;
+  total_cancelled_amount: number | string;
+  unreconciled_cheques_count: number;
+  warnings: string[];
+}
+
+

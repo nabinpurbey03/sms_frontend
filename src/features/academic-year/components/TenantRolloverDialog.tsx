@@ -61,9 +61,12 @@ import {
   UserMinus,
   Sparkles,
   Bus,
+  Wallet,
+  Receipt,
 } from 'lucide-react';
 import { formatDualDateRange } from '@/features/school-settings/utils/nepaliDate';
 import { useCalendarPreferenceStore } from '@/stores/calendarPreferenceStore';
+import { useRolloverFinancialAudit } from '@/features/finance/hooks';
 import { toast } from 'sonner';
 
 export interface TenantRolloverDialogProps {
@@ -83,10 +86,12 @@ export const TenantRolloverDialog: React.FC<TenantRolloverDialogProps> = ({
   const rolloverMutation = useTenantRollover();
   const cleanupMutation = useCleanupEmptySections();
   const { data: statusData } = useAcademicYearStatus(tenantId);
+  const { data: financialAudit, isLoading: isAuditLoading, error: auditError } = useRolloverFinancialAudit(tenantId, open);
   const navigate = useNavigate();
 
-  // Wizard state
-  const [currentStep, setCurrentStep] = useState<1 | 2 | 3>(1);
+  // Wizard state: Step 0 (Financial Audit) -> Step 1 (Session Details) -> Step 2 (Student Preview) -> Step 3 (Summary/Execution)
+  const [currentStep, setCurrentStep] = useState<0 | 1 | 2 | 3>(0);
+  const [financialAuditAcknowledged, setFinancialAuditAcknowledged] = useState(false);
   const [summary, setSummary] = useState<TenantRolloverSummaryResponse | null>(null);
   const [previewData, setPreviewData] = useState<RolloverPreviewResponse | null>(null);
   const [isFetchingPreview, setIsFetchingPreview] = useState(false);
@@ -126,7 +131,8 @@ export const TenantRolloverDialog: React.FC<TenantRolloverDialogProps> = ({
     setPreviewData(null);
     setOverrides({});
     setActiveClassId('');
-    setCurrentStep(1);
+    setFinancialAuditAcknowledged(false);
+    setCurrentStep(0);
     setIsCleanupConfirmOpen(false);
     onOpenChange(false);
   };
@@ -296,6 +302,7 @@ export const TenantRolloverDialog: React.FC<TenantRolloverDialogProps> = ({
           end_date: formValues.end_date,
           copy_teacher_assignments: formValues.copy_teacher_assignments,
           copy_student_facilities: formValues.copy_student_facilities,
+          financial_audit_acknowledged: true,
           student_overrides: studentOverrides.length > 0 ? studentOverrides : undefined,
         },
       });
@@ -333,7 +340,32 @@ export const TenantRolloverDialog: React.FC<TenantRolloverDialogProps> = ({
           {!summary && (
             <div className="flex items-center justify-between mt-3 pt-2 text-xs">
               <div
-                className={`flex items-center gap-2 ${
+                className={`flex items-center gap-1.5 ${
+                  currentStep === 0
+                    ? 'font-bold text-primary'
+                    : currentStep > 0
+                    ? 'text-muted-foreground'
+                    : 'text-muted-foreground/60'
+                }`}
+              >
+                <span
+                  className={`w-5 h-5 rounded-full flex items-center justify-center text-[10px] font-semibold ${
+                    currentStep === 0
+                      ? 'bg-primary text-primary-foreground'
+                      : currentStep > 0
+                      ? 'bg-emerald-500 text-white'
+                      : 'bg-muted text-muted-foreground'
+                  }`}
+                >
+                  {currentStep > 0 ? <Check className="w-3 h-3" /> : '0'}
+                </span>
+                <span>0. Financial Audit</span>
+              </div>
+
+              <div className="h-0.5 flex-1 mx-2 bg-muted" />
+
+              <div
+                className={`flex items-center gap-1.5 ${
                   currentStep === 1
                     ? 'font-bold text-primary'
                     : currentStep > 1
@@ -342,7 +374,7 @@ export const TenantRolloverDialog: React.FC<TenantRolloverDialogProps> = ({
                 }`}
               >
                 <span
-                  className={`w-6 h-6 rounded-full flex items-center justify-center text-xs font-semibold ${
+                  className={`w-5 h-5 rounded-full flex items-center justify-center text-[10px] font-semibold ${
                     currentStep === 1
                       ? 'bg-primary text-primary-foreground'
                       : currentStep > 1
@@ -350,15 +382,15 @@ export const TenantRolloverDialog: React.FC<TenantRolloverDialogProps> = ({
                       : 'bg-muted text-muted-foreground'
                   }`}
                 >
-                  {currentStep > 1 ? <Check className="w-3.5 h-3.5" /> : '1'}
+                  {currentStep > 1 ? <Check className="w-3 h-3" /> : '1'}
                 </span>
-                <span>1. Session Timeline</span>
+                <span>1. Session Details</span>
               </div>
 
-              <div className="h-0.5 flex-1 mx-3 bg-muted" />
+              <div className="h-0.5 flex-1 mx-2 bg-muted" />
 
               <div
-                className={`flex items-center gap-2 ${
+                className={`flex items-center gap-1.5 ${
                   currentStep === 2
                     ? 'font-bold text-primary'
                     : currentStep > 2
@@ -367,7 +399,7 @@ export const TenantRolloverDialog: React.FC<TenantRolloverDialogProps> = ({
                 }`}
               >
                 <span
-                  className={`w-6 h-6 rounded-full flex items-center justify-center text-xs font-semibold ${
+                  className={`w-5 h-5 rounded-full flex items-center justify-center text-[10px] font-semibold ${
                     currentStep === 2
                       ? 'bg-primary text-primary-foreground'
                       : currentStep > 2
@@ -375,22 +407,22 @@ export const TenantRolloverDialog: React.FC<TenantRolloverDialogProps> = ({
                       : 'bg-muted text-muted-foreground'
                   }`}
                 >
-                  {currentStep > 2 ? <Check className="w-3.5 h-3.5" /> : '2'}
+                  {currentStep > 2 ? <Check className="w-3 h-3" /> : '2'}
                 </span>
-                <span>2. Cohort Staging & Overrides</span>
+                <span>2. Student Preview</span>
               </div>
 
-              <div className="h-0.5 flex-1 mx-3 bg-muted" />
+              <div className="h-0.5 flex-1 mx-2 bg-muted" />
 
               <div
-                className={`flex items-center gap-2 ${
+                className={`flex items-center gap-1.5 ${
                   currentStep === 3
                     ? 'font-bold text-primary'
                     : 'text-muted-foreground/60'
                 }`}
               >
                 <span
-                  className={`w-6 h-6 rounded-full flex items-center justify-center text-xs font-semibold ${
+                  className={`w-5 h-5 rounded-full flex items-center justify-center text-[10px] font-semibold ${
                     currentStep === 3
                       ? 'bg-primary text-primary-foreground'
                       : 'bg-muted text-muted-foreground'
@@ -398,7 +430,7 @@ export const TenantRolloverDialog: React.FC<TenantRolloverDialogProps> = ({
                 >
                   3
                 </span>
-                <span>3. Verification & Execution</span>
+                <span>3. Summary</span>
               </div>
             </div>
           )}
@@ -549,6 +581,199 @@ export const TenantRolloverDialog: React.FC<TenantRolloverDialogProps> = ({
                     </Button>
                   </div>
                 </div>
+              ) : null}
+            </div>
+          ) : currentStep === 0 ? (
+            /* Step 0: Pre-Rollover Financial Audit */
+            <div className="space-y-4 pt-1">
+              {isAuditLoading ? (
+                <div className="p-12 text-center border rounded-lg bg-muted/20 space-y-3">
+                  <Loader2 className="w-8 h-8 animate-spin text-primary mx-auto" />
+                  <p className="text-sm font-semibold text-foreground">
+                    Analyzing outgoing session finances & receivables...
+                  </p>
+                  <p className="text-xs text-muted-foreground">
+                    Compiling total billed, collected revenue, uncollected arrears, and student credit wallets.
+                  </p>
+                </div>
+              ) : auditError ? (
+                <div className="rounded-lg border border-destructive/50 bg-destructive/10 p-4 text-destructive flex items-start gap-3">
+                  <AlertCircle className="w-5 h-5 shrink-0 mt-0.5" />
+                  <div className="text-xs space-y-1">
+                    <p className="font-semibold text-sm">Failed to load pre-rollover financial audit</p>
+                    <p>
+                      {(auditError as any)?.response?.data?.message ||
+                        (auditError as any)?.message ||
+                        'An error occurred while compiling the financial audit.'}
+                    </p>
+                  </div>
+                </div>
+              ) : financialAudit ? (
+                <>
+                  {/* Outgoing Session Header Banner */}
+                  <div className="rounded-lg border bg-muted/30 p-3.5 flex flex-wrap items-center justify-between gap-2">
+                    <div>
+                      <div className="text-xs text-muted-foreground font-medium">Outgoing Academic Session</div>
+                      <div className="text-base font-bold text-foreground">
+                        {financialAudit.outgoing_academic_year_name}
+                      </div>
+                    </div>
+                    <Badge variant="outline" className="bg-primary/10 text-primary border-primary/20 text-xs px-2.5 py-1">
+                      Pre-Rollover Financial Reconciliation
+                    </Badge>
+                  </div>
+
+                  {/* Financial KPI Cards */}
+                  <div className="grid grid-cols-2 sm:grid-cols-5 gap-3">
+                    {/* 1. Total Billed */}
+                    <div className="rounded-lg border p-3 bg-muted/40 text-center space-y-1">
+                      <div className="flex items-center justify-center gap-1.5 text-xs font-medium text-muted-foreground">
+                        <Receipt className="w-3.5 h-3.5" />
+                        <span>Total Billed</span>
+                      </div>
+                      <div className="text-lg font-bold text-foreground truncate">
+                        Rs. {Number(financialAudit.total_billed).toLocaleString('en-IN', { minimumFractionDigits: 2 })}
+                      </div>
+                      <div className="text-[10px] text-muted-foreground">
+                        {financialAudit.cancelled_bills_count > 0 ? `${financialAudit.cancelled_bills_count} cancelled excluded` : 'Gross billed'}
+                      </div>
+                    </div>
+
+                    {/* 2. Total Collected */}
+                    <div className="rounded-lg border border-emerald-500/30 bg-emerald-500/10 p-3 text-center space-y-1">
+                      <div className="flex items-center justify-center gap-1.5 text-xs font-medium text-emerald-700 dark:text-emerald-400">
+                        <CheckCircle2 className="w-3.5 h-3.5" />
+                        <span>Total Collected</span>
+                      </div>
+                      <div className="text-lg font-bold text-emerald-700 dark:text-emerald-300 truncate">
+                        Rs. {Number(financialAudit.total_collected).toLocaleString('en-IN', { minimumFractionDigits: 2 })}
+                      </div>
+                      <div className="text-[10px] text-emerald-700/80 dark:text-emerald-400/80 font-medium">
+                        Rate: {financialAudit.collection_rate_percent}%
+                      </div>
+                    </div>
+
+                    {/* 3. Unpaid Receivables (Opening Arrears) */}
+                    <div className={`rounded-lg border p-3 text-center space-y-1 ${
+                      Number(financialAudit.total_outstanding_dues) > 0
+                        ? 'border-rose-500/30 bg-rose-500/10'
+                        : 'bg-muted/40'
+                    }`}>
+                      <div className={`flex items-center justify-center gap-1.5 text-xs font-medium ${
+                        Number(financialAudit.total_outstanding_dues) > 0
+                          ? 'text-rose-700 dark:text-rose-400'
+                          : 'text-muted-foreground'
+                      }`}>
+                        <AlertCircle className="w-3.5 h-3.5" />
+                        <span>Unpaid Receivables</span>
+                      </div>
+                      <div className={`text-lg font-bold truncate ${
+                        Number(financialAudit.total_outstanding_dues) > 0
+                          ? 'text-rose-700 dark:text-rose-300'
+                          : 'text-foreground'
+                      }`}>
+                        Rs. {Number(financialAudit.total_outstanding_dues).toLocaleString('en-IN', { minimumFractionDigits: 2 })}
+                      </div>
+                      <div className="text-[10px] text-muted-foreground">
+                        Carries as Opening Arrears
+                      </div>
+                    </div>
+
+                    {/* 4. Advance Wallets */}
+                    <div className="rounded-lg border border-blue-500/30 bg-blue-500/10 p-3 text-center space-y-1">
+                      <div className="flex items-center justify-center gap-1.5 text-xs font-medium text-blue-700 dark:text-blue-400">
+                        <Wallet className="w-3.5 h-3.5" />
+                        <span>Advance Wallets</span>
+                      </div>
+                      <div className="text-lg font-bold text-blue-700 dark:text-blue-300 truncate">
+                        Rs. {Number(financialAudit.total_advance_wallet_balance).toLocaleString('en-IN', { minimumFractionDigits: 2 })}
+                      </div>
+                      <div className="text-[10px] text-blue-700/80 dark:text-blue-400/80">
+                        {financialAudit.advance_wallet_students_count} student(s) with credit
+                      </div>
+                    </div>
+
+                    {/* 5. Defaulters */}
+                    <div className={`rounded-lg border p-3 text-center space-y-1 col-span-2 sm:col-span-1 ${
+                      financialAudit.chronic_defaulters_count > 0
+                        ? 'border-amber-500/30 bg-amber-500/10'
+                        : 'bg-muted/40'
+                    }`}>
+                      <div className={`flex items-center justify-center gap-1.5 text-xs font-medium ${
+                        financialAudit.chronic_defaulters_count > 0
+                          ? 'text-amber-700 dark:text-amber-400'
+                          : 'text-muted-foreground'
+                      }`}>
+                        <Users className="w-3.5 h-3.5" />
+                        <span>Defaulters</span>
+                      </div>
+                      <div className={`text-lg font-bold truncate ${
+                        financialAudit.chronic_defaulters_count > 0
+                          ? 'text-amber-700 dark:text-amber-300'
+                          : 'text-foreground'
+                      }`}>
+                        {financialAudit.chronic_defaulters_count}
+                      </div>
+                      <div className="text-[10px] text-muted-foreground truncate">
+                        Dues: Rs. {Number(financialAudit.chronic_defaulters_due_amount).toLocaleString('en-IN', { minimumFractionDigits: 2 })}
+                      </div>
+                    </div>
+                  </div>
+
+                  {/* Warning Callouts */}
+                  {financialAudit.warnings && financialAudit.warnings.length > 0 ? (
+                    <div className="rounded-lg border border-amber-500/30 bg-amber-500/10 p-4 space-y-2.5">
+                      <div className="flex items-center gap-2 text-sm font-bold text-amber-950 dark:text-amber-200">
+                        <AlertTriangle className="w-4 h-4 text-amber-600 dark:text-amber-400 shrink-0" />
+                        <span>Reconciliation Warnings ({financialAudit.warnings.length})</span>
+                      </div>
+                      <ul className="space-y-1.5 pl-6 list-disc text-xs text-amber-900/90 dark:text-amber-300/90 leading-relaxed">
+                        {financialAudit.warnings.map((warn, i) => (
+                          <li key={i}>{warn}</li>
+                        ))}
+                      </ul>
+                    </div>
+                  ) : (
+                    <div className="rounded-lg border border-green-500/30 bg-green-500/10 p-3.5 flex items-center gap-3 text-green-900 dark:text-green-200">
+                      <CheckCircle2 className="w-5 h-5 text-green-600 dark:text-green-400 shrink-0" />
+                      <div className="text-xs">
+                        All accounts in {financialAudit.outgoing_academic_year_name} are fully balanced. No uncollected arrears or pending cheques detected.
+                      </div>
+                    </div>
+                  )}
+
+                  {/* Advance Wallets Note */}
+                  <div className="rounded-lg border p-3 bg-muted/20 flex items-start gap-3 text-xs leading-relaxed">
+                    <Wallet className="w-4 h-4 text-blue-600 dark:text-blue-400 shrink-0 mt-0.5" />
+                    <div className="text-muted-foreground">
+                      <strong className="text-foreground">Student Advance Wallet Carry-Forward:</strong>{' '}
+                      All continuing active students with advance credit balances (Rs. {Number(financialAudit.total_advance_wallet_balance).toLocaleString('en-IN', { minimumFractionDigits: 2 })} across {financialAudit.advance_wallet_students_count} student accounts) will automatically have their balances preserved and recognized in the new session.
+                    </div>
+                  </div>
+
+                  {/* Mandatory Acknowledgment Checkbox */}
+                  <div className="rounded-lg border p-4 bg-muted/30">
+                    <div className="flex items-start space-x-3">
+                      <Checkbox
+                        id="financial-audit-ack"
+                        checked={financialAuditAcknowledged}
+                        onCheckedChange={(checked) => setFinancialAuditAcknowledged(!!checked)}
+                        className="mt-0.5"
+                      />
+                      <div className="space-y-1 leading-none">
+                        <Label
+                          htmlFor="financial-audit-ack"
+                          className="text-sm font-semibold cursor-pointer text-foreground"
+                        >
+                          I have reviewed and acknowledge the outgoing session financial status
+                        </Label>
+                        <p className="text-xs text-muted-foreground">
+                          I confirm that unpaid dues (Rs. {Number(financialAudit.total_outstanding_dues).toLocaleString('en-IN', { minimumFractionDigits: 2 })}) and advance wallet balances will be rolled over to the incoming academic session.
+                        </p>
+                      </div>
+                    </div>
+                  </div>
+                </>
               ) : null}
             </div>
           ) : currentStep === 1 ? (
@@ -1149,15 +1374,35 @@ export const TenantRolloverDialog: React.FC<TenantRolloverDialogProps> = ({
                 Done
               </Button>
             </div>
-          ) : currentStep === 1 ? (
+          ) : currentStep === 0 ? (
             <>
               <Button
                 type="button"
                 variant="outline"
                 onClick={handleClose}
-                disabled={isFetchingPreview}
               >
                 Cancel
+              </Button>
+              <Button
+                type="button"
+                onClick={() => setCurrentStep(1)}
+                disabled={!financialAuditAcknowledged || isAuditLoading || !financialAudit}
+                className="bg-primary hover:bg-primary/90 text-primary-foreground"
+              >
+                Next: Session Details
+                <ChevronRight className="ml-1 h-4 w-4" />
+              </Button>
+            </>
+          ) : currentStep === 1 ? (
+            <>
+              <Button
+                type="button"
+                variant="outline"
+                onClick={() => setCurrentStep(0)}
+                disabled={isFetchingPreview}
+              >
+                <ChevronLeft className="mr-1 h-4 w-4" />
+                Back to Financial Audit
               </Button>
               <Button
                 type="button"

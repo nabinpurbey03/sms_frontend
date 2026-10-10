@@ -45,6 +45,7 @@ export const STUDENT_DUES_BREAKDOWN_KEY = 'student_dues_breakdown';
 export const BILL_LATE_FEE_KEY = 'finance_bill_late_fee';
 export const GENERATED_MONTHS_KEY = 'finance_generated_months';
 export const ALUMNI_CLEARANCE_KEY = 'alumni-clearance';
+export const ROLLOVER_FINANCIAL_AUDIT_KEY = 'rollover_financial_audit';
 
 // --- Query Hooks ---
 
@@ -281,7 +282,17 @@ export function useAlumniClearance(tenantId: string | null, params?: AlumniClear
   });
 }
 
+export function useRolloverFinancialAudit(tenantId: string | null, enabled: boolean = true) {
+  return useQuery({
+    queryKey: [ROLLOVER_FINANCIAL_AUDIT_KEY, tenantId],
+    queryFn: () => financeApi.getRolloverFinancialAudit(tenantId!),
+    enabled: !!tenantId && enabled,
+    staleTime: 1000 * 30,
+  });
+}
+
 // --- Mutation Hooks ---
+
 
 export const useCreateFeeStructure = (tenantId: string | null) => {
   const queryClient = useQueryClient();
