@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import { useAuth } from '@/auth/useAuth';
 import { usePermission } from '@/auth/usePermission';
-import { useAcademicYears, useSetCurrentAcademicYear, useCloseAcademicYear, useAcademicYearStatus } from '../hooks';
+import { useAcademicYears, useSetCurrentAcademicYear, useAcademicYearStatus } from '../hooks';
 import { isAcademicYearClosed } from '../types';
 import { AcademicYearFormDialog } from '../components/AcademicYearFormDialog';
 import { AcademicYearExpiryBanner } from '../components/AcademicYearExpiryBanner';
@@ -25,7 +25,6 @@ import {
   CalendarDays,
   Plus,
   CheckCircle2,
-  Lock,
   Loader2,
   RefreshCw,
   School,
@@ -77,7 +76,6 @@ export const AcademicYearsPage: React.FC<AcademicYearsPageProps> = ({
     (Boolean(statusData?.can_transition) || isSuperAdmin);
 
   const setCurrentMutation = useSetCurrentAcademicYear();
-  const closeMutation = useCloseAcademicYear();
 
   const [isFormOpen, setIsFormOpen] = useState(false);
   const [isRolloverOpen, setIsRolloverOpen] = useState(false);
@@ -85,9 +83,8 @@ export const AcademicYearsPage: React.FC<AcademicYearsPageProps> = ({
   const [isReorderOpen, setIsReorderOpen] = useState(false);
   const [processingId, setProcessingId] = useState<string | null>(null);
 
-  // Accessible confirmation dialog state
+  // Accessible confirmation dialog state for setting current academic year
   const [confirmAction, setConfirmAction] = useState<{
-    type: 'set-current' | 'close-year';
     yearId: string;
     yearName: string;
   } | null>(null);
@@ -98,22 +95,14 @@ export const AcademicYearsPage: React.FC<AcademicYearsPageProps> = ({
   }
 
   const handleSetCurrent = (yearId: string, name: string) => {
-    setConfirmAction({ type: 'set-current', yearId, yearName: name });
-  };
-
-  const handleCloseYear = (yearId: string, name: string) => {
-    setConfirmAction({ type: 'close-year', yearId, yearName: name });
+    setConfirmAction({ yearId, yearName: name });
   };
 
   const executeConfirmAction = async () => {
     if (!confirmAction || !effectiveTenantId) return;
     setProcessingId(confirmAction.yearId);
     try {
-      if (confirmAction.type === 'set-current') {
-        await setCurrentMutation.mutateAsync({ tenantId: effectiveTenantId, yearId: confirmAction.yearId });
-      } else {
-        await closeMutation.mutateAsync({ tenantId: effectiveTenantId, yearId: confirmAction.yearId });
-      }
+      await setCurrentMutation.mutateAsync({ tenantId: effectiveTenantId, yearId: confirmAction.yearId });
     } finally {
       setProcessingId(null);
       setConfirmAction(null);
@@ -347,38 +336,23 @@ export const AcademicYearsPage: React.FC<AcademicYearsPageProps> = ({
                                 </span>
                               </div>
                             ) : year.is_current ? (
+                              <Badge
+                                variant="outline"
+                                className="text-emerald-700 dark:text-emerald-400 bg-emerald-500/10 border-emerald-500/30 px-2.5 py-1 text-xs font-semibold flex items-center gap-1.5"
+                              >
+                                <CheckCircle2 className="w-3.5 h-3.5 text-emerald-600 dark:text-emerald-400" />
+                                Active Session
+                              </Badge>
+                            ) : (
                               <Button
                                 variant="outline"
                                 size="sm"
-                                onClick={() => setIsTenantRolloverOpen(true)}
-                                className="text-amber-700 dark:text-amber-400 border-amber-500/40 hover:bg-amber-500/10"
-                                title="Close this session and rollover students into a new academic year"
+                                onClick={() => handleSetCurrent(year.id, year.name)}
+                                disabled={processingId === year.id}
                               >
-                                <RefreshCw className="w-3.5 h-3.5 mr-1" />
-                                Rollover / Close
+                                <CheckCircle2 className="w-4 h-4 mr-1" />
+                                Set Current
                               </Button>
-                            ) : (
-                              <>
-                                <Button
-                                  variant="outline"
-                                  size="sm"
-                                  onClick={() => handleSetCurrent(year.id, year.name)}
-                                  disabled={processingId === year.id}
-                                >
-                                  <CheckCircle2 className="w-4 h-4 mr-1" />
-                                  Set Current
-                                </Button>
-                                <Button
-                                  variant="outline"
-                                  size="sm"
-                                  onClick={() => handleCloseYear(year.id, year.name)}
-                                  disabled={processingId === year.id}
-                                  title="Close this upcoming session without activating"
-                                >
-                                  <Lock className="w-4 h-4 mr-1" />
-                                  Close
-                                </Button>
-                              </>
                             )}
                           </div>
                         </TableCell>
@@ -425,14 +399,10 @@ export const AcademicYearsPage: React.FC<AcademicYearsPageProps> = ({
       <ConfirmDialog
         open={!!confirmAction}
         onOpenChange={(open) => !open && setConfirmAction(null)}
-        title={confirmAction?.type === 'set-current' ? 'Set Active Academic Year' : 'Close Academic Year'}
-        description={
-          confirmAction?.type === 'set-current'
-            ? `Are you sure you want to set "${confirmAction?.yearName}" as the current academic year for the whole school?`
-            : `Are you sure you want to close "${confirmAction?.yearName}"? This action might make data read-only.`
-        }
-        confirmLabel={confirmAction?.type === 'set-current' ? 'Set as Current' : 'Close Year'}
-        variant={confirmAction?.type === 'close-year' ? 'destructive' : 'default'}
+        title="Set Active Academic Year"
+        description={`Are you sure you want to set "${confirmAction?.yearName}" as the current academic year for the whole school?`}
+        confirmLabel="Set as Current"
+        variant="default"
         onConfirm={executeConfirmAction}
         isPending={!!processingId}
       />
