@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import { useAuth } from '@/auth/useAuth';
 import { usePermission } from '@/auth/usePermission';
-import { useAcademicYears, useSetCurrentAcademicYear, useCloseAcademicYear } from '../hooks';
+import { useAcademicYears, useSetCurrentAcademicYear, useCloseAcademicYear, useAcademicYearStatus } from '../hooks';
 import { isAcademicYearClosed } from '../types';
 import { AcademicYearFormDialog } from '../components/AcademicYearFormDialog';
 import { AcademicYearExpiryBanner } from '../components/AcademicYearExpiryBanner';
@@ -29,6 +29,7 @@ import {
   Loader2,
   RefreshCw,
   School,
+  AlertCircle,
 } from 'lucide-react';
 import { useTenant } from '@/features/tenants/hooks';
 import { SchoolSearchSelect } from '../components/SchoolSearchSelect';
@@ -66,6 +67,15 @@ export const AcademicYearsPage: React.FC<AcademicYearsPageProps> = ({
 
   const { data: years = [], isLoading } = useAcademicYears(effectiveTenantId || null);
   const { data: tenantClasses = [] } = useAllClassesWithDetails(effectiveTenantId || null);
+  const { data: statusData } = useAcademicYearStatus(effectiveTenantId || null);
+
+  // A School Admin can only rollover when the active session is expired AND the target year is provisioned.
+  // Super Admin retains emergency override access.
+  const canShowRolloverButton =
+    canManage &&
+    Boolean(effectiveTenantId) &&
+    (Boolean(statusData?.can_transition) || isSuperAdmin);
+
   const setCurrentMutation = useSetCurrentAcademicYear();
   const closeMutation = useCloseAcademicYear();
 
@@ -135,7 +145,7 @@ export const AcademicYearsPage: React.FC<AcademicYearsPageProps> = ({
                 Platform Rollover
               </Button>
             )}
-            {canManage && effectiveTenantId && (
+            {canShowRolloverButton && (
               <Button
                 variant="outline"
                 size="sm"
@@ -209,7 +219,7 @@ export const AcademicYearsPage: React.FC<AcademicYearsPageProps> = ({
                 Platform Rollover
               </Button>
             )}
-            {canManage && effectiveTenantId && (
+            {canShowRolloverButton && (
               <Button
                 variant="outline"
                 size="sm"
@@ -235,9 +245,25 @@ export const AcademicYearsPage: React.FC<AcademicYearsPageProps> = ({
         </div>
       )}
 
-      {/* Academic Year Expiry Alert Banner */}
+      {/* Academic Year Expiry Alert Banner (when next year is provisioned) */}
       {effectiveTenantId && (
         <AcademicYearExpiryBanner tenantId={effectiveTenantId} />
+      )}
+
+      {/* Active Session Expired but Awaiting Super Admin Provisioning Callout */}
+      {effectiveTenantId && statusData?.is_expired && !statusData?.next_year && (
+        <Card className="rounded-lg border border-amber-500/40 bg-amber-500/10 p-4 text-amber-950 dark:text-amber-100 flex items-start gap-3">
+          <AlertCircle className="w-5 h-5 text-amber-600 dark:text-amber-400 shrink-0 mt-0.5" />
+          <div className="text-xs leading-relaxed space-y-1">
+            <p className="font-semibold text-amber-900 dark:text-amber-200">
+              Active Academic Session Completed — Awaiting Platform Provisioning
+            </p>
+            <p>
+              The current academic session "{statusData.current_year?.name || 'Current Session'}" has reached its end date.
+              Rollover into the next session will become available once platform administrators provision the upcoming academic year.
+            </p>
+          </div>
+        </Card>
       )}
 
       <Card className="overflow-hidden">
