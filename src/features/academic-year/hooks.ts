@@ -25,7 +25,8 @@ export const useCreateAcademicYear = () => {
       toast.success('Academic Year created successfully');
     },
     onError: (err: any) => {
-      toast.error('Failed to create academic year');
+      const msg = err?.response?.data?.message || err?.message || 'Failed to create academic year';
+      toast.error(msg);
     }
   });
 };
@@ -40,7 +41,8 @@ export const useSetCurrentAcademicYear = () => {
       toast.success('Current Academic Year updated successfully');
     },
     onError: (err: any) => {
-      toast.error('Failed to set current academic year');
+      const msg = err?.response?.data?.message || err?.message || 'Failed to set current academic year';
+      toast.error(msg);
     }
   });
 };

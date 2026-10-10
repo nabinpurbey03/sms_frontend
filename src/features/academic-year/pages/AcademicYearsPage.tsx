@@ -179,8 +179,8 @@ export const AcademicYearsPage: React.FC<AcademicYearsPageProps> = ({
         </Card>
       )}
 
-      {/* Standalone Super Admin Platform BS Year Provisioner */}
-      {!isEmbedded && isSuperAdmin && (
+      {/* Super Admin Platform BS Year Provisioner */}
+      {isSuperAdmin && (
         <PlatformBsYearProvisioner />
       )}
 
