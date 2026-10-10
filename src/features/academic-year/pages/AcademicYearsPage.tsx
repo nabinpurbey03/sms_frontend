@@ -146,7 +146,7 @@ export const AcademicYearsPage: React.FC<AcademicYearsPageProps> = ({
                 Rollover Session
               </Button>
             )}
-            {canManage && (
+            {isSuperAdmin && (
               <Button
                 onClick={() => setIsFormOpen(true)}
                 disabled={!effectiveTenantId}
@@ -220,15 +220,17 @@ export const AcademicYearsPage: React.FC<AcademicYearsPageProps> = ({
                 Rollover Session
               </Button>
             )}
-            <Button
-              size="sm"
-              onClick={() => setIsFormOpen(true)}
-              disabled={!effectiveTenantId}
-              title={!effectiveTenantId ? "Please select a school to create a year" : undefined}
-            >
-              <Plus className="w-3.5 h-3.5 mr-1.5" />
-              Create Year
-            </Button>
+            {isSuperAdmin && (
+              <Button
+                size="sm"
+                onClick={() => setIsFormOpen(true)}
+                disabled={!effectiveTenantId}
+                title={!effectiveTenantId ? "Please select a school to create a year" : undefined}
+              >
+                <Plus className="w-3.5 h-3.5 mr-1.5" />
+                Create Year
+              </Button>
+            )}
           </div>
         </div>
       )}
@@ -253,7 +255,10 @@ export const AcademicYearsPage: React.FC<AcademicYearsPageProps> = ({
           </div>
         ) : years.length === 0 ? (
           <div className="p-8 text-center text-muted-foreground">
-            No academic years found for {effectiveTenant?.name || 'this school'}. Click "Create Year" to add one.
+            No academic years found for {effectiveTenant?.name || 'this school'}.{' '}
+            {isSuperAdmin
+              ? 'Click "Create Year" to add one.'
+              : 'Please contact platform administrator to provision academic sessions.'}
           </div>
         ) : (
           <div className="overflow-x-auto">
@@ -300,9 +305,21 @@ export const AcademicYearsPage: React.FC<AcademicYearsPageProps> = ({
                         <TableCell className="text-right">
                           <div className="flex items-center justify-end gap-2">
                             {isClosed ? (
-                              <span className="text-xs text-muted-foreground italic">
-                                Archived
-                              </span>
+                              <div className="flex items-center gap-2">
+                                <Button
+                                  variant="outline"
+                                  size="sm"
+                                  disabled
+                                  title="Closed academic sessions cannot be reactivated."
+                                  className="opacity-50 cursor-not-allowed"
+                                >
+                                  <CheckCircle2 className="w-4 h-4 mr-1" />
+                                  Set Current
+                                </Button>
+                                <span className="text-xs text-muted-foreground italic">
+                                  Archived
+                                </span>
+                              </div>
                             ) : year.is_current ? (
                               <Button
                                 variant="outline"

@@ -53,19 +53,19 @@ export interface RolloverPreviewResponse {
 }
 
 export interface TenantAcademicYearRolloverRequest {
-  name: string;
-  start_date: string;
-  end_date: string;
+  target_academic_year_id: string;
   copy_teacher_assignments: boolean;
   copy_student_facilities?: boolean;
   financial_audit_acknowledged?: boolean;
   student_overrides?: StudentRolloverOverride[];
+  force?: boolean;
 }
 
 export interface TenantRolloverSummaryResponse {
   tenant_id: string;
   academic_year_id: string;
   academic_year_name: string;
+  target_year_name?: string;
   total_students_promoted: number;
   total_students_retained: number;
   total_students_transferred: number;
@@ -82,16 +82,10 @@ export interface TenantRolloverSummaryResponse {
 }
 
 export const tenantRolloverSchema = z.object({
-  name: z.string().trim().min(2, 'Name must be at least 2 characters').max(50, 'Name is too long'),
-  start_date: z.string().min(1, 'Start date is required'),
-  end_date: z.string().min(1, 'End date is required'),
-  copy_teacher_assignments: z.boolean(),
-  copy_student_facilities: z.boolean(),
-}).refine((data) => {
-  return new Date(data.start_date) <= new Date(data.end_date);
-}, {
-  message: "End date cannot be before start date",
-  path: ["end_date"]
+  target_academic_year_id: z.string().min(1, 'Target academic session is required'),
+  copy_teacher_assignments: z.boolean().default(true),
+  copy_student_facilities: z.boolean().default(true),
 });
 
 export type TenantRolloverForm = z.infer<typeof tenantRolloverSchema>;
+

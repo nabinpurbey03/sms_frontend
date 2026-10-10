@@ -1,3 +1,5 @@
+export type AcademicYearStatus = 'UPCOMING' | 'ACTIVE' | 'CLOSED' | 'COMPLETED';
+
 export interface AcademicYear {
   id: string;
   tenant_id: string;
@@ -6,7 +8,7 @@ export interface AcademicYear {
   end_date: string;
   is_current: boolean;
   is_closed: boolean;
-  status?: string;
+  status?: AcademicYearStatus | string;
   created_at?: string;
   updated_at?: string;
 }

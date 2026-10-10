@@ -1,7 +1,7 @@
-import React, { useState, useMemo } from 'react';
+import React, { useState, useMemo, useEffect } from 'react';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
-import { useTenantRollover, useAcademicYearStatus } from '../hooks';
+import { useTenantRollover, useAcademicYearStatus, useAcademicYears } from '../hooks';
 import { academicYearApi } from '../api';
 import {
   tenantRolloverSchema,
@@ -20,11 +20,9 @@ import {
   DialogTitle,
 } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Checkbox } from '@/components/ui/checkbox';
 import { Badge } from '@/components/ui/badge';
-import { NepaliDatePicker } from '@/components/ui/nepali-date-picker';
 import {
   Select,
   SelectContent,
@@ -86,8 +84,14 @@ export const TenantRolloverDialog: React.FC<TenantRolloverDialogProps> = ({
   const rolloverMutation = useTenantRollover();
   const cleanupMutation = useCleanupEmptySections();
   const { data: statusData } = useAcademicYearStatus(tenantId);
+  const { data: allYears = [] } = useAcademicYears(tenantId);
   const { data: financialAudit, isLoading: isAuditLoading, error: auditError } = useRolloverFinancialAudit(tenantId, open);
   const navigate = useNavigate();
+
+  const upcomingYears = useMemo(
+    () => (allYears || []).filter((y) => y.status === 'UPCOMING' && !y.is_current),
+    [allYears]
+  );
 
   // Wizard state: Step 0 (Financial Audit) -> Step 1 (Session Details) -> Step 2 (Student Preview) -> Step 3 (Summary/Execution)
   const [currentStep, setCurrentStep] = useState<0 | 1 | 2 | 3>(0);
@@ -109,24 +113,35 @@ export const TenantRolloverDialog: React.FC<TenantRolloverDialogProps> = ({
     getValues,
     formState: { errors },
   } = useForm<TenantRolloverForm>({
-    resolver: zodResolver(tenantRolloverSchema),
+    resolver: zodResolver(tenantRolloverSchema) as any,
     defaultValues: {
-      name: '',
-      start_date: '',
-      end_date: '',
+      target_academic_year_id: '',
       copy_teacher_assignments: true,
       copy_student_facilities: true,
     },
   });
 
-  const startDate = watch('start_date');
-  const endDate = watch('end_date');
-  const sessionName = watch('name');
+  const selectedTargetYearId = watch('target_academic_year_id');
   const copyAssignments = watch('copy_teacher_assignments');
   const copyFacilities = watch('copy_student_facilities');
 
+  const targetYear = useMemo(
+    () => upcomingYears.find((y) => y.id === selectedTargetYearId) || upcomingYears[0] || null,
+    [upcomingYears, selectedTargetYearId]
+  );
+
+  useEffect(() => {
+    if (upcomingYears.length === 1 && !selectedTargetYearId) {
+      setValue('target_academic_year_id', upcomingYears[0].id, { shouldValidate: true });
+    }
+  }, [upcomingYears, selectedTargetYearId, setValue]);
+
   const handleClose = () => {
-    reset();
+    reset({
+      target_academic_year_id: '',
+      copy_teacher_assignments: true,
+      copy_student_facilities: true,
+    });
     setSummary(null);
     setPreviewData(null);
     setOverrides({});
@@ -174,7 +189,7 @@ export const TenantRolloverDialog: React.FC<TenantRolloverDialogProps> = ({
 
   // Step 1 -> Step 2: Validate & Fetch Preview
   const handleProceedToStep2 = async () => {
-    const isValid = await trigger(['name', 'start_date', 'end_date', 'copy_teacher_assignments']);
+    const isValid = await trigger(['target_academic_year_id', 'copy_teacher_assignments', 'copy_student_facilities']);
     if (!isValid) return;
 
     setIsFetchingPreview(true);
@@ -297,9 +312,7 @@ export const TenantRolloverDialog: React.FC<TenantRolloverDialogProps> = ({
       const res = await rolloverMutation.mutateAsync({
         tenantId,
         data: {
-          name: formValues.name,
-          start_date: formValues.start_date,
-          end_date: formValues.end_date,
+          target_academic_year_id: formValues.target_academic_year_id,
           copy_teacher_assignments: formValues.copy_teacher_assignments,
           copy_student_facilities: formValues.copy_student_facilities,
           financial_audit_acknowledged: true,
@@ -816,43 +829,80 @@ export const TenantRolloverDialog: React.FC<TenantRolloverDialogProps> = ({
                 </div>
               </div>
 
-              <div className="space-y-2">
-                <Label htmlFor="tenant-rollover-name">
-                  New Academic Session Name <span className="text-destructive">*</span>
-                </Label>
-                <Input
-                  id="tenant-rollover-name"
-                  placeholder="e.g. Academic Session 2083/2084"
-                  {...register('name')}
-                />
-                {errors.name && (
-                  <p className="text-xs text-destructive">{errors.name.message}</p>
-                )}
-              </div>
+              {/* Upcoming Session Selection / Provisioning Status */}
+              {upcomingYears.length === 0 ? (
+                <div className="rounded-lg border border-amber-500/50 bg-amber-500/15 p-4 text-amber-950 dark:text-amber-100 flex items-start gap-3">
+                  <AlertTriangle className="h-5 w-5 shrink-0 text-amber-600 dark:text-amber-400 mt-0.5" />
+                  <div className="text-xs leading-relaxed space-y-1">
+                    <p className="font-semibold text-amber-900 dark:text-amber-200">
+                      Next Academic Session Not Yet Provisioned
+                    </p>
+                    <p>
+                      The upcoming academic session for this school has not yet been provisioned by platform administrators. Rollover cannot proceed until the Super Admin provisions the upcoming academic year. Please contact support or your platform administrator.
+                    </p>
+                  </div>
+                </div>
+              ) : upcomingYears.length === 1 ? (
+                <div className="rounded-lg border p-4 bg-muted/30 space-y-3">
+                  <div className="flex items-center justify-between">
+                    <span className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">
+                      Target Academic Session
+                    </span>
+                    <Badge variant="outline" className="text-emerald-700 bg-emerald-500/10 border-emerald-500/30">
+                      Provisioned by Super Admin · Dates Locked
+                    </Badge>
+                  </div>
+                  <div className="text-base font-bold text-foreground">
+                    {upcomingYears[0].name}
+                  </div>
+                  <div className="text-xs text-muted-foreground">
+                    Timeline: <span className="font-medium text-foreground">{formatDualDateRange(upcomingYears[0].start_date, upcomingYears[0].end_date, calendarSystem)}</span>
+                  </div>
+                </div>
+              ) : (
+                <div className="space-y-3">
+                  <div className="space-y-2">
+                    <Label htmlFor="target-academic-year-select">
+                      Select Target Academic Session <span className="text-destructive">*</span>
+                    </Label>
+                    <Select
+                      value={selectedTargetYearId || ''}
+                      onValueChange={(val) => setValue('target_academic_year_id', val, { shouldValidate: true })}
+                    >
+                      <SelectTrigger id="target-academic-year-select" className="w-full">
+                        <SelectValue placeholder="Choose upcoming academic session..." />
+                      </SelectTrigger>
+                      <SelectContent>
+                        {upcomingYears.map((yr) => (
+                          <SelectItem key={yr.id} value={yr.id}>
+                            {yr.name} ({formatDualDateRange(yr.start_date, yr.end_date, calendarSystem)})
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                    {errors.target_academic_year_id && (
+                      <p className="text-xs text-destructive">{errors.target_academic_year_id.message}</p>
+                    )}
+                  </div>
 
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                <NepaliDatePicker
-                  id="tenant-rollover-start-date"
-                  label="Start Date *"
-                  value={startDate}
-                  onChange={(val) => setValue('start_date', val, { shouldValidate: true })}
-                  error={errors.start_date?.message}
-                />
-                <NepaliDatePicker
-                  id="tenant-rollover-end-date"
-                  label="End Date *"
-                  value={endDate}
-                  onChange={(val) => setValue('end_date', val, { shouldValidate: true })}
-                  error={errors.end_date?.message}
-                />
-              </div>
-
-              {startDate && endDate && (
-                <div className="text-xs text-muted-foreground bg-muted/30 p-2.5 rounded border flex items-center justify-between">
-                  <span className="font-medium text-foreground">Calculated Duration:</span>
-                  <span className="font-semibold text-primary">
-                    {formatDualDateRange(startDate, endDate, calendarSystem)}
-                  </span>
+                  {targetYear && selectedTargetYearId && (
+                    <div className="rounded-lg border p-4 bg-muted/30 space-y-3">
+                      <div className="flex items-center justify-between">
+                        <span className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">
+                          Target Academic Session
+                        </span>
+                        <Badge variant="outline" className="text-emerald-700 bg-emerald-500/10 border-emerald-500/30">
+                          Provisioned by Super Admin · Dates Locked
+                        </Badge>
+                      </div>
+                      <div className="text-base font-bold text-foreground">
+                        {targetYear.name}
+                      </div>
+                      <div className="text-xs text-muted-foreground">
+                        Timeline: <span className="font-medium text-foreground">{formatDualDateRange(targetYear.start_date, targetYear.end_date, calendarSystem)}</span>
+                      </div>
+                    </div>
+                  )}
                 </div>
               )}
 
@@ -1194,13 +1244,13 @@ export const TenantRolloverDialog: React.FC<TenantRolloverDialogProps> = ({
 
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 text-xs">
                   <div>
-                    <span className="text-muted-foreground">New Academic Session: </span>
-                    <span className="font-semibold text-foreground">{sessionName}</span>
+                    <span className="text-muted-foreground">Target Academic Session: </span>
+                    <span className="font-semibold text-foreground">{targetYear?.name || 'Selected Session'}</span>
                   </div>
                   <div>
                     <span className="text-muted-foreground">Duration: </span>
                     <span className="font-semibold text-foreground">
-                      {formatDualDateRange(startDate, endDate, calendarSystem)}
+                      {targetYear ? formatDualDateRange(targetYear.start_date, targetYear.end_date, calendarSystem) : '—'}
                     </span>
                   </div>
                   <div>
@@ -1407,7 +1457,7 @@ export const TenantRolloverDialog: React.FC<TenantRolloverDialogProps> = ({
               <Button
                 type="button"
                 onClick={handleProceedToStep2}
-                disabled={isFetchingPreview}
+                disabled={isFetchingPreview || !selectedTargetYearId || upcomingYears.length === 0}
                 className="bg-primary hover:bg-primary/90 text-primary-foreground"
               >
                 {isFetchingPreview && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
