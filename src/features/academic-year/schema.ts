@@ -57,6 +57,7 @@ export interface TenantAcademicYearRolloverRequest {
   start_date: string;
   end_date: string;
   copy_teacher_assignments: boolean;
+  copy_student_facilities?: boolean;
   student_overrides?: StudentRolloverOverride[];
 }
 
@@ -69,6 +70,8 @@ export interface TenantRolloverSummaryResponse {
   total_students_transferred: number;
   total_students_graduated: number;
   teacher_assignments_copied: number;
+  transport_profiles_carried_forward?: number;
+  student_facilities_carried_forward?: number;
   empty_sections_count?: number;
   empty_sections?: Array<{
     section_id: string;
@@ -82,6 +85,7 @@ export const tenantRolloverSchema = z.object({
   start_date: z.string().min(1, 'Start date is required'),
   end_date: z.string().min(1, 'End date is required'),
   copy_teacher_assignments: z.boolean(),
+  copy_student_facilities: z.boolean(),
 }).refine((data) => {
   return new Date(data.start_date) <= new Date(data.end_date);
 }, {

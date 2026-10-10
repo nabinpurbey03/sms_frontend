@@ -60,6 +60,7 @@ import {
   UserCheck,
   UserMinus,
   Sparkles,
+  Bus,
 } from 'lucide-react';
 import { formatDualDateRange } from '@/features/school-settings/utils/nepaliDate';
 import { useCalendarPreferenceStore } from '@/stores/calendarPreferenceStore';
@@ -109,6 +110,7 @@ export const TenantRolloverDialog: React.FC<TenantRolloverDialogProps> = ({
       start_date: '',
       end_date: '',
       copy_teacher_assignments: true,
+      copy_student_facilities: true,
     },
   });
 
@@ -116,6 +118,7 @@ export const TenantRolloverDialog: React.FC<TenantRolloverDialogProps> = ({
   const endDate = watch('end_date');
   const sessionName = watch('name');
   const copyAssignments = watch('copy_teacher_assignments');
+  const copyFacilities = watch('copy_student_facilities');
 
   const handleClose = () => {
     reset();
@@ -292,6 +295,7 @@ export const TenantRolloverDialog: React.FC<TenantRolloverDialogProps> = ({
           start_date: formValues.start_date,
           end_date: formValues.end_date,
           copy_teacher_assignments: formValues.copy_teacher_assignments,
+          copy_student_facilities: formValues.copy_student_facilities,
           student_overrides: studentOverrides.length > 0 ? studentOverrides : undefined,
         },
       });
@@ -460,6 +464,34 @@ export const TenantRolloverDialog: React.FC<TenantRolloverDialogProps> = ({
                 </div>
               </div>
 
+              {(summary.transport_profiles_carried_forward !== undefined ||
+                summary.student_facilities_carried_forward !== undefined) && (
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                  <div className="rounded-lg border p-3 bg-muted/30 flex items-center gap-3">
+                    <div className="w-9 h-9 rounded-full bg-blue-500/10 text-blue-600 dark:text-blue-400 flex items-center justify-center shrink-0">
+                      <Bus className="w-5 h-5" />
+                    </div>
+                    <div>
+                      <div className="text-xs text-muted-foreground font-medium">Transport Subscriptions Carried Forward</div>
+                      <div className="text-lg font-bold text-foreground">
+                        {summary.transport_profiles_carried_forward ?? 0}
+                      </div>
+                    </div>
+                  </div>
+                  <div className="rounded-lg border p-3 bg-muted/30 flex items-center gap-3">
+                    <div className="w-9 h-9 rounded-full bg-indigo-500/10 text-indigo-600 dark:text-indigo-400 flex items-center justify-center shrink-0">
+                      <Sparkles className="w-5 h-5" />
+                    </div>
+                    <div>
+                      <div className="text-xs text-muted-foreground font-medium">Facility Assignments Preserved</div>
+                      <div className="text-lg font-bold text-foreground">
+                        {summary.student_facilities_carried_forward ?? 0}
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              )}
+
               {/* Empty Sections Audit Card */}
               {summary.empty_sections_count && summary.empty_sections_count > 0 ? (
                 <div className="rounded-xl border border-amber-500/30 bg-amber-500/10 p-4 space-y-3">
@@ -618,6 +650,30 @@ export const TenantRolloverDialog: React.FC<TenantRolloverDialogProps> = ({
                     </Label>
                     <p className="text-xs text-muted-foreground">
                       Automatically replicate class teacher and subject teacher allocations into the new academic year.
+                    </p>
+                  </div>
+                </div>
+              </div>
+
+              <div className="rounded-lg border p-3.5 bg-muted/20">
+                <div className="flex items-start space-x-3">
+                  <Checkbox
+                    id="copy_student_facilities"
+                    checked={copyFacilities}
+                    onCheckedChange={(checked) =>
+                      setValue('copy_student_facilities', !!checked, { shouldValidate: true })
+                    }
+                    className="mt-0.5"
+                  />
+                  <div className="space-y-1 leading-none">
+                    <Label
+                      htmlFor="copy_student_facilities"
+                      className="text-sm font-medium cursor-pointer"
+                    >
+                      Preserve Student Transportation & Facility Subscriptions
+                    </Label>
+                    <p className="text-xs text-muted-foreground">
+                      Seamlessly carry forward active bus routes, hostel, and recurring facility assignments for continuing students into the new session.
                     </p>
                   </div>
                 </div>

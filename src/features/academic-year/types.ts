@@ -33,6 +33,7 @@ export interface PlatformRolloverDTO {
   name: string;
   start_date: string;
   end_date: string;
+  copy_student_facilities?: boolean;
 }
 
 export interface PlatformRolloverSummaryDTO {
@@ -40,6 +41,8 @@ export interface PlatformRolloverSummaryDTO {
   total_tenants_affected: number;
   total_students_promoted: number;
   total_students_graduated: number;
+  transport_profiles_carried_forward?: number;
+  student_facilities_carried_forward?: number;
 }
 
 export interface AcademicYearStatusResponse {
